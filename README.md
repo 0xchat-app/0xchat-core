@@ -1,1 +1,1 @@
-# 0xchat_Flutter
+# 0xchat_Core
