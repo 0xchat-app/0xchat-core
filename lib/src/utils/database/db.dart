@@ -11,7 +11,7 @@ class Reflector extends Reflectable {
             reflectedTypeCapability); // Request the capability to invoke methods.
 }
 
-const reflector = const Reflector();
+const reflector = Reflector();
 
 class DB {
   List<Type> schemes = [];
@@ -38,7 +38,7 @@ class DB {
     db = await openDatabase(dbPath, version: version,
         onCreate: (db, version) async {
       var batch = db.batch();
-      schemes.forEach((type) {
+      for (var type in schemes) {
         TypeMirror objectMirror = reflector.reflectType(type);
         String sql = DBHelper.generatorTableSql(type);
         if (sql.isNotEmpty) {
@@ -48,22 +48,22 @@ class DB {
             print("create ${objectMirror.simpleName} failure");
           }
         }
-      });
+      }
       await batch.commit();
     }, onUpgrade: (db, oldVersion, newVersion) async {
       // Update Table
       List<Map<String, dynamic>> tables = await db
           .rawQuery("SELECT name FROM sqlite_master WHERE type='table'");
-      List<String> tablenames =
+      List<String> tableNames =
           tables.map((item) => item["name"].toString()).toList();
       while (oldVersion <= newVersion) {
         var batch = db.batch();
         for (int i = 0; i < schemes.length; i++) {
           Type type = schemes[i];
-          String tablename = DBHelper.getTableName(type);
+          String tableName = DBHelper.getTableName(type);
           TypeMirror objectMirror = reflector.reflectType(type);
           ClassMirror classMirror = reflector.reflectType(type) as ClassMirror;
-          if (!tablenames.contains(tablename)) {
+          if (!tableNames.contains(tableName)) {
             DBHelper.createTable(type, db);
             continue;
           }
@@ -73,14 +73,14 @@ class DB {
                 classMirror.invoke("updateTable", []) as Map<String, String?>;
             var updateSql = updateTableMap["$oldVersion"];
 
-            if (updateSql != null && updateSql.length > 0) {
+            if (updateSql != null && updateSql.isNotEmpty) {
               var sqlList = updateSql.split(";");
               try {
-                sqlList.forEach((sql) {
-                  if (sql != null && sql.trim().length > 1) {
-                    batch.execute(sql.trim() + ";");
+                for (var sql in sqlList) {
+                  if (sql.trim().length > 1) {
+                    batch.execute("${sql.trim()};");
                   }
-                });
+                }
               } catch (_) {
                 print(
                     "update ${objectMirror.simpleName} failure ==> ${updateSql.toString()}");
@@ -107,15 +107,15 @@ class DB {
   }
 
   Future<int> insert<T extends DBObject>(T object) async {
-    String tablename = DBHelper.getTableName(T);
-    await creatTableForDBObject<T>(tablename);
-    return await db.insert(tablename, object.toMap(),
+    String tableName = DBHelper.getTableName(T);
+    await createTableForDBObject<T>(tableName);
+    return await db.insert(tableName, object.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<int> insertObjects<T extends DBObject>(List<T> objects) async {
     String tableName = DBHelper.getTableName(T);
-    await creatTableForDBObject<T>(tableName);
+    await createTableForDBObject<T>(tableName);
     int successCount = 0;
     db.transaction((txn) async {
       for (int i = 0; i < objects.length; i++) {
@@ -131,9 +131,9 @@ class DB {
   }
 
   Future<int> update<T extends DBObject>(T object) async {
-    String tablename = DBHelper.getTableName(T);
-    await creatTableForDBObject<T>(tablename);
-    return await db.update(tablename, object.toMap(),
+    String tableName = DBHelper.getTableName(T);
+    await createTableForDBObject<T>(tableName);
+    return await db.update(tableName, object.toMap(),
         conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
@@ -143,9 +143,9 @@ class DB {
 
   Future<int> delete<T extends DBObject>(
       {String? where, List<Object?>? whereArgs}) async {
-    String tablename = DBHelper.getTableName(T);
-    await creatTableForDBObject<T>(tablename);
-    return await db.delete(tablename, where: where, whereArgs: whereArgs);
+    String tableName = DBHelper.getTableName(T);
+    await createTableForDBObject<T>(tableName);
+    return await db.delete(tableName, where: where, whereArgs: whereArgs);
   }
 
   Future<int> rawDelete(String sql, [List<Object?>? arguments]) async {
@@ -188,7 +188,7 @@ class DB {
     int? offset,
   }) async {
     String tableName = DBHelper.getTableName(T);
-    await creatTableForDBObject<T>(tableName);
+    await createTableForDBObject<T>(tableName);
     List<Object?> maps = await rawObjects(
       table: tableName,
       distinct: distinct,
@@ -207,11 +207,11 @@ class DB {
         !classMirror.staticMembers.containsKey("fromMap")) {
       return [];
     }
-    List<T> dbOBjectList = maps.map((map) {
+    List<T> dbObjectList = maps.map((map) {
       T object = classMirror.invoke("fromMap", [map]) as T;
       return object;
     }).toList();
-    return dbOBjectList;
+    return dbObjectList;
   }
 
   Future<List<Map<String, Object?>>> rawQuery(String sql,
@@ -219,10 +219,10 @@ class DB {
     return db.rawQuery(sql, arguments);
   }
 
-  Future creatTableForDBObject<T extends DBObject>(String tablename) async {
-    if (!allTablenames.contains(tablename)) {
+  Future createTableForDBObject<T extends DBObject>(String tableName) async {
+    if (!allTablenames.contains(tableName)) {
       bool result = await DBHelper.createTable(T, db);
-      if (result) allTablenames.add(tablename);
+      if (result) allTablenames.add(tableName);
     }
   }
 }

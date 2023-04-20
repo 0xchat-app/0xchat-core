@@ -5,8 +5,8 @@ import 'db.dart';
 import 'db_object.dart';
 
 class DBHelper {
-  static DateTime createDateTime(int miliseconds) {
-    return DateTime.fromMillisecondsSinceEpoch(miliseconds, isUtc: true);
+  static DateTime createDateTime(int milSeconds) {
+    return DateTime.fromMillisecondsSinceEpoch(milSeconds, isUtc: true);
   }
 
   static getTableName(Type type) {
@@ -19,11 +19,11 @@ class DBHelper {
     if (classMirror.staticMembers.keys.contains("tableName")) {
       try {
         var tableName = classMirror.invoke("tableName", []);
-        String _tableName = classMirror.simpleName;
+        String tableName0 = classMirror.simpleName;
         if (tableName != null && tableName.toString().isNotEmpty) {
-          _tableName = tableName.toString();
+          tableName0 = tableName.toString();
         }
-        return _tableName;
+        return tableName0;
       } catch (_) {
         return classMirror.simpleName;
       }
@@ -32,8 +32,8 @@ class DBHelper {
   }
 
   static bool isSubclassOfDBObject(Type type) {
-    TypeMirror object_mirror = reflector.reflectType(type);
-    if (object_mirror.isSubtypeOf(reflector.reflectType(DBObject))) {
+    TypeMirror objectMirror = reflector.reflectType(type);
+    if (objectMirror.isSubtypeOf(reflector.reflectType(DBObject))) {
       return true;
     }
     return false;
@@ -45,15 +45,15 @@ class DBHelper {
       return "";
     }
     String sql = "CREATE TABLE IF NOT EXISTS ";
-    sql = sql + DBHelper.getTableName(type) + "(";
+    sql = "${sql + DBHelper.getTableName(type)}(";
 
     ClassMirror classMirror = typeMirror as ClassMirror;
     List<String?> primaryKeys = [];
     if (classMirror.staticMembers.keys.contains("primaryKey")) {
       try {
-        var pkeys = classMirror.invoke("primaryKey", []);
-        if (pkeys != null) {
-          primaryKeys.addAll(pkeys as List<String?>);
+        var pKeys = classMirror.invoke("primaryKey", []);
+        if (pKeys != null) {
+          primaryKeys.addAll(pKeys as List<String?>);
         }
       } catch (_) {}
     }
@@ -61,19 +61,19 @@ class DBHelper {
     String primaryKey = "";
     if (primaryKeys.isNotEmpty) {
       primaryKey = "PRIMARY KEY (";
-      primaryKeys.forEach((element) {
-        primaryKey = primaryKey + element.toString() + ",";
-      });
+      for (var element in primaryKeys) {
+        primaryKey = "$primaryKey$element,";
+      }
       primaryKey = primaryKey.substring(0, primaryKey.length - 1);
-      primaryKey = primaryKey + ")";
+      primaryKey = "$primaryKey)";
     }
     print("primaryKey===>$primaryKey");
     List<String?> ignoreList = [];
     if (classMirror.staticMembers.keys.contains("ignoreKey")) {
       try {
-        var igkeys = classMirror.invoke("ignoreKey", []);
-        if (igkeys != null) {
-          ignoreList.addAll(igkeys as List<String?>);
+        var igKeys = classMirror.invoke("ignoreKey", []);
+        if (igKeys != null) {
+          ignoreList.addAll(igKeys as List<String?>);
         }
       } catch (_) {}
     }
@@ -104,10 +104,10 @@ class DBHelper {
       }
     });
     if (primaryKey.isNotEmpty) {
-      sql = sql + primaryKey + ",";
+      sql = "$sql$primaryKey,";
     }
     sql = sql.substring(0, sql.length - 1);
-    sql = sql + ")";
+    sql = "$sql)";
     print("sql=====>$sql");
     return sql;
   }
@@ -139,10 +139,10 @@ class DBHelper {
     TypeMirror objectMirror = reflector.reflectType(type);
     List<Map<String, dynamic>> tables =
         await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'");
-    List<String> tablenames =
+    List<String> tableNames =
         tables.map((item) => item["name"].toString()).toList();
-    String tablename = getTableName(type);
-    if (tablenames.contains(tablename)) {
+    String tableName = getTableName(type);
+    if (tableNames.contains(tableName)) {
       return false;
     }
     String sql = DBHelper.generatorTableSql(type);
