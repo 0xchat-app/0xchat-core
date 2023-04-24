@@ -1,5 +1,6 @@
 import 'package:chatcore/src/common/database/db.dart';
 import 'package:chatcore/src/common/database/db_object.dart';
+import 'package:nostr/nostr.dart';
 
 @reflector
 class UserDB extends DBObject {
@@ -59,6 +60,21 @@ class UserDB extends DBObject {
     return ['pubKey'];
   }
 
+  static decodePubkey(String pubkey) {
+    return Nip19.encodePubkey(pubkey);
+  }
+
+  static decodePrivkey(String privkey) {
+    return Nip19.encodePubkey(privkey);
+  }
+
+  String encodedPubkey() {
+    return Nip19.encodePubkey(pubKey!);
+  }
+
+  String encodedPrivkey() {
+    return Nip19.encodePubkey(privkey!);
+  }
 }
 
 UserDB _userInfoFromMap(Map<String, dynamic> map) {
