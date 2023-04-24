@@ -176,7 +176,7 @@ class DB {
     return maps;
   }
 
-  Future<List<T>> objects<T extends DBObject>({
+  Future<List<T>> objects<T extends DBObject>(String s, {
     bool? distinct,
     List<String>? columns,
     String? where,
