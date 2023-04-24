@@ -5,6 +5,7 @@ import 'package:chatcore/src/common/database/db_object.dart';
 class UserDB extends DBObject {
   String? pubKey;
   String? encryptedPrivKey;
+  String? privkey;
   String? defaultPassword;
 
   /// optional
@@ -17,7 +18,7 @@ class UserDB extends DBObject {
   /// zap url
   String? lnurl;
 
-  List<String>? badges;
+  String? badges;
 
   /// additional infos
   String? gender;
@@ -27,12 +28,13 @@ class UserDB extends DBObject {
   UserDB({
     this.pubKey = '',
     this.encryptedPrivKey = '',
+    this.privkey = '',
     this.defaultPassword = '',
     this.nickName = '',
     this.mainRelay = '',
     this.dns = '',
     this.lnurl = '',
-    this.badges,
+    this.badges = '',
     this.gender = '',
     this.area = '',
     this.bio = '',
@@ -68,7 +70,7 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     mainRelay: map['mainRelay'].toString(),
     dns: map['dns'].toString(),
     lnurl: map['lnurl'].toString(),
-    badges: map['badges'],
+    badges: map['badges'].toString(),
     gender: map['gender'].toString(),
     area: map['area'].toString(),
     bio: map['bio'].toString(),

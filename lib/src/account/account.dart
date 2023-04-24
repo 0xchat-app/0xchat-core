@@ -4,24 +4,26 @@ import '../common/database/db.dart';
 import 'model/userDB.dart';
 
 class Account {
-  Future<UserDB?> loginWithPubKeyAndPassword(
+  static Future<UserDB?> loginWithPubKeyAndPassword(
       String pubkey, String password) async {
     List<Object?> maps = await DB.sharedInstance
         .objects<UserDB>('userDB', where: 'pubKey = ?', whereArgs: [pubkey]);
     UserDB? db;
+    print(maps);
     if (maps.isNotEmpty) {
       db = maps.first as UserDB?;
       if (db != null && db.encryptedPrivKey != null) {
-        String encryptedPrivKey = db!.encryptedPrivKey!;
+        String encryptedPrivKey = db.encryptedPrivKey!;
         Uint8List privkey =
             decryptPrivateKey(hexToBytes(encryptedPrivKey), password);
+        db.privkey = bytesToHex(privkey);
         if (Keychain.getPublicKey(bytesToHex(privkey)) == pubkey) return db;
       }
     }
     return null;
   }
 
-  Future<UserDB?> loginWithPriKey(String privkey) async {
+  static Future<UserDB?> loginWithPriKey(String privkey) async {
     String pubkey = Keychain.getPublicKey(privkey);
     List<Object?> maps = await DB.sharedInstance
         .objects<UserDB>('userDB', where: 'pubKey = ?', whereArgs: [pubkey]);
@@ -35,11 +37,12 @@ class Account {
           encryptPrivateKey(hexToBytes(privkey), defaultPassword);
       db?.encryptedPrivKey = bytesToHex(enPrivkey);
       db?.defaultPassword = defaultPassword;
+      db?.privkey = privkey;
     }
     return db;
   }
 
-  Future<UserDB> newAccount() async {
+  static Future<UserDB> newAccount() async {
     String defaultPassword = generateStrongPassword(16);
     var user = Keychain.generate();
     Uint8List enPrivkey =
@@ -48,21 +51,23 @@ class Account {
     db.pubKey = user.public;
     db.encryptedPrivKey = bytesToHex(enPrivkey);
     db.defaultPassword = defaultPassword;
-    await DB.sharedInstance.update<UserDB>(db);
+    db.privkey = user.private;
+    await DB.sharedInstance.insert<UserDB>(db);
     return db;
   }
 
-  Future<UserDB> newAccountWithPassword(String password) async {
+  static Future<UserDB> newAccountWithPassword(String password) async {
     var user = Keychain.generate();
     Uint8List enPrivkey = encryptPrivateKey(hexToBytes(user.private), password);
     UserDB db = UserDB();
     db.pubKey = user.public;
     db.encryptedPrivKey = bytesToHex(enPrivkey);
-    await DB.sharedInstance.update<UserDB>(db);
+    db.privkey = user.private;
+    await DB.sharedInstance.insert<UserDB>(db);
     return db;
   }
 
-  Future<UserDB?> updateProfile(String privkey, String nickname, String gender,
+  static Future<UserDB?> updateProfile(String privkey, String nickname, String gender,
       String area, String bio) async {
     String pubkey = Keychain.getPublicKey(privkey);
     List<Object?> maps = await DB.sharedInstance
@@ -75,6 +80,7 @@ class Account {
         db.gender = gender;
         db.area = area;
         db.bio = bio;
+        db.privkey = privkey;
         await DB.sharedInstance.update<UserDB>(db);
         return db;
       }
@@ -82,7 +88,7 @@ class Account {
     return null;
   }
 
-  Future<UserDB?> updatePassword(String privkey, String password) async {
+  static Future<UserDB?> updatePassword(String privkey, String password) async {
     String pubkey = Keychain.getPublicKey(privkey);
     List<Object?> maps = await DB.sharedInstance
         .objects<UserDB>('userDB', where: 'pubKey = ?', whereArgs: [pubkey]);
@@ -93,6 +99,7 @@ class Account {
         Uint8List enPrivkey = encryptPrivateKey(hexToBytes(privkey), password);
         db.encryptedPrivKey = bytesToHex(enPrivkey);
         db.defaultPassword = "";
+        db.privkey = privkey;
         await DB.sharedInstance.update<UserDB>(db);
         return db;
       }
@@ -100,6 +107,12 @@ class Account {
     return null;
   }
 
-  Future logout() async {}
-  Future delete() async {}
+  static Future<int> logout(String privkey) async {
+    return delete(privkey);
+  }
+
+  static Future<int> delete(String privkey) async {
+    String pubkey = Keychain.getPublicKey(privkey);
+    return DB.sharedInstance.delete<UserDB>(where: 'pubKey = ?', whereArgs: [pubkey]);
+  }
 }
