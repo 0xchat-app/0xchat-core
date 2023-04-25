@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:chatcore/src/account/account.dart';
 import 'package:chatcore/src/account/model/userDB.dart';
 import 'package:chatcore/src/common/database/db.dart';
+import 'package:chatcore/src/common/network/connect.dart';
 import 'main.reflectable.dart'; // Import generated code.
+import 'package:nostr/nostr.dart';
 
 initDB() async {
   DB.sharedInstance.schemes.add(UserDB);
   DB.sharedInstance.deleteDBIfNeedMirgration = false;
-  await DB.sharedInstance.open("chat.db", version: 1);
+  await DB.sharedInstance.open("chat1.db", version: 1);
 }
 
 Future<void> testAccount() async {
@@ -24,6 +26,22 @@ Future<void> testAccount() async {
   // UserDB? db3 = await Account.updateProfile(db?.privkey!!, "nickname", "gender", "area", "bio");
   // print(db3?.toMap());
 }
+///
+/// 335189cda14e1f819bc9d39673fed45b4f07ffc688ee12560ba85a1c3d878eef
+/// Fw5_COv@,V(IKf+p
+Future<void> testConnect() async {
+    await Connect.sharedInstance.connectRelays(["ws://192.168.1.3:6969"]);
+    Filter f = Filter(
+      since: 1674063680,
+      limit: 450,
+    );
+    Connect.sharedInstance.addSubscription([f], (event) {
+        print(event);
+    });
+  UserDB db = await Account.newAccount();
+  print(db.toMap());
+  Account.updateProfile(db.privkey!, 'name', 'gender', 'area', 'about', 'picture');
+}
 
 
 
@@ -31,7 +49,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   initializeReflectable(); // Set up reflection support.
   await initDB();
-  testAccount();
+  testConnect();
   runApp(const MyApp());
 }
 

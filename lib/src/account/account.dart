@@ -1,7 +1,10 @@
+import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:nostr/nostr.dart';
 import '../common/database/db.dart';
 import 'model/userDB.dart';
+import '../common/network/connect.dart';
 
 class Account {
   static Future<UserDB?> loginWithPubKeyAndPassword(
@@ -67,8 +70,8 @@ class Account {
     return db;
   }
 
-  static Future<UserDB?> updateProfile(String privkey, String nickname, String gender,
-      String area, String bio) async {
+  static Future<UserDB?> updateProfile(String privkey, String name, String gender,
+      String area, String about, String picture) async {
     String pubkey = Keychain.getPublicKey(privkey);
     List<Object?> maps = await DB.sharedInstance
         .objects<UserDB>('userDB', where: 'pubKey = ?', whereArgs: [pubkey]);
@@ -76,12 +79,24 @@ class Account {
     if (maps.isNotEmpty) {
       db = maps.first as UserDB?;
       if (db != null) {
-        db.nickName = nickname;
+        db.name = name;
         db.gender = gender;
         db.area = area;
-        db.bio = bio;
+        db.about = about;
+        db.picture = picture;
         db.privkey = privkey;
         await DB.sharedInstance.update<UserDB>(db);
+
+        /// send metadata event
+        Map map = {
+          'name': name,
+          'about' : about,
+          'gender' : gender,
+          'area' : area,
+          'picture' : picture,
+        };
+        Event event = Nip1.setMetadata(jsonEncode(map), privkey);
+        Connect.sharedInstance.sendEvent(event);
         return db;
       }
     }

@@ -9,8 +9,7 @@ class UserDB extends DBObject {
   String? privkey;
   String? defaultPassword;
 
-  /// optional
-  String? nickName;
+  String? name;
   String? mainRelay;
 
   /// dns, example@0xchat.com
@@ -21,28 +20,30 @@ class UserDB extends DBObject {
 
   String? badges;
 
-  /// additional infos
+  /// metadata infos
   String? gender;
   String? area;
-  String? bio;
+  String? about;
+  String? picture;
 
   UserDB({
     this.pubKey = '',
     this.encryptedPrivKey = '',
     this.privkey = '',
     this.defaultPassword = '',
-    this.nickName = '',
+    this.name = '',
     this.mainRelay = '',
     this.dns = '',
     this.lnurl = '',
     this.badges = '',
     this.gender = '',
     this.area = '',
-    this.bio = '',
+    this.about = '',
+    this.picture = '',
   });
 
   @override
-  //Map 转换
+  //Map
   Map<String, Object?> toMap() {
     return _userInfoToMap(this);
   }
@@ -82,14 +83,15 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     pubKey: map['pubKey'].toString(),
     encryptedPrivKey: map['encryptedPrivKey'].toString(),
     defaultPassword: map['defaultPassword'].toString(),
-    nickName: map['nickName'].toString(),
+    name: map['name'].toString(),
     mainRelay: map['mainRelay'].toString(),
     dns: map['dns'].toString(),
     lnurl: map['lnurl'].toString(),
     badges: map['badges'].toString(),
     gender: map['gender'].toString(),
     area: map['area'].toString(),
-    bio: map['bio'].toString(),
+    about: map['about'].toString(),
+    picture: map['picture'].toString(),
   );
 }
 
@@ -97,12 +99,13 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'pubKey': instance.pubKey,
       'encryptedPrivKey': instance.encryptedPrivKey,
       'defaultPassword': instance.defaultPassword,
-      'nickName': instance.nickName,
+      'name': instance.name,
       'mainRelay': instance.mainRelay,
       'dns': instance.dns,
       'lnurl': instance.lnurl,
       'badges': instance.badges,
       'gender': instance.gender,
       'area': instance.area,
-      'bio': instance.bio,
+      'about': instance.about,
+      'picture': instance.picture,
     };

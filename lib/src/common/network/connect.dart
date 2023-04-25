@@ -7,31 +7,44 @@ typedef EventCallBack = void Function(Event event);
 class Connect {
   Connect._internal();
 
-  factory Connect() => _instance;
+  factory Connect() => sharedInstance;
 
-  static final Connect _instance = Connect._internal();
+  static final Connect sharedInstance = Connect._internal();
 
-  /// socket
-  late WebSocket webSocket;
+  /// sockets
+  Map<String, WebSocket> webSockets = {};
 
   /// subscriptionId, EventCallBack
   Map<String, EventCallBack> map = {};
 
   Future connect(String relay) async {
-    /// Connecting to a nostr relay using websocket
-    webSocket = await WebSocket.connect(relay);
-    webSocket.listen((message) {
-      _handleMessage(message);
-    });
+    WebSocket socket;
+    if (webSockets.containsKey(relay)) {
+      socket = webSockets[relay]!;
+      int status = socket.readyState;
+      print('status =  $status');
+      if (status != 3) {
+        /// not closed
+        return;
+      }
+    }
+    print("connecting...");
+    socket = await _connectWs(relay);
+    print("socket connection initialized");
+    socket.done.then((dynamic _) => _onDisconnected(relay));
+    _listenEvent(socket, relay);
+    webSockets[relay] = socket;
   }
 
-  Future closeConnect() async {
-    await webSocket.close();
+  Future connectRelays(List<String> relays) async {
+    for(String relay in relays) await connect(relay);
   }
 
-  Future reConnect(String relay) async {
-    await webSocket.close(000, "change relay");
-    connect(relay);
+  Future closeConnect(String relay) async {
+    if (webSockets.containsKey(relay)) {
+      webSockets[relay]!.close();
+      webSockets.remove(relay);
+    }
   }
 
   String addSubscription(List<Filter> filters, EventCallBack callBack) {
@@ -40,7 +53,7 @@ class Connect {
     String subscriptionId = requestWithFilter.serialize();
 
     /// Send a request message to the WebSocket server
-    webSocket.add(subscriptionId);
+    webSockets.forEach((relay, socket) => socket.add(subscriptionId));
 
     /// store subscriptionId & callBack mapping
     map[subscriptionId] = callBack;
@@ -48,14 +61,15 @@ class Connect {
   }
 
   Future closeSubscription(String subscriptionId) async {
-    Close(subscriptionId);
+    webSockets.forEach((relay, socket) => socket.add(Close(subscriptionId).serialize()));
     /// remove the mapping
     map.remove(subscriptionId);
   }
 
   /// send an event to relay
   void sendEvent(Event event) {
-    webSocket.add(event.serialize());
+    print("sendEvent");
+    webSockets.forEach((relay, socket) => socket.add(event.serialize()));
   }
 
   void _handleMessage(String message) {
@@ -91,5 +105,31 @@ class Connect {
 
   void _handleNotice(String notice) {
     print('receive notice: $notice');
+  }
+
+  void _listenEvent(WebSocket socket, String relay) {
+    socket.listen((message) {
+      _handleMessage(message);
+    }, onDone: () {
+      print("connect aborted");
+      connect(relay);
+    }, onError: (e) {
+      print('Server error: $e');
+      connect(relay);
+    });
+  }
+
+  Future _connectWs(String relay) async {
+    try {
+      return await WebSocket.connect(relay);
+    } catch (e) {
+      print("Error! can not connect WS connectWs $e");
+      await Future.delayed(Duration(milliseconds: 10000));
+      return await _connectWs(relay);
+    }
+  }
+
+  void _onDisconnected(String relay) {
+    connect(relay);
   }
 }
