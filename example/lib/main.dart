@@ -32,15 +32,15 @@ Future<void> testAccount() async {
 Future<void> testConnect() async {
     await Connect.sharedInstance.connectRelays(["ws://192.168.1.3:6969"]);
     Filter f = Filter(
-      since: 1674063680,
-      limit: 450,
+      kinds: [0],
+      authors: ["bb4beecb9cbd06786506204eff2841387c286a058019fc8de8042d2151bada3d"],
     );
     Connect.sharedInstance.addSubscription([f], (event) {
-        print(event);
+        print(event.content);
     });
-  UserDB db = await Account.newAccount();
-  print(db.toMap());
-  Account.updateProfile(db.privkey!, 'name', 'gender', 'area', 'about', 'picture');
+  // UserDB db = await Account.newAccount();
+  // print(db.toMap());
+  // Account.updateProfile(db.privkey!, 'name', 'gender', 'area', 'about', 'picture');
 }
 
 

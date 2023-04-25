@@ -56,7 +56,7 @@ class Connect {
     webSockets.forEach((relay, socket) => socket.add(subscriptionId));
 
     /// store subscriptionId & callBack mapping
-    map[subscriptionId] = callBack;
+    map[requestWithFilter.subscriptionId] = callBack;
     return subscriptionId;
   }
 
