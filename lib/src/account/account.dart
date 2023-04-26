@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'dart:math';
 import 'dart:typed_data';
 import 'package:nostr/nostr.dart';
-import '../common/database/db.dart';
 import 'model/userDB.dart';
+import '../common/database/db.dart';
 import '../common/network/connect.dart';
+
+typedef SyncCallBack = void Function(UserDB);
 
 class Account {
   static Future<UserDB?> getUserFromDB(String privkey) async {
@@ -89,7 +90,7 @@ class Account {
   }
 
   /// sync profile from relays
-  static Future syncProfile(String privkey) async {
+  static Future syncProfile(String privkey, SyncCallBack callBack) async {
     String pubkey = Keychain.getPublicKey(privkey);
     Filter f = Filter(
       kinds: [0],
@@ -106,6 +107,7 @@ class Account {
       db.picture = map['picture'];
       db.privkey = privkey;
       await DB.sharedInstance.update<UserDB>(db);
+      callBack(db);
     });
   }
 
