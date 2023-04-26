@@ -109,6 +109,8 @@ class Account {
       );
       subscriptionId =
           Connect.sharedInstance.addSubscription([f], (event) async {
+        /// close subscription
+        Connect.sharedInstance.closeSubscription(subscriptionId);
         UserDB? db = await getUserFromDB(privkey: privkey);
         db ??= UserDB();
         Map map = jsonDecode(event.content);
@@ -119,8 +121,6 @@ class Account {
         db.picture = map['picture'];
         db.privkey = privkey;
 
-        /// close subscription
-        Connect.sharedInstance.closeSubscription(subscriptionId);
         callBack(db);
         await DB.sharedInstance.update<UserDB>(db);
       });
