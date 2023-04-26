@@ -26,6 +26,10 @@ class UserDB extends DBObject {
   String? about;
   String? picture;
 
+  ///
+  String? aliasPubkey;
+  String? aliasPrivkey;
+
   UserDB({
     this.pubKey = '',
     this.encryptedPrivKey = '',
@@ -40,6 +44,8 @@ class UserDB extends DBObject {
     this.area = '',
     this.about = '',
     this.picture = '',
+    this.aliasPubkey = '',
+    this.aliasPrivkey = '',
   });
 
   @override
@@ -62,18 +68,19 @@ class UserDB extends DBObject {
   }
 
   static decodePubkey(String pubkey) {
-    return Nip19.encodePubkey(pubkey);
+    return Nip19.decodePubkey(pubkey);
   }
 
   static decodePrivkey(String privkey) {
-    return Nip19.encodePubkey(privkey);
+    return Nip19.decodePubkey(privkey);
   }
 
-  String encodedPubkey() {
+  /// nip19 encode
+  String get encodedPubkey {
     return Nip19.encodePubkey(pubKey!);
   }
 
-  String encodedPrivkey() {
+  String get encodedPrivkey {
     return Nip19.encodePubkey(privkey!);
   }
 }

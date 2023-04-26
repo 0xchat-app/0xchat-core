@@ -5,18 +5,24 @@ import 'model/userDB.dart';
 import '../common/database/db.dart';
 import '../common/network/connect.dart';
 
-typedef SyncCallBack = void Function(UserDB);
+typedef SyncCallBack = void Function(UserDB?);
 
 class Account {
-  static Future<UserDB?> getUserFromDB(String privkey) async {
-    String pubkey = Keychain.getPublicKey(privkey);
-    List<Object?> maps = await DB.sharedInstance
-        .objects<UserDB>('userDB', where: 'pubKey = ?', whereArgs: [pubkey]);
-    UserDB? db;
-    if (maps.isNotEmpty) {
-      db = maps.first as UserDB?;
-      if (db != null) {
-        return db;
+  static Future<UserDB?> getUserFromDB(
+      {String pubkey = '', String privkey = ''}) async {
+    if (privkey.isNotEmpty) {
+      pubkey = Keychain.getPublicKey(privkey);
+    }
+    if (pubkey.isNotEmpty) {
+      List<Object?> maps = await DB.sharedInstance
+          .objects<UserDB>('userDB', where: 'pubKey = ?', whereArgs: [pubkey]);
+      UserDB? db;
+      if (maps.isNotEmpty) {
+        db = maps.first as UserDB?;
+        if (db != null) {
+          db.privkey = privkey;
+          return db;
+        }
       }
     }
     return null;
@@ -90,30 +96,45 @@ class Account {
   }
 
   /// sync profile from relays
-  static Future syncProfile(String privkey, SyncCallBack callBack) async {
-    String pubkey = Keychain.getPublicKey(privkey);
-    Filter f = Filter(
-      kinds: [0],
-      authors: [pubkey],
-    );
-    Connect.sharedInstance.addSubscription([f], (event) async {
-      UserDB? db = await getUserFromDB(privkey);
-      db ??= UserDB();
-      Map map = jsonDecode(event.content);
-      db.name = map['name'];
-      db.gender = map['gender'];
-      db.area = map['area'];
-      db.about = map['about'];
-      db.picture = map['picture'];
-      db.privkey = privkey;
-      await DB.sharedInstance.update<UserDB>(db);
-      callBack(db);
-    });
+  static Future syncProfile(SyncCallBack callBack,
+      {String pubkey = '', String privkey = ''}) async {
+    if (privkey.isNotEmpty) {
+      pubkey = Keychain.getPublicKey(privkey);
+    }
+    if (pubkey.isNotEmpty) {
+      String subscriptionId = '';
+      Filter f = Filter(
+        kinds: [0],
+        authors: [pubkey],
+      );
+      subscriptionId =
+          Connect.sharedInstance.addSubscription([f], (event) async {
+        UserDB? db = await getUserFromDB(privkey: privkey);
+        db ??= UserDB();
+        Map map = jsonDecode(event.content);
+        db.name = map['name'];
+        db.gender = map['gender'];
+        db.area = map['area'];
+        db.about = map['about'];
+        db.picture = map['picture'];
+        db.privkey = privkey;
+
+        /// close subscription
+        Connect.sharedInstance.closeSubscription(subscriptionId);
+        callBack(db);
+        await DB.sharedInstance.update<UserDB>(db);
+      });
+    } else {
+      callBack(null);
+    }
   }
 
   static Future<UserDB?> updateProfile(String privkey, String name,
-      String gender, String area, String about, String picture) async {
-    UserDB? db = await getUserFromDB(privkey);
+      {String gender = '',
+      String area = '',
+      String about = '',
+      String picture = ''}) async {
+    UserDB? db = await getUserFromDB(privkey: privkey);
     if (db != null) {
       db.name = name;
       db.gender = gender;
@@ -139,7 +160,7 @@ class Account {
   }
 
   static Future<UserDB?> updatePassword(String privkey, String password) async {
-    UserDB? db = await getUserFromDB(privkey);
+    UserDB? db = await getUserFromDB(privkey: privkey);
     if (db != null) {
       Uint8List enPrivkey = encryptPrivateKey(hexToBytes(privkey), password);
       db.encryptedPrivKey = bytesToHex(enPrivkey);
