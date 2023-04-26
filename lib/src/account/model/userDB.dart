@@ -26,9 +26,10 @@ class UserDB extends DBObject {
   String? about;
   String? picture;
 
-  ///
+  /// private chat
   String? aliasPubkey;
   String? aliasPrivkey;
+  String? friendAliasPubkey;
 
   UserDB({
     this.pubKey = '',
