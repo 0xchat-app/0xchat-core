@@ -1,9 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:nostr/nostr.dart';
-import 'model/userDB.dart';
-import '../common/database/db.dart';
-import '../common/network/connect.dart';
+import 'package:chatcore/chat-core.dart';
 
 typedef SyncCallBack = void Function(UserDB?);
 
@@ -111,7 +109,7 @@ class Account {
           Connect.sharedInstance.addSubscription([f], (event) async {
         /// close subscription
         Connect.sharedInstance.closeSubscription(subscriptionId);
-        UserDB? db = await getUserFromDB(privkey: privkey);
+        UserDB? db = await getUserFromDB(pubkey: pubkey);
         db ??= UserDB();
         Map map = jsonDecode(event.content);
         db.name = map['name'];

@@ -1,5 +1,4 @@
-import 'package:chatcore/src/common/database/db.dart';
-import 'package:chatcore/src/common/database/db_object.dart';
+import 'package:chatcore/chat-core.dart';
 
 @reflector
 class BadgeDB extends DBObject {

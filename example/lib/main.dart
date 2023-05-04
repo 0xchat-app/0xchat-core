@@ -62,7 +62,6 @@ Future<void> testFriends() async {
 
   await Future.delayed(const Duration(seconds: 1));
 
-  Friends.sharedInstance.initSubscription(user2.private);
 }
 
 Future<void> main() async {

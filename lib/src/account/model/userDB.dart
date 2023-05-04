@@ -1,6 +1,5 @@
-import 'package:chatcore/src/common/database/db.dart';
-import 'package:chatcore/src/common/database/db_object.dart';
 import 'package:nostr/nostr.dart';
+import 'package:chatcore/chat-core.dart';
 
 @reflector
 class UserDB extends DBObject {
