@@ -101,7 +101,7 @@ class Friends {
       p: [pubkey],
     );
     filters.add(friendRequest);
-    List<String> p = [];
+    List<String> p = [pubkey];
     for (UserDB friend in friends) {
       if (friend.aliasPubkey != null) {
         p.add(friend.aliasPubkey!);
@@ -116,7 +116,7 @@ class Friends {
         Connect.sharedInstance.addSubscription(filters, (event) {
       switch (event.kind) {
         case 10100:
-          _handleFriendRequest(event);
+          _handleFriendRequest(event, pubkey, privkey);
           break;
         case 10101:
           _handleFriendAccept(event);
@@ -128,18 +128,40 @@ class Friends {
           _handleFriendRemove(event);
           break;
         case 4:
-          _handlePrivateMessage(event);
+          _handlePrivateMessage(event, pubkey, privkey);
           break;
         default:
           print('unhandled message $event');
           break;
       }
     });
+    print('friendsSubscription = $friendsSubscription');
   }
 
-  void _handleFriendRequest(Event event) {}
-  void _handleFriendAccept(Event event) {}
-  void _handleFriendReject(Event event) {}
-  void _handleFriendRemove(Event event) {}
-  void _handlePrivateMessage(Event event) {}
+  void _handleFriendRequest(Event event, String pubkey, String privkey) {
+    Alias alias = Nip101.getRequest(event, pubkey, privkey);
+    String aliasPrivkey = Friends.getAliasPrivkey(alias.toPubkey, privkey);
+    String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
+    alias.fromAliasPubkey = aliasPubkey;
+    print('_handleFriendRequest ${alias.fromPubkey}, ${alias.fromAliasPubkey}, ${alias.toPubkey}, ${alias.toAliasPubkey}, ${alias.content}');
+  }
+
+  void _handleFriendAccept(Event event) {
+    print('_handleFriendAccept $event');
+  }
+
+  void _handleFriendReject(Event event) {
+    print('_handleFriendReject $event');
+  }
+
+  void _handleFriendRemove(Event event) {
+    print('_handleFriendRemove $event');
+  }
+
+  void _handlePrivateMessage(Event event, String pubkey, String privkey) {
+    print('event: ${event.serialize()}');
+    EDMessage message = Nip4.decode(event, pubkey, privkey);
+    print(
+        '_handlePrivateMessage from ${message.sender}, to ${message.receiver}, content ${message.content}');
+  }
 }
