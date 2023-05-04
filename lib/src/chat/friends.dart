@@ -21,6 +21,9 @@ class Friends {
     return Nip101.aliasPrivkey(friendPubkey, privkey);
   }
 
+  void syncFriendsFromDB() {}
+  void syncFriendsToDB() {}
+
   void syncFriends(String privkey) {
     String pubkey = Keychain.getPublicKey(privkey);
     String subscriptionId = '';
@@ -31,6 +34,7 @@ class Friends {
     );
     subscriptionId = Connect.sharedInstance.addSubscription([f], (event) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
+
       /// clear friends
       friends = [];
 
@@ -137,7 +141,5 @@ class Friends {
   void _handleFriendAccept(Event event) {}
   void _handleFriendReject(Event event) {}
   void _handleFriendRemove(Event event) {}
-  void _handlePrivateMessage(Event event) {
-
-  }
+  void _handlePrivateMessage(Event event) {}
 }
