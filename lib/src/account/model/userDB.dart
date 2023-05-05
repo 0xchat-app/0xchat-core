@@ -27,8 +27,8 @@ class UserDB extends DBObject {
 
   /// private chat
   String? aliasPubkey;
-  String? aliasPrivkey;
-  String? friendAliasPubkey;
+  String? toAliasPubkey;
+  String? toAliasPrivkey;
 
   UserDB({
     this.pubKey = '',
@@ -45,7 +45,8 @@ class UserDB extends DBObject {
     this.about = '',
     this.picture = '',
     this.aliasPubkey = '',
-    this.aliasPrivkey = '',
+    this.toAliasPubkey = '',
+    this.toAliasPrivkey = '',
   });
 
   @override

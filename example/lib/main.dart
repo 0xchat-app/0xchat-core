@@ -58,7 +58,7 @@ Future<void> testFriends() async {
   var user2 = Keychain("a803fee503edde5f08d713a9b5365b7951aa65b986f3a4bcdbc89e6fb9f9847c");
 
   await Connect.sharedInstance.connectRelays(["ws://192.168.1.3:6969"]);
-  Friends.sharedInstance.requestFriend(user2.public, user1.private, "hello, friends request");
+  Friends.sharedInstance.requestFriend(user2.public, "hello, friends request");
 
   await Future.delayed(const Duration(seconds: 1));
 
