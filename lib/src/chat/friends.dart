@@ -61,16 +61,19 @@ class Friends {
     });
   }
 
-  void _addFriend(String friendPubkey) {
+  void _addFriend(String friendPubkey, {String? friendAliasPubkey}) {
     Account.syncProfile((user) {
       if (user != null) {
         user.toAliasPrivkey = Friends.getAliasPrivkey(user.pubKey!, privkey);
         user.toAliasPubkey = Keychain.getPublicKey(privkey);
+        if (friendAliasPubkey != null) user.aliasPubkey = friendAliasPubkey;
         friends[user.pubKey!] = user;
 
         /// subscript friend accept, reject, delete, private messages
         _addSubscription(user.toAliasPubkey!);
+        return user;
       }
+      return null;
     }, pubkey: friendPubkey);
   }
 
@@ -128,7 +131,6 @@ class Friends {
   }
 
   void acceptFriend(String friendPubkey, String friendAliasPubkey) {
-    String pubkey = Keychain.getPublicKey(privkey);
     String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event =
@@ -146,9 +148,9 @@ class Friends {
 
   void removeFriend(String friendPubkey) {
     UserDB? friend = friends[friendPubkey];
-    if(friend != null){
-      Event event =
-      Nip101.remove(pubkey, friend.toAliasPubkey!, friend.toAliasPrivkey!, friend.aliasPubkey!);
+    if (friend != null) {
+      Event event = Nip101.remove(pubkey, friend.toAliasPubkey!,
+          friend.toAliasPrivkey!, friend.aliasPubkey!);
       Connect.sharedInstance.sendEvent(event);
     }
     _deleteFriend(friendPubkey);

@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:nostr/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
-typedef SyncCallBack = void Function(UserDB?);
+typedef SyncCallBack = UserDB? Function(UserDB?);
 
 class Account {
   static Future<UserDB?> getUserFromDB(
@@ -13,7 +13,7 @@ class Account {
     }
     if (pubkey.isNotEmpty) {
       List<Object?> maps = await DB.sharedInstance
-          .objects<UserDB>('userDB', where: 'pubKey = ?', whereArgs: [pubkey]);
+          .objects<UserDB>(where: 'pubKey = ?', whereArgs: [pubkey]);
       UserDB? db;
       if (maps.isNotEmpty) {
         db = maps.first as UserDB?;
@@ -29,7 +29,7 @@ class Account {
   static Future<UserDB?> loginWithPubKeyAndPassword(
       String pubkey, String password) async {
     List<Object?> maps = await DB.sharedInstance
-        .objects<UserDB>('userDB', where: 'pubKey = ?', whereArgs: [pubkey]);
+        .objects<UserDB>(where: 'pubKey = ?', whereArgs: [pubkey]);
     UserDB? db;
     print(maps);
     if (maps.isNotEmpty) {
@@ -48,7 +48,7 @@ class Account {
   static Future<UserDB?> loginWithPriKey(String privkey) async {
     String pubkey = Keychain.getPublicKey(privkey);
     List<Object?> maps = await DB.sharedInstance
-        .objects<UserDB>('userDB', where: 'pubKey = ?', whereArgs: [pubkey]);
+        .objects<UserDB>(where: 'pubKey = ?', whereArgs: [pubkey]);
     UserDB? db;
     if (maps.isNotEmpty) {
       db = maps.first as UserDB?;
@@ -119,8 +119,8 @@ class Account {
         db.picture = map['picture'];
         db.privkey = privkey;
 
-        callBack(db);
-        await DB.sharedInstance.update<UserDB>(db);
+        db = callBack(db);
+        await DB.sharedInstance.update<UserDB>(db!);
       });
     } else {
       callBack(null);
