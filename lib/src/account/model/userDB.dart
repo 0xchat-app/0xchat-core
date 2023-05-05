@@ -30,6 +30,9 @@ class UserDB extends DBObject {
   String? toAliasPubkey;
   String? toAliasPrivkey;
 
+  /// friends list
+  String? friendsList;
+
   UserDB({
     this.pubKey = '',
     this.encryptedPrivKey = '',
@@ -47,6 +50,7 @@ class UserDB extends DBObject {
     this.aliasPubkey = '',
     this.toAliasPubkey = '',
     this.toAliasPrivkey = '',
+    this.friendsList = '',
   });
 
   @override
@@ -100,6 +104,7 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     area: map['area'].toString(),
     about: map['about'].toString(),
     picture: map['picture'].toString(),
+    friendsList: map['friendsList'].toString(),
   );
 }
 
@@ -116,4 +121,5 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'area': instance.area,
       'about': instance.about,
       'picture': instance.picture,
+      'friendsList': instance.friendsList,
     };

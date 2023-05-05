@@ -16,8 +16,9 @@ class Friends {
   static final Friends sharedInstance = Friends._internal();
 
   /// storage
-  String privkey = '';
+  UserDB? me;
   String pubkey = '';
+  String privkey = '';
   Map<String, UserDB> friends = {};
   Map<String, String> subscriptions = {};
 
@@ -32,12 +33,18 @@ class Friends {
     return Nip101.aliasPrivkey(friendPubkey, privkey);
   }
 
-  void syncFriendsFromDB() {}
-  void syncFriendsToDB() {}
+  void _syncFriendsFromDB() {
+    //todo
+  }
+  void _syncFriendsToDB(String list) {
 
-  void initFriends(String key) {
-    privkey = key;
-    pubkey = Keychain.getPublicKey(privkey);
+  }
+
+  Future<void> initWithPrikey(String key) async {
+    me = await Account.getUserFromDB(privkey: key);
+    pubkey = me!.pubKey!;
+    privkey = me!.privkey!;
+    _syncFriendsFromDB();
 
     /// subscript friend request
     _addSubscription(pubkey);
@@ -128,6 +135,7 @@ class Friends {
         pubkey, aliasPubkey, aliasPrivkey, friendPubkey, content);
     Connect.sharedInstance.sendEvent(event);
     _addFriend(friendPubkey);
+    _updateFriendList();
   }
 
   void acceptFriend(String friendPubkey, String friendAliasPubkey) {
@@ -136,7 +144,8 @@ class Friends {
     Event event =
         Nip101.accept(pubkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
     Connect.sharedInstance.sendEvent(event);
-    _addFriend(friendPubkey);
+    _addFriend(friendPubkey, friendAliasPubkey: friendAliasPubkey);
+    _updateFriendList();
   }
 
   void rejectFriend(
@@ -154,6 +163,15 @@ class Friends {
       Connect.sharedInstance.sendEvent(event);
     }
     _deleteFriend(friendPubkey);
+    _updateFriendList();
+  }
+
+  void _updateFriendList() {
+    List<String> friendList = friends.keys.toList();
+    Event event =
+        Nip51.createCategorizedPeople(identifier, friendList, privkey, pubkey);
+    Connect.sharedInstance.sendEvent(event);
+    _syncFriendsToDB(event.content);
   }
 
   void sendMessage(

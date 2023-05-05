@@ -59,7 +59,7 @@ Future<void> testFriends() async {
 
   await Connect.sharedInstance.connectRelays(["ws://192.168.1.7:6969"]);
 
-  Friends.sharedInstance.initFriends(user2.private);
+  Friends.sharedInstance.initWithPrikey(user2.private);
   // Friends.sharedInstance.requestFriend(user2.public, "hello, friends request");
 
   await Future.delayed(const Duration(seconds: 1));
