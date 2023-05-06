@@ -1,8 +1,12 @@
+import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
 import 'package:nostr/nostr.dart';
 
 typedef EventCallBack = void Function(Event event);
+typedef EOSECallBack = void Function(
+    int status); // 0:end without event, 1:end with events
+typedef NoticeCallBack = void Function(String notice);
 
 class Connect {
   Connect._internal();
@@ -11,11 +15,13 @@ class Connect {
 
   static final Connect sharedInstance = Connect._internal();
 
+  NoticeCallBack? noticeCallBack;
+
   /// sockets
   Map<String, WebSocket> webSockets = {};
 
   /// subscriptionId, EventCallBack
-  Map<String, EventCallBack> map = {};
+  Map<String, List> map = {};
 
   Future connect(String relay) async {
     WebSocket socket;
@@ -37,7 +43,7 @@ class Connect {
   }
 
   Future connectRelays(List<String> relays) async {
-    for(String relay in relays) {
+    for (String relay in relays) {
       await connect(relay);
     }
   }
@@ -49,7 +55,8 @@ class Connect {
     }
   }
 
-  String addSubscription(List<Filter> filters, EventCallBack callBack) {
+  String addSubscription(List<Filter> filters,
+      {EventCallBack? eventCallBack, EOSECallBack? eoseCallBack}) {
     /// Create a subscription message request with one or many filters
     Request requestWithFilter = Request(generate64RandomHexChars(), filters);
     String subscriptionId = requestWithFilter.serialize();
@@ -58,19 +65,20 @@ class Connect {
     webSockets.forEach((relay, socket) => socket.add(subscriptionId));
 
     /// store subscriptionId & callBack mapping
-    map[requestWithFilter.subscriptionId] = callBack;
+    map[requestWithFilter.subscriptionId] = [eventCallBack, eoseCallBack, 0];
     return subscriptionId;
   }
 
   Future closeSubscription(String subscriptionId) async {
-    webSockets.forEach((relay, socket) => socket.add(Close(subscriptionId).serialize()));
+    webSockets.forEach(
+        (relay, socket) => socket.add(Close(subscriptionId).serialize()));
+
     /// remove the mapping
     map.remove(subscriptionId);
   }
 
   /// send an event to relay
   void sendEvent(Event event) {
-    print("sendEvent");
     webSockets.forEach((relay, socket) => socket.add(event.serialize()));
   }
 
@@ -96,17 +104,25 @@ class Connect {
     print('Received event: $event');
     String? subscriptionId = event.subscriptionId;
     if (subscriptionId != null && subscriptionId.isNotEmpty) {
-      EventCallBack? callBack = map[subscriptionId];
+      EventCallBack? callBack = map[subscriptionId]![0];
+      map[subscriptionId]![2] = 1;
       if (callBack != null) callBack(event);
     }
   }
 
-  void _handleEOSE(String subscriptionId) {
-    print('receive EOSE: $subscriptionId');
+  void _handleEOSE(String eose) {
+    print('receive EOSE: $eose');
+    String subscriptionId = jsonDecode(eose)[0];
+    if (subscriptionId.isNotEmpty) {
+      EOSECallBack? callBack = map[subscriptionId]![1];
+      if (callBack != null) callBack(map[subscriptionId]![2]);
+    }
   }
 
   void _handleNotice(String notice) {
     print('receive notice: $notice');
+    String n = jsonDecode(notice)[0];
+    if (noticeCallBack != null) noticeCallBack!(n);
   }
 
   void _listenEvent(WebSocket socket, String relay) {

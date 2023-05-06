@@ -105,8 +105,8 @@ class Account {
         kinds: [0],
         authors: [pubkey],
       );
-      subscriptionId =
-          Connect.sharedInstance.addSubscription([f], (event) async {
+      subscriptionId = Connect.sharedInstance.addSubscription([f],
+          eventCallBack: (event) async {
         /// close subscription
         Connect.sharedInstance.closeSubscription(subscriptionId);
         UserDB? db = await getUserFromDB(pubkey: pubkey);
@@ -121,6 +121,15 @@ class Account {
 
         db = callBack(db);
         await DB.sharedInstance.update<UserDB>(db!);
+      }, eoseCallBack: (status) async {
+        Connect.sharedInstance.closeSubscription(subscriptionId);
+        if(status == 0){
+          UserDB? db = await getUserFromDB(pubkey: pubkey);
+          db ??= UserDB();
+          db.pubKey = pubkey;
+          db = callBack(db);
+          await DB.sharedInstance.update<UserDB>(db!);
+        }
       });
     } else {
       callBack(null);

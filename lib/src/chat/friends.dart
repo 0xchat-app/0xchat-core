@@ -33,18 +33,28 @@ class Friends {
     return Nip101.aliasPrivkey(friendPubkey, privkey);
   }
 
-  void _syncFriendsFromDB() {
-    //todo
+  Future<void> _syncFriendsFromDB() async {
+    String? list = me?.friendsList;
+    if (list != null && list.isNotEmpty) {
+      List<String> friendsList = Nip51.fromContent(list, privkey, pubkey);
+      for (String friendKey in friendsList) {
+        UserDB? friend = await Account.getUserFromDB(pubkey: friendKey);
+        if (friend != null) friends[pubkey] = friend;
+      }
+    }
   }
-  void _syncFriendsToDB(String list) {
 
+  Future<void> _syncFriendsToDB(String list) async {
+    me?.friendsList = list;
+    await DB.sharedInstance.update<UserDB>(me!);
   }
 
   Future<void> initWithPrikey(String key) async {
+    privkey = key;
+    pubkey = Keychain.getPublicKey(privkey);
     me = await Account.getUserFromDB(privkey: key);
-    pubkey = me!.pubKey!;
-    privkey = me!.privkey!;
-    _syncFriendsFromDB();
+    me ??= UserDB(pubKey: pubkey, privkey: privkey);
+    await _syncFriendsFromDB();
 
     /// subscript friend request
     _addSubscription(pubkey);
@@ -55,12 +65,12 @@ class Friends {
       d: [identifier],
       authors: [pubkey],
     );
-    subscriptionId = Connect.sharedInstance.addSubscription([f], (event) {
+    subscriptionId = Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
 
       /// clear data
       friends.clear();
-
+      print(event.serialize());
       Lists lists = Nip51.getLists(event, privkey);
       for (String p in lists.people) {
         _addFriend(p);
@@ -75,6 +85,7 @@ class Friends {
         user.toAliasPubkey = Keychain.getPublicKey(privkey);
         if (friendAliasPubkey != null) user.aliasPubkey = friendAliasPubkey;
         friends[user.pubKey!] = user;
+        _updateFriendList();
 
         /// subscript friend accept, reject, delete, private messages
         _addSubscription(user.toAliasPubkey!);
@@ -91,6 +102,16 @@ class Friends {
     }
   }
 
+  void _updateFriendList() {
+    List<String> friendList = friends.keys.toList();
+
+    print('friendlist $friendList');
+    Event event =
+        Nip51.createCategorizedPeople(identifier, [], friendList, privkey, pubkey);
+    Connect.sharedInstance.sendEvent(event);
+    _syncFriendsToDB(event.content);
+  }
+
   void _addSubscription(String subscriptPubkey) {
     if (subscriptions[subscriptPubkey] == null) {
       Filter f = subscriptPubkey == pubkey
@@ -103,7 +124,7 @@ class Friends {
               p: [subscriptPubkey],
             );
       subscriptions[subscriptPubkey] =
-          Connect.sharedInstance.addSubscription([f], (event) {
+          Connect.sharedInstance.addSubscription([f], eventCallBack:(event) {
         switch (event.kind) {
           case 10100:
             _handleFriendRequest(event);
@@ -135,7 +156,6 @@ class Friends {
         pubkey, aliasPubkey, aliasPrivkey, friendPubkey, content);
     Connect.sharedInstance.sendEvent(event);
     _addFriend(friendPubkey);
-    _updateFriendList();
   }
 
   void acceptFriend(String friendPubkey, String friendAliasPubkey) {
@@ -166,14 +186,6 @@ class Friends {
     _updateFriendList();
   }
 
-  void _updateFriendList() {
-    List<String> friendList = friends.keys.toList();
-    Event event =
-        Nip51.createCategorizedPeople(identifier, friendList, privkey, pubkey);
-    Connect.sharedInstance.sendEvent(event);
-    _syncFriendsToDB(event.content);
-  }
-
   void sendMessage(
       String friendAliasPubkey, String aliasPrivkey, String content) {
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
@@ -188,13 +200,10 @@ class Friends {
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     alias.fromAliasPubkey = aliasPubkey;
     if (friendRequestCallBack != null) friendRequestCallBack!(alias);
-    print(
-        '_handleFriendRequest ${alias.fromPubkey}, ${alias.fromAliasPubkey}, ${alias.toPubkey}, ${alias.toAliasPubkey}, ${alias.content}');
   }
 
   void _handleFriendAccept(Event event) {
     // Alias alias = Nip101.getAccept(event, pubkey, privkey);
-
     print('_handleFriendAccept $event');
   }
 

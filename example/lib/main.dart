@@ -41,7 +41,7 @@ Future<void> testConnect() async {
       "bb4beecb9cbd06786506204eff2841387c286a058019fc8de8042d2151bada3d"
     ],
   );
-  Connect.sharedInstance.addSubscription([f], (event) {
+  Connect.sharedInstance.addSubscription([f], eventCallBack:  (event) {
     print(event.content);
   });
   // UserDB db = await Account.newAccount();
@@ -55,16 +55,19 @@ Future<void> testConnect() async {
 // user2 priv:  a803fee503edde5f08d713a9b5365b7951aa65b986f3a4bcdbc89e6fb9f9847c
 Future<void> testFriends() async {
   var user1 = Keychain("81cce0c8980eafd8eeab8b46c4a93aee0ef4c92c91f4b7b45a4db940304d7f51");
-  var user2 = Keychain("a803fee503edde5f08d713a9b5365b7951aa65b986f3a4bcdbc89e6fb9f9847c");
+  var user2 = Keychain("fb505c65d4df950f5d28c9e4d285ee12ffaf315deef1fc24e3c7cd1e7e35f2b1");
 
   await Connect.sharedInstance.connectRelays(["ws://192.168.1.7:6969"]);
 
-  Friends.sharedInstance.initWithPrikey(user2.private);
-  // Friends.sharedInstance.requestFriend(user2.public, "hello, friends request");
-
+  Friends.sharedInstance.initWithPrikey(user1.private);
   await Future.delayed(const Duration(seconds: 1));
 
-
+  // Friends.sharedInstance.requestFriend(user2.public, "hello, friends request");
+  Friends.sharedInstance.friendRequestCallBack = (Alias alias){
+    print(
+        '_handleFriendRequest ${alias.fromPubkey}, ${alias.fromAliasPubkey}, ${alias.toPubkey}, ${alias.toAliasPubkey}, ${alias.content}');
+    Friends.sharedInstance.acceptFriend(alias.toPubkey, alias.toAliasPubkey);
+  };
 }
 
 Future<void> main() async {
