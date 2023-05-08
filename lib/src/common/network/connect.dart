@@ -101,7 +101,7 @@ class Connect {
   }
 
   void _handleEvent(Event event) {
-    print('Received event: $event');
+    print('Received event: ${event.serialize()}');
     String? subscriptionId = event.subscriptionId;
     if (subscriptionId != null && subscriptionId.isNotEmpty) {
       EventCallBack? callBack = map[subscriptionId]![0];

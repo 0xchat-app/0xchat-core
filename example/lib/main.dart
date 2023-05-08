@@ -60,14 +60,14 @@ Future<void> testFriends() async {
   await Connect.sharedInstance.connectRelays(["ws://192.168.1.7:6969"]);
 
   Friends.sharedInstance.initWithPrikey(user1.private);
-  await Future.delayed(const Duration(seconds: 1));
+  // await Future.delayed(const Duration(seconds: 1));
 
   // Friends.sharedInstance.requestFriend(user2.public, "hello, friends request");
-  Friends.sharedInstance.friendRequestCallBack = (Alias alias){
-    print(
-        '_handleFriendRequest ${alias.fromPubkey}, ${alias.fromAliasPubkey}, ${alias.toPubkey}, ${alias.toAliasPubkey}, ${alias.content}');
-    Friends.sharedInstance.acceptFriend(alias.toPubkey, alias.toAliasPubkey);
-  };
+  // Friends.sharedInstance.friendRequestCallBack = (Alias alias){
+  //   print(
+  //       '_handleFriendRequest ${alias.fromPubkey}, ${alias.fromAliasPubkey}, ${alias.toPubkey}, ${alias.toAliasPubkey}, ${alias.content}');
+  //   Friends.sharedInstance.acceptFriend(alias.toPubkey, alias.toAliasPubkey);
+  // };
 }
 
 Future<void> main() async {

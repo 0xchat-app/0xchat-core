@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:nostr/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
-typedef SyncCallBack = UserDB? Function(UserDB?);
+typedef SyncCallBack = Function(Map<String, UserDB>);
 
 class Account {
   static Future<UserDB?> getUserFromDB(
@@ -94,46 +94,37 @@ class Account {
   }
 
   /// sync profile from relays
-  static Future syncProfile(SyncCallBack callBack,
-      {String pubkey = '', String privkey = ''}) async {
-    if (privkey.isNotEmpty) {
-      pubkey = Keychain.getPublicKey(privkey);
+  static Future syncProfilesFromRelay(List<String> pubkeys, SyncCallBack callBack) async {
+    String subscriptionId = '';
+    Filter f = Filter(
+      kinds: [0],
+      authors: pubkeys,
+    );
+    Map<String, UserDB> users = {};
+    // init users from DB
+    for (var key in pubkeys) {
+      UserDB? db = await getUserFromDB(pubkey: key);
+      if(db == null){
+        db = UserDB();
+        db.pubKey = key;
+      }
+      users[key] = db;
     }
-    if (pubkey.isNotEmpty) {
-      String subscriptionId = '';
-      Filter f = Filter(
-        kinds: [0],
-        authors: [pubkey],
-      );
-      subscriptionId = Connect.sharedInstance.addSubscription([f],
-          eventCallBack: (event) async {
-        /// close subscription
-        Connect.sharedInstance.closeSubscription(subscriptionId);
-        UserDB? db = await getUserFromDB(pubkey: pubkey);
-        db ??= UserDB();
-        Map map = jsonDecode(event.content);
-        db.name = map['name'];
-        db.gender = map['gender'];
-        db.area = map['area'];
-        db.about = map['about'];
-        db.picture = map['picture'];
-        db.privkey = privkey;
-
-        db = callBack(db);
-        await DB.sharedInstance.update<UserDB>(db!);
-      }, eoseCallBack: (status) async {
-        Connect.sharedInstance.closeSubscription(subscriptionId);
-        if(status == 0){
-          UserDB? db = await getUserFromDB(pubkey: pubkey);
-          db ??= UserDB();
-          db.pubKey = pubkey;
-          db = callBack(db);
-          await DB.sharedInstance.update<UserDB>(db!);
-        }
-      });
-    } else {
-      callBack(null);
-    }
+    subscriptionId = Connect.sharedInstance.addSubscription([f],
+        eventCallBack: (event) async {
+          Map map = jsonDecode(event.content);
+          UserDB? db = users[event.pubkey];
+          if(db != null){
+            db.name = map['name'];
+            db.gender = map['gender'];
+            db.area = map['area'];
+            db.about = map['about'];
+            db.picture = map['picture'];
+          }
+        }, eoseCallBack: (status) {
+          Connect.sharedInstance.closeSubscription(subscriptionId);
+          callBack(users);
+        });
   }
 
   static Future<UserDB?> updateProfile(String privkey, String name,
