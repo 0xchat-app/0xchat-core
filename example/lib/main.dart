@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:chatcore/src/account/account.dart';
 import 'package:chatcore/src/account/model/userDB.dart';
@@ -54,20 +56,32 @@ Future<void> testConnect() async {
 // user2 pub:   3d4ce46b892035f0a89dd7df0d69e2c4d63377f139823c8d53a8ebc25b489168
 // user2 priv:  a803fee503edde5f08d713a9b5365b7951aa65b986f3a4bcdbc89e6fb9f9847c
 Future<void> testFriends() async {
-  var user1 = Keychain("81cce0c8980eafd8eeab8b46c4a93aee0ef4c92c91f4b7b45a4db940304d7f51");
-  var user2 = Keychain("fb505c65d4df950f5d28c9e4d285ee12ffaf315deef1fc24e3c7cd1e7e35f2b1");
+  // pubkey = 353a138b1b398a3203a489d9a9a2023ac1b74ee5bdbe75400e2a7722a686723c
+  // alias = acc19e82ec3a908a4fbfef93044baf86ee83b9c39f333600098c851350e33f00
+  var user1 = Keychain("81cce0c8980eafd8eeab8b46c4a93aee0ef4c92c91f4b7b45a4db940304d7f50");
+  // pubkey = 9918de469f12a7d518b64e2e10249c5e5b2c1b6b2339ca2f0531661d2161b40b
+  // alias = da2327a577642d181adb507ff9a15078eb6568fc68ccc56a1f3a00ff3480c8ba
+  var user2 = Keychain("fb505c65d4df950f5d28c9e4d285ee12ffaf315deef1fc24e3c7cd1e7e35f2b9");
 
   await Connect.sharedInstance.connectRelays(["ws://192.168.1.7:6969"]);
 
-  Friends.sharedInstance.initWithPrikey(user1.private);
+  Friends.sharedInstance.initWithPrikey(user2.private);
   // await Future.delayed(const Duration(seconds: 1));
 
-  // Friends.sharedInstance.requestFriend(user2.public, "hello, friends request");
+  // Friends.sharedInstance.requestFriend(user2.public, "hello, friends request, 81cce0c8980eafd8eeab8b46c4a93aee0ef4c92c91f4b7b45a4db940304d7f50");
   // Friends.sharedInstance.friendRequestCallBack = (Alias alias){
   //   print(
   //       '_handleFriendRequest ${alias.fromPubkey}, ${alias.fromAliasPubkey}, ${alias.toPubkey}, ${alias.toAliasPubkey}, ${alias.content}');
   //   Friends.sharedInstance.acceptFriend(alias.toPubkey, alias.toAliasPubkey);
   // };
+  //
+  // Friends.sharedInstance.friendAcceptCallBack = (Alias alias){
+  //   print(
+  //         '_handleFriendAccept ${alias.fromPubkey}, ${alias.fromAliasPubkey}, ${alias.toPubkey}, ${alias.toAliasPubkey}, ${alias.content}');
+  //     Friends.sharedInstance.acceptFriend(alias.toPubkey, alias.toAliasPubkey);
+  //     Friends.sharedInstance.sendMessage(user2.public, '', 'sendMessage!');
+  // };
+
 }
 
 Future<void> main() async {
