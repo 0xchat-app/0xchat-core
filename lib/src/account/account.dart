@@ -94,7 +94,8 @@ class Account {
   }
 
   /// sync profile from relays
-  static Future syncProfilesFromRelay(List<String> pubkeys, SyncCallBack callBack) async {
+  static Future syncProfilesFromRelay(
+      List<String> pubkeys, SyncCallBack callBack) async {
     String subscriptionId = '';
     Filter f = Filter(
       kinds: [0],
@@ -104,7 +105,7 @@ class Account {
     // init users from DB
     for (var key in pubkeys) {
       UserDB? db = await getUserFromDB(pubkey: key);
-      if(db == null){
+      if (db == null) {
         db = UserDB();
         db.pubKey = key;
       }
@@ -112,49 +113,42 @@ class Account {
     }
     subscriptionId = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event) async {
-          Map map = jsonDecode(event.content);
-          UserDB? db = users[event.pubkey];
-          if(db != null){
-            db.name = map['name'];
-            db.gender = map['gender'];
-            db.area = map['area'];
-            db.about = map['about'];
-            db.picture = map['picture'];
-          }
-        }, eoseCallBack: (status) {
-          Connect.sharedInstance.closeSubscription(subscriptionId);
-          callBack(users);
-        });
+      Map map = jsonDecode(event.content);
+      UserDB? db = users[event.pubkey];
+      if (db != null) {
+        db.name = map['name'];
+        db.gender = map['gender'];
+        db.area = map['area'];
+        db.about = map['about'];
+        db.picture = map['picture'];
+      }
+    }, eoseCallBack: (status) {
+      Connect.sharedInstance.closeSubscription(subscriptionId);
+      callBack(users);
+    });
   }
 
-  static Future<UserDB?> updateProfile(String privkey, String name,
-      {String gender = '',
-      String area = '',
-      String about = '',
-      String picture = ''}) async {
-    UserDB? db = await getUserFromDB(privkey: privkey);
-    if (db != null) {
-      db.name = name;
-      db.gender = gender;
-      db.area = area;
-      db.about = about;
-      db.picture = picture;
-      db.privkey = privkey;
-      await DB.sharedInstance.update<UserDB>(db);
+  static Future<UserDB?> updateProfile(String privkey, UserDB updateDB) async {
+    UserDB db = await getUserFromDB(privkey: privkey) ?? UserDB();
+    db.name = updateDB.name;
+    db.gender = updateDB.gender;
+    db.area = updateDB.area;
+    db.about = updateDB.about;
+    db.picture = updateDB.picture;
+    db.privkey = privkey;
+    await DB.sharedInstance.update<UserDB>(db);
 
-      /// send metadata event
-      Map map = {
-        'name': name,
-        'about': about,
-        'gender': gender,
-        'area': area,
-        'picture': picture,
-      };
-      Event event = Nip1.setMetadata(jsonEncode(map), privkey);
-      Connect.sharedInstance.sendEvent(event);
-      return db;
-    }
-    return null;
+    /// send metadata event
+    Map map = {
+      'name': updateDB.name,
+      'about': updateDB.about,
+      'gender': updateDB.gender,
+      'area': updateDB.area,
+      'picture': updateDB.picture,
+    };
+    Event event = Nip1.setMetadata(jsonEncode(map), privkey);
+    Connect.sharedInstance.sendEvent(event);
+    return db;
   }
 
   static Future<UserDB?> updatePassword(String privkey, String password) async {

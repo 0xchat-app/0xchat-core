@@ -28,7 +28,7 @@ Future<void> testAccount() async {
 
   // int result = await Account.delete(db3!.privkey!);
   // print('result = $result');
-  // UserDB? db3 = await Account.updateProfile(db?.privkey!!, "nickname", "gender", "area", "bio");
+  // await Account.updateProfile(db?.privkey!!, "nickname", "gender", "area", "bio");
   // print(db3?.toMap());
 }
 
@@ -43,7 +43,7 @@ Future<void> testConnect() async {
       "bb4beecb9cbd06786506204eff2841387c286a058019fc8de8042d2151bada3d"
     ],
   );
-  Connect.sharedInstance.addSubscription([f], eventCallBack:  (event) {
+  Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
     print(event.content);
   });
   // UserDB db = await Account.newAccount();
@@ -58,16 +58,31 @@ Future<void> testConnect() async {
 Future<void> testFriends() async {
   // pubkey = 353a138b1b398a3203a489d9a9a2023ac1b74ee5bdbe75400e2a7722a686723c
   // alias = acc19e82ec3a908a4fbfef93044baf86ee83b9c39f333600098c851350e33f00
-  var user1 = Keychain("81cce0c8980eafd8eeab8b46c4a93aee0ef4c92c91f4b7b45a4db940304d7f50");
+  var user1 = Keychain(
+      "81cce0c8980eafd8eeab8b46c4a93aee0ef4c92c91f4b7b45a4db940304d7f50");
   // pubkey = 9918de469f12a7d518b64e2e10249c5e5b2c1b6b2339ca2f0531661d2161b40b
   // alias = da2327a577642d181adb507ff9a15078eb6568fc68ccc56a1f3a00ff3480c8ba
-  var user2 = Keychain("fb505c65d4df950f5d28c9e4d285ee12ffaf315deef1fc24e3c7cd1e7e35f2b9");
+  var user2 = Keychain(
+      "fb505c65d4df950f5d28c9e4d285ee12ffaf315deef1fc24e3c7cd1e7e35f2b9");
 
   await Connect.sharedInstance.connectRelays(["ws://192.168.1.7:6969"]);
-
-  Friends.sharedInstance.initWithPrikey(user2.private);
   await Future.delayed(const Duration(seconds: 3));
-  Friends.sharedInstance.sendMessage(user1.public, '', 'sendMessage!');
+
+  // await Account.updateProfile(user1.private, "hkling",
+  //     gender: 'male',
+  //     picture:
+  //         'https://img1.baidu.com/it/u=898692534,2766260827&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500',
+  //     about: 'hello, my name is hkling');
+  //
+  // await Account.updateProfile(user2.private, "BABY",
+  //     gender: 'female',
+  //     picture:
+  //         'https://c-ssl.dtstatic.com/uploads/blog/202106/22/20210622154903_3c36a.thumb.1000_0.jpeg',
+  //     about: 'my name is baby');
+
+  // Friends.sharedInstance.initWithPrikey(user2.private);
+  // await Future.delayed(const Duration(seconds: 3));
+  // Friends.sharedInstance.sendMessage(user1.public, '', 'sendMessage!');
 
   // await Future.delayed(const Duration(seconds: 1));
 
@@ -84,7 +99,6 @@ Future<void> testFriends() async {
   //     Friends.sharedInstance.acceptFriend(alias.toPubkey, alias.toAliasPubkey);
   //     Friends.sharedInstance.sendMessage(user2.public, '', 'sendMessage!');
   // };
-
 }
 
 Future<void> main() async {
