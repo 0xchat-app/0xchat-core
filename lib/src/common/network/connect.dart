@@ -19,11 +19,14 @@ class Connect {
 
   /// sockets
   Map<String, WebSocket> webSockets = {};
+  Map<String, bool> connecting = {};
 
   /// subscriptionId, EventCallBack
   Map<String, List> map = {};
 
   Future connect(String relay) async {
+    if (connecting[relay] == true) return;
+
     WebSocket socket;
     if (webSockets.containsKey(relay)) {
       socket = webSockets[relay]!;
@@ -35,7 +38,9 @@ class Connect {
       }
     }
     print("connecting...");
+    connecting[relay] = true;
     socket = await _connectWs(relay);
+    connecting[relay] = false;
     print("socket connection initialized");
     socket.done.then((dynamic _) => _onDisconnected(relay));
     _listenEvent(socket, relay);
@@ -79,6 +84,7 @@ class Connect {
 
   /// send an event to relay
   void sendEvent(Event event) {
+    print(event.serialize());
     webSockets.forEach((relay, socket) => socket.add(event.serialize()));
   }
 
@@ -148,6 +154,7 @@ class Connect {
   }
 
   void _onDisconnected(String relay) {
+    print("_onDisconnected");
     connect(relay);
   }
 }

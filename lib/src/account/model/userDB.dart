@@ -33,6 +33,8 @@ class UserDB extends DBObject {
   /// friends list
   String? friendsList;
 
+  /// last event timestamps
+
   UserDB({
     this.pubKey = '',
     this.encryptedPrivKey = '',

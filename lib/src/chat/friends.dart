@@ -199,17 +199,15 @@ class Friends {
   }
 
   void _handleFriendAccept(Event event) {
-    if (event.tags[0][0] == 'p') {
-      String toAliasPubkey = event.tags[0][1];
-      for (UserDB user in friends.values) {
-        if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
-          Alias alias = Nip101.getAccept(
-              event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
-          user.aliasPubkey = alias.toAliasPubkey;
-          DB.sharedInstance.update<UserDB>(user);
-          if (friendAcceptCallBack != null) friendAcceptCallBack!(alias);
-          break;
-        }
+    String toAliasPubkey = Nip101.getP(event);
+    for (UserDB user in friends.values) {
+      if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
+        Alias alias = Nip101.getAccept(
+            event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
+        user.aliasPubkey = alias.toAliasPubkey;
+        DB.sharedInstance.update<UserDB>(user);
+        if (friendAcceptCallBack != null) friendAcceptCallBack!(alias);
+        break;
       }
     }
   }
@@ -223,14 +221,14 @@ class Friends {
   }
 
   void _handlePrivateMessage(Event event) {
-    if (event.tags[0][0] == 'p') {
-      String toAliasPubkey = event.tags[0][1];
-      for (UserDB user in friends.values) {
-        if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
-          EDMessage message = Nip4.decode(event, user.toAliasPubkey!, user.toAliasPrivkey!);
-          if(friendMessageCallBack != null) friendMessageCallBack!(message);
-          break;
-        }
+    String toAliasPubkey = Nip101.getP(event);
+    for (UserDB user in friends.values) {
+      if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
+        EDMessage message =
+            Nip4.decode(event, user.toAliasPubkey!, user.toAliasPrivkey!);
+        // todo storage messages
+        if (friendMessageCallBack != null) friendMessageCallBack!(message);
+        break;
       }
     }
   }
@@ -241,9 +239,11 @@ class Friends {
     me = await Account.getUserFromDB(privkey: key);
     me ??= UserDB(pubKey: pubkey, privkey: privkey);
 
-    /// sync friend list
+    // sync friend list from DB & relays
     await _syncFriendsFromDB();
     await _syncFriendsFromRelay();
+
+    // subscript friend requests
     _friendRequestSubscription();
   }
 
