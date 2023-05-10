@@ -5,7 +5,7 @@ typedef FriendRequestCallBack = void Function(Alias);
 typedef FriendAcceptCallBack = void Function(Alias);
 typedef FriendRejectCallBack = void Function(Alias);
 typedef FriendRemoveCallBack = void Function(Alias);
-typedef FriendMessageCallBack = void Function(EDMessage);
+typedef FriendMessageCallBack = void Function(MessageDB);
 
 class Friends {
   static final String identifier = 'Chat-Friends';
@@ -221,14 +221,11 @@ class Friends {
   }
 
   void _handlePrivateMessage(Event event) {
-    String toAliasPubkey = Nip101.getP(event);
-    for (UserDB user in friends.values) {
-      if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
-        EDMessage message =
-            Nip4.decode(event, user.toAliasPubkey!, user.toAliasPrivkey!);
-        // todo storage messages
-        if (friendMessageCallBack != null) friendMessageCallBack!(message);
-        break;
+    MessageDB? messageDB = MessageDB.fromPrivateMessage(event);
+    if (messageDB != null) {
+      Messages.saveMessagesToDB([messageDB]);
+      if (friendMessageCallBack != null) {
+        friendMessageCallBack!(messageDB);
       }
     }
   }
@@ -282,11 +279,16 @@ class Friends {
     _deleteFriend(friendPubkey);
   }
 
-  void sendMessage(String friendPubkey, String replayId, String content) {
+  void sendMessage(
+      String friendPubkey, String replayId, MessageType type, String content) {
     UserDB? friend = friends[friendPubkey];
     if (friend != null) {
-      Event event = Nip4.encode(friend.toAliasPubkey!, friend.aliasPubkey!,
-          content, replayId, friend.toAliasPrivkey!);
+      Event event = Nip4.encode(
+          friend.toAliasPubkey!,
+          friend.aliasPubkey!,
+          MessageDB.encodeContent(type, content),
+          replayId,
+          friend.toAliasPrivkey!);
       Connect.sharedInstance.sendEvent(event);
     }
   }

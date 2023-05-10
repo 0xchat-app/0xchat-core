@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr/nostr.dart';
+
+enum MessageType { text, image, video, audio, file, template }
 
 @reflector
 class MessageDB extends DBObject {
@@ -10,13 +13,11 @@ class MessageDB extends DBObject {
   int? kind;
   String? tags;
   String? content; // content
-  String? createTime;
+  int? createTime;
 
   // additional
-  String? privkey;
   String? decryptContent;
-  String? type; // audio/file/video/image/text/template
-  List<String>? mentions; // mention list
+  MessageType? type;
 
   MessageDB({
     this.messageId = '',
@@ -26,8 +27,7 @@ class MessageDB extends DBObject {
     this.kind = 0,
     this.tags = '',
     this.content = '',
-    this.createTime = '',
-    this.privkey = '',
+    this.createTime = 0,
   });
 
   @override
@@ -48,21 +48,95 @@ class MessageDB extends DBObject {
     return ['messageId'];
   }
 
-  // static MessageDB fromPrivateMessage(Event event) {
-  //
-  // }
+  static String messageTypeToString(MessageType type) {
+    switch (type) {
+      case MessageType.text:
+        return 'text';
+      case MessageType.image:
+        return 'image';
+      case MessageType.video:
+        return 'video';
+      case MessageType.audio:
+        return 'audio';
+      case MessageType.file:
+        return 'file';
+      case MessageType.template:
+        return 'template';
+      default:
+        return 'text';
+    }
+  }
+
+  static MessageType stringtoMessageType(String type) {
+    switch (type) {
+      case 'text':
+        return MessageType.text;
+      case 'image':
+        return MessageType.image;
+      case 'video':
+        return MessageType.video;
+      case 'audio':
+        return MessageType.audio;
+      case 'file':
+        return MessageType.file;
+      case 'template':
+        return MessageType.template;
+      default:
+        return MessageType.text;
+    }
+  }
+
+  static Map<String, dynamic> decodeContent(String content) {
+    try {
+      return jsonDecode(content);
+    } catch (e) {
+      print(e.toString());
+      return {'contentType': MessageType.text, 'content': content};
+    }
+  }
+
+  static String encodeContent(MessageType type, String content) {
+    return jsonEncode(
+        {'contentType': messageTypeToString(type), 'content': content});
+  }
+
+  static MessageDB? fromPrivateMessage(Event event) {
+    if (event.kind == 4) {
+      String toAliasPubkey = Nip101.getP(event);
+      for (UserDB friend in Friends.sharedInstance.friends.values) {
+        if (friend.toAliasPubkey != null &&
+            friend.toAliasPubkey == toAliasPubkey) {
+          EDMessage message =
+              Nip4.decode(event, friend.toAliasPubkey!, friend.toAliasPrivkey!);
+          MessageDB messageDB = MessageDB(
+              messageId: event.id,
+              sender: friend.pubKey,
+              receiver: Friends.sharedInstance.me!.pubKey,
+              groupId: '',
+              kind: 4,
+              tags: event.tags.toString(),
+              content: event.content,
+              createTime: event.createdAt);
+          messageDB.decryptContent = decodeContent(message.content)['content'];
+          messageDB.type = stringtoMessageType(decodeContent(message.content)['contentType']);
+          return messageDB;
+        }
+      }
+    }
+    return null;
+  }
 }
 
 Map<String, dynamic> _messageInfoToMap(MessageDB instance) => <String, dynamic>{
-  'messageId': instance.messageId,
-  'sender': instance.sender,
-  'receiver': instance.receiver,
-  'groupId': instance.groupId,
-  'kind': instance.kind,
-  'tags': instance.tags,
-  'content': instance.content,
-  'createTime': instance.createTime,
-};
+      'messageId': instance.messageId,
+      'sender': instance.sender,
+      'receiver': instance.receiver,
+      'groupId': instance.groupId,
+      'kind': instance.kind,
+      'tags': instance.tags,
+      'content': instance.content,
+      'createTime': instance.createTime,
+    };
 
 MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
   return MessageDB(
@@ -73,6 +147,6 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     kind: map['kind'],
     tags: map['tags'].toString(),
     content: map['content'].toString(),
-    createTime: map['createTime'].toString(),
+    createTime: map['createTime'],
   );
 }

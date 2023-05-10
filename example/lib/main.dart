@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -7,7 +8,7 @@ import 'package:chatcore/src/common/database/db.dart';
 import 'package:chatcore/src/common/network/connect.dart';
 import 'main.reflectable.dart'; // Import generated code.
 import 'package:nostr/nostr.dart';
-import 'package:chatcore/src/chat/friends.dart';
+import 'package:chatcore/chat-core.dart';
 
 initDB() async {
   DB.sharedInstance.schemes.add(UserDB);
@@ -65,8 +66,9 @@ Future<void> testFriends() async {
   var user2 = Keychain(
       "fb505c65d4df950f5d28c9e4d285ee12ffaf315deef1fc24e3c7cd1e7e35f2b9");
 
+  var user3 = Keychain('5c4eb49a5098530fc81f89a8fa282f06f94ed3a088f750071b27c6b5f81e053c');
+
   await Connect.sharedInstance.connectRelays(["ws://192.168.1.7:6969"]);
-  await Future.delayed(const Duration(seconds: 3));
 
   // await Account.updateProfile(user1.private, "hkling",
   //     gender: 'male',
@@ -80,13 +82,23 @@ Future<void> testFriends() async {
   //         'https://c-ssl.dtstatic.com/uploads/blog/202106/22/20210622154903_3c36a.thumb.1000_0.jpeg',
   //     about: 'my name is baby');
 
-  // Friends.sharedInstance.initWithPrikey(user2.private);
+  Friends.sharedInstance.initWithPrikey(user2.private);
+  Friends.sharedInstance.friendMessageCallBack = (MessageDB message){
+    print('friend message type: ${message.type}, content: ${message.decryptContent}' );
+  };
+
+  // await Future.delayed(const Duration(seconds: 3));
+  // Map m = {'contentType': 'image', 'content':'https://www.baidu.com'};
+  // Friends.sharedInstance.sendMessage(user2.public, '', jsonEncode(m));
+
+
+  // await Future.delayed(const Duration(seconds: 3));
   // await Future.delayed(const Duration(seconds: 3));
   // Friends.sharedInstance.sendMessage(user1.public, '', 'sendMessage!');
 
   // await Future.delayed(const Duration(seconds: 1));
 
-  // Friends.sharedInstance.requestFriend(user2.public, "hello, friends request, 81cce0c8980eafd8eeab8b46c4a93aee0ef4c92c91f4b7b45a4db940304d7f50");
+  // Friends.sharedInstance.requestFriend(user3.public, "hello, im hq");
   // Friends.sharedInstance.friendRequestCallBack = (Alias alias){
   //   print(
   //       '_handleFriendRequest ${alias.fromPubkey}, ${alias.fromAliasPubkey}, ${alias.toPubkey}, ${alias.toAliasPubkey}, ${alias.content}');
