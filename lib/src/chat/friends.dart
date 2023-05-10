@@ -262,8 +262,9 @@ class Friends {
     _addFriend(friendPubkey, friendAliasPubkey);
   }
 
-  void rejectFriend(
-      String aliasPubkey, String aliasPrivkey, String friendAliasPubkey) {
+  void rejectFriend(String friendPubkey, String friendAliasPubkey) {
+    String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
+    String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event =
         Nip101.reject(pubkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
     Connect.sharedInstance.sendEvent(event);
