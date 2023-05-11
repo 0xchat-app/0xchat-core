@@ -66,7 +66,8 @@ Future<void> testFriends() async {
   var user2 = Keychain(
       "fb505c65d4df950f5d28c9e4d285ee12ffaf315deef1fc24e3c7cd1e7e35f2b9");
 
-  var user3 = Keychain('5c4eb49a5098530fc81f89a8fa282f06f94ed3a088f750071b27c6b5f81e053c');
+  var user3 = Keychain(
+      '5c4eb49a5098530fc81f89a8fa282f06f94ed3a088f750071b27c6b5f81e053c');
 
   await Connect.sharedInstance.connectRelays(["ws://192.168.1.7:6969"]);
 
@@ -83,14 +84,14 @@ Future<void> testFriends() async {
   //     about: 'my name is baby');
 
   Friends.sharedInstance.initWithPrikey(user2.private);
-  Friends.sharedInstance.friendMessageCallBack = (MessageDB message){
-    print('friend message type: ${message.type}, content: ${message.decryptContent}' );
+  Friends.sharedInstance.friendMessageCallBack = (MessageDB message) {
+    print(
+        'friend message type: ${message.type}, content: ${message.decryptContent}');
   };
 
   // await Future.delayed(const Duration(seconds: 3));
   // Map m = {'contentType': 'image', 'content':'https://www.baidu.com'};
   // Friends.sharedInstance.sendMessage(user2.public, '', jsonEncode(m));
-
 
   // await Future.delayed(const Duration(seconds: 3));
   // await Future.delayed(const Duration(seconds: 3));
@@ -113,11 +114,33 @@ Future<void> testFriends() async {
   // };
 }
 
+Future<void> testChannel() async {
+  var user1 = Keychain(
+      "81cce0c8980eafd8eeab8b46c4a93aee0ef4c92c91f4b7b45a4db940304d7f50");
+  var user2 = Keychain(
+      "fb505c65d4df950f5d28c9e4d285ee12ffaf315deef1fc24e3c7cd1e7e35f2b9");
+  var user3 = Keychain(
+      '5c4eb49a5098530fc81f89a8fa282f06f94ed3a088f750071b27c6b5f81e053c');
+
+  await Connect.sharedInstance.connectRelays(["ws://192.168.1.7:6969"]);
+
+  await Channels.sharedInstance.initWithPrivkey(user1.private);
+
+  await Channels.sharedInstance.createChannel('name', 'about', 'picture', [], 'relay');
+
+  await Future.delayed(const Duration(seconds: 3));
+
+  for(ChannelDB channel in Channels.sharedInstance.myChannels.values){
+    print(channel.name);
+    Channels.sharedInstance.sendChannelMessage(channel.channelId!, MessageType.text, "hello, test channel", null, null);
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   initializeReflectable(); // Set up reflection support.
   await initDB();
-  testFriends();
+  testChannel();
   runApp(const MyApp());
 }
 

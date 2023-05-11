@@ -7,6 +7,7 @@ typedef EventCallBack = void Function(Event event);
 typedef EOSECallBack = void Function(
     int status); // 0:end without event, 1:end with events
 typedef NoticeCallBack = void Function(String notice);
+typedef OKCallBack = void Function(Ok ok);
 
 class Connect {
   Connect._internal();
@@ -23,6 +24,8 @@ class Connect {
 
   /// subscriptionId, EventCallBack
   Map<String, List> map = {};
+  // send event callback
+  Map<String, OKCallBack> okMap = {};
 
   Future connect(String relay) async {
     if (connecting[relay] == true) return;
@@ -83,8 +86,9 @@ class Connect {
   }
 
   /// send an event to relay
-  void sendEvent(Event event) {
+  void sendEvent(Event event, {OKCallBack? sendCallBack}) {
     print(event.serialize());
+    if (sendCallBack != null) okMap[event.id] = sendCallBack;
     webSockets.forEach((relay, socket) => socket.add(event.serialize()));
   }
 
@@ -99,6 +103,9 @@ class Connect {
         break;
       case "NOTICE":
         _handleNotice(m.message);
+        break;
+      case "OK":
+        _handleOk(message);
         break;
       default:
         print('Received message not supported: $message');
@@ -129,6 +136,12 @@ class Connect {
     print('receive notice: $notice');
     String n = jsonDecode(notice)[0];
     if (noticeCallBack != null) noticeCallBack!(n);
+  }
+
+  void _handleOk(String message) {
+    print('receive ok: $message');
+    Ok? ok = Nip20.getOk(message);
+    if (ok != null && okMap.containsKey(ok.eventId)) okMap[ok!.eventId]!(ok);
   }
 
   void _listenEvent(WebSocket socket, String relay) {

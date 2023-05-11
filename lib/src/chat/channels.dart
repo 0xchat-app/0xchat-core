@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr/nostr.dart';
@@ -101,10 +102,12 @@ class Channels {
   }
 
   Map<String, ChannelDB> _myChannels() {
-    List<String> channelList = jsonDecode(me!.channelsList!);
     Map<String, ChannelDB> result = {};
-    for (String channelId in channelList) {
-      result[channelId] = channels[channelId]!;
+    if(me!= null && me!.channelsList != null && me!.channelsList!.isNotEmpty){
+      List<String> channelList = jsonDecode(me!.channelsList!);
+      for (String channelId in channelList) {
+        result[channelId] = channels[channelId]!;
+      }
     }
     return result;
   }
@@ -172,16 +175,23 @@ class Channels {
     await _loadMyChannelsFromRelay();
   }
 
-  Future<void> createChannel(ChannelDB channelDB) async {
-    Event event = Nip28.createChannel(
-        channelDB.name!,
-        channelDB.about!,
-        channelDB.picture!,
-        channelDB.badges != null ? jsonDecode(channelDB.badges!) : [],
-        privkey);
+  Future<void> createChannel(String name, String about, String picture,
+      List<String>? badges, String relay) async {
+    Event event =
+        Nip28.createChannel(name, about, picture, badges ?? [], privkey);
     Connect.sharedInstance.sendEvent(event);
 
     // update channel
+    ChannelDB channelDB = ChannelDB(
+      channelId: event.id,
+      createTime: event.createdAt,
+      creator: pubkey,
+      name: name,
+      about: about,
+      picture: picture,
+      badges: jsonEncode(badges),
+      relayURL: relay,
+    );
     channelDB.channelId = event.id;
     channelDB.creator = pubkey;
     channelDB.createTime = event.createdAt;
@@ -231,9 +241,9 @@ class Channels {
   }
 
   Future<void> sendChannelMessage(String channelId, MessageType type,
-      String content, Thread? thread) async {
+      String content, String? relay, Thread? thread) async {
     Event event = Nip28.sendChannelMessage(
-        channelId, MessageDB.encodeContent(type, content), thread, privkey);
+        channelId, MessageDB.encodeContent(type, content), relay, thread, privkey);
     Connect.sharedInstance.sendEvent(event);
 
     MessageDB messageDB = MessageDB(
