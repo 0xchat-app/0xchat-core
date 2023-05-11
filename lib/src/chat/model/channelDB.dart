@@ -9,6 +9,7 @@ class ChannelDB extends DBObject {
   String? about;
   String? picture;
   String? badges; // string list
+  String? relayURL;
 
   ChannelDB({
     this.channelId = '',
@@ -18,6 +19,7 @@ class ChannelDB extends DBObject {
     this.about = '',
     this.picture = '',
     this.badges = '',
+    this.relayURL = '',
   });
 
   @override
@@ -47,6 +49,7 @@ Map<String, dynamic> _channelInfoToMap(ChannelDB instance) => <String, dynamic>{
   'about': instance.about,
   'picture': instance.picture,
   'badges': instance.badges,
+  'relayURL': instance.relayURL,
 };
 
 ChannelDB _channelInfoFromMap(Map<String, dynamic> map) {
@@ -58,5 +61,6 @@ ChannelDB _channelInfoFromMap(Map<String, dynamic> map) {
     about: map['about'],
     picture: map['picture'].toString(),
     badges: map['badges'].toString(),
+    relayURL: map['relayURL'].toString(),
   );
 }

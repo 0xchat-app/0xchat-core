@@ -18,7 +18,7 @@ class Channels {
   String pubkey = '';
   String privkey = '';
   Map<String, ChannelDB> channels = {};
-  List<ChannelDB> myChannels = [];
+  Map<String, ChannelDB> myChannels = {};
 
   ChannelsUpdatedCallBack? myChannelsUpdatedCallBack;
 
@@ -61,11 +61,11 @@ class Channels {
     });
   }
 
-  List<ChannelDB> _myChannels() {
+  Map<String, ChannelDB> _myChannels() {
     List<String> channelList = jsonDecode(me!.channelsList!);
-    List<ChannelDB> result = [];
+    Map<String, ChannelDB> result = {};
     for (String channelId in channelList) {
-      result.add(channels[channelId]!);
+      result[channelId] = channels[channelId]!;
     }
     return result;
   }
@@ -106,17 +106,19 @@ class Channels {
   }
 
   Future<void> _syncChannelToDB(ChannelDB channelDB) async {
-    await DB.sharedInstance.insert<ChannelDB>(channelDB);
+    await DB.sharedInstance.update<ChannelDB>(channelDB);
   }
 
   Future<void> _syncMyChannelListToDB() async {
-
+    List<String> list = myChannels.keys.toList();
+    me!.channelsList = jsonEncode(list);
+    await DB.sharedInstance.update<UserDB>(me!);
   }
 
   Future<void> _syncMyChannelListToRelay() async {
-    List<String> list = myChannels.map((e) => e.channelId!).toList();
-    Event event = Nip51.createCategorizedBookmarks(
-        identifier, list, [], privkey, pubkey);
+    List<String> list = myChannels.keys.toList();
+    Event event =
+        Nip51.createCategorizedBookmarks(identifier, list, [], privkey, pubkey);
     Connect.sharedInstance.sendEvent(event);
     _syncMyChannelListToDB();
   }
@@ -131,8 +133,23 @@ class Channels {
     await _loadMyChannelsFromRelay();
   }
 
-  Future<void> createChannel() async {
-    // _syncChannelToDB();
+  Future<void> createChannel(ChannelDB channelDB) async {
+    Event event = Nip28.createChannel(
+        channelDB.name!,
+        channelDB.about!,
+        channelDB.picture!,
+        channelDB.badges != null ? jsonDecode(channelDB.badges!) : [],
+        privkey);
+    Connect.sharedInstance.sendEvent(event);
+
+    // update channel
+    channelDB.channelId = event.id;
+    channelDB.creator = pubkey;
+    channelDB.createTime = event.createdAt;
+    channels[channelDB.channelId!] = channelDB;
+    myChannels[channelDB.channelId!] = channelDB;
+    _syncChannelToDB(channelDB);
+    // update my channel list
     _syncMyChannelListToRelay();
   }
 
@@ -146,24 +163,77 @@ class Channels {
           // update finished
           callBack();
         });
-      }
-      else{
+      } else {
         callBack();
       }
     });
   }
 
-  Future<void> setChannel(ChannelDB channelDB) async {}
-  Future<void> receiveChannelMessage() async {}
-  Future<void> sendChannelMessage() async {}
+  Future<void> setChannel(ChannelDB channelDB) async {
+    Event event = Nip28.setChannelMetaData(
+        channelDB.name!,
+        channelDB.about!,
+        channelDB.picture!,
+        channelDB.badges != null ? jsonDecode(channelDB.badges!) : [],
+        channelDB.channelId!,
+        channelDB.relayURL!,
+        privkey);
+    Connect.sharedInstance.sendEvent(event);
 
-  Future<void> hideMessage(String messageId) async {}
-  Future<void> muteUser(String userPubkey) async {}
-
-  Future<void> joinChannel(String channelId) async {
+    // update channel
+    channelDB.channelId = event.id;
+    channelDB.creator = pubkey;
+    channelDB.createTime = event.createdAt;
+    channels[channelDB.channelId!] = channelDB;
+    myChannels[channelDB.channelId!] = channelDB;
+    _syncChannelToDB(channelDB);
+    // update my channel list
     _syncMyChannelListToRelay();
   }
+
+  Future<void> receiveChannelMessages() async {
+
+  }
+
+  Future<void> sendChannelMessage(String channelId, MessageType type,
+      String content, Thread? thread) async {
+    Event event = Nip28.sendChannelMessage(
+        channelId, MessageDB.encodeContent(type, content), thread, privkey);
+    Connect.sharedInstance.sendEvent(event);
+
+    MessageDB messageDB = MessageDB(
+      messageId: event.id,
+      sender: event.pubkey,
+      receiver: '',
+      groupId: channelId,
+      kind: event.kind,
+      tags: jsonEncode(event.tags),
+      content: event.content,
+      createTime: event.createdAt,
+    );
+    Messages.saveMessagesToDB([messageDB]);
+  }
+
+  Future<void> hideMessage(MessageDB messageDB, String reason) async {
+    Messages.deleteMessagesFromDB([messageDB]);
+    Nip28.hideChannelMessage(messageDB.messageId!, reason, privkey);
+  }
+
+  Future<void> muteUser(String userPubkey, String reason) async {
+    Nip28.muteUser(userPubkey, reason, privkey);
+  }
+
+  Future<void> joinChannel(String channelId) async {
+    _syncChannelsInfos('', [channelId], true, (status) {
+      if (channels.containsKey(channelId)) {
+        myChannels[channelId] = channels[channelId]!;
+        _syncMyChannelListToRelay();
+      }
+    });
+  }
+
   Future<void> leaveChannel(String channelId) async {
+    myChannels.remove(channelId);
     _syncMyChannelListToRelay();
   }
 }

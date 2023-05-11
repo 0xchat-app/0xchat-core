@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr/nostr.dart';
 
@@ -291,6 +293,18 @@ class Friends {
           replayId,
           friend.toAliasPrivkey!);
       Connect.sharedInstance.sendEvent(event);
+
+      MessageDB messageDB = MessageDB(
+        messageId: event.id,
+        sender: pubkey,
+        receiver: friendPubkey,
+        groupId: '',
+        kind: event.kind,
+        tags: jsonEncode(event.tags),
+        content: event.content,
+        createTime: event.createdAt,
+      );
+      Messages.saveMessagesToDB([messageDB]);
     }
   }
 }

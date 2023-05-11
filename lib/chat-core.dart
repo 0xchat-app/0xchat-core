@@ -5,6 +5,7 @@ library chatcore;
 
 export 'src/account/account.dart';
 export 'src/account/model/userDB.dart';
+export 'src/account/model/badgeDB.dart';
 export 'src/chat/model/messageDB.dart';
 export 'src/chat/model/channelDB.dart';
 export 'src/chat/friends.dart';
