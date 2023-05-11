@@ -4,6 +4,7 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr/nostr.dart';
 
 typedef ChannelsUpdatedCallBack = void Function();
+typedef ChannelMessageCallBack = void Function(MessageDB);
 
 class Channels {
   /// singleton
@@ -12,6 +13,7 @@ class Channels {
   static final Channels sharedInstance = Channels._internal();
 
   static final String identifier = 'Chat-Channels';
+  String subscription = '';
 
   // memory storage
   UserDB? me;
@@ -21,6 +23,7 @@ class Channels {
   Map<String, ChannelDB> myChannels = {};
 
   ChannelsUpdatedCallBack? myChannelsUpdatedCallBack;
+  ChannelMessageCallBack? channelMessageCallBack;
 
   Future<void> _loadAllChannelsFromDB() async {
     List<Object?> maps = await DB.sharedInstance.objects<ChannelDB>();
@@ -28,6 +31,40 @@ class Channels {
       for (var channelDB in maps) (channelDB as ChannelDB).channelId!: channelDB
     };
     myChannels = _myChannels();
+  }
+
+  void _updateSubscription() {
+    Close(subscription);
+    if (myChannels.keys.isNotEmpty) {
+      Filter f = Filter(kinds: [42], e: myChannels.keys.toList());
+      subscription =
+          Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+        switch (event.kind) {
+          case 42:
+            _receiveChannelMessages(event);
+            break;
+          default:
+            print('unhandled message $event');
+            break;
+        }
+      });
+    }
+  }
+
+  Future<void> _receiveChannelMessages(Event event) async {
+    ChannelMessage channelMessage = Nip28.getChannelMessage(event);
+    MessageDB messageDB = MessageDB(
+      messageId: channelMessage.channelId,
+      sender: channelMessage.sender,
+      receiver: '',
+      groupId: channelMessage.channelId,
+      kind: event.kind,
+      tags: jsonEncode(event.tags),
+      content: event.content,
+      createTime: event.createdAt,
+    );
+    if (channelMessageCallBack != null) channelMessageCallBack!(messageDB);
+    Messages.saveMessagesToDB([messageDB]);
   }
 
   Future<void> _loadMyChannelsFromRelay() async {
@@ -47,6 +84,7 @@ class Channels {
       syncChannelsFromRelay(lists.owner, lists.bookmarks, () {
         if (myChannelsUpdatedCallBack != null) {
           myChannels = _myChannels();
+          _updateSubscription();
           myChannelsUpdatedCallBack!();
         }
       });
@@ -56,6 +94,7 @@ class Channels {
         // no friend list
         print('no channels list online!');
         channels.clear();
+        _updateSubscription();
         if (myChannelsUpdatedCallBack != null) myChannelsUpdatedCallBack!();
       }
     });
@@ -189,10 +228,6 @@ class Channels {
     _syncChannelToDB(channelDB);
     // update my channel list
     _syncMyChannelListToRelay();
-  }
-
-  Future<void> receiveChannelMessages() async {
-
   }
 
   Future<void> sendChannelMessage(String channelId, MessageType type,
