@@ -91,7 +91,7 @@ class MessageDB extends DBObject {
       return jsonDecode(content);
     } catch (e) {
       print(e.toString());
-      return {'contentType': MessageType.text, 'content': content};
+      return {'contentType': 'text', 'content': content};
     }
   }
 

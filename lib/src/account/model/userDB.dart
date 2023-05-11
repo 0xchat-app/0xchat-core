@@ -30,8 +30,11 @@ class UserDB extends DBObject {
   String? toAliasPubkey;
   String? toAliasPrivkey;
 
-  /// friends list
+  /// lists for me
   String? friendsList;
+  String? channelsList;
+  String? groupsList;
+  String? badgesList;
 
   /// last event timestamps
 
@@ -53,6 +56,9 @@ class UserDB extends DBObject {
     this.toAliasPubkey = '',
     this.toAliasPrivkey = '',
     this.friendsList = '',
+    this.channelsList = '',
+    this.groupsList = '',
+    this.badgesList = '',
   });
 
   @override
@@ -107,6 +113,9 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     about: map['about'].toString(),
     picture: map['picture'].toString(),
     friendsList: map['friendsList'].toString(),
+    channelsList: map['channelsList'].toString(),
+    groupsList: map['groupsList'].toString(),
+    badgesList: map['badgesList'].toString(),
   );
 }
 
@@ -124,4 +133,7 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'about': instance.about,
       'picture': instance.picture,
       'friendsList': instance.friendsList,
+      'channelsList': instance.channelsList,
+      'groupsList': instance.groupsList,
+      'badgesList': instance.badgesList,
     };
