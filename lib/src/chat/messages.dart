@@ -16,7 +16,7 @@ class Messages {
           String content = Nip4.decryptContent(
             message.content!,
             friend.toAliasPrivkey!,
-            friend.toAliasPubkey!,
+            friend.aliasPubkey!,
           );
           Map<String, dynamic> decodeContent = MessageDB.decodeContent(content);
           message.decryptContent = decodeContent['content'];
