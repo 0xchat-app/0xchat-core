@@ -87,7 +87,6 @@ class Channels {
       me!.channelsList = jsonEncode(lists.bookmarks);
       DB.sharedInstance.update<UserDB>(me!);
       syncChannelsFromRelay(lists.owner, lists.bookmarks, () {
-        print('channels.length : ${channels.length}');
         myChannels = _myChannels();
         _updateSubscription();
         if (myChannelsUpdatedCallBack != null) myChannelsUpdatedCallBack!();
@@ -124,9 +123,9 @@ class Channels {
     String subscriptionId = '';
     Filter f = updateInfos
         ? Filter(
-            ids: channelIds,
             authors: [owner],
             kinds: [41],
+            e: channelIds,
             limit: 1,
           )
         : Filter(
@@ -231,7 +230,7 @@ class Channels {
         channelDB.name!,
         channelDB.about!,
         channelDB.picture!,
-        channelDB.badges != null ? jsonDecode(channelDB.badges!) : [],
+        channelDB.badges!.isNotEmpty ? jsonDecode(channelDB.badges!) : [],
         channelDB.channelId!,
         channelDB.relayURL!,
         privkey);

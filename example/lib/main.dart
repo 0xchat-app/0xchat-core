@@ -129,6 +129,15 @@ Future<void> testChannel() async {
   Channels.sharedInstance.channelMessageCallBack = (MessageDB messageDB){
     print(messageDB.decryptContent);
   };
+
+  ChannelDB db = ChannelDB(channelId: '969bc1ec0f3ce8d47d573732f0dec4bf236d5c0fecb0a8cc2a5f7c3f10e5d23a',
+    name: 'dicc',
+    about: 'heppy dicc',
+    picture: 'picture',
+    relayURL: '',
+  );
+  Channels.sharedInstance.setChannel(db);
+
   // await Channels.sharedInstance.createChannel('name', 'about', 'picture', [], 'relay');
 
   // await Future.delayed(const Duration(seconds: 3));
