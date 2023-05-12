@@ -116,9 +116,6 @@ Future<void> testFriends() async {
 
 Future<void> testChannel() async {
 
-  Map r = await Messages.loadMessagesFromDB();
-  return;
-
   var user1 = Keychain(
       "81cce0c8980eafd8eeab8b46c4a93aee0ef4c92c91f4b7b45a4db940304d7f50");
   var user2 = Keychain(
@@ -130,17 +127,23 @@ Future<void> testChannel() async {
 
   await Channels.sharedInstance.initWithPrivkey(user1.private);
 
+  Channels.sharedInstance.getLatestChannels((channels) {
+    for(ChannelDB channelDB in channels){
+      print(channelDB.name);
+    }
+  });
+
   Channels.sharedInstance.channelMessageCallBack = (MessageDB messageDB){
     print(messageDB.decryptContent);
   };
 
-  ChannelDB db = ChannelDB(channelId: '969bc1ec0f3ce8d47d573732f0dec4bf236d5c0fecb0a8cc2a5f7c3f10e5d23a',
-    name: 'dicc',
-    about: 'heppy dicc',
-    picture: 'picture',
-    relayURL: '',
-  );
-  Channels.sharedInstance.setChannel(db);
+  // ChannelDB db = ChannelDB(channelId: '969bc1ec0f3ce8d47d573732f0dec4bf236d5c0fecb0a8cc2a5f7c3f10e5d23a',
+  //   name: 'dicc',
+  //   about: 'heppy dicc',
+  //   picture: 'picture',
+  //   relayURL: '',
+  // );
+  // Channels.sharedInstance.setChannel(db);
 
   // await Channels.sharedInstance.createChannel('name', 'about', 'picture', [], 'relay');
 

@@ -6,6 +6,7 @@ import 'package:nostr/nostr.dart';
 
 typedef ChannelsUpdatedCallBack = void Function();
 typedef ChannelMessageCallBack = void Function(MessageDB);
+typedef GetChannelsCallBack = void Function(List<ChannelDB>);
 
 class Channels {
   /// singleton
@@ -151,7 +152,6 @@ class Channels {
       Connect.sharedInstance.closeSubscription(subscriptionId);
       eoseCallBack(status);
     });
-    print('subscriptionId: $subscriptionId');
   }
 
   Future<void> _syncChannelToDB(ChannelDB channelDB) async {
@@ -287,5 +287,32 @@ class Channels {
   Future<void> leaveChannel(String channelId) async {
     myChannels.remove(channelId);
     _syncMyChannelListToRelay();
+  }
+
+  // get 20 latest channels
+  Future<void> getLatestChannels(
+      GetChannelsCallBack getChannelsCallBack) async {
+    String subscriptionId = '';
+    Filter f = Filter(kinds: [40], limit: 20);
+    List<ChannelDB> result = [];
+    subscriptionId =
+        Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+      Channel channel = Nip28.getChannel(event);
+      ChannelDB channelDB = ChannelDB(
+        channelId: event.id,
+        createTime: event.createdAt,
+        creator: event.pubkey,
+        name: channel.name,
+        about: channel.about,
+        picture: channel.picture,
+        badges: jsonEncode(channel.badges),
+      );
+      channels[channelDB.channelId!] = channelDB;
+      result.add(channelDB);
+      _syncChannelToDB(channelDB);
+    }, eoseCallBack: (status) {
+      Connect.sharedInstance.closeSubscription(subscriptionId);
+      getChannelsCallBack(result);
+    });
   }
 }
