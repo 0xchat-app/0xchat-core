@@ -14,7 +14,7 @@ class MessageDB extends DBObject {
   String? tags;
   String? content; // content
   int? createTime;
-
+  bool? read;
   // additional
   String? decryptContent;
   MessageType? type;
@@ -28,6 +28,7 @@ class MessageDB extends DBObject {
     this.tags = '',
     this.content = '',
     this.createTime = 0,
+    this.read = false,
   });
 
   @override
@@ -118,7 +119,8 @@ class MessageDB extends DBObject {
               content: event.content,
               createTime: event.createdAt);
           messageDB.decryptContent = decodeContent(message.content)['content'];
-          messageDB.type = stringtoMessageType(decodeContent(message.content)['contentType']);
+          messageDB.type = stringtoMessageType(
+              decodeContent(message.content)['contentType']);
           return messageDB;
         }
       }
@@ -136,6 +138,7 @@ Map<String, dynamic> _messageInfoToMap(MessageDB instance) => <String, dynamic>{
       'tags': instance.tags,
       'content': instance.content,
       'createTime': instance.createTime,
+      'read': instance.read,
     };
 
 MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
@@ -148,5 +151,6 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     tags: map['tags'].toString(),
     content: map['content'].toString(),
     createTime: map['createTime'],
+    read: map['read'],
   );
 }

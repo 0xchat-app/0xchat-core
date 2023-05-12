@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
-
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr/nostr.dart';
 
@@ -50,7 +48,6 @@ class Channels {
             break;
         }
       });
-      print(subscription);
     }
   }
 
