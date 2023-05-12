@@ -37,7 +37,7 @@ class Channels {
   void _updateSubscription() {
     Close(subscription);
     if (myChannels.keys.isNotEmpty) {
-      Filter f = Filter(kinds: [42], e: myChannels.keys.toList());
+      Filter f = Filter(e: myChannels.keys.toList(), kinds: [42]);
       subscription =
           Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
         switch (event.kind) {
@@ -49,6 +49,7 @@ class Channels {
             break;
         }
       });
+      print(subscription);
     }
   }
 
@@ -64,6 +65,10 @@ class Channels {
       content: event.content,
       createTime: event.createdAt,
     );
+    messageDB.decryptContent =
+        MessageDB.decodeContent(messageDB.content!)['content'];
+    messageDB.type = MessageDB.stringtoMessageType(
+        MessageDB.decodeContent(messageDB.content!)['contentType']);
     if (channelMessageCallBack != null) channelMessageCallBack!(messageDB);
     Messages.saveMessagesToDB([messageDB]);
   }
@@ -78,21 +83,19 @@ class Channels {
     );
     subscriptionId =
         Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
-      // clear friends data
       Lists lists = Nip51.getLists(event, privkey);
       me!.channelsList = jsonEncode(lists.bookmarks);
       DB.sharedInstance.update<UserDB>(me!);
       syncChannelsFromRelay(lists.owner, lists.bookmarks, () {
-        if (myChannelsUpdatedCallBack != null) {
-          myChannels = _myChannels();
-          _updateSubscription();
-          myChannelsUpdatedCallBack!();
-        }
+        print('channels.length : ${channels.length}');
+        myChannels = _myChannels();
+        _updateSubscription();
+        if (myChannelsUpdatedCallBack != null) myChannelsUpdatedCallBack!();
       });
     }, eoseCallBack: (status) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
       if (status == 0) {
-        // no friend list
+        // no channels list
         print('no channels list online!');
         channels.clear();
         _updateSubscription();
@@ -103,10 +106,14 @@ class Channels {
 
   Map<String, ChannelDB> _myChannels() {
     Map<String, ChannelDB> result = {};
-    if(me!= null && me!.channelsList != null && me!.channelsList!.isNotEmpty){
-      List<String> channelList = jsonDecode(me!.channelsList!);
+    if (me != null &&
+        me!.channelsList != null &&
+        me!.channelsList!.isNotEmpty) {
+      List<dynamic> channelList = jsonDecode(me!.channelsList!);
       for (String channelId in channelList) {
-        result[channelId] = channels[channelId]!;
+        if (channels.containsKey(channelId)) {
+          result[channelId] = channels[channelId]!;
+        }
       }
     }
     return result;
@@ -117,15 +124,15 @@ class Channels {
     String subscriptionId = '';
     Filter f = updateInfos
         ? Filter(
+            ids: channelIds,
             authors: [owner],
             kinds: [41],
-            e: channelIds,
             limit: 1,
           )
         : Filter(
+            ids: channelIds,
             authors: [owner],
             kinds: [40],
-            e: channelIds,
           );
     subscriptionId =
         Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
@@ -145,6 +152,7 @@ class Channels {
       Connect.sharedInstance.closeSubscription(subscriptionId);
       eoseCallBack(status);
     });
+    print('subscriptionId: $subscriptionId');
   }
 
   Future<void> _syncChannelToDB(ChannelDB channelDB) async {
@@ -242,8 +250,8 @@ class Channels {
 
   Future<void> sendChannelMessage(String channelId, MessageType type,
       String content, String? relay, Thread? thread) async {
-    Event event = Nip28.sendChannelMessage(
-        channelId, MessageDB.encodeContent(type, content), relay, thread, privkey);
+    Event event = Nip28.sendChannelMessage(channelId,
+        MessageDB.encodeContent(type, content), relay, thread, privkey);
     Connect.sharedInstance.sendEvent(event);
 
     MessageDB messageDB = MessageDB(

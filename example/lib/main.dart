@@ -126,14 +126,17 @@ Future<void> testChannel() async {
 
   await Channels.sharedInstance.initWithPrivkey(user1.private);
 
-  await Channels.sharedInstance.createChannel('name', 'about', 'picture', [], 'relay');
+  Channels.sharedInstance.channelMessageCallBack = (MessageDB messageDB){
+    print(messageDB.decryptContent);
+  };
+  // await Channels.sharedInstance.createChannel('name', 'about', 'picture', [], 'relay');
 
-  await Future.delayed(const Duration(seconds: 3));
+  // await Future.delayed(const Duration(seconds: 3));
 
-  for(ChannelDB channel in Channels.sharedInstance.myChannels.values){
-    print(channel.name);
-    Channels.sharedInstance.sendChannelMessage(channel.channelId!, MessageType.text, "hello, test channel", null, null);
-  }
+  // for(ChannelDB channel in Channels.sharedInstance.myChannels.values){
+  //   print(channel.name);
+  //   Channels.sharedInstance.sendChannelMessage(channel.channelId!, MessageType.text, "hello, test channel", null, null);
+  // }
 }
 
 Future<void> main() async {
