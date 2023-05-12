@@ -10,7 +10,8 @@ class Messages {
           message.createTime! > theLastTime ? message.createTime! : theLastTime;
       if (message.kind == 4) {
         // private message
-        UserDB? friend = Friends.sharedInstance.friends[message.sender];
+        String sender = (message.sender == Friends.sharedInstance.pubkey) ? message.receiver! : message.sender!;
+        UserDB? friend = Friends.sharedInstance.friends[sender];
         if (friend != null) {
           String content = Nip4.decryptContent(
             message.content!,

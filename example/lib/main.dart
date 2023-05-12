@@ -115,6 +115,10 @@ Future<void> testFriends() async {
 }
 
 Future<void> testChannel() async {
+
+  Map r = await Messages.loadMessagesFromDB();
+  return;
+
   var user1 = Keychain(
       "81cce0c8980eafd8eeab8b46c4a93aee0ef4c92c91f4b7b45a4db940304d7f50");
   var user2 = Keychain(
