@@ -9,7 +9,7 @@ import 'package:chatcore/src/chat/model/channelDB.dart' as prefix5;
 import 'package:chatcore/src/chat/model/messageDB.dart' as prefix4;
 import 'package:chatcore/src/common/database/db.dart' as prefix0;
 import 'package:chatcore/src/common/database/db_object.dart' as prefix2;
-import 'package:nostr/src/event.dart' as prefix6;
+import 'package:nostr_core_dart/src/event.dart' as prefix6;
 
 // ignore_for_file: camel_case_types
 // ignore_for_file: implementation_imports

@@ -3,7 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'main.reflectable.dart'; // Import generated code.
-import 'package:nostr/nostr.dart';
+import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
 initDB() async {

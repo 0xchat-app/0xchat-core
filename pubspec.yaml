@@ -1,6 +1,6 @@
 name: chatcore
 description: A library for 0xchat-core implemented in dart for flutter
-version: 1.0.0
+version: 0.1.0
 homepage: https://github.com/0xchat-dev/0xchat-core
 
 environment:

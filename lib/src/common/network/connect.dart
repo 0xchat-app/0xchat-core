@@ -4,10 +4,11 @@ import 'dart:io';
 import 'package:nostr_core_dart/nostr.dart';
 
 typedef EventCallBack = void Function(Event event);
-typedef EOSECallBack = void Function(
-    int status); // 0:end without event, 1:end with events
+/// 0:end without event, 1:end with events
+typedef EOSECallBack = void Function(int status);
 typedef NoticeCallBack = void Function(String notice);
 typedef OKCallBack = void Function(Ok ok);
+typedef ConnectStatusCallBack = void Function(String relay, int status);
 
 class Connect {
   Connect._internal();
@@ -17,33 +18,43 @@ class Connect {
   static final Connect sharedInstance = Connect._internal();
 
   NoticeCallBack? noticeCallBack;
+  ConnectStatusCallBack? connectStatusCallBack;
 
   /// sockets
   Map<String, WebSocket> webSockets = {};
-  Map<String, bool> connecting = {};
+  /// connecting = 0;
+  /// open = 1;
+  /// closing = 2;
+  /// closed = 3;
+  Map<String, int> connectStatus = {};
 
   /// subscriptionId, EventCallBack
   Map<String, List> map = {};
   // send event callback
   Map<String, OKCallBack> okMap = {};
 
-  Future connect(String relay) async {
-    if (connecting[relay] == true) return;
+  void _setConnectStatus(String relay, int status){
+    connectStatus[relay] = status;
+    if(connectStatusCallBack != null) {
+      connectStatusCallBack!(relay, status);
+    }
+  }
 
+  Future connect(String relay) async {
+    // connecting or open
+    if (connectStatus[relay] == 0 || connectStatus[relay] == 1) return;
     WebSocket socket;
     if (webSockets.containsKey(relay)) {
       socket = webSockets[relay]!;
-      int status = socket.readyState;
-      print('status =  $status');
-      if (status != 3) {
+      _setConnectStatus(relay, socket.readyState);
+      print('status =  ${connectStatus[relay]}');
+      if (connectStatus[relay] != 3) {
         /// not closed
         return;
       }
     }
     print("connecting...");
-    connecting[relay] = true;
     socket = await _connectWs(relay);
-    connecting[relay] = false;
     print("socket connection initialized");
     socket.done.then((dynamic _) => _onDisconnected(relay));
     _listenEvent(socket, relay);
@@ -158,16 +169,20 @@ class Connect {
 
   Future _connectWs(String relay) async {
     try {
+      _setConnectStatus(relay, 0); // connecting
       return await WebSocket.connect(relay);
     } catch (e) {
       print("Error! can not connect WS connectWs $e");
-      await Future.delayed(Duration(milliseconds: 10000));
+      _setConnectStatus(relay, 3); // closed
+      await Future.delayed(Duration(milliseconds: 3000));
       return await _connectWs(relay);
     }
   }
 
-  void _onDisconnected(String relay) {
+  Future<void> _onDisconnected(String relay) async {
     print("_onDisconnected");
+    _setConnectStatus(relay, 3); // closed
+    await Future.delayed(Duration(milliseconds: 3000));
     connect(relay);
   }
 }
