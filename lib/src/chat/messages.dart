@@ -1,5 +1,5 @@
 import 'package:chatcore/chat-core.dart';
-import 'package:nostr/nostr.dart';
+import 'package:nostr_core_dart/nostr.dart';
 
 class Messages {
   static Future<Map> loadMessagesFromDB() async {

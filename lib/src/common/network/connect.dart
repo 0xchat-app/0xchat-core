@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
-import 'package:nostr/nostr.dart';
+import 'package:nostr_core_dart/nostr.dart';
 
 typedef EventCallBack = void Function(Event event);
 typedef EOSECallBack = void Function(
@@ -141,7 +141,7 @@ class Connect {
   void _handleOk(String message) {
     print('receive ok: $message');
     Ok? ok = Nip20.getOk(message);
-    if (ok != null && okMap.containsKey(ok.eventId)) okMap[ok!.eventId]!(ok);
+    if (ok != null && okMap.containsKey(ok.eventId)) okMap[ok.eventId]!(ok);
   }
 
   void _listenEvent(WebSocket socket, String relay) {

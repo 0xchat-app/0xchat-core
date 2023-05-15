@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
-import 'package:nostr/nostr.dart';
+import 'package:nostr_core_dart/nostr.dart';
 
 typedef FriendRequestCallBack = void Function(Alias);
 typedef FriendAcceptCallBack = void Function(Alias);
@@ -250,7 +250,7 @@ class Friends {
     String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.request(
-        pubkey, aliasPubkey, aliasPrivkey, friendPubkey, content);
+        pubkey, privkey, aliasPubkey, aliasPrivkey, friendPubkey, content);
     Connect.sharedInstance.sendEvent(event);
     _addFriend(friendPubkey, '');
   }
@@ -258,8 +258,8 @@ class Friends {
   void acceptFriend(String friendPubkey, String friendAliasPubkey) {
     String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
-    Event event =
-        Nip101.accept(pubkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
+    Event event = Nip101.accept(
+        pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
     Connect.sharedInstance.sendEvent(event);
     _addFriend(friendPubkey, friendAliasPubkey);
   }
@@ -267,15 +267,15 @@ class Friends {
   void rejectFriend(String friendPubkey, String friendAliasPubkey) {
     String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
-    Event event =
-        Nip101.reject(pubkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
+    Event event = Nip101.reject(
+        pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
     Connect.sharedInstance.sendEvent(event);
   }
 
   void removeFriend(String friendPubkey) {
     UserDB? friend = friends[friendPubkey];
     if (friend != null) {
-      Event event = Nip101.remove(pubkey, friend.toAliasPubkey!,
+      Event event = Nip101.remove(pubkey, privkey, friend.toAliasPubkey!,
           friend.toAliasPrivkey!, friend.aliasPubkey!);
       Connect.sharedInstance.sendEvent(event);
     }

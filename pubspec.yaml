@@ -14,7 +14,7 @@ dependencies:
   reflectable: ^3.0.1
   built_value_generator: any
   json_annotation: ^4.0.1
-  nostr:
+  nostr_core_dart:
     path: ../nostr-dart
 
 

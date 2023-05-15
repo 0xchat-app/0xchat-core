@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
-import 'package:nostr/nostr.dart';
+import 'package:nostr_core_dart/nostr.dart';
 
 enum MessageType { text, image, video, audio, file, template }
 

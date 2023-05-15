@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
-import 'package:nostr/nostr.dart';
+import 'package:nostr_core_dart/nostr.dart';
 
 typedef ChannelsUpdatedCallBack = void Function();
 typedef ChannelMessageCallBack = void Function(MessageDB);
