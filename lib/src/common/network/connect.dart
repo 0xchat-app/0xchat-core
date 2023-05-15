@@ -78,14 +78,14 @@ class Connect {
       {EventCallBack? eventCallBack, EOSECallBack? eoseCallBack}) {
     /// Create a subscription message request with one or many filters
     Request requestWithFilter = Request(generate64RandomHexChars(), filters);
-    String subscriptionId = requestWithFilter.serialize();
+    String subscriptionString = requestWithFilter.serialize();
 
     /// Send a request message to the WebSocket server
-    webSockets.forEach((relay, socket) => socket.add(subscriptionId));
+    webSockets.forEach((relay, socket) => socket.add(subscriptionString));
 
     /// store subscriptionId & callBack mapping
     map[requestWithFilter.subscriptionId] = [eventCallBack, eoseCallBack, 0];
-    return subscriptionId;
+    return requestWithFilter.subscriptionId;
   }
 
   Future closeSubscription(String subscriptionId) async {
@@ -160,9 +160,11 @@ class Connect {
       _handleMessage(message);
     }, onDone: () {
       print("connect aborted");
+      _setConnectStatus(relay, 3); // closed
       connect(relay);
     }, onError: (e) {
       print('Server error: $e');
+      _setConnectStatus(relay, 3); // closed
       connect(relay);
     });
   }

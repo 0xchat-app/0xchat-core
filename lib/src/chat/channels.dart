@@ -34,7 +34,8 @@ class Channels {
   }
 
   void _updateSubscription() {
-    Close(subscription);
+    Connect.sharedInstance.closeSubscription(subscription);
+
     if (myChannels.keys.isNotEmpty) {
       Filter f = Filter(e: myChannels.keys.toList(), kinds: [42]);
       subscription =

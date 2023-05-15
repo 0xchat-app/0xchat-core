@@ -154,7 +154,7 @@ class Friends {
   }
 
   void _updateSubscription() {
-    Close(subscription);
+    Connect.sharedInstance.closeSubscription(subscription);
 
     List<String> pubkeys = [];
     friends.forEach((key, f) {
