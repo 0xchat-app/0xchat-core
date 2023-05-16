@@ -12,7 +12,7 @@ class Messages {
         // private message
         String sender = (message.sender == Friends.sharedInstance.pubkey) ? message.receiver! : message.sender!;
         UserDB? friend = Friends.sharedInstance.friends[sender];
-        if (friend != null) {
+        if (friend != null && friend.aliasPubkey!.isNotEmpty) {
           String content = Nip4.decryptContent(
             message.content!,
             friend.toAliasPrivkey!,
