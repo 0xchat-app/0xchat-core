@@ -81,7 +81,7 @@ class Friends {
     List<People> friendList = [];
     for (UserDB user in friends.values) {
       People p =
-          People(user.pubKey!, user.aliasPubkey, user.mainRelay, user.name);
+          People(user.pubKey!, user.mainRelay, user.name, user.aliasPubkey);
       friendList.add(p);
     }
     Event event = Nip51.createCategorizedPeople(
@@ -110,21 +110,19 @@ class Friends {
   }
 
   void _addFriend(String friendPubkey, String friendAliasPubkey) {
-    if (!friends.containsKey(friendPubkey)) {
-      Account.syncProfilesFromRelay([friendPubkey], (usersMap) async {
-        UserDB? user = usersMap[friendPubkey];
-        if (user != null) {
-          user.toAliasPrivkey = Friends.getAliasPrivkey(user.pubKey!, privkey);
-          user.toAliasPubkey = Keychain.getPublicKey(privkey);
-          user.aliasPubkey = friendAliasPubkey;
-          // sync to db
-          await DB.sharedInstance.update<UserDB>(user);
-          friends[user.pubKey!] = user;
-          _updateSubscription();
-          _syncFriendsToRelay();
-        }
-      });
-    }
+    Account.syncProfilesFromRelay([friendPubkey], (usersMap) async {
+      UserDB? user = usersMap[friendPubkey];
+      if (user != null) {
+        user.toAliasPrivkey = Friends.getAliasPrivkey(user.pubKey!, privkey);
+        user.toAliasPubkey = Keychain.getPublicKey(privkey);
+        user.aliasPubkey = friendAliasPubkey;
+        // sync to db
+        await DB.sharedInstance.update<UserDB>(user);
+        friends[user.pubKey!] = user;
+        _updateSubscription();
+        _syncFriendsToRelay();
+      }
+    });
   }
 
   void _deleteFriend(String friendPubkey) {
@@ -140,8 +138,7 @@ class Friends {
       kinds: [10100],
       p: [pubkey],
     );
-    subscription =
-        Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+    Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
       switch (event.kind) {
         case 10100:
           _handleFriendRequest(event);
@@ -160,7 +157,6 @@ class Friends {
     friends.forEach((key, f) {
       if (f.toAliasPubkey != null) pubkeys.add(f.toAliasPubkey!);
     });
-
     if (pubkeys.isNotEmpty) {
       Filter f = Filter(
         kinds: [10101, 10102, 10103, 4],
