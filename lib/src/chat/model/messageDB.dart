@@ -151,6 +151,6 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     tags: map['tags'].toString(),
     content: map['content'].toString(),
     createTime: map['createTime'],
-    read: map['read'],
+    read: map['read'] > 0 ? true : false,
   );
 }

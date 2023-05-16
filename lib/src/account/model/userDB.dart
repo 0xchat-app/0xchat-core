@@ -80,11 +80,11 @@ class UserDB extends DBObject {
     return ['pubKey'];
   }
 
-  static decodePubkey(String pubkey) {
+  static String decodePubkey(String pubkey) {
     return Nip19.decodePubkey(pubkey);
   }
 
-  static decodePrivkey(String privkey) {
+  static String decodePrivkey(String privkey) {
     return Nip19.decodePubkey(privkey);
   }
 
