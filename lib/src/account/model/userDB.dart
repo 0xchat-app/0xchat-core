@@ -85,7 +85,7 @@ class UserDB extends DBObject {
   }
 
   static String decodePrivkey(String privkey) {
-    return Nip19.decodePubkey(privkey);
+    return Nip19.decodePrivkey(privkey);
   }
 
   /// nip19 encode
@@ -94,7 +94,7 @@ class UserDB extends DBObject {
   }
 
   String get encodedPrivkey {
-    return Nip19.encodePubkey(privkey!);
+    return Nip19.encodePrivkey(privkey!);
   }
 }
 
