@@ -79,7 +79,6 @@ class Connect {
     /// Create a subscription message request with one or many filters
     Request requestWithFilter = Request(generate64RandomHexChars(), filters);
     String subscriptionString = requestWithFilter.serialize();
-
     /// Send a request message to the WebSocket server
     webSockets.forEach((relay, socket) => socket.add(subscriptionString));
 
@@ -89,11 +88,16 @@ class Connect {
   }
 
   Future closeSubscription(String subscriptionId) async {
-    webSockets.forEach(
-        (relay, socket) => socket.add(Close(subscriptionId).serialize()));
+    if(subscriptionId.isNotEmpty){
+      webSockets.forEach(
+              (relay, socket) => socket.add(Close(subscriptionId).serialize()));
 
-    /// remove the mapping
-    map.remove(subscriptionId);
+      /// remove the mapping
+      map.remove(subscriptionId);
+    }
+    else {
+      throw Exception("null subscriptionId");
+    }
   }
 
   /// send an event to relay

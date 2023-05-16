@@ -22,7 +22,8 @@ class Friends {
   String pubkey = '';
   String privkey = '';
   Map<String, UserDB> friends = {};
-  String subscription = '';
+  String friendRequestSubscription = '';
+  String updateSubscription = '';
 
   /// callbacks
   FriendRequestCallBack? friendRequestCallBack;
@@ -91,22 +92,24 @@ class Friends {
   }
 
   void _syncFriendsProfiles(List<People> peoples) {
-    List<String> pubkeys = peoples.map((p) => p.pubkey).toList();
-    Account.syncProfilesFromRelay(pubkeys, (usersMap) async {
-      for (People p in peoples) {
-        UserDB? user = usersMap[p.pubkey];
-        if (user != null) {
-          user.toAliasPrivkey = Friends.getAliasPrivkey(user.pubKey!, privkey);
-          user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
-          user.aliasPubkey = p.aliasPubKey;
-          // sync to db
-          await DB.sharedInstance.update<UserDB>(user);
-          friends[user.pubKey!] = user;
+    if(peoples.isNotEmpty){
+      List<String> pubkeys = peoples.map((p) => p.pubkey).toList();
+      Account.syncProfilesFromRelay(pubkeys, (usersMap) async {
+        for (People p in peoples) {
+          UserDB? user = usersMap[p.pubkey];
+          if (user != null) {
+            user.toAliasPrivkey = Friends.getAliasPrivkey(user.pubKey!, privkey);
+            user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
+            user.aliasPubkey = p.aliasPubKey;
+            // sync to db
+            await DB.sharedInstance.update<UserDB>(user);
+            friends[user.pubKey!] = user;
+          }
         }
-      }
-      // subscript friend accept, reject, delete, private messages
-      _updateSubscription();
-    });
+        // subscript friend accept, reject, delete, private messages
+        _updateSubscription();
+      });
+    }
   }
 
   void _addFriend(String friendPubkey, String friendAliasPubkey) {
@@ -138,7 +141,7 @@ class Friends {
       kinds: [10100],
       p: [pubkey],
     );
-    Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+    friendRequestSubscription = Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
       switch (event.kind) {
         case 10100:
           _handleFriendRequest(event);
@@ -151,7 +154,9 @@ class Friends {
   }
 
   void _updateSubscription() {
-    Connect.sharedInstance.closeSubscription(subscription);
+    if(updateSubscription.isNotEmpty) {
+      Connect.sharedInstance.closeSubscription(updateSubscription);
+    }
 
     List<String> pubkeys = [];
     friends.forEach((key, f) {
@@ -162,7 +167,7 @@ class Friends {
         kinds: [10101, 10102, 10103, 4],
         p: pubkeys,
       );
-      subscription =
+      updateSubscription =
           Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
         switch (event.kind) {
           case 10100:
