@@ -117,7 +117,7 @@ class Friends {
       UserDB? user = usersMap[friendPubkey];
       if (user != null) {
         user.toAliasPrivkey = Friends.getAliasPrivkey(user.pubKey!, privkey);
-        user.toAliasPubkey = Keychain.getPublicKey(privkey);
+        user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
         user.aliasPubkey = friendAliasPubkey;
         // sync to db
         await DB.sharedInstance.update<UserDB>(user);
@@ -210,7 +210,7 @@ class Friends {
         user.aliasPubkey = alias.toAliasPubkey;
         DB.sharedInstance.update<UserDB>(user);
         if (friendAcceptCallBack != null) friendAcceptCallBack!(alias);
-        break;
+        return;
       }
     }
   }
