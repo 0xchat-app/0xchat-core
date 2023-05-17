@@ -34,7 +34,9 @@ class Channels {
   }
 
   void _updateSubscription() {
-    Connect.sharedInstance.closeSubscription(subscription);
+    if(subscription.isNotEmpty) {
+      Connect.sharedInstance.closeSubscription(subscription);
+    }
 
     if (myChannels.keys.isNotEmpty) {
       Filter f = Filter(e: myChannels.keys.toList(), kinds: [42]);
@@ -180,7 +182,7 @@ class Channels {
     await _loadMyChannelsFromRelay();
   }
 
-  Future<void> createChannel(String name, String about, String picture,
+  Future<ChannelDB> createChannel(String name, String about, String picture,
       List<String>? badges, String relay) async {
     Event event =
         Nip28.createChannel(name, about, picture, badges ?? [], privkey);
@@ -202,9 +204,10 @@ class Channels {
     channelDB.createTime = event.createdAt;
     channels[channelDB.channelId!] = channelDB;
     myChannels[channelDB.channelId!] = channelDB;
-    _syncChannelToDB(channelDB);
+    await _syncChannelToDB(channelDB);
     // update my channel list
-    _syncMyChannelListToRelay();
+    await _syncMyChannelListToRelay();
+    return channelDB;
   }
 
   Future<void> syncChannelsFromRelay(String owner, List<String> channelIds,

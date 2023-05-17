@@ -123,7 +123,7 @@ class Account {
         db.picture = map['picture'];
       }
     }, eoseCallBack: (status) {
-      Connect.sharedInstance.closeSubscription(subscriptionId);
+          Connect.sharedInstance.closeSubscription(subscriptionId);
       callBack(users);
     });
   }
