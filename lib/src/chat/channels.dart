@@ -204,6 +204,7 @@ class Channels {
     channelDB.createTime = event.createdAt;
     channels[channelDB.channelId!] = channelDB;
     myChannels[channelDB.channelId!] = channelDB;
+    _updateSubscription();
     await _syncChannelToDB(channelDB);
     // update my channel list
     await _syncMyChannelListToRelay();
@@ -280,6 +281,7 @@ class Channels {
     _syncChannelsInfos('', [channelId], true, (status) {
       if (channels.containsKey(channelId)) {
         myChannels[channelId] = channels[channelId]!;
+        _updateSubscription();
         _syncMyChannelListToRelay();
       }
     });
@@ -287,6 +289,7 @@ class Channels {
 
   Future<void> leaveChannel(String channelId) async {
     myChannels.remove(channelId);
+    _updateSubscription();
     _syncMyChannelListToRelay();
   }
 
