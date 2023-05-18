@@ -138,9 +138,9 @@ class Channels {
         Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
       Channel channel = Nip28.getChannel(event);
       ChannelDB channelDB = ChannelDB(
-        channelId: event.id,
+        channelId: channel.channelId,
         createTime: event.createdAt,
-        creator: event.pubkey,
+        creator: channel.owner,
         name: channel.name,
         about: channel.about,
         picture: channel.picture,
