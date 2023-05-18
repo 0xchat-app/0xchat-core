@@ -2,9 +2,10 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 class Messages {
-  static Future<Map> loadMessagesFromDB() async {
+  static Future<Map> loadMessagesFromDB({String? where,
+      List<Object?>? whereArgs}) async {
     int theLastTime = 0;
-    List<MessageDB> messages = await DB.sharedInstance.objects<MessageDB>();
+    List<MessageDB> messages = await DB.sharedInstance.objects<MessageDB>(where: where, whereArgs: whereArgs);
     for (MessageDB message in messages) {
       theLastTime =
           message.createTime! > theLastTime ? message.createTime! : theLastTime;
