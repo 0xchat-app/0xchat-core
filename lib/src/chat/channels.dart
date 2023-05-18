@@ -124,14 +124,14 @@ class Channels {
     String subscriptionId = '';
     Filter f = updateInfos
         ? Filter(
-            authors: [owner],
+            // authors: [owner], //todo check channel owner
             kinds: [41],
             e: channelIds,
             limit: 1,
           )
         : Filter(
             ids: channelIds,
-            authors: [owner],
+            // authors: [owner],
             kinds: [40],
           );
     subscriptionId =

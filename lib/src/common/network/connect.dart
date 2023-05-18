@@ -141,7 +141,7 @@ class Connect {
   void _handleEOSE(String eose) {
     print('receive EOSE: $eose');
     String subscriptionId = jsonDecode(eose)[0];
-    if (subscriptionId.isNotEmpty) {
+    if (subscriptionId.isNotEmpty && map.containsKey(subscriptionId)) {
       EOSECallBack? callBack = map[subscriptionId]![1];
       if (callBack != null) callBack(map[subscriptionId]![2]);
     }
