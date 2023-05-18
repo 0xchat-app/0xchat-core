@@ -92,13 +92,14 @@ class Friends {
   }
 
   void _syncFriendsProfiles(List<People> peoples) {
-    if(peoples.isNotEmpty){
+    if (peoples.isNotEmpty) {
       List<String> pubkeys = peoples.map((p) => p.pubkey).toList();
       Account.syncProfilesFromRelay(pubkeys, (usersMap) async {
         for (People p in peoples) {
           UserDB? user = usersMap[p.pubkey];
           if (user != null) {
-            user.toAliasPrivkey = Friends.getAliasPrivkey(user.pubKey!, privkey);
+            user.toAliasPrivkey =
+                Friends.getAliasPrivkey(user.pubKey!, privkey);
             user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
             user.aliasPubkey = p.aliasPubKey;
             // sync to db
@@ -141,7 +142,8 @@ class Friends {
       kinds: [10100],
       p: [pubkey],
     );
-    friendRequestSubscription = Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+    friendRequestSubscription =
+        Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
       switch (event.kind) {
         case 10100:
           _handleFriendRequest(event);
@@ -154,7 +156,7 @@ class Friends {
   }
 
   void _updateSubscription() {
-    if(updateSubscription.isNotEmpty) {
+    if (updateSubscription.isNotEmpty) {
       Connect.sharedInstance.closeSubscription(updateSubscription);
     }
 
@@ -231,6 +233,13 @@ class Friends {
         friendMessageCallBack!(messageDB);
       }
     }
+  }
+
+  Alias userDBToAlias(UserDB userDB) {
+    String aliasPrivkey = Friends.getAliasPrivkey(userDB.pubKey!, privkey);
+    String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
+    return Alias(privkey, aliasPubkey, userDB.pubKey!, userDB.aliasPubkey!,
+        "accept", 10101);
   }
 
   Future<void> initWithPrikey(String key) async {
