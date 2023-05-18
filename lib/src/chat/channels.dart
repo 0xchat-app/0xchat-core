@@ -25,8 +25,8 @@ class Channels {
   ChannelsUpdatedCallBack? myChannelsUpdatedCallBack;
   ChannelMessageCallBack? channelMessageCallBack;
 
-  Future<void> _loadAllChannelsFromDB() async {
-    List<Object?> maps = await DB.sharedInstance.objects<ChannelDB>();
+  Future<void> _loadAllChannelsFromDB({String? where, List<Object?>? whereArgs}) async {
+    List<Object?> maps = await DB.sharedInstance.objects<ChannelDB>(where: where, whereArgs: whereArgs);
     channels = {
       for (var channelDB in maps) (channelDB as ChannelDB).channelId!: channelDB
     };
