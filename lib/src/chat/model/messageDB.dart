@@ -29,6 +29,8 @@ class MessageDB extends DBObject {
     this.content = '',
     this.createTime = 0,
     this.read = false,
+    this.decryptContent = '',
+    this.type = MessageType.text,
   });
 
   @override
@@ -47,6 +49,11 @@ class MessageDB extends DBObject {
   //primaryKey
   static List<String?> primaryKey() {
     return ['messageId'];
+  }
+
+  //ignoreKey
+  static List<String?> ignoreKey() {
+    return ['decryptContent', 'type'];
   }
 
   static String messageTypeToString(MessageType type) {
