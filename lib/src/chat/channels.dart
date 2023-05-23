@@ -25,8 +25,8 @@ class Channels {
   ChannelsUpdatedCallBack? myChannelsUpdatedCallBack;
   ChannelMessageCallBack? channelMessageCallBack;
 
-  Future<void> _loadAllChannelsFromDB({String? where, List<Object?>? whereArgs}) async {
-    List<Object?> maps = await DB.sharedInstance.objects<ChannelDB>(where: where, whereArgs: whereArgs);
+  Future<void> _loadAllChannelsFromDB() async {
+    List<Object?> maps = await DB.sharedInstance.objects<ChannelDB>();
     channels = {
       for (var channelDB in maps) (channelDB as ChannelDB).channelId!: channelDB
     };
@@ -34,7 +34,7 @@ class Channels {
   }
 
   void _updateSubscription() {
-    if(subscription.isNotEmpty) {
+    if (subscription.isNotEmpty) {
       Connect.sharedInstance.closeSubscription(subscription);
     }
 
@@ -291,6 +291,14 @@ class Channels {
     myChannels.remove(channelId);
     _updateSubscription();
     _syncMyChannelListToRelay();
+  }
+
+  List<ChannelDB>? fuzzySearch(String keyword) {
+    List<ChannelDB> filteredFriends = myChannels.values
+        .where((channel) =>
+            channel.name!.contains(keyword) || channel.about!.contains(keyword))
+        .toList();
+    return filteredFriends;
   }
 
   // get 20 latest channels

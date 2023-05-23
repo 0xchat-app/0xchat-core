@@ -292,6 +292,13 @@ class Friends {
     _deleteFriend(friendPubkey);
   }
 
+  List<UserDB>? fuzzySearch(String keyword) {
+    List<UserDB> filteredFriends = friends.values
+        .where((person) => person.name!.contains(keyword))
+        .toList();
+    return filteredFriends;
+  }
+
   void sendMessage(
       String friendPubkey, String replayId, MessageType type, String content) {
     UserDB? friend = friends[friendPubkey];
