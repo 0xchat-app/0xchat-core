@@ -304,11 +304,15 @@ class Channels {
   }
 
   List<ChannelDB>? fuzzySearch(String keyword) {
-    List<ChannelDB> filteredFriends = myChannels.values
-        .where((channel) =>
-            channel.name!.contains(keyword) || channel.about!.contains(keyword))
-        .toList();
-    return filteredFriends;
+    if (keyword.isNotEmpty) {
+      List<ChannelDB> filteredFriends = myChannels.values
+          .where((channel) =>
+              channel.name!.contains(keyword) ||
+              channel.about!.contains(keyword))
+          .toList();
+      return filteredFriends;
+    }
+    return null;
   }
 
   // get 20 latest channels

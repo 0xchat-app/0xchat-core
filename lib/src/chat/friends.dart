@@ -294,10 +294,13 @@ class Friends {
   }
 
   List<UserDB>? fuzzySearch(String keyword) {
-    List<UserDB> filteredFriends = friends.values
-        .where((person) => person.name!.contains(keyword))
-        .toList();
-    return filteredFriends;
+    if (keyword.isNotEmpty) {
+      List<UserDB> filteredFriends = friends.values
+          .where((person) => person.name!.contains(keyword))
+          .toList();
+      return filteredFriends;
+    }
+    return null;
   }
 
   void sendMessage(
