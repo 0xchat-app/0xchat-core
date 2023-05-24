@@ -68,11 +68,15 @@ class Account {
     return db;
   }
 
+  static Uint8List encryptPrivateKeyWithMap(Map map) {
+    return encryptPrivateKey(hexToBytes(map['privkey']), map['password']);
+  }
+
   static Future<UserDB> newAccount() async {
-    String defaultPassword = await compute(generateStrongPassword, 16);
+    String defaultPassword = generateStrongPassword(16);
     var user = Keychain.generate();
-    Uint8List enPrivkey =
-        encryptPrivateKey(hexToBytes(user.private), defaultPassword);
+    Uint8List enPrivkey = await compute(encryptPrivateKeyWithMap,
+        {'privkey': user.private, 'password': defaultPassword});
     UserDB db = UserDB();
     db.pubKey = user.public;
     db.encryptedPrivKey = bytesToHex(enPrivkey);
@@ -82,9 +86,14 @@ class Account {
     return db;
   }
 
+  static Uint8List decryptPrivateKeyWithMap(Map map) {
+    return decryptPrivateKey(hexToBytes(map['privkey']), map['password']);
+  }
+
   static Future<UserDB> newAccountWithPassword(String password) async {
     var user = Keychain.generate();
-    Uint8List enPrivkey = encryptPrivateKey(hexToBytes(user.private), password);
+    Uint8List enPrivkey = await compute(decryptPrivateKeyWithMap,
+        {'privkey': user.private, 'password': password});
     UserDB db = UserDB();
     db.pubKey = user.public;
     db.encryptedPrivKey = bytesToHex(enPrivkey);
@@ -123,7 +132,7 @@ class Account {
         db.picture = map['picture'];
       }
     }, eoseCallBack: (status) {
-          Connect.sharedInstance.closeSubscription(subscriptionId);
+      Connect.sharedInstance.closeSubscription(subscriptionId);
       callBack(users);
     });
   }
