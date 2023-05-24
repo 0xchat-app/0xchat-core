@@ -81,6 +81,10 @@ class Account {
       throw Exception(response.toString());
     }
   }
+  
+  static String signData(List data, String privateKey){
+      return Nip101.getSig(data, privateKey);
+  }
 
   static Uint8List encryptPrivateKeyWithMap(Map map) {
     return encryptPrivateKey(hexToBytes(map['privkey']), map['password']);
