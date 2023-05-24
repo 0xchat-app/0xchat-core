@@ -144,6 +144,7 @@ class Account {
     db.area = updateDB.area;
     db.about = updateDB.about;
     db.picture = updateDB.picture;
+    db.dns = updateDB.dns;
     db.privkey = privkey;
     await DB.sharedInstance.update<UserDB>(db);
 
@@ -154,6 +155,7 @@ class Account {
       'gender': updateDB.gender,
       'area': updateDB.area,
       'picture': updateDB.picture,
+      'nip05': updateDB.dns,
     };
     Event event = Nip1.setMetadata(jsonEncode(map), privkey);
     Connect.sharedInstance.sendEvent(event);
