@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 typedef SyncCallBack = Function(Map<String, UserDB>);
 
@@ -66,6 +67,19 @@ class Account {
       await DB.sharedInstance.insert<UserDB>(db);
     }
     return db;
+  }
+
+  static Future<bool> checkDNS(DNS dns) async {
+    final response = await http.get(Uri.parse(
+        'https://${dns.domain}/.well-known/nostr.json?name=${dns.name}'));
+
+    if (response.statusCode == 200) {
+      var jsonResponse = jsonDecode(response.body);
+      String pubkey = jsonResponse["names"][dns.name];
+      return pubkey == dns.pubkey;
+    } else {
+      throw Exception(response.toString());
+    }
   }
 
   static Uint8List encryptPrivateKeyWithMap(Map map) {
