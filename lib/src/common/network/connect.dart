@@ -7,7 +7,7 @@ typedef EventCallBack = void Function(Event event);
 /// 0:end without event, 1:end with events
 typedef EOSECallBack = void Function(int status);
 typedef NoticeCallBack = void Function(String notice);
-typedef OKCallBack = void Function(Ok ok);
+typedef OKCallBack = void Function(OKEvent ok);
 typedef ConnectStatusCallBack = void Function(String relay, int status);
 
 class Connect {
@@ -155,7 +155,7 @@ class Connect {
 
   void _handleOk(String message) {
     print('receive ok: $message');
-    Ok? ok = Nip20.getOk(message);
+    OKEvent? ok = Nip20.getOk(message);
     if (ok != null && okMap.containsKey(ok.eventId)) okMap[ok.eventId]!(ok);
   }
 

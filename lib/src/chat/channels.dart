@@ -136,7 +136,15 @@ class Channels {
           );
     subscriptionId =
         Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
-      Channel channel = Nip28.getChannel(event);
+      Channel channel = updateInfos
+          ? Nip28.getChannelMetadata(event)
+          : Nip28.getChannelCreation(event);
+
+      String badges = '';
+      if (channel.additional.containsKey('badges')) {
+        badges = jsonEncode(channel.additional['badges']);
+      }
+
       ChannelDB channelDB = ChannelDB(
         channelId: channel.channelId,
         createTime: event.createdAt,
@@ -144,7 +152,7 @@ class Channels {
         name: channel.name,
         about: channel.about,
         picture: channel.picture,
-        badges: jsonEncode(channel.badges),
+        badges: badges,
       );
       channels[channelDB.channelId!] = channelDB;
       _syncChannelToDB(channelDB);
@@ -184,8 +192,9 @@ class Channels {
 
   Future<ChannelDB> createChannel(String name, String about, String picture,
       List<String>? badges, String relay) async {
+    Map<String, String> additional = {'badges': jsonEncode(badges)};
     Event event =
-        Nip28.createChannel(name, about, picture, badges ?? [], privkey);
+        Nip28.createChannel(name, about, picture, additional, privkey);
     Connect.sharedInstance.sendEvent(event);
 
     // update channel
@@ -251,8 +260,9 @@ class Channels {
 
   Future<void> sendChannelMessage(String channelId, MessageType type,
       String content, String? relay, Thread? thread) async {
-    Event event = Nip28.sendChannelMessage(channelId,
-        MessageDB.encodeContent(type, content), relay, thread, privkey);
+    Event event = Nip28.sendChannelMessage(
+        channelId, MessageDB.encodeContent(type, content), privkey,
+        relay: relay);
     Connect.sharedInstance.sendEvent(event);
 
     MessageDB messageDB = MessageDB(
@@ -309,7 +319,11 @@ class Channels {
     List<ChannelDB> result = [];
     subscriptionId =
         Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
-      Channel channel = Nip28.getChannel(event);
+      Channel channel = Nip28.getChannelCreation(event);
+      String badges = '';
+      if (channel.additional.containsKey('badges')) {
+        badges = jsonEncode(channel.additional['badges']);
+      }
       ChannelDB channelDB = ChannelDB(
         channelId: event.id,
         createTime: event.createdAt,
@@ -317,7 +331,7 @@ class Channels {
         name: channel.name,
         about: channel.about,
         picture: channel.picture,
-        badges: jsonEncode(channel.badges),
+        badges: badges,
       );
       channels[channelDB.channelId!] = channelDB;
       result.add(channelDB);

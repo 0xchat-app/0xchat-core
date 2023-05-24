@@ -40,7 +40,8 @@ class Friends {
   Future<void> _syncFriendsFromDB() async {
     String? list = me?.friendsList;
     if (list != null && list.isNotEmpty) {
-      List<People> friendsList = Nip51.fromContent(list, privkey, pubkey);
+      Map map = Nip51.fromContent(list, privkey, pubkey);
+      List<People> friendsList = map['people'];
       for (People p in friendsList) {
         UserDB? friend = await Account.getUserFromDB(pubkey: p.pubkey);
         if (friend != null) friends[pubkey] = friend;
