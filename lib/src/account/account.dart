@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/foundation.dart';
 
 typedef SyncCallBack = Function(Map<String, UserDB>);
 
@@ -69,7 +69,7 @@ class Account {
   }
 
   static Future<UserDB> newAccount() async {
-    String defaultPassword = generateStrongPassword(16);
+    String defaultPassword = await compute(generateStrongPassword, 16);
     var user = Keychain.generate();
     Uint8List enPrivkey =
         encryptPrivateKey(hexToBytes(user.private), defaultPassword);

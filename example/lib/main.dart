@@ -13,15 +13,15 @@ initDB() async {
 }
 
 Future<void> testAccount() async {
-  // UserDB db = await Account.newAccount();
-  // print(db.toMap());
+  UserDB db = await Account.newAccount();
+  print(db.toMap());
   // UserDB db2 = await Account.newAccountWithPassword("password");
   // print(db2.toMap());
 
-  UserDB? db3 = await Account.loginWithPubKeyAndPassword(
-      "7bd7161b4ea87d34dbc9a7f36907c6ada238b29ea7fb469df431921604ee7dba",
-      "password");
-  print(db3?.toMap());
+  // UserDB? db3 = await Account.loginWithPubKeyAndPassword(
+  //     "7bd7161b4ea87d34dbc9a7f36907c6ada238b29ea7fb469df431921604ee7dba",
+  //     "password");
+  // print(db3?.toMap());
 
   // int result = await Account.delete(db3!.privkey!);
   // print('result = $result');
@@ -155,7 +155,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   initializeReflectable(); // Set up reflection support.
   await initDB();
-  testChannel();
+  testAccount();
   runApp(const MyApp());
 }
 
