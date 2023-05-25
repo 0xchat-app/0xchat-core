@@ -28,6 +28,11 @@ class BadgeDB extends DBObject {
   static BadgeDB fromMap(Map<String, Object?> map) {
     return _badgeInfoFromMap(map);
   }
+
+  //primaryKey
+  static List<String?> primaryKey() {
+    return ['id'];
+  }
 }
 
 BadgeDB _badgeInfoFromMap(Map<String, dynamic> map) {
