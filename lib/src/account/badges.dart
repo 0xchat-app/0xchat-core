@@ -28,8 +28,9 @@ class BadgesHelper {
         BadgeDB badgeDB = badgeToBadgeDB(badge);
         syncBadgeInfoToDB(badgeDB);
         callBack(badgeDB);
+      } else {
+        callBack(null);
       }
-      callBack(null);
     }, eoseCallBack: (status) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
       if (status == 0) callBack(null);
@@ -47,10 +48,30 @@ class BadgesHelper {
     return maps;
   }
 
+  static Future<List<BadgeAwardDB?>> getBadgeAwardFromDB(
+      String identifies, String creator, String badgeOwner) async {
+    List<BadgeAwardDB?> maps = await DB.sharedInstance.objects<BadgeAwardDB>(
+        where: 'identifies = ? AND creator = ? AND badgeOwner = ?',
+        whereArgs: [identifies, creator, badgeOwner]);
+    return maps;
+  }
+
+  // return badge award id list
+  static Future<List<String>?> getProfileBadgesFromDB(
+      String userPubkey, GetUserBadgesCallBack callBack) async {
+    UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
+    if (userDB != null && userDB.badges != null && userDB.badges!.isNotEmpty) {
+      return jsonDecode(userDB.badges!);
+    }
+    return null;
+  }
+
   static Future<void> getUserBadgesFromDB(
       String userPubkey, GetUserBadgesCallBack callBack) async {
     UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
-    if (userDB != null && userDB.badgesList != null && userDB.badgesList!.isNotEmpty) {
+    if (userDB != null &&
+        userDB.badgesList != null &&
+        userDB.badgesList!.isNotEmpty) {
       List<String> badgesList = jsonDecode(userDB.badgesList!);
       List<BadgeDB?> badges = await getBadgeInfosFromDB(badgesList);
       callBack(badges);
@@ -107,20 +128,46 @@ class BadgesHelper {
   }
 
   static Future<void> setProfileBadges(
-      List<String> badgeIds, String privkey) async {
+      List<String> badgeIds, String pubkey, String privkey) async {
     List<BadgeDB?> badges = await getBadgeInfosFromDB(badgeIds);
     List<BadgeAward> badgeAwards = [];
     for (BadgeDB? badgeDB in badges) {
       if (badgeDB != null) {
-        // BadgeAward badgeAward = BadgeAward(awardId, awardTime, identifies, creator, users)
+        List<BadgeAwardDB?> map =
+            await getBadgeAwardFromDB(badgeDB.d!, badgeDB.creator!, pubkey);
+        if (map[0] != null) {
+          BadgeAwardDB? db = map[0];
+          BadgeAward badgeAward = BadgeAward(
+              db!.awardId!,
+              db.awardTime,
+              db.identifies,
+              db.creator,
+              [People(db.badgeOwner!, null, null, null)]);
+          badgeAwards.add(badgeAward);
+        }
       }
     }
     Nip58.setProfileBadges(badgeAwards, privkey);
   }
 
   static Future<void> getProfileBadgesFromRelay(
-      String userPubkey, GetUserBadgesCallBack callBack) async {}
-
-  static Future<void> getProfileBadgesFromDB(
-      String userPubkey, GetUserBadgesCallBack callBack) async {}
+      String userPubkey, GetUserBadgesCallBack callBack) async {
+    String subscriptionId = '';
+    List<BadgeDB?> result = [];
+    Filter f =
+        Filter(kinds: [30008], d: ['profile_badges'], authors: [userPubkey]);
+    subscriptionId = Connect.sharedInstance.addSubscription([f],
+        eventCallBack: (event) async {
+      List<BadgeAward> profileBadges = Nip58.getProfileBadges(event);
+      for (BadgeAward badgeAward in profileBadges) {
+        await getBadgeInfoFromRelay(badgeAward.creator!, badgeAward.identifies!,
+            (BadgeDB? badgeDB) {
+          if (badgeDB != null) result.add(badgeDB);
+        });
+      }
+    }, eoseCallBack: (status) {
+      Connect.sharedInstance.closeSubscription(subscriptionId);
+      callBack(result);
+    });
+  }
 }

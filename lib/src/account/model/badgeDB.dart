@@ -9,6 +9,8 @@ class BadgeDB extends DBObject {
   String? description;
   String? image;
   String? thumb;
+  String? creator;
+  int? createTime;
 
   BadgeDB({
     this.id = '',
