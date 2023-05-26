@@ -17,6 +17,7 @@ class UserDB extends DBObject {
   /// zap url
   String? lnurl;
 
+  /// profile badges
   String? badges;
 
   /// metadata infos

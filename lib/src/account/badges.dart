@@ -50,13 +50,23 @@ class BadgesHelper {
   static Future<void> getUserBadgesFromDB(
       String userPubkey, GetUserBadgesCallBack callBack) async {
     UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
-    if (userDB != null && userDB.badgesList != null) {
+    if (userDB != null && userDB.badgesList != null && userDB.badgesList!.isNotEmpty) {
       List<String> badgesList = jsonDecode(userDB.badgesList!);
       List<BadgeDB?> badges = await getBadgeInfosFromDB(badgesList);
       callBack(badges);
     } else {
       callBack(null);
     }
+  }
+
+  static BadgeAwardDB badgeAwardToBadgeAwardDB(BadgeAward award) {
+    return BadgeAwardDB(
+        awardId: award.awardId,
+        awardTime: award.awardTime,
+        identifies: award.identifies,
+        creator: award.creator,
+        relay: award.relay,
+        badgeOwner: award.users != null ? award.users![0].pubkey : '');
   }
 
   static Future<void> getUserBadgesFromRelay(
@@ -68,6 +78,9 @@ class BadgesHelper {
         eventCallBack: (event) async {
       BadgeAward? badgeAward = Nip58.getBadgeAward(event);
       if (badgeAward != null) {
+        BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
+        // save to DB
+        await DB.sharedInstance.update<BadgeAwardDB>(badgeAwardDB);
         getBadgeInfoFromRelay(badgeAward.creator!, badgeAward.identifies!,
             (BadgeDB? badgeDB) {
           if (badgeDB != null) badges.add(badgeDB);
@@ -92,4 +105,22 @@ class BadgesHelper {
       await DB.sharedInstance.update<UserDB>(userDB);
     }
   }
+
+  static Future<void> setProfileBadges(
+      List<String> badgeIds, String privkey) async {
+    List<BadgeDB?> badges = await getBadgeInfosFromDB(badgeIds);
+    List<BadgeAward> badgeAwards = [];
+    for (BadgeDB? badgeDB in badges) {
+      if (badgeDB != null) {
+        // BadgeAward badgeAward = BadgeAward(awardId, awardTime, identifies, creator, users)
+      }
+    }
+    Nip58.setProfileBadges(badgeAwards, privkey);
+  }
+
+  static Future<void> getProfileBadgesFromRelay(
+      String userPubkey, GetUserBadgesCallBack callBack) async {}
+
+  static Future<void> getProfileBadgesFromDB(
+      String userPubkey, GetUserBadgesCallBack callBack) async {}
 }
