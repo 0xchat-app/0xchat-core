@@ -4,6 +4,7 @@ library chatcore;
 
 export 'src/account/account.dart';
 export 'src/account/badges.dart';
+export 'src/account/zaps.dart';
 export 'src/account/model/userDB.dart';
 export 'src/account/model/badgeDB.dart';
 export 'src/account/model/badgeAwardDB.dart';

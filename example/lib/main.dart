@@ -151,11 +151,17 @@ Future<void> testChannel() async {
   // }
 }
 
+Future<void> testZaps() async {
+  String lnurl = await Zaps.getLNURL('0xchat@getalby.com');
+  print(lnurl);
+  // await Zaps.getInvoice(lnurl);
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   initializeReflectable(); // Set up reflection support.
   await initDB();
-  testAccount();
+  testZaps();
   runApp(const MyApp());
 }
 
