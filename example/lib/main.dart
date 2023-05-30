@@ -182,12 +182,18 @@ Future<void> testBadges() async {
   //   print(badge!.name);
   // });
 
-  List<BadgeDB?> badges = await BadgesHelper.getBadgeInfosFromDB(
-      ['8d2578b83bc18ce792df220652313d2fb4057415aea6cba74ce86f02905ff326']);
-  for (BadgeDB? badgeDB in badges) {
-    print(badgeDB!.creator);
-    print(badgeDB!.name);
-  }
+  // List<BadgeDB?> badges = await BadgesHelper.getBadgeInfosFromDB(
+  //     ['8d2578b83bc18ce792df220652313d2fb4057415aea6cba74ce86f02905ff326']);
+  // for (BadgeDB? badgeDB in badges) {
+  //   print(badgeDB!.creator);
+  //   print(badgeDB!.name);
+  // }
+
+  BadgesHelper.getUserBadgeAwardsFromRelay('78fca9b9c335fd51c8541076e6cf5dae4719a3dc6a419ab79c1d718b0dffa541', (List<BadgeDB?>? result) {
+      for(BadgeDB? b in result!){
+        print(b!.d!);
+      }
+  });
 }
 
 Future<void> main() async {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
@@ -38,8 +39,25 @@ class BadgesHelper {
     });
   }
 
-  static Future<void> searchBadgeFromRelay(String creator, String identifies,
-      SearchBadgeInfoCallBack callBack) async {
+  static Future<void> searchBadgesInfoFromRelay(
+      List<BadgeAward> awards, GetBadgesInfoCallBack callBack) async {
+    List<BadgeDB> result = [];
+    for (BadgeAward award in awards) {
+      _searchBadgeFromRelay(award.creator!, award.identifies!,
+          (BadgeDB? badgeDB) {
+        if (badgeDB != null) {
+          result.add(badgeDB);
+          if (awards.last == award) {
+            callBack(result);
+          }
+        }
+      });
+    }
+  }
+
+  static Future<void> _searchBadgeFromRelay(String creator,
+      String identifies, SearchBadgeInfoCallBack callBack) async {
+    print('_searchBadgeFromRelay: $creator, $identifies');
     String subscriptionId = '';
     Filter f = Filter(kinds: [30009], d: [identifies], authors: [creator]);
     subscriptionId = Connect.sharedInstance.addSubscription([f],
@@ -54,12 +72,11 @@ class BadgesHelper {
       }
     }, eoseCallBack: (status) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
-      if (status == 0) callBack(null);
     });
   }
 
   static Future<void> syncBadgeInfoToDB(BadgeDB badgeDB) async {
-    await DB.sharedInstance.insert<BadgeDB>(badgeDB);
+    await DB.sharedInstance.update<BadgeDB>(badgeDB);
   }
 
   static Future<List<BadgeDB?>> getBadgeInfosFromDB(
@@ -67,6 +84,31 @@ class BadgesHelper {
     List<BadgeDB?> maps = await DB.sharedInstance
         .objects<BadgeDB>(where: 'id = ?', whereArgs: badgeIds);
     return maps;
+  }
+
+  /// badge award
+  static Future<void> getUserBadgeAwardsFromRelay(
+      String userPubkey, GetUserBadgesCallBack callBack) async {
+    String subscriptionId = '';
+    List<BadgeAward> badgeAwards = [];
+    Filter f = Filter(kinds: [8], p: [userPubkey]);
+    subscriptionId = Connect.sharedInstance.addSubscription([f],
+        eventCallBack: (event) async {
+      BadgeAward? badgeAward = Nip58.getBadgeAward(event);
+      if (badgeAward != null) {
+        badgeAwards.add(badgeAward);
+        // cache to DB
+        BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
+        await DB.sharedInstance.update<BadgeAwardDB>(badgeAwardDB);
+      }
+    }, eoseCallBack: (status) async {
+      Connect.sharedInstance.closeSubscription(subscriptionId);
+      searchBadgesInfoFromRelay(badgeAwards, (badges) {
+        // cache to DB
+        syncUserBadgesToDB(userPubkey, badges);
+        callBack(badges);
+      });
+    });
   }
 
   static Future<List<BadgeAwardDB?>> getBadgeAwardFromDB(
@@ -109,30 +151,6 @@ class BadgesHelper {
         creator: award.creator,
         relay: award.relay,
         badgeOwner: award.users != null ? award.users![0].pubkey : '');
-  }
-
-  static Future<void> getUserBadgesFromRelay(
-      String userPubkey, GetUserBadgesCallBack callBack) async {
-    String subscriptionId = '';
-    List<BadgeDB> badges = [];
-    Filter f = Filter(kinds: [8], p: [userPubkey]);
-    subscriptionId = Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event) async {
-      BadgeAward? badgeAward = Nip58.getBadgeAward(event);
-      if (badgeAward != null) {
-        BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
-        // save to DB
-        await DB.sharedInstance.update<BadgeAwardDB>(badgeAwardDB);
-        searchBadgeFromRelay(badgeAward.creator!, badgeAward.identifies!,
-            (BadgeDB? badgeDB) {
-          if (badgeDB != null) badges.add(badgeDB);
-        });
-      }
-    }, eoseCallBack: (status) {
-      Connect.sharedInstance.closeSubscription(subscriptionId);
-      callBack(badges);
-      syncUserBadgesToDB(userPubkey, badges);
-    });
   }
 
   static Future<void> syncUserBadgesToDB(
@@ -181,9 +199,12 @@ class BadgesHelper {
         eventCallBack: (event) async {
       List<BadgeAward> profileBadges = Nip58.getProfileBadges(event);
       for (BadgeAward badgeAward in profileBadges) {
-        await searchBadgeFromRelay(badgeAward.creator!, badgeAward.identifies!,
-            (BadgeDB? badgeDB) {
+        _searchBadgeFromRelay(
+            badgeAward.creator!, badgeAward.identifies!, (BadgeDB? badgeDB){
           if (badgeDB != null) result.add(badgeDB);
+          if (profileBadges.last == badgeAward) {
+            callBack(result);
+          }
         });
       }
     }, eoseCallBack: (status) {
