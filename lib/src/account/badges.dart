@@ -1,31 +1,52 @@
 import 'dart:convert';
-
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
-typedef BadgeInfoCallBack = void Function(BadgeDB?);
+typedef SearchBadgeInfoCallBack = void Function(BadgeDB?);
+typedef GetBadgesInfoCallBack = void Function(List<BadgeDB>);
 typedef GetUserBadgesCallBack = void Function(List<BadgeDB?>?);
 
 class BadgesHelper {
-  static BadgeDB badgeToBadgeDB(Badge badge) {
+  static BadgeDB _badgeToBadgeDB(Badge badge) {
     return BadgeDB(
         id: badge.badgeId,
         d: badge.identifies,
         name: badge.name,
         description: badge.description,
         image: badge.image.url,
-        thumb: badge.thumb.url);
+        thumb: badge.thumb.url,
+        creator: badge.creator,
+        createTime: badge.createTime);
   }
 
-  static Future<void> getBadgeInfoFromRelay(
-      String creator, String identifies, BadgeInfoCallBack callBack) async {
+  static Future<void> getBadgesInfoFromRelay(
+      List<String> ids, GetBadgesInfoCallBack callBack) async {
+    String subscriptionId = '';
+    Filter f = Filter(ids: ids);
+    List<BadgeDB> badges = [];
+    subscriptionId = Connect.sharedInstance.addSubscription([f],
+        eventCallBack: (event) async {
+      Badge? badge = Nip58.getBadgeDefinition(event);
+      if (badge != null) {
+        BadgeDB badgeDB = _badgeToBadgeDB(badge);
+        syncBadgeInfoToDB(badgeDB);
+        badges.add(badgeDB);
+      }
+    }, eoseCallBack: (status) {
+      Connect.sharedInstance.closeSubscription(subscriptionId);
+      callBack(badges);
+    });
+  }
+
+  static Future<void> searchBadgeFromRelay(String creator, String identifies,
+      SearchBadgeInfoCallBack callBack) async {
     String subscriptionId = '';
     Filter f = Filter(kinds: [30009], d: [identifies], authors: [creator]);
     subscriptionId = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event) async {
       Badge? badge = Nip58.getBadgeDefinition(event);
       if (badge != null) {
-        BadgeDB badgeDB = badgeToBadgeDB(badge);
+        BadgeDB badgeDB = _badgeToBadgeDB(badge);
         syncBadgeInfoToDB(badgeDB);
         callBack(badgeDB);
       } else {
@@ -102,7 +123,7 @@ class BadgesHelper {
         BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
         // save to DB
         await DB.sharedInstance.update<BadgeAwardDB>(badgeAwardDB);
-        getBadgeInfoFromRelay(badgeAward.creator!, badgeAward.identifies!,
+        searchBadgeFromRelay(badgeAward.creator!, badgeAward.identifies!,
             (BadgeDB? badgeDB) {
           if (badgeDB != null) badges.add(badgeDB);
         });
@@ -160,7 +181,7 @@ class BadgesHelper {
         eventCallBack: (event) async {
       List<BadgeAward> profileBadges = Nip58.getProfileBadges(event);
       for (BadgeAward badgeAward in profileBadges) {
-        await getBadgeInfoFromRelay(badgeAward.creator!, badgeAward.identifies!,
+        await searchBadgeFromRelay(badgeAward.creator!, badgeAward.identifies!,
             (BadgeDB? badgeDB) {
           if (badgeDB != null) result.add(badgeDB);
         });

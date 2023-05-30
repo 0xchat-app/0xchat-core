@@ -19,6 +19,8 @@ class BadgeDB extends DBObject {
     this.description = '',
     this.image = '',
     this.thumb = '',
+    this.creator = '',
+    this.createTime = 0
   });
 
   @override
@@ -45,6 +47,8 @@ BadgeDB _badgeInfoFromMap(Map<String, dynamic> map) {
     description: map['description'].toString(),
     image: map['image'].toString(),
     thumb: map['thumb'].toString(),
+    creator: map['creator'].toString(),
+    createTime: map['createTime'],
   );
 }
 
@@ -55,4 +59,6 @@ Map<String, dynamic> _badgeInfoToMap(BadgeDB instance) => <String, dynamic>{
   'description': instance.description,
   'image': instance.image,
   'thumb': instance.thumb,
+  'creator': instance.creator,
+  'createTime': instance.createTime,
 };

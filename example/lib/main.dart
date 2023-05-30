@@ -158,16 +158,43 @@ Future<void> testZaps() async {
       100,
       lnurl,
       'dc6ef75354eaa089089e4cd5246384c2a3ea554fa04bf2c26c8af798e96e6f3d',
-      '5c4eb49a5098530fc81f89a8fa282f06f94ed3a088f750071b27c6b5f81e053c', (invoice){
-        print(invoice);
+      '5c4eb49a5098530fc81f89a8fa282f06f94ed3a088f750071b27c6b5f81e053c',
+      (invoice) {
+    print(invoice);
   });
+}
+
+Future<void> testBadges() async {
+  await Connect.sharedInstance.connectRelays(["ws://192.168.1.16:6969"]);
+  await Future.delayed(const Duration(seconds: 3));
+
+  // await BadgesHelper.getBadgesInfoFromRelay(['8d2578b83bc18ce792df220652313d2fb4057415aea6cba74ce86f02905ff326'], (List<BadgeDB> badges) {
+  //     for(BadgeDB badgeDB in badges){
+  //       print(badgeDB.creator);
+  //       print(badgeDB.name);
+  //     }
+  // });
+
+  // await BadgesHelper.searchBadgeFromRelay(
+  //     'a19d53de6fb2e04b16ad90a50b36fbccbea2d656fdf5c0629368d690e87bbeb8',
+  //     'bravery1685432800690', (BadgeDB? badge) {
+  //   print(badge!.creator);
+  //   print(badge!.name);
+  // });
+
+  List<BadgeDB?> badges = await BadgesHelper.getBadgeInfosFromDB(
+      ['8d2578b83bc18ce792df220652313d2fb4057415aea6cba74ce86f02905ff326']);
+  for (BadgeDB? badgeDB in badges) {
+    print(badgeDB!.creator);
+    print(badgeDB!.name);
+  }
 }
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   initializeReflectable(); // Set up reflection support.
   await initDB();
-  testZaps();
+  await testBadges();
   runApp(const MyApp());
 }
 
