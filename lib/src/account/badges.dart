@@ -135,7 +135,7 @@ class BadgesHelper {
       if (badgeDB != null) {
         List<BadgeAwardDB?> map =
             await getBadgeAwardFromDB(badgeDB.d!, badgeDB.creator!, pubkey);
-        if (map[0] != null) {
+        if (map.isNotEmpty && map[0] != null) {
           BadgeAwardDB? db = map[0];
           BadgeAward badgeAward = BadgeAward(
               db!.awardId!,

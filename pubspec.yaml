@@ -17,6 +17,7 @@ dependencies:
   built_value_generator: any
   json_annotation: ^4.0.1
   http: ^0.13.3
+  bolt11_decoder: ^1.0.2
   nostr_core_dart:
     path: ../nostr-dart
 

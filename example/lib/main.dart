@@ -111,7 +111,6 @@ Future<void> testFriends() async {
 }
 
 Future<void> testChannel() async {
-
   var user1 = Keychain(
       "81cce0c8980eafd8eeab8b46c4a93aee0ef4c92c91f4b7b45a4db940304d7f50");
   var user2 = Keychain(
@@ -124,12 +123,12 @@ Future<void> testChannel() async {
   await Channels.sharedInstance.initWithPrivkey(user1.private);
 
   Channels.sharedInstance.getLatestChannels((channels) {
-    for(ChannelDB channelDB in channels){
+    for (ChannelDB channelDB in channels) {
       print(channelDB.name);
     }
   });
 
-  Channels.sharedInstance.channelMessageCallBack = (MessageDB messageDB){
+  Channels.sharedInstance.channelMessageCallBack = (MessageDB messageDB) {
     print(messageDB.decryptContent);
   };
 
@@ -152,9 +151,16 @@ Future<void> testChannel() async {
 }
 
 Future<void> testZaps() async {
-  String lnurl = await Zaps.getLNURL('0xchat@getalby.com');
+  String lnurl = await Zaps.getLnurlFromLnaddr('0xchat@getalby.com');
   print(lnurl);
-  // await Zaps.getInvoice(lnurl);
+  await Zaps.getInvoice(
+      ['ws://192.168.1.7:6969'],
+      100,
+      lnurl,
+      'dc6ef75354eaa089089e4cd5246384c2a3ea554fa04bf2c26c8af798e96e6f3d',
+      '5c4eb49a5098530fc81f89a8fa282f06f94ed3a088f750071b27c6b5f81e053c', (invoice){
+        print(invoice);
+  });
 }
 
 Future<void> main() async {
