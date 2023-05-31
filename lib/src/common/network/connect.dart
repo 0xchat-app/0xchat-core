@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:nostr_core_dart/nostr.dart';
 
 typedef EventCallBack = void Function(Event event);
+
 /// 0:end without event, 1:end with events
 typedef EOSECallBack = void Function(int status);
 typedef NoticeCallBack = void Function(String notice);
@@ -22,6 +23,7 @@ class Connect {
 
   /// sockets
   Map<String, WebSocket> webSockets = {};
+
   /// connecting = 0;
   /// open = 1;
   /// closing = 2;
@@ -33,9 +35,9 @@ class Connect {
   // send event callback
   Map<String, OKCallBack> okMap = {};
 
-  void _setConnectStatus(String relay, int status){
+  void _setConnectStatus(String relay, int status) {
     connectStatus[relay] = status;
-    if(connectStatusCallBack != null) {
+    if (connectStatusCallBack != null) {
       connectStatusCallBack!(relay, status);
     }
   }
@@ -79,6 +81,7 @@ class Connect {
     /// Create a subscription message request with one or many filters
     Request requestWithFilter = Request(generate64RandomHexChars(), filters);
     String subscriptionString = requestWithFilter.serialize();
+
     /// Send a request message to the WebSocket server
     webSockets.forEach((relay, socket) => socket.add(subscriptionString));
 
@@ -88,14 +91,13 @@ class Connect {
   }
 
   Future closeSubscription(String subscriptionId) async {
-    if(subscriptionId.isNotEmpty){
+    if (subscriptionId.isNotEmpty) {
       webSockets.forEach(
-              (relay, socket) => socket.add(Close(subscriptionId).serialize()));
+          (relay, socket) => socket.add(Close(subscriptionId).serialize()));
 
       /// remove the mapping
       map.remove(subscriptionId);
-    }
-    else {
+    } else {
       throw Exception("null subscriptionId");
     }
   }
@@ -156,7 +158,10 @@ class Connect {
   void _handleOk(String message) {
     print('receive ok: $message');
     OKEvent? ok = Nip20.getOk(message);
-    if (ok != null && okMap.containsKey(ok.eventId)) okMap[ok.eventId]!(ok);
+    if (ok != null && okMap.containsKey(ok.eventId)) {
+      okMap[ok.eventId]!(ok);
+      okMap.remove(ok.eventId);
+    }
   }
 
   void _listenEvent(WebSocket socket, String relay) {

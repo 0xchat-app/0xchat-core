@@ -190,17 +190,17 @@ Future<void> testBadges() async {
   // }
 
   BadgesHelper.getUserBadgeAwardsFromRelay(
-      '78fca9b9c335fd51c8541076e6cf5dae4719a3dc6a419ab79c1d718b0dffa541',
+      '792ed3a7a45d564f1ad9b21d2da26d0093ec3042475b01a84de206d53e4680b6',
       (List<BadgeDB?>? result) async {
     for (BadgeDB? b in result!) {
       print(b!.d!);
     }
     await BadgesHelper.setProfileBadges(
-        ['df9a17c13899177dc09cc5b18adf50fa05afdbdb7657c57ef895c1ed04684e75'],
-        '78fca9b9c335fd51c8541076e6cf5dae4719a3dc6a419ab79c1d718b0dffa541',
-        '824655ded765eab4eaa04f9c77f2537c4d556fc3df1863c38c647a238528f2dc');
+        ['3422277673444894c9a78d578641c27a966baa21f04b969ce2753452f5febe23'],
+        '792ed3a7a45d564f1ad9b21d2da26d0093ec3042475b01a84de206d53e4680b6',
+        '8b6846785424eab24a9a36957df1cb77d3348a4db91019274fb9a1bfa86f1daf');
     BadgesHelper.getProfileBadgesFromRelay(
-        '78fca9b9c335fd51c8541076e6cf5dae4719a3dc6a419ab79c1d718b0dffa541',
+        '792ed3a7a45d564f1ad9b21d2da26d0093ec3042475b01a84de206d53e4680b6',
         (List<BadgeDB?>? result) {
       for (BadgeDB? badgeDB in result!) {
         print('getProfileBadgesFromRelay:${badgeDB!.d}');
@@ -227,7 +227,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   initializeReflectable(); // Set up reflection support.
   await initDB();
-  await testNotification();
+  await testBadges();
   runApp(const MyApp());
 }
 
