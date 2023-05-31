@@ -75,7 +75,7 @@ class BadgesHelper {
   }
 
   static Future<void> syncBadgeInfoToDB(BadgeDB badgeDB) async {
-    await DB.sharedInstance.update<BadgeDB>(badgeDB);
+    await DB.sharedInstance.insert<BadgeDB>(badgeDB);
   }
 
   static Future<List<BadgeDB?>> getBadgeInfosFromDB(
