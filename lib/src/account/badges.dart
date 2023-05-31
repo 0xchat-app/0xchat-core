@@ -55,9 +55,8 @@ class BadgesHelper {
     }
   }
 
-  static Future<void> _searchBadgeFromRelay(String creator,
-      String identifies, SearchBadgeInfoCallBack callBack) async {
-    print('_searchBadgeFromRelay: $creator, $identifies');
+  static Future<void> _searchBadgeFromRelay(String creator, String identifies,
+      SearchBadgeInfoCallBack callBack) async {
     String subscriptionId = '';
     Filter f = Filter(kinds: [30009], d: [identifies], authors: [creator]);
     subscriptionId = Connect.sharedInstance.addSubscription([f],
@@ -84,6 +83,20 @@ class BadgesHelper {
     List<BadgeDB?> maps = await DB.sharedInstance
         .objects<BadgeDB>(where: 'id = ?', whereArgs: badgeIds);
     return maps;
+  }
+
+  static Future<List<BadgeDB>> searchBadgeInfosFromDB(
+      List<BadgeAward> awards) async {
+    List<BadgeDB> result = [];
+    for (BadgeAward badgeAward in awards) {
+      List<BadgeDB?> maps = await DB.sharedInstance.objects<BadgeDB>(
+          where: 'creator = ? AND d = ?',
+          whereArgs: [badgeAward.creator, badgeAward.identifies]);
+      if (maps.first != null) {
+        result.add(maps.first!);
+      }
+    }
+    return result;
   }
 
   /// badge award
@@ -186,7 +199,10 @@ class BadgesHelper {
         }
       }
     }
-    Nip58.setProfileBadges(badgeAwards, privkey);
+    if (badgeAwards.isNotEmpty) {
+      Event event = Nip58.setProfileBadges(badgeAwards, privkey);
+      Connect.sharedInstance.sendEvent(event);
+    }
   }
 
   static Future<void> getProfileBadgesFromRelay(
@@ -199,8 +215,8 @@ class BadgesHelper {
         eventCallBack: (event) async {
       List<BadgeAward> profileBadges = Nip58.getProfileBadges(event);
       for (BadgeAward badgeAward in profileBadges) {
-        _searchBadgeFromRelay(
-            badgeAward.creator!, badgeAward.identifies!, (BadgeDB? badgeDB){
+        _searchBadgeFromRelay(badgeAward.creator!, badgeAward.identifies!,
+            (BadgeDB? badgeDB) {
           if (badgeDB != null) result.add(badgeDB);
           if (profileBadges.last == badgeAward) {
             callBack(result);
