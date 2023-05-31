@@ -132,7 +132,7 @@ class BadgesHelper {
     return maps;
   }
 
-  // return badge award id list
+  // return badge id list
   static Future<List<String>?> getProfileBadgesFromDB(
       String userPubkey, GetUserBadgesCallBack callBack) async {
     UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
@@ -140,6 +140,15 @@ class BadgesHelper {
       return jsonDecode(userDB.badges!);
     }
     return null;
+  }
+
+  static Future<void> syncProfileBadgesToDB(
+      String userPubkey, List<String> profileBadges) async {
+    UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
+    if (userDB != null) {
+      userDB.badges = jsonEncode(profileBadges);
+      await DB.sharedInstance.update<UserDB>(userDB);
+    }
   }
 
   static Future<void> getUserBadgesFromDB(
@@ -202,6 +211,8 @@ class BadgesHelper {
     if (badgeAwards.isNotEmpty) {
       Event event = Nip58.setProfileBadges(badgeAwards, privkey);
       Connect.sharedInstance.sendEvent(event);
+      /// SYNC TO DB
+      syncProfileBadgesToDB(pubkey, badgeIds);
     }
   }
 
