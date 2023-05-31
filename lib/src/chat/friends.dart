@@ -308,7 +308,6 @@ class Friends {
     UserDB? friend = friends[friendPubkey];
     if (friend != null) {
       Event event = Nip4.encode(
-          friend.toAliasPubkey!,
           friend.aliasPubkey!,
           MessageDB.encodeContent(type, content),
           replayId,

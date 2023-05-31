@@ -189,18 +189,45 @@ Future<void> testBadges() async {
   //   print(badgeDB!.name);
   // }
 
-  BadgesHelper.getUserBadgeAwardsFromRelay('78fca9b9c335fd51c8541076e6cf5dae4719a3dc6a419ab79c1d718b0dffa541', (List<BadgeDB?>? result) {
-      for(BadgeDB? b in result!){
-        print(b!.d!);
+  BadgesHelper.getUserBadgeAwardsFromRelay(
+      '78fca9b9c335fd51c8541076e6cf5dae4719a3dc6a419ab79c1d718b0dffa541',
+      (List<BadgeDB?>? result) async {
+    for (BadgeDB? b in result!) {
+      print(b!.d!);
+    }
+    await BadgesHelper.setProfileBadges(
+        ['df9a17c13899177dc09cc5b18adf50fa05afdbdb7657c57ef895c1ed04684e75'],
+        '78fca9b9c335fd51c8541076e6cf5dae4719a3dc6a419ab79c1d718b0dffa541',
+        '824655ded765eab4eaa04f9c77f2537c4d556fc3df1863c38c647a238528f2dc');
+    BadgesHelper.getProfileBadgesFromRelay(
+        '78fca9b9c335fd51c8541076e6cf5dae4719a3dc6a419ab79c1d718b0dffa541',
+        (List<BadgeDB?>? result) {
+      for (BadgeDB? badgeDB in result!) {
+        print('getProfileBadgesFromRelay:${badgeDB!.d}');
       }
+    });
   });
+}
+
+Future<void> testNotification() async {
+  await Connect.sharedInstance.connectRelays(["ws://192.168.1.16:6969"]);
+  await Future.delayed(const Duration(seconds: 3));
+
+  NotificationHelper.setNotification(
+      'a19d53de6fb2e04b16ad90a50b36fbccbea2d656fdf5c0629368d690e87bbeb8',
+      'deviceId',
+      [4, 42, 10100, 10101, 10102, 10103],
+      ['wss://relay.0xchat.com'],
+      ['78fca9b9c335fd51c8541076e6cf5dae4719a3dc6a419ab79c1d718b0dffa541'],
+      ['969bc1ec0f3ce8d47d573732f0dec4bf236d5c0fecb0a8cc2a5f7c3f10e5d23a'],
+      '81cce0c8980eafd8eeab8b46c4a93aee0ef4c92c91f4b7b45a4db940304d7f50');
 }
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   initializeReflectable(); // Set up reflection support.
   await initDB();
-  await testBadges();
+  await testNotification();
   runApp(const MyApp());
 }
 
