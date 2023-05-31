@@ -157,8 +157,8 @@ class BadgesHelper {
     if (userDB != null &&
         userDB.badgesList != null &&
         userDB.badgesList!.isNotEmpty) {
-      List<String> badgesList = jsonDecode(userDB.badgesList!);
-      List<BadgeDB?> badges = await getBadgeInfosFromDB(badgesList);
+      List<dynamic> badgesList = jsonDecode(userDB.badgesList!);
+      List<BadgeDB?> badges = await getBadgeInfosFromDB(badgesList.map((e) => e.toString()).toList());
       callBack(badges);
     } else {
       callBack(null);
