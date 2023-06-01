@@ -91,6 +91,7 @@ class Connect {
   }
 
   Future closeSubscription(String subscriptionId) async {
+    print(Close(subscriptionId).serialize());
     if (subscriptionId.isNotEmpty) {
       webSockets.forEach(
           (relay, socket) => socket.add(Close(subscriptionId).serialize()));
@@ -133,7 +134,7 @@ class Connect {
   void _handleEvent(Event event) {
     print('Received event: ${event.serialize()}');
     String? subscriptionId = event.subscriptionId;
-    if (subscriptionId != null && subscriptionId.isNotEmpty) {
+    if (subscriptionId != null && subscriptionId.isNotEmpty && map.containsKey(subscriptionId)) {
       EventCallBack? callBack = map[subscriptionId]![0];
       map[subscriptionId]![2] = 1;
       if (callBack != null) callBack(event);

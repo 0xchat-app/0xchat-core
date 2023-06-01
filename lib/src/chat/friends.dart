@@ -173,9 +173,6 @@ class Friends {
       updateSubscription =
           Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
         switch (event.kind) {
-          case 10100:
-            _handleFriendRequest(event);
-            break;
           case 10101:
             _handleFriendAccept(event);
             break;
@@ -303,7 +300,7 @@ class Friends {
 
   void removeFriend(String friendPubkey) {
     UserDB? friend = friends[friendPubkey];
-    if (friend != null) {
+    if (friend != null && friend.aliasPubkey!.isNotEmpty) {
       Event event = Nip101.remove(pubkey, privkey, friend.toAliasPubkey!,
           friend.toAliasPrivkey!, friend.aliasPubkey!);
       Connect.sharedInstance.sendEvent(event);

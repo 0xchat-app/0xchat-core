@@ -148,8 +148,9 @@ class Account {
         db.area = map['area'];
         db.about = map['about'];
         db.picture = map['picture'];
+        await DB.sharedInstance.insert<UserDB>(db);
       }
-    }, eoseCallBack: (status) {
+        }, eoseCallBack: (status) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
       callBack(users);
     });
