@@ -39,9 +39,14 @@ class Channels {
     }
 
     if (myChannels.keys.isNotEmpty) {
-      Filter f = Filter(e: myChannels.keys.toList(), kinds: [42]);
+      Filter f = Filter(
+          e: myChannels.keys.toList(),
+          kinds: [42],
+          since: me!.lastEventTimeStamp);
       subscription =
           Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+        me!.lastEventTimeStamp = event.createdAt;
+
         switch (event.kind) {
           case 42:
             _receiveChannelMessages(event);

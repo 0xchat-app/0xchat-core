@@ -37,30 +37,31 @@ class UserDB extends DBObject {
   String? groupsList;
   String? badgesList;
 
-  /// last event timestamps
+  /// last event update timestamp
+  int? lastEventTimeStamp;
 
-  UserDB({
-    this.pubKey = '',
-    this.encryptedPrivKey = '',
-    this.privkey = '',
-    this.defaultPassword = '',
-    this.name = '',
-    this.mainRelay = '',
-    this.dns = '',
-    this.lnurl = '',
-    this.badges = '',
-    this.gender = '',
-    this.area = '',
-    this.about = '',
-    this.picture = '',
-    this.aliasPubkey = '',
-    this.toAliasPubkey = '',
-    this.toAliasPrivkey = '',
-    this.friendsList = '',
-    this.channelsList = '',
-    this.groupsList = '',
-    this.badgesList = '',
-  });
+  UserDB(
+      {this.pubKey = '',
+      this.encryptedPrivKey = '',
+      this.privkey = '',
+      this.defaultPassword = '',
+      this.name = '',
+      this.mainRelay = '',
+      this.dns = '',
+      this.lnurl = '',
+      this.badges = '',
+      this.gender = '',
+      this.area = '',
+      this.about = '',
+      this.picture = '',
+      this.aliasPubkey = '',
+      this.toAliasPubkey = '',
+      this.toAliasPrivkey = '',
+      this.friendsList = '',
+      this.channelsList = '',
+      this.groupsList = '',
+      this.badgesList = '',
+      this.lastEventTimeStamp = 0});
 
   @override
   //Map
@@ -101,23 +102,23 @@ class UserDB extends DBObject {
 
 UserDB _userInfoFromMap(Map<String, dynamic> map) {
   return UserDB(
-    pubKey: map['pubKey'].toString(),
-    encryptedPrivKey: map['encryptedPrivKey'].toString(),
-    defaultPassword: map['defaultPassword'].toString(),
-    name: map['name'].toString(),
-    mainRelay: map['mainRelay'].toString(),
-    dns: map['dns'].toString(),
-    lnurl: map['lnurl'].toString(),
-    badges: map['badges'].toString(),
-    gender: map['gender'].toString(),
-    area: map['area'].toString(),
-    about: map['about'].toString(),
-    picture: map['picture'].toString(),
-    friendsList: map['friendsList'].toString(),
-    channelsList: map['channelsList'].toString(),
-    groupsList: map['groupsList'].toString(),
-    badgesList: map['badgesList'].toString(),
-  );
+      pubKey: map['pubKey'].toString(),
+      encryptedPrivKey: map['encryptedPrivKey'].toString(),
+      defaultPassword: map['defaultPassword'].toString(),
+      name: map['name'].toString(),
+      mainRelay: map['mainRelay'].toString(),
+      dns: map['dns'].toString(),
+      lnurl: map['lnurl'].toString(),
+      badges: map['badges'].toString(),
+      gender: map['gender'].toString(),
+      area: map['area'].toString(),
+      about: map['about'].toString(),
+      picture: map['picture'].toString(),
+      friendsList: map['friendsList'].toString(),
+      channelsList: map['channelsList'].toString(),
+      groupsList: map['groupsList'].toString(),
+      badgesList: map['badgesList'].toString(),
+      lastEventTimeStamp: map['lastEventTimeStamp']);
 }
 
 Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
@@ -137,4 +138,5 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'channelsList': instance.channelsList,
       'groupsList': instance.groupsList,
       'badgesList': instance.badgesList,
+      'lastEventTimeStamp': instance.lastEventTimeStamp,
     };

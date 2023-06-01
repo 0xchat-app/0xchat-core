@@ -139,12 +139,11 @@ class Friends {
   }
 
   void _friendRequestSubscription() {
-    Filter f = Filter(
-      kinds: [10100],
-      p: [pubkey],
-    );
+    Filter f =
+        Filter(kinds: [10100], p: [pubkey], since: me!.lastEventTimeStamp);
     friendRequestSubscription =
         Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+      me!.lastEventTimeStamp = event.createdAt;
       switch (event.kind) {
         case 10100:
           _handleFriendRequest(event);
@@ -169,11 +168,13 @@ class Friends {
     });
     if (pubkeys.isNotEmpty) {
       Filter f = Filter(
-        kinds: [10101, 10102, 10103, 4],
-        p: pubkeys,
-      );
+          kinds: [10101, 10102, 10103, 4],
+          p: pubkeys,
+          since: me!.lastEventTimeStamp);
       updateSubscription =
           Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+        me!.lastEventTimeStamp = event.createdAt;
+
         switch (event.kind) {
           case 10101:
             _handleFriendAccept(event);
