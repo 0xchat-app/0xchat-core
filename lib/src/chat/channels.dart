@@ -86,7 +86,7 @@ class Channels {
         Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
       Lists lists = Nip51.getLists(event, privkey);
       me!.channelsList = jsonEncode(lists.bookmarks);
-      DB.sharedInstance.update<UserDB>(me!);
+      DB.sharedInstance.insert<UserDB>(me!);
       syncChannelsFromRelay(lists.owner, lists.bookmarks, () {
         myChannels = _myChannels();
         _updateSubscription();
@@ -163,13 +163,13 @@ class Channels {
   }
 
   Future<void> _syncChannelToDB(ChannelDB channelDB) async {
-    await DB.sharedInstance.update<ChannelDB>(channelDB);
+    await DB.sharedInstance.insert<ChannelDB>(channelDB);
   }
 
   Future<void> _syncMyChannelListToDB() async {
     List<String> list = myChannels.keys.toList();
     me!.channelsList = jsonEncode(list);
-    await DB.sharedInstance.update<UserDB>(me!);
+    await DB.sharedInstance.insert<UserDB>(me!);
   }
 
   Future<void> _syncMyChannelListToRelay() async {

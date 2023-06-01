@@ -112,7 +112,7 @@ class BadgesHelper {
         badgeAwards.add(badgeAward);
         // cache to DB
         BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
-        await DB.sharedInstance.update<BadgeAwardDB>(badgeAwardDB);
+        await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB);
       }
     }, eoseCallBack: (status) async {
       Connect.sharedInstance.closeSubscription(subscriptionId);
@@ -147,7 +147,7 @@ class BadgesHelper {
     UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
     if (userDB != null) {
       userDB.badges = jsonEncode(profileBadges);
-      await DB.sharedInstance.update<UserDB>(userDB);
+      await DB.sharedInstance.insert<UserDB>(userDB);
     }
   }
 
@@ -184,7 +184,7 @@ class BadgesHelper {
         badgesList.add(badgeDB.id!);
       }
       userDB.badgesList = jsonEncode(badgesList);
-      await DB.sharedInstance.update<UserDB>(userDB);
+      await DB.sharedInstance.insert<UserDB>(userDB);
     }
   }
 

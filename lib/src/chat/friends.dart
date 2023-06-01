@@ -76,7 +76,7 @@ class Friends {
 
   Future<void> _syncFriendsListToDB(String list) async {
     me?.friendsList = list;
-    await DB.sharedInstance.update<UserDB>(me!);
+    await DB.sharedInstance.insert<UserDB>(me!);
   }
 
   void _syncFriendsToRelay() {
@@ -104,7 +104,7 @@ class Friends {
             user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
             user.aliasPubkey = p.aliasPubKey;
             // sync to db
-            await DB.sharedInstance.update<UserDB>(user);
+            await DB.sharedInstance.insert<UserDB>(user);
             friends[user.pubKey!] = user;
           }
         }
@@ -122,7 +122,7 @@ class Friends {
         user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
         user.aliasPubkey = friendAliasPubkey;
         // sync to db
-        await DB.sharedInstance.update<UserDB>(user);
+        await DB.sharedInstance.insert<UserDB>(user);
         friends[user.pubKey!] = user;
         _updateSubscription();
         _syncFriendsToRelay();
@@ -211,7 +211,7 @@ class Friends {
         Alias alias = Nip101.getAccept(
             event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
         user.aliasPubkey = alias.toAliasPubkey;
-        DB.sharedInstance.update<UserDB>(user);
+        DB.sharedInstance.insert<UserDB>(user);
         if (friendAcceptCallBack != null) friendAcceptCallBack!(alias);
         return;
       }
