@@ -219,11 +219,29 @@ class Friends {
   }
 
   void _handleFriendReject(Event event) {
-    print('_handleFriendReject $event');
+    String toAliasPubkey = Nip101.getP(event);
+    for (UserDB user in friends.values) {
+      if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
+        Alias alias = Nip101.getReject(
+            event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
+        removeFriend(user.pubKey!);
+        if (friendRejectCallBack != null) friendRejectCallBack!(alias);
+        return;
+      }
+    }
   }
 
   void _handleFriendRemove(Event event) {
-    print('_handleFriendRemove $event');
+    String toAliasPubkey = Nip101.getP(event);
+    for (UserDB user in friends.values) {
+      if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
+        Alias alias = Nip101.getRemove(
+            event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
+        removeFriend(user.pubKey!);
+        if (friendRemoveCallBack != null) friendRemoveCallBack!(alias);
+        return;
+      }
+    }
   }
 
   void _handlePrivateMessage(Event event) {
