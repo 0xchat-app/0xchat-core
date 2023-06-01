@@ -163,7 +163,9 @@ class Friends {
 
     List<String> pubkeys = [];
     friends.forEach((key, f) {
-      if (f.toAliasPubkey != null) pubkeys.add(f.toAliasPubkey!);
+      if (f.toAliasPubkey != null && f.toAliasPubkey!.isNotEmpty) {
+        pubkeys.add(f.toAliasPubkey!);
+      }
     });
     if (pubkeys.isNotEmpty) {
       Filter f = Filter(
