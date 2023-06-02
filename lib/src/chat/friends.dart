@@ -140,7 +140,7 @@ class Friends {
 
   void _friendRequestSubscription() {
     Filter f =
-        Filter(kinds: [10100], p: [pubkey], since: me!.lastEventTimeStamp);
+        Filter(kinds: [10100], p: [pubkey], since: (me!.lastEventTimeStamp! + 1));
     friendRequestSubscription =
         Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
       me!.lastEventTimeStamp = event.createdAt;
@@ -170,7 +170,7 @@ class Friends {
       Filter f = Filter(
           kinds: [10101, 10102, 10103, 4],
           p: pubkeys,
-          since: me!.lastEventTimeStamp);
+          since: (me!.lastEventTimeStamp! + 1));
       updateSubscription =
           Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
         me!.lastEventTimeStamp = event.createdAt;

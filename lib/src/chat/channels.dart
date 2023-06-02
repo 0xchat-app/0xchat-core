@@ -42,7 +42,7 @@ class Channels {
       Filter f = Filter(
           e: myChannels.keys.toList(),
           kinds: [42],
-          since: me!.lastEventTimeStamp);
+          since: (me!.lastEventTimeStamp! + 1));
       subscription =
           Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
         me!.lastEventTimeStamp = event.createdAt;
