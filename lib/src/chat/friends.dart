@@ -126,13 +126,6 @@ class Friends {
     await DB.sharedInstance.insert<UserDB>(friend);
     _updateSubscription();
     _syncFriendsToRelay();
-
-    Account.syncProfilesFromRelay([friendPubkey], (usersMap) async {
-      UserDB? user = usersMap[friendPubkey];
-      if (user != null) {
-        friends[user.pubKey!] = user;
-      }
-    });
   }
 
   void _deleteFriend(String friendPubkey) {
