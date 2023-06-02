@@ -118,7 +118,8 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
       channelsList: map['channelsList'].toString(),
       groupsList: map['groupsList'].toString(),
       badgesList: map['badgesList'].toString(),
-      lastEventTimeStamp: map['lastEventTimeStamp']);
+      lastEventTimeStamp: map['lastEventTimeStamp'],
+      aliasPubkey: map['aliasPubkey']);
 }
 
 Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
@@ -139,4 +140,5 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'groupsList': instance.groupsList,
       'badgesList': instance.badgesList,
       'lastEventTimeStamp': instance.lastEventTimeStamp,
+      'aliasPubkey': instance.aliasPubkey,
     };

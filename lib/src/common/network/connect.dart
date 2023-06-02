@@ -34,6 +34,8 @@ class Connect {
   Map<String, List> map = {};
   // send event callback
   Map<String, OKCallBack> okMap = {};
+  // cache events not send for relay
+  Map<String, List<String>> eventsMap = {};
 
   void _setConnectStatus(String relay, int status) {
     connectStatus[relay] = status;
@@ -58,9 +60,11 @@ class Connect {
     print("connecting...");
     socket = await _connectWs(relay);
     print("socket connection initialized");
+    _setConnectStatus(relay, 1);
     socket.done.then((dynamic _) => _onDisconnected(relay));
     _listenEvent(socket, relay);
     webSockets[relay] = socket;
+    _sendCachedDataForRelay(relay);
   }
 
   Future connectRelays(List<String> relays) async {
@@ -83,7 +87,7 @@ class Connect {
     String subscriptionString = requestWithFilter.serialize();
 
     /// Send a request message to the WebSocket server
-    webSockets.forEach((relay, socket) => socket.add(subscriptionString));
+    _send(subscriptionString);
 
     /// store subscriptionId & callBack mapping
     map[requestWithFilter.subscriptionId] = [eventCallBack, eoseCallBack, 0];
@@ -93,8 +97,7 @@ class Connect {
   Future closeSubscription(String subscriptionId) async {
     print(Close(subscriptionId).serialize());
     if (subscriptionId.isNotEmpty) {
-      webSockets.forEach(
-          (relay, socket) => socket.add(Close(subscriptionId).serialize()));
+      _send(Close(subscriptionId).serialize());
 
       /// remove the mapping
       map.remove(subscriptionId);
@@ -107,7 +110,32 @@ class Connect {
   void sendEvent(Event event, {OKCallBack? sendCallBack}) {
     print(event.serialize());
     if (sendCallBack != null) okMap[event.id] = sendCallBack;
-    webSockets.forEach((relay, socket) => socket.add(event.serialize()));
+    _send(event.serialize());
+  }
+
+  void _send(String data) {
+    webSockets.forEach((relay, socket) {
+      if (connectStatus[relay] == 1) {
+        socket.add(data);
+      } else {
+        // cache the event data
+        List<String>? events = eventsMap[relay];
+        events ??= [];
+        events.add(data);
+      }
+    });
+  }
+
+  void _sendCachedDataForRelay(String relay){
+    List<String>? events = eventsMap[relay];
+    if(events != null && events.isNotEmpty){
+      WebSocket socket = webSockets[relay]!;
+      for(String data in events) {
+        socket.add(data);
+        Future.delayed(Duration(milliseconds: 100));
+      }
+      eventsMap.remove(relay);
+    }
   }
 
   void _handleMessage(String message) {
@@ -134,7 +162,9 @@ class Connect {
   void _handleEvent(Event event) {
     print('Received event: ${event.serialize()}');
     String? subscriptionId = event.subscriptionId;
-    if (subscriptionId != null && subscriptionId.isNotEmpty && map.containsKey(subscriptionId)) {
+    if (subscriptionId != null &&
+        subscriptionId.isNotEmpty &&
+        map.containsKey(subscriptionId)) {
       EventCallBack? callBack = map[subscriptionId]![0];
       map[subscriptionId]![2] = 1;
       if (callBack != null) callBack(event);

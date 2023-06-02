@@ -44,7 +44,12 @@ class Friends {
       List<People> friendsList = map['people'];
       for (People p in friendsList) {
         UserDB? friend = await Account.getUserFromDB(pubkey: p.pubkey);
-        if (friend != null) friends[pubkey] = friend;
+        if (friend != null) {
+          friend.toAliasPrivkey =
+              Friends.getAliasPrivkey(friend.pubKey!, privkey);
+          friend.toAliasPubkey = Keychain.getPublicKey(friend.toAliasPrivkey!);
+          friends[pubkey] = friend;
+        }
       }
     }
   }
@@ -117,7 +122,7 @@ class Friends {
   Future<void> _addFriend(String friendPubkey, String friendAliasPubkey) async {
     UserDB? friend = await Account.getUserFromDB(pubkey: friendPubkey);
     friend ??= UserDB(pubKey: friendPubkey, aliasPubkey: friendAliasPubkey);
-    if(friend.toAliasPubkey == null || friend.toAliasPubkey!.isEmpty){
+    if (friend.toAliasPubkey == null || friend.toAliasPubkey!.isEmpty) {
       friend.toAliasPrivkey = Friends.getAliasPrivkey(friend.pubKey!, privkey);
       friend.toAliasPubkey = Keychain.getPublicKey(friend.toAliasPrivkey!);
     }
@@ -236,7 +241,7 @@ class Friends {
         Alias alias = Nip101.getRemove(
             event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
         // check is real friend(aliasPubkey can't not be null)
-        if(user.aliasPubkey != null && user.aliasPubkey!.isNotEmpty){
+        if (user.aliasPubkey != null && user.aliasPubkey!.isNotEmpty) {
           removeFriend(user.pubKey!);
           if (friendRemoveCallBack != null) friendRemoveCallBack!(alias);
         }
