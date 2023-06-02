@@ -114,18 +114,23 @@ class Friends {
     }
   }
 
-  void _addFriend(String friendPubkey, String friendAliasPubkey) {
+  Future<void> _addFriend(String friendPubkey, String friendAliasPubkey) async {
+    UserDB? friend = await Account.getUserFromDB(pubkey: friendPubkey);
+    friend ??= UserDB(pubKey: friendPubkey, aliasPubkey: friendAliasPubkey);
+    if(friend.toAliasPubkey == null || friend.toAliasPubkey!.isEmpty){
+      friend.toAliasPrivkey = Friends.getAliasPrivkey(friend.pubKey!, privkey);
+      friend.toAliasPubkey = Keychain.getPublicKey(friend.toAliasPrivkey!);
+    }
+    friend.aliasPubkey = friendAliasPubkey;
+    friends[friendPubkey] = friend;
+    await DB.sharedInstance.insert<UserDB>(friend);
+    _updateSubscription();
+    _syncFriendsToRelay();
+
     Account.syncProfilesFromRelay([friendPubkey], (usersMap) async {
       UserDB? user = usersMap[friendPubkey];
       if (user != null) {
-        user.toAliasPrivkey = Friends.getAliasPrivkey(user.pubKey!, privkey);
-        user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
-        user.aliasPubkey = friendAliasPubkey;
-        // sync to db
-        await DB.sharedInstance.insert<UserDB>(user);
         friends[user.pubKey!] = user;
-        _updateSubscription();
-        _syncFriendsToRelay();
       }
     });
   }
@@ -139,8 +144,8 @@ class Friends {
   }
 
   void _friendRequestSubscription() {
-    Filter f =
-        Filter(kinds: [10100], p: [pubkey], since: (me!.lastEventTimeStamp! + 1));
+    Filter f = Filter(
+        kinds: [10100], p: [pubkey], since: (me!.lastEventTimeStamp! + 1));
     friendRequestSubscription =
         Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
       me!.lastEventTimeStamp = event.createdAt;
@@ -275,22 +280,23 @@ class Friends {
     _friendRequestSubscription();
   }
 
-  void requestFriend(String friendPubkey, String content) {
+  Future<void> requestFriend(String friendPubkey, String content) async {
     String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.request(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendPubkey, content);
     Connect.sharedInstance.sendEvent(event);
-    _addFriend(friendPubkey, '');
+    await _addFriend(friendPubkey, '');
   }
 
-  void acceptFriend(String friendPubkey, String friendAliasPubkey) {
+  Future<void> acceptFriend(
+      String friendPubkey, String friendAliasPubkey) async {
     String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.accept(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
     Connect.sharedInstance.sendEvent(event);
-    _addFriend(friendPubkey, friendAliasPubkey);
+    await _addFriend(friendPubkey, friendAliasPubkey);
   }
 
   void rejectFriend(String friendPubkey, String friendAliasPubkey) {
