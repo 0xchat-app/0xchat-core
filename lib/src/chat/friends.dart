@@ -242,8 +242,11 @@ class Friends {
       if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
         Alias alias = Nip101.getRemove(
             event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
-        removeFriend(user.pubKey!);
-        if (friendRemoveCallBack != null) friendRemoveCallBack!(alias);
+        // check is real friend(aliasPubkey can't not be null)
+        if(user.aliasPubkey != null && user.aliasPubkey!.isNotEmpty){
+          removeFriend(user.pubKey!);
+          if (friendRemoveCallBack != null) friendRemoveCallBack!(alias);
+        }
         return;
       }
     }
