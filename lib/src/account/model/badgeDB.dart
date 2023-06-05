@@ -24,7 +24,7 @@ class BadgeDB extends DBObject {
   });
 
   @override
-  //Map 转换
+  //Map
   Map<String, Object?> toMap() {
     return _badgeInfoToMap(this);
   }

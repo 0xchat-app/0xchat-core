@@ -19,7 +19,7 @@ class BadgeAwardDB extends DBObject {
   });
 
   @override
-  //Map 转换
+  //Map
   Map<String, Object?> toMap() {
     return _badgeAwardInfoToMap(this);
   }
