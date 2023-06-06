@@ -352,4 +352,27 @@ class Friends {
       Messages.saveMessagesToDB([messageDB]);
     }
   }
+
+  Future<void> muteFriend(String friendPubkey) async {
+    _setMuteFriend(friendPubkey, true);
+  }
+
+  Future<void> unMuteFriend(String friendPubkey) async {
+    _setMuteFriend(friendPubkey, false);
+  }
+
+  List<String> getAllUnMuteFriendsToAliasPubkey() {
+    return friends.entries
+        .where((e) => e.value.mute == false)
+        .map((e) => e.value.toAliasPubkey!)
+        .toList();
+  }
+
+  Future<void> _setMuteFriend(String friendPubkey, bool mute) async {
+    if (friends.containsKey(friendPubkey)) {
+      UserDB friend = friends[friendPubkey]!;
+      friend.mute = mute;
+      await DB.sharedInstance.insert<UserDB>(friend);
+    }
+  }
 }

@@ -40,28 +40,32 @@ class UserDB extends DBObject {
   /// last event update timestamp
   int? lastEventTimeStamp;
 
-  UserDB(
-      {this.pubKey = '',
-      this.encryptedPrivKey = '',
-      this.privkey = '',
-      this.defaultPassword = '',
-      this.name = '',
-      this.mainRelay = '',
-      this.dns = '',
-      this.lnurl = '',
-      this.badges = '',
-      this.gender = '',
-      this.area = '',
-      this.about = '',
-      this.picture = '',
-      this.aliasPubkey = '',
-      this.toAliasPubkey = '',
-      this.toAliasPrivkey = '',
-      this.friendsList = '',
-      this.channelsList = '',
-      this.groupsList = '',
-      this.badgesList = '',
-      this.lastEventTimeStamp = 0});
+  bool? mute;
+
+  UserDB({
+    this.pubKey = '',
+    this.encryptedPrivKey = '',
+    this.privkey = '',
+    this.defaultPassword = '',
+    this.name = '',
+    this.mainRelay = '',
+    this.dns = '',
+    this.lnurl = '',
+    this.badges = '',
+    this.gender = '',
+    this.area = '',
+    this.about = '',
+    this.picture = '',
+    this.aliasPubkey = '',
+    this.toAliasPubkey = '',
+    this.toAliasPrivkey = '',
+    this.friendsList = '',
+    this.channelsList = '',
+    this.groupsList = '',
+    this.badgesList = '',
+    this.lastEventTimeStamp = 0,
+    this.mute = false,
+  });
 
   @override
   //Map
@@ -119,7 +123,8 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
       groupsList: map['groupsList'].toString(),
       badgesList: map['badgesList'].toString(),
       lastEventTimeStamp: map['lastEventTimeStamp'],
-      aliasPubkey: map['aliasPubkey']);
+      aliasPubkey: map['aliasPubkey'],
+      mute: map['mute'] > 0 ? true : false);
 }
 
 Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
@@ -141,4 +146,5 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'badgesList': instance.badgesList,
       'lastEventTimeStamp': instance.lastEventTimeStamp,
       'aliasPubkey': instance.aliasPubkey,
+      'mute': instance.mute
     };

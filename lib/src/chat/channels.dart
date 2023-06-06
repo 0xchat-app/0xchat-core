@@ -350,4 +350,27 @@ class Channels {
       getChannelsCallBack(result);
     });
   }
+
+  Future<void> muteChannel(String channelId) async {
+    _setMuteChannel(channelId, true);
+  }
+
+  Future<void> unMuteChannel(String channelId) async {
+    _setMuteChannel(channelId, false);
+  }
+
+  List<String> getAllUnMuteChannels() {
+    return myChannels.entries
+        .where((e) => e.value.mute == false)
+        .map((e) => e.key)
+        .toList();
+  }
+
+  Future<void> _setMuteChannel(String channelId, bool mute) async {
+    if (myChannels.containsKey(channelId)) {
+      ChannelDB channelDB = myChannels[channelId]!;
+      channelDB.mute = mute;
+      await _syncChannelToDB(channelDB);
+    }
+  }
 }

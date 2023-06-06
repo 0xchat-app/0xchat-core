@@ -10,6 +10,7 @@ class ChannelDB extends DBObject {
   String? picture;
   String? badges; // string list
   String? relayURL;
+  bool? mute;
 
   ChannelDB({
     this.channelId = '',
@@ -20,6 +21,7 @@ class ChannelDB extends DBObject {
     this.picture = '',
     this.badges = '',
     this.relayURL = '',
+    this.mute = false,
   });
 
   @override
@@ -42,15 +44,16 @@ class ChannelDB extends DBObject {
 }
 
 Map<String, dynamic> _channelInfoToMap(ChannelDB instance) => <String, dynamic>{
-  'channelId': instance.channelId,
-  'createTime': instance.createTime,
-  'creator': instance.creator,
-  'name': instance.name,
-  'about': instance.about,
-  'picture': instance.picture,
-  'badges': instance.badges,
-  'relayURL': instance.relayURL,
-};
+      'channelId': instance.channelId,
+      'createTime': instance.createTime,
+      'creator': instance.creator,
+      'name': instance.name,
+      'about': instance.about,
+      'picture': instance.picture,
+      'badges': instance.badges,
+      'relayURL': instance.relayURL,
+      'mute': instance.mute,
+    };
 
 ChannelDB _channelInfoFromMap(Map<String, dynamic> map) {
   return ChannelDB(
@@ -62,5 +65,6 @@ ChannelDB _channelInfoFromMap(Map<String, dynamic> map) {
     picture: map['picture'].toString(),
     badges: map['badges'].toString(),
     relayURL: map['relayURL'].toString(),
+    mute: map['mute'] > 0 ? true : false,
   );
 }
