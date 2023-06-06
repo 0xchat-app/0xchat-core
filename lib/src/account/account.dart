@@ -81,9 +81,9 @@ class Account {
       throw Exception(response.toString());
     }
   }
-  
-  static String signData(List data, String privateKey){
-      return Nip101.getSig(data, privateKey);
+
+  static String signData(List data, String privateKey) {
+    return Nip101.getSig(data, privateKey);
   }
 
   static Uint8List encryptPrivateKeyWithMap(Map map) {
@@ -150,7 +150,7 @@ class Account {
         db.picture = map['picture'];
         await DB.sharedInstance.insert<UserDB>(db);
       }
-        }, eoseCallBack: (status) {
+    }, eoseCallBack: (status) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
       callBack(users);
     });
@@ -202,5 +202,13 @@ class Account {
     String pubkey = Keychain.getPublicKey(privkey);
     return DB.sharedInstance
         .delete<UserDB>(where: 'pubKey = ?', whereArgs: [pubkey]);
+  }
+
+  static String encodeProfile(String pubkey, List<String> relays) {
+    return Nip19.encodeProfile(pubkey, relays);
+  }
+
+  static Map<String, dynamic> decodeProfile(String profile) {
+    return Nip19.decodeProfile(profile);
   }
 }
