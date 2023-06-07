@@ -22,7 +22,7 @@ class Connect {
   ConnectStatusCallBack? connectStatusCallBack;
 
   /// sockets
-  Map<String, WebSocket> webSockets = {};
+  Map<String, WebSocket?> webSockets = {};
 
   /// connecting = 0;
   /// open = 1;
@@ -58,6 +58,7 @@ class Connect {
       }
     }
     print("connecting...");
+    webSockets[relay] = null;
     socket = await _connectWs(relay);
     print("socket connection initialized");
     _setConnectStatus(relay, 1);
@@ -115,13 +116,14 @@ class Connect {
 
   void _send(String data) {
     webSockets.forEach((relay, socket) {
-      if (connectStatus[relay] == 1) {
+      if (connectStatus[relay] == 1 && socket != null) {
         socket.add(data);
       } else {
         // cache the event data
         List<String>? events = eventsMap[relay];
         events ??= [];
         events.add(data);
+        eventsMap[relay] = events;
       }
     });
   }
@@ -131,6 +133,7 @@ class Connect {
     if(events != null && events.isNotEmpty){
       WebSocket socket = webSockets[relay]!;
       for(String data in events) {
+        print(data);
         socket.add(data);
         Future.delayed(Duration(milliseconds: 100));
       }
