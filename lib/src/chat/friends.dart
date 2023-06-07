@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
@@ -375,5 +375,13 @@ class Friends {
       friend.mute = mute;
       await DB.sharedInstance.insert<UserDB>(friend);
     }
+  }
+
+  Uint8List? getFriendSharedSecret(String friendPubkey) {
+    if (friends.containsKey(friendPubkey)) {
+      UserDB friend = friends[friendPubkey]!;
+      return getSharedSecret(friend.toAliasPrivkey!, friend.aliasPubkey!);
+    }
+    return null;
   }
 }
