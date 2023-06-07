@@ -320,8 +320,9 @@ class Friends {
 
   List<UserDB>? fuzzySearch(String keyword) {
     if (keyword.isNotEmpty) {
+      RegExp regex = RegExp(keyword, caseSensitive: false);
       List<UserDB> filteredFriends = friends.values
-          .where((person) => person.name!.contains(keyword))
+          .where((person) => regex.hasMatch(person.name!))
           .toList();
       return filteredFriends;
     }

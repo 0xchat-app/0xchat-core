@@ -310,10 +310,10 @@ class Channels {
 
   List<ChannelDB>? fuzzySearch(String keyword) {
     if (keyword.isNotEmpty) {
+      RegExp regex = RegExp(keyword, caseSensitive: false);
       List<ChannelDB> filteredFriends = myChannels.values
           .where((channel) =>
-              channel.name!.contains(keyword) ||
-              channel.about!.contains(keyword))
+              regex.hasMatch(channel.name!) || regex.hasMatch(channel.about!))
           .toList();
       return filteredFriends;
     }
