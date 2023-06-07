@@ -42,6 +42,9 @@ class Connect {
     if (connectStatusCallBack != null) {
       connectStatusCallBack!(relay, status);
     }
+    if(status == 1){
+      _sendCachedDataForRelay(relay);
+    }
   }
 
   Future connect(String relay) async {
@@ -60,12 +63,11 @@ class Connect {
     print("connecting...");
     webSockets[relay] = null;
     socket = await _connectWs(relay);
-    print("socket connection initialized");
-    _setConnectStatus(relay, 1);
     socket.done.then((dynamic _) => _onDisconnected(relay));
     _listenEvent(socket, relay);
     webSockets[relay] = socket;
-    _sendCachedDataForRelay(relay);
+    print("socket connection initialized");
+    _setConnectStatus(relay, 1);
   }
 
   Future connectRelays(List<String> relays) async {
@@ -120,10 +122,8 @@ class Connect {
         socket.add(data);
       } else {
         // cache the event data
-        List<String>? events = eventsMap[relay];
-        events ??= [];
-        events.add(data);
-        eventsMap[relay] = events;
+        eventsMap[relay] ??= [];
+        eventsMap[relay]!.add(data);
       }
     });
   }
