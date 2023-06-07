@@ -3,10 +3,10 @@ import 'package:nostr_core_dart/nostr.dart';
 
 class Messages {
   static Future<Map> loadMessagesFromDB(
-      {String? where, List<Object?>? whereArgs}) async {
+      {String? where, List<Object?>? whereArgs, String? orderBy}) async {
     int theLastTime = 0;
     List<MessageDB> messages = await DB.sharedInstance
-        .objects<MessageDB>(where: where, whereArgs: whereArgs);
+        .objects<MessageDB>(where: where, whereArgs: whereArgs, orderBy: orderBy);
     for (MessageDB message in messages) {
       theLastTime =
           message.createTime! > theLastTime ? message.createTime! : theLastTime;
