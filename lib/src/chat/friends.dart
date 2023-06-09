@@ -88,7 +88,7 @@ class Friends {
     List<People> friendList = [];
     for (UserDB user in friends.values) {
       People p =
-          People(user.pubKey!, user.mainRelay, user.name, user.aliasPubkey);
+          People(user.pubKey!, user.mainRelay, user.nickName, user.aliasPubkey);
       friendList.add(p);
     }
     Event event = Nip51.createCategorizedPeople(
@@ -108,6 +108,7 @@ class Friends {
                 Friends.getAliasPrivkey(user.pubKey!, privkey);
             user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
             user.aliasPubkey = p.aliasPubKey;
+            user.nickName = p.petName;
             // sync to db
             await DB.sharedInstance.insert<UserDB>(user);
             friends[user.pubKey!] = user;
