@@ -9,6 +9,7 @@ class UserDB extends DBObject {
   String? defaultPassword;
 
   String? name;
+  String? nickName;
   String? mainRelay;
 
   /// dns, example@0xchat.com
@@ -37,6 +38,8 @@ class UserDB extends DBObject {
   String? groupsList;
   String? badgesList;
 
+  String? blockedList; // blocked users list
+
   /// last event update timestamp
   int? lastEventTimeStamp;
 
@@ -48,6 +51,7 @@ class UserDB extends DBObject {
     this.privkey = '',
     this.defaultPassword = '',
     this.name = '',
+    this.nickName = '',
     this.mainRelay = '',
     this.dns = '',
     this.lnurl = '',
@@ -63,6 +67,7 @@ class UserDB extends DBObject {
     this.channelsList = '',
     this.groupsList = '',
     this.badgesList = '',
+    this.blockedList = '',
     this.lastEventTimeStamp = 0,
     this.mute = false,
   });
@@ -110,6 +115,7 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
       encryptedPrivKey: map['encryptedPrivKey'].toString(),
       defaultPassword: map['defaultPassword'].toString(),
       name: map['name'].toString(),
+      nickName: map['nickName'].toString(),
       mainRelay: map['mainRelay'].toString(),
       dns: map['dns'].toString(),
       lnurl: map['lnurl'].toString(),
@@ -122,6 +128,7 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
       channelsList: map['channelsList'].toString(),
       groupsList: map['groupsList'].toString(),
       badgesList: map['badgesList'].toString(),
+      blockedList: map['blockedList'].toString(),
       lastEventTimeStamp: map['lastEventTimeStamp'],
       aliasPubkey: map['aliasPubkey'],
       mute: map['mute'] > 0 ? true : false);
@@ -132,6 +139,7 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'encryptedPrivKey': instance.encryptedPrivKey,
       'defaultPassword': instance.defaultPassword,
       'name': instance.name,
+      'nickName': instance.nickName,
       'mainRelay': instance.mainRelay,
       'dns': instance.dns,
       'lnurl': instance.lnurl,
@@ -144,6 +152,7 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'channelsList': instance.channelsList,
       'groupsList': instance.groupsList,
       'badgesList': instance.badgesList,
+      'blockedList': instance.blockedList,
       'lastEventTimeStamp': instance.lastEventTimeStamp,
       'aliasPubkey': instance.aliasPubkey,
       'mute': instance.mute

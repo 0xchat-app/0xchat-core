@@ -380,7 +380,7 @@ class Friends {
   Uint8List? getFriendSharedSecret(String friendPubkey) {
     if (friends.containsKey(friendPubkey)) {
       UserDB friend = friends[friendPubkey]!;
-      return getSharedSecret(friend.toAliasPrivkey!, friend.aliasPubkey!);
+      return Nip101.getSharedSecret(friend.toAliasPrivkey!, friend.aliasPubkey!);
     }
     return null;
   }

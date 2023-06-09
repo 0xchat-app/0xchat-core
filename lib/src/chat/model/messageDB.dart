@@ -15,9 +15,10 @@ class MessageDB extends DBObject {
   String? content; // content
   int? createTime;
   bool? read;
-  // additional
+  // additional, not save to DB
   String? decryptContent;
   MessageType? type;
+  List<String>? reportList; // hide message ids list
 
   MessageDB({
     this.messageId = '',

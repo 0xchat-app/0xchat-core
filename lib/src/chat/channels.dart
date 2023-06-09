@@ -59,8 +59,31 @@ class Channels {
     }
   }
 
+  bool _checkBlockedList(String user) {
+    String? blockedList = me!.blockedList;
+    if (blockedList != null && blockedList.isNotEmpty) {
+      List<String> list = jsonDecode(blockedList);
+      return list.contains(user);
+    }
+    return false;
+  }
+
+  Future<void> handleMuteUser(String user) async {
+    String? blockedList = me!.blockedList;
+    List<String> list = [];
+    if (blockedList != null && blockedList.isNotEmpty) {
+      list = jsonDecode(blockedList);
+    }
+    if (list.contains(user) == false) {
+      list.add(user);
+    }
+    me!.blockedList = jsonEncode(list);
+    await DB.sharedInstance.insert<UserDB>(me!);
+  }
+
   Future<void> _receiveChannelMessages(Event event) async {
     ChannelMessage channelMessage = Nip28.getChannelMessage(event);
+    if (_checkBlockedList(channelMessage.sender)) return;
     MessageDB messageDB = MessageDB(
       messageId: channelMessage.channelId,
       sender: channelMessage.sender,
@@ -283,9 +306,9 @@ class Channels {
     Messages.saveMessagesToDB([messageDB]);
   }
 
-  Future<void> hideMessage(MessageDB messageDB, String reason) async {
-    Messages.deleteMessagesFromDB([messageDB]);
-    Nip28.hideChannelMessage(messageDB.messageId!, reason, privkey);
+  Future<void> hideMessage(String messageId, String reason) async {
+    Messages.deleteMessagesFromDB([messageId]);
+    Nip28.hideChannelMessage(messageId, reason, privkey);
   }
 
   Future<void> muteUser(String userPubkey, String reason) async {
