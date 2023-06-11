@@ -15,6 +15,7 @@ class MessageDB extends DBObject {
   String? content; // content
   int? createTime;
   bool? read;
+  String replyId;
   // additional, not save to DB
   String? decryptContent;
   MessageType? type;
@@ -30,6 +31,7 @@ class MessageDB extends DBObject {
     this.content = '',
     this.createTime = 0,
     this.read = false,
+    this.replyId = '',
     this.decryptContent = '',
     this.type = MessageType.text,
   });
@@ -125,7 +127,8 @@ class MessageDB extends DBObject {
               kind: 4,
               tags: event.tags.toString(),
               content: event.content,
-              createTime: event.createdAt);
+              createTime: event.createdAt,
+              replyId: message.replyId);
           messageDB.decryptContent = decodeContent(message.content)['content'];
           messageDB.type = stringtoMessageType(
               decodeContent(message.content)['contentType']);
@@ -147,6 +150,7 @@ Map<String, dynamic> _messageInfoToMap(MessageDB instance) => <String, dynamic>{
       'content': instance.content,
       'createTime': instance.createTime,
       'read': instance.read,
+      'replyId': instance.replyId,
     };
 
 MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
@@ -160,5 +164,6 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     content: map['content'].toString(),
     createTime: map['createTime'],
     read: map['read'] > 0 ? true : false,
+    replyId: map['replyId'].toString(),
   );
 }

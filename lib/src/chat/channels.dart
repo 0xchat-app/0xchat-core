@@ -286,11 +286,20 @@ class Channels {
     _syncMyChannelListToRelay();
   }
 
-  Future<void> sendChannelMessage(String channelId, MessageType type,
-      String content, String? relay, Thread? thread) async {
+  Future<void> sendChannelMessage(
+      String channelId, MessageType type, String content,
+      {String? channelRelay,
+      String? replyMessage,
+      String? replyMessageRelay,
+      String? replyUser,
+      String? replyUserRelay}) async {
     Event event = Nip28.sendChannelMessage(
         channelId, MessageDB.encodeContent(type, content), privkey,
-        relay: relay);
+        channelRelay: channelRelay,
+        replyMessage: replyMessage,
+        replyMessageRelay: replyMessageRelay,
+        replyUser: replyUser,
+        replyUserRelay: replyUserRelay);
     Connect.sharedInstance.sendEvent(event);
 
     MessageDB messageDB = MessageDB(
