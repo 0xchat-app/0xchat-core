@@ -26,10 +26,9 @@ class NotificationHelper {
   }
 
   // call when offline
-  static void offline(String serverPubkey, String deviceId, String privkey) {
+  static void heartBeat(String serverPubkey, String privkey) {
     Map map = {
-      'online': 0,
-      'deviceId': deviceId
+      'online': 1
     };
     Event event = Nip4.encode(serverPubkey, jsonEncode(map), '', privkey);
     Connect.sharedInstance.sendEvent(event);
