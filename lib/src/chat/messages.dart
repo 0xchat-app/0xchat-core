@@ -237,4 +237,13 @@ class Messages {
     Event event = Nip9.encode(messageIds, reason, privkey);
     Connect.sharedInstance.sendEvent(event);
   }
+
+  static List<ProfileMention> decodeProfileMention(String content) {
+    return Nip27.decodeProfileMention(content);
+  }
+
+  static String encodeProfileMention(
+      List<ProfileMention> mentions, String content) {
+    return Nip27.encodeProfileMention(mentions, content);
+  }
 }
