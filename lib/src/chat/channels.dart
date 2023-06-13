@@ -317,11 +317,13 @@ class Channels {
 
   Future<void> hideMessage(String messageId, String reason) async {
     Messages.deleteMessagesFromDB([messageId]);
-    Nip28.hideChannelMessage(messageId, reason, privkey);
+    Event event = Nip28.hideChannelMessage(messageId, reason, privkey);
+    Connect.sharedInstance.sendEvent(event);
   }
 
   Future<void> muteUser(String userPubkey, String reason) async {
-    Nip28.muteUser(userPubkey, reason, privkey);
+    Event event = Nip28.muteUser(userPubkey, reason, privkey);
+    Connect.sharedInstance.sendEvent(event);
   }
 
   Future<void> joinChannel(String channelId) async {
