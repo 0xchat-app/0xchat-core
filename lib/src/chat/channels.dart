@@ -96,8 +96,7 @@ class Channels {
     );
     messageDB.decryptContent =
         MessageDB.decodeContent(messageDB.content!)['content'];
-    messageDB.type = MessageDB.stringtoMessageType(
-        MessageDB.decodeContent(messageDB.content!)['contentType']);
+    messageDB.type = MessageDB.decodeContent(messageDB.content!)['contentType'];
     if (channelMessageCallBack != null) channelMessageCallBack!(messageDB);
     Messages.saveMessagesToDB([messageDB]);
   }

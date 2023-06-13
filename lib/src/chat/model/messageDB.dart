@@ -16,10 +16,11 @@ class MessageDB extends DBObject {
   int? createTime;
   bool? read;
   String replyId;
-  // additional, not save to DB
+  // additional,
   String? decryptContent;
-  MessageType? type;
-  List<String>? reportList; // hide message ids list
+  String? type;
+
+  List<String>? reportList; // hide message ids list, not save to DB
 
   MessageDB({
     this.messageId = '',
@@ -33,7 +34,7 @@ class MessageDB extends DBObject {
     this.read = false,
     this.replyId = '',
     this.decryptContent = '',
-    this.type = MessageType.text,
+    this.type = 'text',
   });
 
   @override
@@ -52,11 +53,6 @@ class MessageDB extends DBObject {
   //primaryKey
   static List<String?> primaryKey() {
     return ['messageId'];
-  }
-
-  //ignoreKey
-  static List<String?> ignoreKey() {
-    return ['decryptContent', 'type'];
   }
 
   static String messageTypeToString(MessageType type) {
@@ -140,8 +136,7 @@ class MessageDB extends DBObject {
               createTime: event.createdAt,
               replyId: message.replyId);
           messageDB.decryptContent = decodeContent(message.content)['content'];
-          messageDB.type = stringtoMessageType(
-              decodeContent(message.content)['contentType']);
+          messageDB.type = decodeContent(message.content)['contentType'];
           return messageDB;
         }
       }
@@ -161,6 +156,8 @@ Map<String, dynamic> _messageInfoToMap(MessageDB instance) => <String, dynamic>{
       'createTime': instance.createTime,
       'read': instance.read,
       'replyId': instance.replyId,
+      'decryptContent': instance.decryptContent,
+      'type': instance.type,
     };
 
 MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
@@ -175,5 +172,7 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     createTime: map['createTime'],
     read: map['read'] > 0 ? true : false,
     replyId: map['replyId'].toString(),
+    decryptContent: map['decryptContent'].toString(),
+    type: map['type'],
   );
 }

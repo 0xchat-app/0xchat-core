@@ -25,7 +25,6 @@ class Friends {
   Map<String, UserDB> friends = {};
   String friendRequestSubscription = '';
   String friendsSubscription = '';
-  String meSubscription = '';
 
   /// callbacks
   FriendRequestCallBack? friendRequestCallBack;
@@ -120,7 +119,6 @@ class Friends {
         }
         // subscript friend accept, reject, delete, private messages
         _updateFriendsSubscription();
-        _updateMeSubscription();
         if (friendUpdatedCallBack != null) friendUpdatedCallBack!();
       });
     }
@@ -137,7 +135,6 @@ class Friends {
     friends[friendPubkey] = friend;
     await DB.sharedInstance.insert<UserDB>(friend);
     _updateFriendsSubscription();
-    _updateMeSubscription();
     _syncFriendsToRelay();
   }
 
@@ -145,7 +142,6 @@ class Friends {
     UserDB? friend = friends.remove(friendPubkey);
     if (friend != null) {
       _updateFriendsSubscription();
-      _updateMeSubscription();
       _syncFriendsToRelay();
     }
   }
@@ -179,12 +175,16 @@ class Friends {
       }
     });
     if (pubkeys.isNotEmpty) {
-      Filter f = Filter(
+      Filter f1 = Filter(
           kinds: [10101, 10102, 10103, 4],
           p: pubkeys,
           since: (me!.lastEventTimeStamp! + 1));
+      Filter f2 = Filter(
+          kinds: [4],
+          authors: pubkeys,
+          since: (me!.lastEventTimeStamp! + 1));
       friendsSubscription =
-          Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+          Connect.sharedInstance.addSubscription([f1, f2], eventCallBack: (event) {
         me!.lastEventTimeStamp = event.createdAt;
 
         switch (event.kind) {
@@ -197,38 +197,6 @@ class Friends {
           case 10103:
             _handleFriendRemove(event);
             break;
-          case 4:
-            _handlePrivateMessage(event);
-            break;
-          default:
-            print('unhandled message $event');
-            break;
-        }
-      });
-    }
-  }
-
-  void _updateMeSubscription() {
-    if (meSubscription.isNotEmpty) {
-      Connect.sharedInstance.closeSubscription(meSubscription);
-    }
-
-    List<String> pubkeys = [];
-    friends.forEach((key, f) {
-      if (f.toAliasPubkey != null && f.toAliasPubkey!.isNotEmpty) {
-        pubkeys.add(f.toAliasPubkey!);
-      }
-    });
-    if (pubkeys.isNotEmpty) {
-      Filter f = Filter(
-          kinds: [4],
-          authors: pubkeys,
-          since: (me!.lastEventTimeStamp! + 1));
-      meSubscription =
-          Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
-        me!.lastEventTimeStamp = event.createdAt;
-
-        switch (event.kind) {
           case 4:
             _handlePrivateMessage(event);
             break;
@@ -392,6 +360,8 @@ class Friends {
         tags: jsonEncode(event.tags),
         content: event.content,
         createTime: event.createdAt,
+        decryptContent: content,
+        type: MessageDB.messageTypeToString(type)
       );
       Messages.saveMessagesToDB([messageDB]);
     }
