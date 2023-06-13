@@ -24,7 +24,8 @@ class Friends {
   String privkey = '';
   Map<String, UserDB> friends = {};
   String friendRequestSubscription = '';
-  String updateSubscription = '';
+  String friendsSubscription = '';
+  String meSubscription = '';
 
   /// callbacks
   FriendRequestCallBack? friendRequestCallBack;
@@ -77,7 +78,7 @@ class Friends {
         print('no friend list online!');
         friends.clear();
         _syncFriendsListToDB('');
-        if(friendUpdatedCallBack != null) friendUpdatedCallBack!();
+        if (friendUpdatedCallBack != null) friendUpdatedCallBack!();
       }
     });
   }
@@ -118,8 +119,9 @@ class Friends {
           }
         }
         // subscript friend accept, reject, delete, private messages
-        _updateSubscription();
-        if(friendUpdatedCallBack != null) friendUpdatedCallBack!();
+        _updateFriendsSubscription();
+        _updateMeSubscription();
+        if (friendUpdatedCallBack != null) friendUpdatedCallBack!();
       });
     }
   }
@@ -134,14 +136,16 @@ class Friends {
     friend.aliasPubkey = friendAliasPubkey;
     friends[friendPubkey] = friend;
     await DB.sharedInstance.insert<UserDB>(friend);
-    _updateSubscription();
+    _updateFriendsSubscription();
+    _updateMeSubscription();
     _syncFriendsToRelay();
   }
 
   void _deleteFriend(String friendPubkey) {
     UserDB? friend = friends.remove(friendPubkey);
     if (friend != null) {
-      _updateSubscription();
+      _updateFriendsSubscription();
+      _updateMeSubscription();
       _syncFriendsToRelay();
     }
   }
@@ -163,9 +167,9 @@ class Friends {
     });
   }
 
-  void _updateSubscription() {
-    if (updateSubscription.isNotEmpty) {
-      Connect.sharedInstance.closeSubscription(updateSubscription);
+  void _updateFriendsSubscription() {
+    if (friendsSubscription.isNotEmpty) {
+      Connect.sharedInstance.closeSubscription(friendsSubscription);
     }
 
     List<String> pubkeys = [];
@@ -179,7 +183,7 @@ class Friends {
           kinds: [10101, 10102, 10103, 4],
           p: pubkeys,
           since: (me!.lastEventTimeStamp! + 1));
-      updateSubscription =
+      friendsSubscription =
           Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
         me!.lastEventTimeStamp = event.createdAt;
 
@@ -193,6 +197,38 @@ class Friends {
           case 10103:
             _handleFriendRemove(event);
             break;
+          case 4:
+            _handlePrivateMessage(event);
+            break;
+          default:
+            print('unhandled message $event');
+            break;
+        }
+      });
+    }
+  }
+
+  void _updateMeSubscription() {
+    if (meSubscription.isNotEmpty) {
+      Connect.sharedInstance.closeSubscription(meSubscription);
+    }
+
+    List<String> pubkeys = [];
+    friends.forEach((key, f) {
+      if (f.toAliasPubkey != null && f.toAliasPubkey!.isNotEmpty) {
+        pubkeys.add(f.toAliasPubkey!);
+      }
+    });
+    if (pubkeys.isNotEmpty) {
+      Filter f = Filter(
+          kinds: [4],
+          authors: pubkeys,
+          since: (me!.lastEventTimeStamp! + 1));
+      meSubscription =
+          Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+        me!.lastEventTimeStamp = event.createdAt;
+
+        switch (event.kind) {
           case 4:
             _handlePrivateMessage(event);
             break;
@@ -272,7 +308,8 @@ class Friends {
         "accept", 10101);
   }
 
-  Future<void> initWithPrikey(String key, {FriendUpdatedCallBack? callBack}) async {
+  Future<void> initWithPrikey(String key,
+      {FriendUpdatedCallBack? callBack}) async {
     privkey = key;
     pubkey = Keychain.getPublicKey(privkey);
     me = await Account.getUserFromDB(privkey: key);
@@ -386,7 +423,8 @@ class Friends {
   Uint8List? getFriendSharedSecret(String friendPubkey) {
     if (friends.containsKey(friendPubkey)) {
       UserDB friend = friends[friendPubkey]!;
-      return Nip101.getSharedSecret(friend.toAliasPrivkey!, friend.aliasPubkey!);
+      return Nip101.getSharedSecret(
+          friend.toAliasPrivkey!, friend.aliasPubkey!);
     }
     return null;
   }

@@ -114,15 +114,25 @@ class MessageDB extends DBObject {
   static MessageDB? fromPrivateMessage(Event event) {
     if (event.kind == 4) {
       String toAliasPubkey = Nip101.getP(event);
+      String author = event.pubkey;
       for (UserDB friend in Friends.sharedInstance.friends.values) {
-        if (friend.toAliasPubkey != null &&
-            friend.toAliasPubkey == toAliasPubkey) {
+        if (friend.toAliasPubkey != null) {
+          String sender = '', receiver = '';
+          if (friend.toAliasPubkey == toAliasPubkey) {
+            // friends message
+            sender = friend.pubKey!;
+            receiver = Friends.sharedInstance.me!.pubKey!;
+          } else if (friend.toAliasPubkey == author) {
+            // my message
+            sender = Friends.sharedInstance.me!.pubKey!;
+            receiver = friend.pubKey!;
+          }
           EDMessage message =
               Nip4.decode(event, friend.toAliasPubkey!, friend.toAliasPrivkey!);
           MessageDB messageDB = MessageDB(
               messageId: event.id,
-              sender: friend.pubKey,
-              receiver: Friends.sharedInstance.me!.pubKey,
+              sender: sender,
+              receiver: receiver,
               groupId: '',
               kind: 4,
               tags: event.tags.toString(),
