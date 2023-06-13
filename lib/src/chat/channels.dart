@@ -208,11 +208,12 @@ class Channels {
     _syncMyChannelListToDB();
   }
 
-  Future<void> initWithPrivkey(String key) async {
+  Future<void> initWithPrivkey(String key, {ChannelsUpdatedCallBack? callBack}) async {
     privkey = key;
     pubkey = Keychain.getPublicKey(privkey);
     me = await Account.getUserFromDB(privkey: key);
     me ??= UserDB(pubKey: pubkey, privkey: privkey);
+    myChannelsUpdatedCallBack = callBack;
 
     await _loadAllChannelsFromDB();
     await _loadMyChannelsFromRelay();

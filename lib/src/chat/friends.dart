@@ -8,6 +8,7 @@ typedef FriendAcceptCallBack = void Function(Alias);
 typedef FriendRejectCallBack = void Function(Alias);
 typedef FriendRemoveCallBack = void Function(Alias);
 typedef FriendMessageCallBack = void Function(MessageDB);
+typedef FriendUpdatedCallBack = void Function();
 
 class Friends {
   static final String identifier = 'Chat-Friends';
@@ -31,6 +32,7 @@ class Friends {
   FriendRejectCallBack? friendRejectCallBack;
   FriendRemoveCallBack? friendRemoveCallBack;
   FriendMessageCallBack? friendMessageCallBack;
+  FriendUpdatedCallBack? friendUpdatedCallBack;
 
   static String getAliasPrivkey(String friendPubkey, String privkey) {
     return Nip101.aliasPrivkey(friendPubkey, privkey);
@@ -75,6 +77,7 @@ class Friends {
         print('no friend list online!');
         friends.clear();
         _syncFriendsListToDB('');
+        if(friendUpdatedCallBack != null) friendUpdatedCallBack!();
       }
     });
   }
@@ -116,6 +119,7 @@ class Friends {
         }
         // subscript friend accept, reject, delete, private messages
         _updateSubscription();
+        if(friendUpdatedCallBack != null) friendUpdatedCallBack!();
       });
     }
   }
@@ -268,11 +272,12 @@ class Friends {
         "accept", 10101);
   }
 
-  Future<void> initWithPrikey(String key) async {
+  Future<void> initWithPrikey(String key, {FriendUpdatedCallBack? callBack}) async {
     privkey = key;
     pubkey = Keychain.getPublicKey(privkey);
     me = await Account.getUserFromDB(privkey: key);
     me ??= UserDB(pubKey: pubkey, privkey: privkey);
+    friendUpdatedCallBack = callBack;
 
     // sync friend list from DB & relays
     await _syncFriendsFromDB();
