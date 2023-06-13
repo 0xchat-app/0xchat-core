@@ -15,7 +15,7 @@ class NotificationHelper {
   String pubkey = '';
   String privkey = '';
   String serverPubkey = '';
-  late Timer timer;
+  Timer? timer;
 
   // key: private key
   // serverkey: server pubkey
@@ -28,7 +28,7 @@ class NotificationHelper {
   }
 
   void startHeartBeat() {
-    if (!timer.isActive) {
+    if (timer == null || timer!.isActive == false) {
       timer = Timer.periodic(Duration(seconds: 60), (Timer t) {
         _heartBeat(serverPubkey, privkey);
       });
@@ -36,7 +36,9 @@ class NotificationHelper {
   }
 
   void stopHeartBeat() {
-    timer.cancel();
+    if (timer != null && timer!.isActive) {
+      timer!.cancel();
+    }
   }
 
   void _heartBeat(String serverPubkey, String privkey) {
