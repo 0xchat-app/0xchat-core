@@ -151,7 +151,7 @@ class Friends {
         kinds: [10100], p: [pubkey], since: (me!.lastEventTimeStamp! + 1));
     friendRequestSubscription =
         Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
-      me!.lastEventTimeStamp = event.createdAt;
+      _updateLastEventTimeStamp(event.createdAt);
       switch (event.kind) {
         case 10100:
           _handleFriendRequest(event);
@@ -161,6 +161,12 @@ class Friends {
           break;
       }
     });
+  }
+
+  void _updateLastEventTimeStamp(int updateTime) {
+    me!.lastEventTimeStamp = me!.lastEventTimeStamp! > updateTime
+        ? me!.lastEventTimeStamp
+        : updateTime;
   }
 
   void _updateFriendsSubscription() {
@@ -180,12 +186,10 @@ class Friends {
           p: pubkeys,
           since: (me!.lastEventTimeStamp! + 1));
       Filter f2 = Filter(
-          kinds: [4],
-          authors: pubkeys,
-          since: (me!.lastEventTimeStamp! + 1));
-      friendsSubscription =
-          Connect.sharedInstance.addSubscription([f1, f2], eventCallBack: (event) {
-        me!.lastEventTimeStamp = event.createdAt;
+          kinds: [4], authors: pubkeys, since: (me!.lastEventTimeStamp! + 1));
+      friendsSubscription = Connect.sharedInstance.addSubscription([f1, f2],
+          eventCallBack: (event) {
+        _updateLastEventTimeStamp(event.createdAt);
 
         switch (event.kind) {
           case 10101:
@@ -352,17 +356,16 @@ class Friends {
       Connect.sharedInstance.sendEvent(event);
 
       MessageDB messageDB = MessageDB(
-        messageId: event.id,
-        sender: pubkey,
-        receiver: friendPubkey,
-        groupId: '',
-        kind: event.kind,
-        tags: jsonEncode(event.tags),
-        content: event.content,
-        createTime: event.createdAt,
-        decryptContent: content,
-        type: MessageDB.messageTypeToString(type)
-      );
+          messageId: event.id,
+          sender: pubkey,
+          receiver: friendPubkey,
+          groupId: '',
+          kind: event.kind,
+          tags: jsonEncode(event.tags),
+          content: event.content,
+          createTime: event.createdAt,
+          decryptContent: content,
+          type: MessageDB.messageTypeToString(type));
       Messages.saveMessagesToDB([messageDB]);
     }
   }

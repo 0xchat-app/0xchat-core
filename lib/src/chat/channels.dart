@@ -45,7 +45,7 @@ class Channels {
           since: (me!.lastEventTimeStamp! + 1));
       subscription =
           Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
-        me!.lastEventTimeStamp = event.createdAt;
+        _updateLastEventTimeStamp(event.createdAt);
 
         switch (event.kind) {
           case 42:
@@ -57,6 +57,12 @@ class Channels {
         }
       });
     }
+  }
+
+  void _updateLastEventTimeStamp(int updateTime) {
+    me!.lastEventTimeStamp = me!.lastEventTimeStamp! > updateTime
+        ? me!.lastEventTimeStamp
+        : updateTime;
   }
 
   bool _checkBlockedList(String user) {
@@ -207,7 +213,8 @@ class Channels {
     _syncMyChannelListToDB();
   }
 
-  Future<void> initWithPrivkey(String key, {ChannelsUpdatedCallBack? callBack}) async {
+  Future<void> initWithPrivkey(String key,
+      {ChannelsUpdatedCallBack? callBack}) async {
     privkey = key;
     pubkey = Keychain.getPublicKey(privkey);
     me = await Account.getUserFromDB(privkey: key);
