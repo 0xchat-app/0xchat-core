@@ -123,21 +123,23 @@ class MessageDB extends DBObject {
             sender = Friends.sharedInstance.me!.pubKey!;
             receiver = friend.pubKey!;
           }
-          EDMessage message =
-              Nip4.decode(event, friend.toAliasPubkey!, friend.toAliasPrivkey!);
-          MessageDB messageDB = MessageDB(
-              messageId: event.id,
-              sender: sender,
-              receiver: receiver,
-              groupId: '',
-              kind: 4,
-              tags: event.tags.toString(),
-              content: event.content,
-              createTime: event.createdAt,
-              replyId: message.replyId);
-          messageDB.decryptContent = decodeContent(message.content)['content'];
-          messageDB.type = decodeContent(message.content)['contentType'];
-          return messageDB;
+          if(sender.isNotEmpty && receiver.isNotEmpty){
+            EDMessage message =
+            Nip4.decode(event, friend.toAliasPubkey!, friend.toAliasPrivkey!);
+            MessageDB messageDB = MessageDB(
+                messageId: event.id,
+                sender: sender,
+                receiver: receiver,
+                groupId: '',
+                kind: 4,
+                tags: event.tags.toString(),
+                content: event.content,
+                createTime: event.createdAt,
+                replyId: message.replyId);
+            messageDB.decryptContent = decodeContent(message.content)['content'];
+            messageDB.type = decodeContent(message.content)['contentType'];
+            return messageDB;
+          }
         }
       }
     }
