@@ -19,6 +19,7 @@ class MessageDB extends DBObject {
   // additional,
   String? decryptContent;
   String? type;
+  int? status; // 0 sending, 1 sent, 2 fail 3 recall
 
   List<String>? reportList; // hide message ids list, not save to DB
 
@@ -35,6 +36,7 @@ class MessageDB extends DBObject {
     this.replyId = '',
     this.decryptContent = '',
     this.type = 'text',
+    this.status = 1
   });
 
   @override
@@ -160,7 +162,8 @@ Map<String, dynamic> _messageInfoToMap(MessageDB instance) => <String, dynamic>{
       'replyId': instance.replyId,
       'decryptContent': instance.decryptContent,
       'type': instance.type,
-    };
+  'status': instance.status,
+};
 
 MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
   return MessageDB(
@@ -176,5 +179,6 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     replyId: map['replyId'].toString(),
     decryptContent: map['decryptContent'].toString(),
     type: map['type'],
+    status: map['status'],
   );
 }

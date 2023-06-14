@@ -309,7 +309,6 @@ class Channels {
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
 
     MessageDB messageDB = MessageDB(
       messageId: event.id,
@@ -320,8 +319,10 @@ class Channels {
       tags: jsonEncode(event.tags),
       content: event.content,
       createTime: event.createdAt,
+      status: 0
     );
     Messages.saveMessagesToDB([messageDB]);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
   }
 
   Future<void> hideMessage(String messageId, String reason,

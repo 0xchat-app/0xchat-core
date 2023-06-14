@@ -296,7 +296,8 @@ class Friends {
     _friendRequestSubscription();
   }
 
-  Future<void> requestFriend(String friendPubkey, String content, {OKCallBack? callBack}) async {
+  Future<void> requestFriend(String friendPubkey, String content,
+      {OKCallBack? callBack}) async {
     String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.request(
@@ -305,8 +306,8 @@ class Friends {
     await _addFriend(friendPubkey, '');
   }
 
-  Future<void> acceptFriend(
-      String friendPubkey, String friendAliasPubkey, {OKCallBack? callBack}) async {
+  Future<void> acceptFriend(String friendPubkey, String friendAliasPubkey,
+      {OKCallBack? callBack}) async {
     String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.accept(
@@ -315,7 +316,8 @@ class Friends {
     await _addFriend(friendPubkey, friendAliasPubkey);
   }
 
-  void rejectFriend(String friendPubkey, String friendAliasPubkey, {OKCallBack? callBack}) {
+  void rejectFriend(String friendPubkey, String friendAliasPubkey,
+      {OKCallBack? callBack}) {
     String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.reject(
@@ -345,7 +347,8 @@ class Friends {
   }
 
   void sendMessage(
-      String friendPubkey, String replayId, MessageType type, String content, {OKCallBack? callBack}) {
+      String friendPubkey, String replayId, MessageType type, String content,
+      {OKCallBack? callBack}) {
     UserDB? friend = friends[friendPubkey];
     if (friend != null) {
       Event event = Nip4.encode(
@@ -353,7 +356,6 @@ class Friends {
           MessageDB.encodeContent(type, content),
           replayId,
           friend.toAliasPrivkey!);
-      Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
 
       MessageDB messageDB = MessageDB(
           messageId: event.id,
@@ -365,8 +367,10 @@ class Friends {
           content: event.content,
           createTime: event.createdAt,
           decryptContent: content,
-          type: MessageDB.messageTypeToString(type));
+          type: MessageDB.messageTypeToString(type),
+          status: 0);
       Messages.saveMessagesToDB([messageDB]);
+      Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
     }
   }
 
