@@ -156,8 +156,10 @@ class Messages {
     List<MessageDB> messages = result['messages'];
     List<ChannelMessageHidden> hiddenMessages = [];
     for (MessageDB message in messages) {
-      String? hiddenMessageId =
-          Nip28.tagsToMessageId(jsonDecode(message.tags!));
+      List<dynamic> tags = jsonDecode(message.tags!);
+      String? hiddenMessageId = Nip28.tagsToMessageId(tags.map((item) {
+        return List<String>.from(item.cast<String>());
+      }).toList());
       ChannelMessageHidden hidden = ChannelMessageHidden(message.sender!,
           hiddenMessageId!, message.content!, message.createTime!);
       hiddenMessages.add(hidden);
