@@ -189,7 +189,7 @@ class BadgesHelper {
   }
 
   static Future<void> setProfileBadges(
-      List<String> badgeIds, String pubkey, String privkey) async {
+      List<String> badgeIds, String pubkey, String privkey, {OKCallBack? callBack}) async {
     List<BadgeDB?> badges = await getBadgeInfosFromDB(badgeIds);
     List<BadgeAward> badgeAwards = [];
     for (BadgeDB? badgeDB in badges) {
@@ -210,7 +210,7 @@ class BadgesHelper {
     }
     if (badgeAwards.isNotEmpty) {
       Event event = Nip58.setProfileBadges(badgeAwards, privkey);
-      Connect.sharedInstance.sendEvent(event);
+      Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
       /// SYNC TO DB
       syncProfileBadgesToDB(pubkey, badgeIds);
     }
