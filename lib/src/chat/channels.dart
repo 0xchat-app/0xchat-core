@@ -205,11 +205,11 @@ class Channels {
     await DB.sharedInstance.insert<UserDB>(me!);
   }
 
-  Future<void> _syncMyChannelListToRelay() async {
+  Future<void> _syncMyChannelListToRelay({OKCallBack? callBack}) async {
     List<String> list = myChannels.keys.toList();
     Event event =
         Nip51.createCategorizedBookmarks(identifier, list, [], privkey, pubkey);
-    Connect.sharedInstance.sendEvent(event);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
     _syncMyChannelListToDB();
   }
 
@@ -226,11 +226,12 @@ class Channels {
   }
 
   Future<ChannelDB> createChannel(String name, String about, String picture,
-      List<String>? badges, String relay) async {
+      List<String>? badges, String relay,
+      {OKCallBack? callBack}) async {
     Map<String, String> additional = {'badges': jsonEncode(badges)};
     Event event =
         Nip28.createChannel(name, about, picture, additional, privkey);
-    Connect.sharedInstance.sendEvent(event);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
 
     // update channel
     ChannelDB channelDB = ChannelDB(
@@ -271,7 +272,7 @@ class Channels {
     });
   }
 
-  Future<void> setChannel(ChannelDB channelDB) async {
+  Future<void> setChannel(ChannelDB channelDB, {OKCallBack? callBack}) async {
     Event event = Nip28.setChannelMetaData(
         channelDB.name!,
         channelDB.about!,
@@ -280,7 +281,7 @@ class Channels {
         channelDB.channelId!,
         channelDB.relayURL!,
         privkey);
-    Connect.sharedInstance.sendEvent(event);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
 
     // update channel
     channelDB.channelId = event.id;
@@ -299,7 +300,8 @@ class Channels {
       String? replyMessage,
       String? replyMessageRelay,
       String? replyUser,
-      String? replyUserRelay}) async {
+      String? replyUserRelay,
+      OKCallBack? callBack}) async {
     Event event = Nip28.sendChannelMessage(
         channelId, MessageDB.encodeContent(type, content), privkey,
         channelRelay: channelRelay,
@@ -307,7 +309,7 @@ class Channels {
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay);
-    Connect.sharedInstance.sendEvent(event);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
 
     MessageDB messageDB = MessageDB(
       messageId: event.id,
@@ -322,31 +324,33 @@ class Channels {
     Messages.saveMessagesToDB([messageDB]);
   }
 
-  Future<void> hideMessage(String messageId, String reason) async {
+  Future<void> hideMessage(String messageId, String reason,
+      {OKCallBack? callBack}) async {
     Messages.deleteMessagesFromDB([messageId]);
     Event event = Nip28.hideChannelMessage(messageId, reason, privkey);
-    Connect.sharedInstance.sendEvent(event);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
   }
 
-  Future<void> muteUser(String userPubkey, String reason) async {
+  Future<void> muteUser(String userPubkey, String reason,
+      {OKCallBack? callBack}) async {
     Event event = Nip28.muteUser(userPubkey, reason, privkey);
-    Connect.sharedInstance.sendEvent(event);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
   }
 
-  Future<void> joinChannel(String channelId) async {
+  Future<void> joinChannel(String channelId, {OKCallBack? callBack}) async {
     _syncChannelsInfos('', [channelId], true, (status) {
       if (channels.containsKey(channelId)) {
         myChannels[channelId] = channels[channelId]!;
         _updateSubscription();
-        _syncMyChannelListToRelay();
+        _syncMyChannelListToRelay(callBack: callBack);
       }
     });
   }
 
-  Future<void> leaveChannel(String channelId) async {
+  Future<void> leaveChannel(String channelId, {OKCallBack? callBack}) async {
     myChannels.remove(channelId);
     _updateSubscription();
-    _syncMyChannelListToRelay();
+    _syncMyChannelListToRelay(callBack: callBack);
   }
 
   List<ChannelDB>? fuzzySearch(String keyword) {

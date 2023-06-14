@@ -296,39 +296,39 @@ class Friends {
     _friendRequestSubscription();
   }
 
-  Future<void> requestFriend(String friendPubkey, String content) async {
+  Future<void> requestFriend(String friendPubkey, String content, {OKCallBack? callBack}) async {
     String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.request(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendPubkey, content);
-    Connect.sharedInstance.sendEvent(event);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
     await _addFriend(friendPubkey, '');
   }
 
   Future<void> acceptFriend(
-      String friendPubkey, String friendAliasPubkey) async {
+      String friendPubkey, String friendAliasPubkey, {OKCallBack? callBack}) async {
     String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.accept(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
-    Connect.sharedInstance.sendEvent(event);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
     await _addFriend(friendPubkey, friendAliasPubkey);
   }
 
-  void rejectFriend(String friendPubkey, String friendAliasPubkey) {
+  void rejectFriend(String friendPubkey, String friendAliasPubkey, {OKCallBack? callBack}) {
     String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.reject(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
-    Connect.sharedInstance.sendEvent(event);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
   }
 
-  void removeFriend(String friendPubkey) {
+  void removeFriend(String friendPubkey, {OKCallBack? callBack}) {
     UserDB? friend = friends[friendPubkey];
     if (friend != null && friend.aliasPubkey!.isNotEmpty) {
       Event event = Nip101.remove(pubkey, privkey, friend.toAliasPubkey!,
           friend.toAliasPrivkey!, friend.aliasPubkey!);
-      Connect.sharedInstance.sendEvent(event);
+      Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
     }
     _deleteFriend(friendPubkey);
   }
@@ -345,7 +345,7 @@ class Friends {
   }
 
   void sendMessage(
-      String friendPubkey, String replayId, MessageType type, String content) {
+      String friendPubkey, String replayId, MessageType type, String content, {OKCallBack? callBack}) {
     UserDB? friend = friends[friendPubkey];
     if (friend != null) {
       Event event = Nip4.encode(
@@ -353,7 +353,7 @@ class Friends {
           MessageDB.encodeContent(type, content),
           replayId,
           friend.toAliasPrivkey!);
-      Connect.sharedInstance.sendEvent(event);
+      Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
 
       MessageDB messageDB = MessageDB(
           messageId: event.id,
