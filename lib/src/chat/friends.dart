@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
@@ -100,27 +101,25 @@ class Friends {
     _syncFriendsListToDB(event.content);
   }
 
-  void _syncFriendsProfiles(List<People> peoples) {
+  Future<void> _syncFriendsProfiles(List<People> peoples) async {
     if (peoples.isNotEmpty) {
       List<String> pubkeys = peoples.map((p) => p.pubkey).toList();
-      Account.syncProfilesFromRelay(pubkeys, (usersMap) async {
-        for (People p in peoples) {
-          UserDB? user = usersMap[p.pubkey];
-          if (user != null) {
-            user.toAliasPrivkey =
-                Friends.getAliasPrivkey(user.pubKey!, privkey);
-            user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
-            user.aliasPubkey = p.aliasPubKey;
-            user.nickName = p.petName;
-            // sync to db
-            await DB.sharedInstance.insert<UserDB>(user);
-            friends[user.pubKey!] = user;
-          }
+      var usersMap = await Account.syncProfilesFromRelay(pubkeys);
+      for (People p in peoples) {
+        UserDB? user = usersMap[p.pubkey];
+        if (user != null) {
+          user.toAliasPrivkey = Friends.getAliasPrivkey(user.pubKey!, privkey);
+          user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
+          user.aliasPubkey = p.aliasPubKey;
+          user.nickName = p.petName;
+          // sync to db
+          await DB.sharedInstance.insert<UserDB>(user);
+          friends[user.pubKey!] = user;
         }
-        // subscript friend accept, reject, delete, private messages
-        _updateFriendsSubscription();
-        if (friendUpdatedCallBack != null) friendUpdatedCallBack!();
-      });
+      }
+      // subscript friend accept, reject, delete, private messages
+      _updateFriendsSubscription();
+      if (friendUpdatedCallBack != null) friendUpdatedCallBack!();
     }
   }
 
@@ -296,43 +295,64 @@ class Friends {
     _friendRequestSubscription();
   }
 
-  Future<void> requestFriend(String friendPubkey, String content,
-      {OKCallBack? callBack}) async {
+  Future<OKEvent> requestFriend(String friendPubkey, String content) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+
     String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.request(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendPubkey, content);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+      completer.complete(ok);
+    });
     await _addFriend(friendPubkey, '');
+    return completer.future;
   }
 
-  Future<void> acceptFriend(String friendPubkey, String friendAliasPubkey,
-      {OKCallBack? callBack}) async {
+  Future<OKEvent> acceptFriend(
+      String friendPubkey, String friendAliasPubkey) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+
     String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.accept(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+      completer.complete(ok);
+    });
     await _addFriend(friendPubkey, friendAliasPubkey);
+    return completer.future;
   }
 
-  void rejectFriend(String friendPubkey, String friendAliasPubkey,
-      {OKCallBack? callBack}) {
+  Future<OKEvent> rejectFriend(
+    String friendPubkey,
+    String friendAliasPubkey,
+  ) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+
     String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.reject(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+      completer.complete(ok);
+    });
+    return completer.future;
   }
 
-  void removeFriend(String friendPubkey, {OKCallBack? callBack}) {
+  Future<OKEvent> removeFriend(String friendPubkey) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+
     UserDB? friend = friends[friendPubkey];
     if (friend != null && friend.aliasPubkey!.isNotEmpty) {
       Event event = Nip101.remove(pubkey, privkey, friend.toAliasPubkey!,
           friend.toAliasPrivkey!, friend.aliasPubkey!);
-      Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
+      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+        completer.complete(ok);
+      });
     }
     _deleteFriend(friendPubkey);
+    return completer.future;
   }
 
   List<UserDB>? fuzzySearch(String keyword) {
@@ -346,9 +366,13 @@ class Friends {
     return null;
   }
 
-  void sendMessage(
-      String friendPubkey, String replayId, MessageType type, String content,
-      {OKCallBack? callBack}) {
+  Future<OKEvent> sendMessage(
+    String friendPubkey,
+    String replayId,
+    MessageType type,
+    String content,
+  ) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
     UserDB? friend = friends[friendPubkey];
     if (friend != null) {
       Event event = Nip4.encode(
@@ -370,8 +394,12 @@ class Friends {
           type: MessageDB.messageTypeToString(type),
           status: 0);
       Messages.saveMessagesToDB([messageDB]);
-      Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
+      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+        completer.complete(ok);
+      });
+      return completer.future;
     }
+    return completer.future;
   }
 
   Future<void> muteFriend(String friendPubkey) async {

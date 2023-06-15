@@ -3,10 +3,6 @@ import 'dart:convert';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
-typedef SearchBadgeInfoCallBack = void Function(BadgeDB?);
-typedef GetBadgesInfoCallBack = void Function(List<BadgeDB>);
-typedef GetUserBadgesCallBack = void Function(List<BadgeDB?>?);
-
 class BadgesHelper {
   static BadgeDB _badgeToBadgeDB(Badge badge) {
     return BadgeDB(
@@ -20,8 +16,9 @@ class BadgesHelper {
         createTime: badge.createTime);
   }
 
-  static Future<void> getBadgesInfoFromRelay(
-      List<String> ids, GetBadgesInfoCallBack callBack) async {
+  static Future<List<BadgeDB>> getBadgesInfoFromRelay(List<String> ids) async {
+    Completer<List<BadgeDB>> completer = Completer<List<BadgeDB>>();
+
     String subscriptionId = '';
     Filter f = Filter(ids: ids);
     List<BadgeDB> badges = [];
@@ -35,28 +32,33 @@ class BadgesHelper {
       }
     }, eoseCallBack: (status) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
-      callBack(badges);
+      completer.complete(badges);
     });
+    return completer.future;
   }
 
-  static Future<void> searchBadgesInfoFromRelay(
-      List<BadgeAward> awards, GetBadgesInfoCallBack callBack) async {
+  static Future<List<BadgeDB>> searchBadgesInfoFromRelay(
+      List<BadgeAward> awards) async {
+    Completer<List<BadgeDB>> completer = Completer<List<BadgeDB>>();
+
     List<BadgeDB> result = [];
     for (BadgeAward award in awards) {
-      _searchBadgeFromRelay(award.creator!, award.identifies!,
-          (BadgeDB? badgeDB) {
-        if (badgeDB != null) {
-          result.add(badgeDB);
-          if (awards.last == award) {
-            callBack(result);
-          }
+      BadgeDB? badgeDB =
+          await _searchBadgeFromRelay(award.creator!, award.identifies!);
+      if (badgeDB != null) {
+        result.add(badgeDB);
+        if (awards.last == award) {
+          completer.complete(result);
         }
-      });
+      }
     }
+    return completer.future;
   }
 
-  static Future<void> _searchBadgeFromRelay(String creator, String identifies,
-      SearchBadgeInfoCallBack callBack) async {
+  static Future<BadgeDB?> _searchBadgeFromRelay(
+      String creator, String identifies) async {
+    Completer<BadgeDB?> completer = Completer<BadgeDB?>();
+
     String subscriptionId = '';
     Filter f = Filter(kinds: [30009], d: [identifies], authors: [creator]);
     subscriptionId = Connect.sharedInstance.addSubscription([f],
@@ -65,13 +67,14 @@ class BadgesHelper {
       if (badge != null) {
         BadgeDB badgeDB = _badgeToBadgeDB(badge);
         syncBadgeInfoToDB(badgeDB);
-        callBack(badgeDB);
+        completer.complete(badgeDB);
       } else {
-        callBack(null);
+        completer.complete(null);
       }
     }, eoseCallBack: (status) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
     });
+    return completer.future;
   }
 
   static Future<void> syncBadgeInfoToDB(BadgeDB badgeDB) async {
@@ -100,8 +103,9 @@ class BadgesHelper {
   }
 
   /// badge award
-  static Future<void> getUserBadgeAwardsFromRelay(
-      String userPubkey, GetUserBadgesCallBack callBack) async {
+  static Future<List<BadgeDB?>?> getUserBadgeAwardsFromRelay(
+      String userPubkey) async {
+    Completer<List<BadgeDB?>?> completer = Completer<List<BadgeDB?>?>();
     String subscriptionId = '';
     List<BadgeAward> badgeAwards = [];
     Filter f = Filter(kinds: [8], p: [userPubkey]);
@@ -116,12 +120,12 @@ class BadgesHelper {
       }
     }, eoseCallBack: (status) async {
       Connect.sharedInstance.closeSubscription(subscriptionId);
-      searchBadgesInfoFromRelay(badgeAwards, (badges) {
-        // cache to DB
-        syncUserBadgesToDB(userPubkey, badges);
-        callBack(badges);
-      });
+      List<BadgeDB> badges = await searchBadgesInfoFromRelay(badgeAwards);
+      // cache to DB
+      await syncUserBadgesToDB(userPubkey, badges);
+      completer.complete(badges);
     });
+    return completer.future;
   }
 
   static Future<List<BadgeAwardDB?>> getBadgeAwardFromDB(
@@ -133,8 +137,7 @@ class BadgesHelper {
   }
 
   // return badge id list
-  static Future<List<String>?> getProfileBadgesFromDB(
-      String userPubkey, GetUserBadgesCallBack callBack) async {
+  static Future<List<String>?> getProfileBadgesFromDB(String userPubkey) async {
     UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
     if (userDB != null && userDB.badges != null && userDB.badges!.isNotEmpty) {
       return jsonDecode(userDB.badges!);
@@ -151,18 +154,21 @@ class BadgesHelper {
     }
   }
 
-  static Future<void> getUserBadgesFromDB(
-      String userPubkey, GetUserBadgesCallBack callBack) async {
+  static Future<List<BadgeDB?>?> getUserBadgesFromDB(String userPubkey) async {
+    Completer<List<BadgeDB?>?> completer = Completer<List<BadgeDB?>?>();
+
     UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
     if (userDB != null &&
         userDB.badgesList != null &&
         userDB.badgesList!.isNotEmpty) {
       List<dynamic> badgesList = jsonDecode(userDB.badgesList!);
-      List<BadgeDB?> badges = await getBadgeInfosFromDB(badgesList.map((e) => e.toString()).toList());
-      callBack(badges);
+      List<BadgeDB?> badges = await getBadgeInfosFromDB(
+          badgesList.map((e) => e.toString()).toList());
+      completer.complete(badges);
     } else {
-      callBack(null);
+      completer.complete(null);
     }
+    return completer.future;
   }
 
   static BadgeAwardDB badgeAwardToBadgeAwardDB(BadgeAward award) {
@@ -188,8 +194,10 @@ class BadgesHelper {
     }
   }
 
-  static Future<void> setProfileBadges(
-      List<String> badgeIds, String pubkey, String privkey, {OKCallBack? callBack}) async {
+  static Future<OKEvent> setProfileBadges(
+      List<String> badgeIds, String pubkey, String privkey) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+
     List<BadgeDB?> badges = await getBadgeInfosFromDB(badgeIds);
     List<BadgeAward> badgeAwards = [];
     for (BadgeDB? badgeDB in badges) {
@@ -210,14 +218,19 @@ class BadgesHelper {
     }
     if (badgeAwards.isNotEmpty) {
       Event event = Nip58.setProfileBadges(badgeAwards, privkey);
-      Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
+      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+        completer.complete(ok);
+      });
+
       /// SYNC TO DB
       syncProfileBadgesToDB(pubkey, badgeIds);
     }
+    return completer.future;
   }
 
-  static Future<void> getProfileBadgesFromRelay(
-      String userPubkey, GetUserBadgesCallBack callBack) async {
+  static Future<List<BadgeDB?>?> getProfileBadgesFromRelay(
+      String userPubkey) async {
+    Completer<List<BadgeDB?>?> completer = Completer<List<BadgeDB?>?>();
     String subscriptionId = '';
     List<BadgeDB?> result = [];
     Filter f =
@@ -226,17 +239,17 @@ class BadgesHelper {
         eventCallBack: (event) async {
       List<BadgeAward> profileBadges = Nip58.getProfileBadges(event);
       for (BadgeAward badgeAward in profileBadges) {
-        _searchBadgeFromRelay(badgeAward.creator!, badgeAward.identifies!,
-            (BadgeDB? badgeDB) {
-          if (badgeDB != null) result.add(badgeDB);
-          if (profileBadges.last == badgeAward) {
-            callBack(result);
-          }
-        });
+        BadgeDB? badgeDB = await _searchBadgeFromRelay(
+            badgeAward.creator!, badgeAward.identifies!);
+        if (badgeDB != null) result.add(badgeDB);
+        if (profileBadges.last == badgeAward) {
+          completer.complete(result);
+        }
       }
     }, eoseCallBack: (status) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
-      callBack(result);
+      if (status == 0) completer.complete(result);
     });
+    return completer.future;
   }
 }

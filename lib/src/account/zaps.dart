@@ -1,11 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
-
-typedef GetInvoiceCallBack = void Function(String?);
-typedef GetZapReceiptCallBack = void Function(ZapReceipt?);
 
 class Zaps {
   static Future<String> getLnurlFromLnaddr(String lnaddr) async {
@@ -41,9 +39,10 @@ class Zaps {
     }
   }
 
-  static Future<void> getInvoice(List<String> relays, int sats, String lnurl,
-      String recipient, String privkey, GetInvoiceCallBack callBack,
+  static Future<String?> getInvoice(List<String> relays, int sats, String lnurl,
+      String recipient, String privkey,
       {String? eventId, String? coordinate, String? content}) async {
+    Completer<String?> completer = Completer<String?>();
     ZapsDB? zapsDB = await getZapsInfoFromLnurl(lnurl);
     if (zapsDB != null) {
       String url =
@@ -58,18 +57,20 @@ class Zaps {
       final result = await http.get(Uri.parse(url));
       if (result.statusCode == 200) {
         String pr = jsonDecode(result.body)['pr'];
-        callBack(pr);
+        completer.complete(pr);
       } else {
-        callBack(null);
+        completer.complete(null);
       }
     } else {
-      callBack(null);
+      completer.complete(null);
     }
+    return completer.future;
   }
 
-  static Future<void> getZapReceipt(
-      String zapper, GetZapReceiptCallBack callBack,
+  static Future<ZapReceipt?> getZapReceipt(
+      String zapper,
       {String? recipient, String? eventId}) async {
+    Completer<ZapReceipt?> completer = Completer<ZapReceipt?>();
     String subscriptionId = '';
     Filter f = Filter(kinds: [9735], authors: [zapper]);
     if (recipient != null) {
@@ -81,12 +82,14 @@ class Zaps {
     subscriptionId = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event) async {
       ZapReceipt zapReceipt = Nip57.getZapReceipt(event);
+
       /// check invoiceAmount, lnurl?
-      callBack(zapReceipt);
+      completer.complete(zapReceipt);
     }, eoseCallBack: (status) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
-      if (status == 0) callBack(null);
+      if (status == 0) completer.complete(null);
     });
+    return completer.future;
   }
 
   static Future<void> loadZapRecordsFromRelay() async {}

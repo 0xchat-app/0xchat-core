@@ -1,10 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-
-typedef SyncCallBack = Function(Map<String, UserDB>);
 
 class Account {
   static Future<UserDB?> getUserFromDB(
@@ -121,8 +120,10 @@ class Account {
   }
 
   /// sync profile from relays
-  static Future syncProfilesFromRelay(
-      List<String> pubkeys, SyncCallBack callBack) async {
+  static Future<Map<String, UserDB>> syncProfilesFromRelay(
+      List<String> pubkeys) async {
+    Completer<Map<String, UserDB>> completer = Completer<Map<String, UserDB>>();
+
     String subscriptionId = '';
     Filter f = Filter(
       kinds: [0],
@@ -152,8 +153,9 @@ class Account {
       }
     }, eoseCallBack: (status) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
-      callBack(users);
+      completer.complete(users);
     });
+    return completer.future;
   }
 
   static Future<UserDB?> updateProfile(String privkey, UserDB updateDB) async {

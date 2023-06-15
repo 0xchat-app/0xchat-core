@@ -1,10 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 typedef ChannelsUpdatedCallBack = void Function();
 typedef ChannelMessageCallBack = void Function(MessageDB);
-typedef GetChannelsCallBack = void Function(List<ChannelDB>);
 
 class Channels {
   /// singleton
@@ -115,16 +115,15 @@ class Channels {
       authors: [pubkey],
       limit: 1,
     );
-    subscriptionId =
-        Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+    subscriptionId = Connect.sharedInstance.addSubscription([f],
+        eventCallBack: (event) async {
       Lists lists = Nip51.getLists(event, privkey);
       me!.channelsList = jsonEncode(lists.bookmarks);
       DB.sharedInstance.insert<UserDB>(me!);
-      syncChannelsFromRelay(lists.owner, lists.bookmarks, () {
-        myChannels = _myChannels();
-        _updateSubscription();
-        if (myChannelsUpdatedCallBack != null) myChannelsUpdatedCallBack!();
-      });
+      await syncChannelsFromRelay(lists.owner, lists.bookmarks);
+      myChannels = _myChannels();
+      _updateSubscription();
+      if (myChannelsUpdatedCallBack != null) myChannelsUpdatedCallBack!();
     }, eoseCallBack: (status) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
       if (status == 0) {
@@ -225,54 +224,65 @@ class Channels {
     await _loadMyChannelsFromRelay();
   }
 
-  Future<ChannelDB> createChannel(String name, String about, String picture,
+  Future<ChannelDB?> createChannel(String name, String about, String picture,
       List<String>? badges, String relay,
       {OKCallBack? callBack}) async {
+    Completer<ChannelDB?> completer = Completer<ChannelDB?>();
     Map<String, String> additional = {'badges': jsonEncode(badges)};
     Event event =
         Nip28.createChannel(name, about, picture, additional, privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) async {
+      if (ok.status == true) {
+        // update channel
+        ChannelDB channelDB = ChannelDB(
+          channelId: event.id,
+          createTime: event.createdAt,
+          creator: pubkey,
+          name: name,
+          about: about,
+          picture: picture,
+          badges: jsonEncode(badges),
+          relayURL: relay,
+        );
+        channelDB.channelId = event.id;
+        channelDB.creator = pubkey;
+        channelDB.createTime = event.createdAt;
+        channels[channelDB.channelId!] = channelDB;
+        myChannels[channelDB.channelId!] = channelDB;
+        _updateSubscription();
+        await _syncChannelToDB(channelDB);
+        // update my channel list
+        await _syncMyChannelListToRelay();
+        completer.complete(channelDB);
+      } else {
+        completer.complete(null);
+      }
+    });
 
-    // update channel
-    ChannelDB channelDB = ChannelDB(
-      channelId: event.id,
-      createTime: event.createdAt,
-      creator: pubkey,
-      name: name,
-      about: about,
-      picture: picture,
-      badges: jsonEncode(badges),
-      relayURL: relay,
-    );
-    channelDB.channelId = event.id;
-    channelDB.creator = pubkey;
-    channelDB.createTime = event.createdAt;
-    channels[channelDB.channelId!] = channelDB;
-    myChannels[channelDB.channelId!] = channelDB;
-    _updateSubscription();
-    await _syncChannelToDB(channelDB);
-    // update my channel list
-    await _syncMyChannelListToRelay();
-    return channelDB;
+    return completer.future;
   }
 
-  Future<void> syncChannelsFromRelay(String owner, List<String> channelIds,
-      ChannelsUpdatedCallBack callBack) async {
+  Future<void> syncChannelsFromRelay(
+      String owner, List<String> channelIds) async {
+    Completer<void> completer = Completer<void>();
     // get create infos
     _syncChannelsInfos(owner, channelIds, false, (status) {
       if (status == 1) {
         // get update infos
         _syncChannelsInfos(owner, channelIds, true, (status) {
           // update finished
-          callBack();
+          completer.complete();
         });
       } else {
-        callBack();
+        completer.complete();
       }
     });
+    return completer.future;
   }
 
-  Future<void> setChannel(ChannelDB channelDB, {OKCallBack? callBack}) async {
+  Future<OKEvent> setChannel(ChannelDB channelDB,
+      {OKCallBack? callBack}) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = Nip28.setChannelMetaData(
         channelDB.name!,
         channelDB.about!,
@@ -281,7 +291,9 @@ class Channels {
         channelDB.channelId!,
         channelDB.relayURL!,
         privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+      completer.complete(ok);
+    });
 
     // update channel
     channelDB.channelId = event.id;
@@ -292,16 +304,17 @@ class Channels {
     _syncChannelToDB(channelDB);
     // update my channel list
     _syncMyChannelListToRelay();
+    return completer.future;
   }
 
-  Future<void> sendChannelMessage(
+  Future<OKEvent> sendChannelMessage(
       String channelId, MessageType type, String content,
       {String? channelRelay,
       String? replyMessage,
       String? replyMessageRelay,
       String? replyUser,
-      String? replyUserRelay,
-      OKCallBack? callBack}) async {
+      String? replyUserRelay}) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = Nip28.sendChannelMessage(
         channelId, MessageDB.encodeContent(type, content), privkey,
         channelRelay: channelRelay,
@@ -311,47 +324,64 @@ class Channels {
         replyUserRelay: replyUserRelay);
 
     MessageDB messageDB = MessageDB(
-      messageId: event.id,
-      sender: event.pubkey,
-      receiver: '',
-      groupId: channelId,
-      kind: event.kind,
-      tags: jsonEncode(event.tags),
-      content: event.content,
-      createTime: event.createdAt,
-      status: 0
-    );
+        messageId: event.id,
+        sender: event.pubkey,
+        receiver: '',
+        groupId: channelId,
+        kind: event.kind,
+        tags: jsonEncode(event.tags),
+        content: event.content,
+        createTime: event.createdAt,
+        status: 0);
     Messages.saveMessagesToDB([messageDB]);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+      completer.complete(ok);
+    });
+    return completer.future;
   }
 
-  Future<void> hideMessage(String messageId, String reason,
+  Future<OKEvent> hideMessage(String messageId, String reason,
       {OKCallBack? callBack}) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
     Messages.deleteMessagesFromDB([messageId]);
     Event event = Nip28.hideChannelMessage(messageId, reason, privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+      completer.complete(ok);
+    });
+    return completer.future;
   }
 
-  Future<void> muteUser(String userPubkey, String reason,
-      {OKCallBack? callBack}) async {
+  Future<OKEvent> muteUser(String userPubkey, String reason) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = Nip28.muteUser(userPubkey, reason, privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+      completer.complete(ok);
+    });
+    return completer.future;
   }
 
-  Future<void> joinChannel(String channelId, {OKCallBack? callBack}) async {
+  Future<OKEvent> joinChannel(String channelId) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
     _syncChannelsInfos('', [channelId], true, (status) {
       if (channels.containsKey(channelId)) {
         myChannels[channelId] = channels[channelId]!;
         _updateSubscription();
-        _syncMyChannelListToRelay(callBack: callBack);
+        _syncMyChannelListToRelay(callBack: (ok) {
+          completer.complete(ok);
+        });
       }
     });
+    return completer.future;
   }
 
-  Future<void> leaveChannel(String channelId, {OKCallBack? callBack}) async {
+  Future<OKEvent> leaveChannel(String channelId) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
     myChannels.remove(channelId);
     _updateSubscription();
-    _syncMyChannelListToRelay(callBack: callBack);
+    _syncMyChannelListToRelay(callBack: (ok) {
+      completer.complete(ok);
+    });
+    return completer.future;
   }
 
   List<ChannelDB>? fuzzySearch(String keyword) {
@@ -367,8 +397,9 @@ class Channels {
   }
 
   // get 20 latest channels
-  Future<void> getLatestChannels(
-      GetChannelsCallBack getChannelsCallBack) async {
+  Future<List<ChannelDB>> getLatestChannels() async {
+    Completer<List<ChannelDB>> completer = Completer<List<ChannelDB>>();
+
     String subscriptionId = '';
     Filter f = Filter(kinds: [40], limit: 20);
     List<ChannelDB> result = [];
@@ -393,8 +424,9 @@ class Channels {
       _syncChannelToDB(channelDB);
     }, eoseCallBack: (status) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
-      getChannelsCallBack(result);
+      completer.complete(result);
     });
+    return completer.future;
   }
 
   Future<void> muteChannel(String channelId) async {

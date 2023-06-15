@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
@@ -205,14 +206,19 @@ class Messages {
         .delete<MessageDB>(where: 'messageId = ?', whereArgs: messageIds);
   }
 
-  static deleteMessageFromRelay(
-      List<String> messageIds, String reason, String privkey, {OKCallBack? sendCallBack}) {
+  static Future<OKEvent> deleteMessageFromRelay(
+      List<String> messageIds, String reason, String privkey) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+
     /// delete frome DB
     deleteMessagesFromDB(messageIds);
 
     /// send delete event to relay
     Event event = Nip9.encode(messageIds, reason, privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: sendCallBack);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+      completer.complete(ok);
+    });
+    return completer.future;
   }
 
   static List<ProfileMention> decodeProfileMention(String content) {

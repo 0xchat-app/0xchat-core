@@ -48,7 +48,8 @@ class NotificationHelper {
   }
 
   // call setNotification when online or updating notification
-  void setNotification(String deviceId, List<int> kinds, List<String> relays, {OKCallBack? callBack}) {
+  Future<OKEvent> setNotification(String deviceId, List<int> kinds, List<String> relays) async{
+    Completer<OKEvent> completer = Completer<OKEvent>();
     List<String> toAliasPubkeys =
         Friends.sharedInstance.getAllUnMuteFriendsToAliasPubkey();
     List<String> channels = Channels.sharedInstance.getAllUnMuteChannels();
@@ -62,6 +63,9 @@ class NotificationHelper {
       '#p': toAliasPubkeys
     };
     Event event = Nip4.encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok){
+      completer.complete(ok);
+    });
+    return completer.future;
   }
 }
