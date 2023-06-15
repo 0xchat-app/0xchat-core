@@ -122,11 +122,10 @@ Future<void> testChannel() async {
 
   await Channels.sharedInstance.initWithPrivkey(user1.private);
 
-  Channels.sharedInstance.getLatestChannels((channels) {
-    for (ChannelDB channelDB in channels) {
-      print(channelDB.name);
-    }
-  });
+  var channels = await Channels.sharedInstance.getLatestChannels();
+  for (ChannelDB channelDB in channels) {
+    print(channelDB.name);
+  }
 
   Channels.sharedInstance.channelMessageCallBack = (MessageDB messageDB) {
     print(messageDB.decryptContent);
@@ -158,10 +157,7 @@ Future<void> testZaps() async {
       100,
       lnurl,
       'dc6ef75354eaa089089e4cd5246384c2a3ea554fa04bf2c26c8af798e96e6f3d',
-      '5c4eb49a5098530fc81f89a8fa282f06f94ed3a088f750071b27c6b5f81e053c',
-      (invoice) {
-    print(invoice);
-  });
+      '5c4eb49a5098530fc81f89a8fa282f06f94ed3a088f750071b27c6b5f81e053c');
 }
 
 Future<void> testBadges() async {
@@ -189,24 +185,20 @@ Future<void> testBadges() async {
   //   print(badgeDB!.name);
   // }
 
-  BadgesHelper.getUserBadgeAwardsFromRelay(
+  var result = await BadgesHelper.getUserBadgeAwardsFromRelay(
+      '792ed3a7a45d564f1ad9b21d2da26d0093ec3042475b01a84de206d53e4680b6');
+  for (BadgeDB? b in result!) {
+    print(b!.d!);
+  }
+  await BadgesHelper.setProfileBadges(
+      ['3422277673444894c9a78d578641c27a966baa21f04b969ce2753452f5febe23'],
       '792ed3a7a45d564f1ad9b21d2da26d0093ec3042475b01a84de206d53e4680b6',
-      (List<BadgeDB?>? result) async {
-    for (BadgeDB? b in result!) {
-      print(b!.d!);
-    }
-    await BadgesHelper.setProfileBadges(
-        ['3422277673444894c9a78d578641c27a966baa21f04b969ce2753452f5febe23'],
-        '792ed3a7a45d564f1ad9b21d2da26d0093ec3042475b01a84de206d53e4680b6',
-        '8b6846785424eab24a9a36957df1cb77d3348a4db91019274fb9a1bfa86f1daf');
-    BadgesHelper.getProfileBadgesFromRelay(
-        '792ed3a7a45d564f1ad9b21d2da26d0093ec3042475b01a84de206d53e4680b6',
-        (List<BadgeDB?>? result) {
-      for (BadgeDB? badgeDB in result!) {
-        print('getProfileBadgesFromRelay:${badgeDB!.d}');
-      }
-    });
-  });
+      '8b6846785424eab24a9a36957df1cb77d3348a4db91019274fb9a1bfa86f1daf');
+  var result2 = await BadgesHelper.getProfileBadgesFromRelay(
+      '792ed3a7a45d564f1ad9b21d2da26d0093ec3042475b01a84de206d53e4680b6');
+  for (BadgeDB? badgeDB in result2!) {
+    print('getProfileBadgesFromRelay:${badgeDB!.d}');
+  }
 }
 
 Future<void> testNotification() async {
