@@ -206,13 +206,13 @@ class Messages {
   }
 
   static deleteMessageFromRelay(
-      List<String> messageIds, String reason, String privkey) {
+      List<String> messageIds, String reason, String privkey, {OKCallBack? sendCallBack}) {
     /// delete frome DB
     deleteMessagesFromDB(messageIds);
 
     /// send delete event to relay
     Event event = Nip9.encode(messageIds, reason, privkey);
-    Connect.sharedInstance.sendEvent(event);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: sendCallBack);
   }
 
   static List<ProfileMention> decodeProfileMention(String content) {
