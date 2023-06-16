@@ -272,12 +272,12 @@ class Friends {
     }
   }
 
-  Alias userDBToAlias(UserDB userDB) {
-    String aliasPrivkey = Friends.getAliasPrivkey(userDB.pubKey!, privkey);
-    String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
-    return Alias(privkey, aliasPubkey, userDB.pubKey!, userDB.aliasPubkey!,
-        "accept", 10101);
-  }
+  // Alias userDBToAlias(UserDB userDB) {
+  //   String aliasPrivkey = Friends.getAliasPrivkey(userDB.pubKey!, privkey);
+  //   String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
+  //   return Alias(privkey, aliasPubkey, userDB.pubKey!, userDB.aliasPubkey!,
+  //       "accept", 10101);
+  // }
 
   Future<void> initWithPrikey(String key,
       {FriendUpdatedCallBack? callBack}) async {
