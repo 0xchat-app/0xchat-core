@@ -100,8 +100,10 @@ class Messages {
     List<DeleteEvent> deleteEvents = [];
     for (MessageDB message in messages) {
       if (message.kind == 5) {
-        List<String> deleteEventIds =
-            Nip9.tagsToList(jsonDecode(message.tags!));
+        List<dynamic> tags = jsonDecode(message.tags!);
+        List<String> deleteEventIds = Nip9.tagsToList(tags.map((item) {
+          return List<String>.from(item.cast<String>());
+        }).toList());
         if (deleteEventIds.isNotEmpty) {
           DeleteEvent deleteEvent = DeleteEvent(message.sender!, deleteEventIds,
               message.content!, message.createTime!);

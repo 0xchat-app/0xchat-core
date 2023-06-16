@@ -362,11 +362,12 @@ class Channels {
 
   Future<OKEvent> joinChannel(String channelId) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    _syncChannelsInfos('', [channelId], true, (status) {
+    _syncChannelsInfos('', [channelId], false, (status) {
       if (channels.containsKey(channelId)) {
         myChannels[channelId] = channels[channelId]!;
         _updateSubscription();
         _syncMyChannelListToRelay(callBack: (ok) {
+          print(ok.eventId);
           completer.complete(ok);
         });
       }
