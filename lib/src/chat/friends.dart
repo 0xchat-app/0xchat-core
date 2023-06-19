@@ -23,7 +23,7 @@ class Friends {
   UserDB? me;
   String pubkey = '';
   String privkey = '';
-  Map<String, UserDB> friends = {};
+  Map<String, UserDB> allFriends = {};
   String friendRequestSubscription = '';
   String friendsSubscription = '';
 
@@ -39,6 +39,13 @@ class Friends {
     return Nip101.aliasPrivkey(friendPubkey, privkey);
   }
 
+  Map<String, UserDB> get friends {
+    return Map.fromEntries(
+      allFriends.entries.where((entry) => (entry.value.aliasPubkey != null &&
+          entry.value.aliasPubkey!.isNotEmpty)),
+    );
+  }
+
   /// sync friends
   Future<void> _syncFriendsFromDB() async {
     String? list = me?.friendsList;
@@ -51,7 +58,7 @@ class Friends {
           friend.toAliasPrivkey =
               Friends.getAliasPrivkey(friend.pubKey!, privkey);
           friend.toAliasPubkey = Keychain.getPublicKey(friend.toAliasPrivkey!);
-          friends[pubkey] = friend;
+          allFriends[pubkey] = friend;
         }
       }
     }
@@ -68,7 +75,7 @@ class Friends {
     subscriptionId =
         Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
       // clear friends data
-      friends.clear();
+      allFriends.clear();
       Lists lists = Nip51.getLists(event, privkey);
       _syncFriendsProfiles(lists.people);
     }, eoseCallBack: (status) {
@@ -76,7 +83,7 @@ class Friends {
       if (status == 0) {
         // no friend list
         print('no friend list online!');
-        friends.clear();
+        allFriends.clear();
         _syncFriendsListToDB('');
         if (friendUpdatedCallBack != null) friendUpdatedCallBack!();
       }
@@ -90,7 +97,7 @@ class Friends {
 
   void _syncFriendsToRelay() {
     List<People> friendList = [];
-    for (UserDB user in friends.values) {
+    for (UserDB user in allFriends.values) {
       People p =
           People(user.pubKey!, user.mainRelay, user.nickName, user.aliasPubkey);
       friendList.add(p);
@@ -114,7 +121,7 @@ class Friends {
           user.nickName = p.petName;
           // sync to db
           await DB.sharedInstance.insert<UserDB>(user);
-          friends[user.pubKey!] = user;
+          allFriends[user.pubKey!] = user;
         }
       }
       // subscript friend accept, reject, delete, private messages
@@ -131,14 +138,14 @@ class Friends {
       friend.toAliasPubkey = Keychain.getPublicKey(friend.toAliasPrivkey!);
     }
     friend.aliasPubkey = friendAliasPubkey;
-    friends[friendPubkey] = friend;
+    allFriends[friendPubkey] = friend;
     await DB.sharedInstance.insert<UserDB>(friend);
     _updateFriendsSubscription();
     _syncFriendsToRelay();
   }
 
   void _deleteFriend(String friendPubkey) {
-    UserDB? friend = friends.remove(friendPubkey);
+    UserDB? friend = allFriends.remove(friendPubkey);
     if (friend != null) {
       _updateFriendsSubscription();
       _syncFriendsToRelay();
@@ -174,7 +181,7 @@ class Friends {
     }
 
     List<String> pubkeys = [];
-    friends.forEach((key, f) {
+    allFriends.forEach((key, f) {
       if (f.toAliasPubkey != null && f.toAliasPubkey!.isNotEmpty) {
         pubkeys.add(f.toAliasPubkey!);
       }
@@ -221,7 +228,7 @@ class Friends {
 
   void _handleFriendAccept(Event event) {
     String toAliasPubkey = Nip101.getP(event);
-    for (UserDB user in friends.values) {
+    for (UserDB user in allFriends.values) {
       if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
         Alias alias = Nip101.getAccept(
             event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
@@ -235,7 +242,7 @@ class Friends {
 
   void _handleFriendReject(Event event) {
     String toAliasPubkey = Nip101.getP(event);
-    for (UserDB user in friends.values) {
+    for (UserDB user in allFriends.values) {
       if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
         Alias alias = Nip101.getReject(
             event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
@@ -248,7 +255,7 @@ class Friends {
 
   void _handleFriendRemove(Event event) {
     String toAliasPubkey = Nip101.getP(event);
-    for (UserDB user in friends.values) {
+    for (UserDB user in allFriends.values) {
       if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
         Alias alias = Nip101.getRemove(
             event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
@@ -343,7 +350,7 @@ class Friends {
   Future<OKEvent> removeFriend(String friendPubkey) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
-    UserDB? friend = friends[friendPubkey];
+    UserDB? friend = allFriends[friendPubkey];
     if (friend != null && friend.aliasPubkey!.isNotEmpty) {
       Event event = Nip101.remove(pubkey, privkey, friend.toAliasPubkey!,
           friend.toAliasPrivkey!, friend.aliasPubkey!);
@@ -358,7 +365,7 @@ class Friends {
   List<UserDB>? fuzzySearch(String keyword) {
     if (keyword.isNotEmpty) {
       RegExp regex = RegExp(keyword, caseSensitive: false);
-      List<UserDB> filteredFriends = friends.values
+      List<UserDB> filteredFriends = allFriends.values
           .where((person) => regex.hasMatch(person.name!))
           .toList();
       return filteredFriends;
@@ -373,7 +380,7 @@ class Friends {
     String content,
   ) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    UserDB? friend = friends[friendPubkey];
+    UserDB? friend = allFriends[friendPubkey];
     if (friend != null) {
       Event event = Nip4.encode(
           friend.aliasPubkey!,
@@ -411,23 +418,23 @@ class Friends {
   }
 
   List<String> getAllUnMuteFriendsToAliasPubkey() {
-    return friends.entries
+    return allFriends.entries
         .where((e) => e.value.mute == false)
         .map((e) => e.value.toAliasPubkey!)
         .toList();
   }
 
   Future<void> _setMuteFriend(String friendPubkey, bool mute) async {
-    if (friends.containsKey(friendPubkey)) {
-      UserDB friend = friends[friendPubkey]!;
+    if (allFriends.containsKey(friendPubkey)) {
+      UserDB friend = allFriends[friendPubkey]!;
       friend.mute = mute;
       await DB.sharedInstance.insert<UserDB>(friend);
     }
   }
 
   Uint8List? getFriendSharedSecret(String friendPubkey) {
-    if (friends.containsKey(friendPubkey)) {
-      UserDB friend = friends[friendPubkey]!;
+    if (allFriends.containsKey(friendPubkey)) {
+      UserDB friend = allFriends[friendPubkey]!;
       return Nip101.getSharedSecret(
           friend.toAliasPrivkey!, friend.aliasPubkey!);
     }
