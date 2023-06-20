@@ -157,7 +157,7 @@ class Account {
       if (status == 0) {
         completer.complete(users);
       }
-    });
+    }, needTimeout: true);
     return completer.future;
   }
 

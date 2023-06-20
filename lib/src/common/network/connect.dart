@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
@@ -12,10 +13,10 @@ typedef OKCallBack = void Function(OKEvent ok);
 typedef ConnectStatusCallBack = void Function(String relay, int status);
 
 class Connect {
-  Connect._internal();
-
+  Connect._internal() {
+    _startCheckTimeOut();
+  }
   factory Connect() => sharedInstance;
-
   static final Connect sharedInstance = Connect._internal();
 
   NoticeCallBack? noticeCallBack;
@@ -30,19 +31,56 @@ class Connect {
   /// closed = 3;
   Map<String, int> connectStatus = {};
 
-  /// subscriptionId, EventCallBack
-  Map<String, List> map = {};
+  // subscriptionId, EventCallBack
+  Map<String, List> requestMap = {};
   // send event callback
-  Map<String, OKCallBack> okMap = {};
+  Map<String, List> okMap = {};
   // cache events not send for relay
   Map<String, List<String>> eventsMap = {};
+  // for timeout
+  Timer? timer;
+
+  void _startCheckTimeOut() {
+    if (timer == null || timer!.isActive == false) {
+      timer = Timer.periodic(Duration(seconds: 5), (Timer t) {
+        _checkTimeout();
+      });
+    }
+  }
+
+  void _stopCheckTimeOut() {
+    if (timer != null && timer!.isActive) {
+      timer!.cancel();
+    }
+  }
+
+  void _checkTimeout() {
+    var now = DateTime.now().millisecondsSinceEpoch;
+    for (var eventId in okMap.keys) {
+      var start = okMap[eventId]![1];
+      if (now - start > 60 * 1000) {
+        // timeout
+        OKEvent ok = OKEvent(eventId, false, 'Time Out');
+        okMap[eventId]![0](ok);
+        okMap.remove(eventId);
+      }
+    }
+    for (var subscriptionId in requestMap.keys) {
+      var start = requestMap[subscriptionId]![3];
+      if (start > 0 && now - start > 60 * 1000) {
+        // timeout
+        EOSECallBack? callBack = requestMap[subscriptionId]![1];
+        if (callBack != null) callBack(requestMap[subscriptionId]![2]);
+      }
+    }
+  }
 
   void _setConnectStatus(String relay, int status) {
     connectStatus[relay] = status;
     if (connectStatusCallBack != null) {
       connectStatusCallBack!(relay, status);
     }
-    if(status == 1){
+    if (status == 1) {
       _sendCachedDataForRelay(relay);
     }
   }
@@ -77,14 +115,16 @@ class Connect {
   }
 
   Future closeConnect(String relay) async {
-    if (webSockets.containsKey(relay)) {
+    if (webSockets.containsKey(relay) && webSockets[relay] != null) {
       webSockets[relay]!.close();
       webSockets.remove(relay);
     }
   }
 
   String addSubscription(List<Filter> filters,
-      {EventCallBack? eventCallBack, EOSECallBack? eoseCallBack}) {
+      {EventCallBack? eventCallBack,
+      EOSECallBack? eoseCallBack,
+      bool? needTimeout}) {
     /// Create a subscription message request with one or many filters
     Request requestWithFilter = Request(generate64RandomHexChars(), filters);
     String subscriptionString = requestWithFilter.serialize();
@@ -93,7 +133,14 @@ class Connect {
     _send(subscriptionString);
 
     /// store subscriptionId & callBack mapping
-    map[requestWithFilter.subscriptionId] = [eventCallBack, eoseCallBack, 0];
+    requestMap[requestWithFilter.subscriptionId] = [
+      eventCallBack,
+      eoseCallBack,
+      0,
+      (needTimeout != null && needTimeout)
+          ? DateTime.now().millisecondsSinceEpoch
+          : 0
+    ];
     return requestWithFilter.subscriptionId;
   }
 
@@ -103,7 +150,7 @@ class Connect {
       _send(Close(subscriptionId).serialize());
 
       /// remove the mapping
-      map.remove(subscriptionId);
+      requestMap.remove(subscriptionId);
     } else {
       throw Exception("null subscriptionId");
     }
@@ -112,7 +159,9 @@ class Connect {
   /// send an event to relay
   void sendEvent(Event event, {OKCallBack? sendCallBack}) {
     print(event.serialize());
-    if (sendCallBack != null) okMap[event.id] = sendCallBack;
+    if (sendCallBack != null) {
+      okMap[event.id] = [sendCallBack, DateTime.now().millisecondsSinceEpoch];
+    }
     _send(event.serialize());
   }
 
@@ -128,11 +177,11 @@ class Connect {
     });
   }
 
-  void _sendCachedDataForRelay(String relay){
+  void _sendCachedDataForRelay(String relay) {
     List<String>? events = eventsMap[relay];
-    if(events != null && events.isNotEmpty){
+    if (events != null && events.isNotEmpty) {
       WebSocket socket = webSockets[relay]!;
-      for(String data in events) {
+      for (String data in events) {
         print(data);
         socket.add(data);
         Future.delayed(Duration(milliseconds: 100));
@@ -167,9 +216,9 @@ class Connect {
     String? subscriptionId = event.subscriptionId;
     if (subscriptionId != null &&
         subscriptionId.isNotEmpty &&
-        map.containsKey(subscriptionId)) {
-      EventCallBack? callBack = map[subscriptionId]![0];
-      map[subscriptionId]![2] = 1;
+        requestMap.containsKey(subscriptionId)) {
+      EventCallBack? callBack = requestMap[subscriptionId]![0];
+      requestMap[subscriptionId]![2] = 1;
       if (callBack != null) callBack(event);
     }
   }
@@ -177,9 +226,9 @@ class Connect {
   void _handleEOSE(String eose) {
     print('receive EOSE: $eose');
     String subscriptionId = jsonDecode(eose)[0];
-    if (subscriptionId.isNotEmpty && map.containsKey(subscriptionId)) {
-      EOSECallBack? callBack = map[subscriptionId]![1];
-      if (callBack != null) callBack(map[subscriptionId]![2]);
+    if (subscriptionId.isNotEmpty && requestMap.containsKey(subscriptionId)) {
+      EOSECallBack? callBack = requestMap[subscriptionId]![1];
+      if (callBack != null) callBack(requestMap[subscriptionId]![2]);
     }
   }
 
@@ -193,7 +242,7 @@ class Connect {
     print('receive ok: $message');
     OKEvent? ok = Nip20.getOk(message);
     if (ok != null && okMap.containsKey(ok.eventId)) {
-      okMap[ok.eventId]!(ok);
+      okMap[ok.eventId]![0](ok);
       okMap.remove(ok.eventId);
     }
   }
