@@ -151,9 +151,12 @@ class Account {
         db.picture = map['picture'];
         await DB.sharedInstance.insert<UserDB>(db);
       }
+      completer.complete(users);
     }, eoseCallBack: (status) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
-      completer.complete(users);
+      if (status == 0) {
+        completer.complete(users);
+      }
     });
     return completer.future;
   }
