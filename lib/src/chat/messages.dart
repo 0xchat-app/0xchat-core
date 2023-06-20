@@ -193,6 +193,11 @@ class Messages {
     for (MessageDB message in messages) {
       theLastTime =
           message.createTime! > theLastTime ? message.createTime! : theLastTime;
+      if (message.decryptContent == null || message.decryptContent!.isEmpty) {
+        message.decryptContent =
+            MessageDB.decodeContent(message.content!)['content'];
+        message.type = MessageDB.decodeContent(message.content!)['contentType'];
+      }
     }
     return {'theLastTime': theLastTime, 'messages': messages};
   }
