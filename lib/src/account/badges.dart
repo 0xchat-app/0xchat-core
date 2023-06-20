@@ -148,7 +148,7 @@ class BadgesHelper {
   static Future<void> syncProfileBadgesToDB(
       String userPubkey, List<String> profileBadges) async {
     UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
-    if (userDB != null) {
+    if (userDB != null && profileBadges.isNotEmpty) {
       userDB.badges = jsonEncode(profileBadges);
       await DB.sharedInstance.insert<UserDB>(userDB);
     }
