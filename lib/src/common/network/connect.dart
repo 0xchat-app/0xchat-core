@@ -58,7 +58,7 @@ class Connect {
     var now = DateTime.now().millisecondsSinceEpoch;
     for (var eventId in okMap.keys) {
       var start = okMap[eventId]![1];
-      if (now - start > 60 * 1000) {
+      if (now - start > 15 * 1000) {
         // timeout
         OKEvent ok = OKEvent(eventId, false, 'Time Out');
         okMap[eventId]![0](ok);
@@ -67,7 +67,7 @@ class Connect {
     }
     for (var subscriptionId in requestMap.keys) {
       var start = requestMap[subscriptionId]![3];
-      if (start > 0 && now - start > 60 * 1000) {
+      if (start > 0 && now - start > 15 * 1000) {
         // timeout
         EOSECallBack? callBack = requestMap[subscriptionId]![1];
         if (callBack != null) callBack(requestMap[subscriptionId]![2]);
