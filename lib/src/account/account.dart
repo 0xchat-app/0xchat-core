@@ -162,6 +162,8 @@ class Account {
   }
 
   static Future<UserDB?> updateProfile(String privkey, UserDB updateDB) async {
+    Completer<UserDB?> completer = Completer<UserDB?>();
+
     UserDB db = await getUserFromDB(privkey: privkey) ?? UserDB();
     db.name = updateDB.name;
     db.gender = updateDB.gender;
@@ -182,8 +184,14 @@ class Account {
       'nip05': updateDB.dns,
     };
     Event event = Nip1.setMetadata(jsonEncode(map), privkey);
-    Connect.sharedInstance.sendEvent(event);
-    return db;
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+      if (ok.status) {
+        completer.complete(db);
+      } else {
+        completer.complete(null);
+      }
+    });
+    return completer.future;
   }
 
   static Future<UserDB?> updatePassword(String privkey, String password) async {
