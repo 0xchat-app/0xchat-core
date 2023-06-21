@@ -299,7 +299,12 @@ class Friends {
     await _syncFriendsFromRelay();
 
     // subscript friend requests
-    _friendRequestSubscription();
+    Connect.sharedInstance.addConnectStatusListener((relay, status) {
+       if(status == 1){
+         _friendRequestSubscription();
+         _updateFriendsSubscription();
+       }
+    });
   }
 
   Future<OKEvent> requestFriend(String friendPubkey, String content) async {

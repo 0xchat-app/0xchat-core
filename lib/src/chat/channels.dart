@@ -222,6 +222,13 @@ class Channels {
 
     await _loadAllChannelsFromDB();
     await _loadMyChannelsFromRelay();
+
+    // subscript friend requests
+    Connect.sharedInstance.addConnectStatusListener((relay, status) {
+      if(status == 1){
+        _updateSubscription();
+      }
+    });
   }
 
   Future<ChannelDB?> createChannel(String name, String about, String picture,

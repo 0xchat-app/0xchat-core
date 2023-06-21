@@ -35,8 +35,8 @@ class Connect {
   Map<String, List> requestMap = {};
   // send event callback
   Map<String, List> okMap = {};
-  // cache events not send for relay
-  Map<String, List<String>> eventsMap = {};
+  // ConnectStatus listeners
+  List<ConnectStatusCallBack> connectStatusListeners = [];
   // for timeout
   Timer? timer;
 
@@ -80,8 +80,20 @@ class Connect {
     if (connectStatusCallBack != null) {
       connectStatusCallBack!(relay, status);
     }
-    if (status == 1) {
-      _sendCachedDataForRelay(relay);
+    for (var callBack in connectStatusListeners) {
+      callBack(relay, status);
+    }
+  }
+
+  void addConnectStatusListener(ConnectStatusCallBack callBack) {
+    if (!connectStatusListeners.contains(callBack)) {
+      connectStatusListeners.add(callBack);
+    }
+  }
+
+  void removeConnectStatusListener(ConnectStatusCallBack callBack) {
+    if (connectStatusListeners.contains(callBack)) {
+      connectStatusListeners.remove(callBack);
     }
   }
 
@@ -110,7 +122,7 @@ class Connect {
 
   Future connectRelays(List<String> relays) async {
     for (String relay in relays) {
-       connect(relay);
+      connect(relay);
     }
   }
 
@@ -169,25 +181,8 @@ class Connect {
     webSockets.forEach((relay, socket) {
       if (connectStatus[relay] == 1 && socket != null) {
         socket.add(data);
-      } else {
-        // cache the event data
-        eventsMap[relay] ??= [];
-        eventsMap[relay]!.add(data);
       }
     });
-  }
-
-  void _sendCachedDataForRelay(String relay) {
-    List<String>? events = eventsMap[relay];
-    if (events != null && events.isNotEmpty) {
-      WebSocket socket = webSockets[relay]!;
-      for (String data in events) {
-        print(data);
-        socket.add(data);
-        Future.delayed(Duration(milliseconds: 100));
-      }
-      eventsMap.remove(relay);
-    }
   }
 
   void _handleMessage(String message) {

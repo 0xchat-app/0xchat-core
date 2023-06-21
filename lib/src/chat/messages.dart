@@ -36,7 +36,12 @@ class Messages {
       await _handleHideMessage(hiddenMessage.messageId, hiddenMessage.operator);
     }
 
-    _initSubscription();
+    // subscript friend requests
+    Connect.sharedInstance.addConnectStatusListener((relay, status) {
+      if(status == 1){
+        _initSubscription();
+      }
+    });
   }
 
   void _initSubscription() {
