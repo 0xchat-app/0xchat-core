@@ -11,7 +11,7 @@ class Zaps {
       List<dynamic> parts = lnaddr.split('@');
       String name = parts[0];
       String domain = parts[1];
-      String url = 'https://${domain}/.well-known/lnurlp/${name}';
+      String url = 'https://$domain/.well-known/lnurlp/$name';
       List<int> bytes = utf8.encode(url);
       String hex = bytesToHex(Uint8List.fromList(bytes));
       return bech32Encode('lnurl', hex);

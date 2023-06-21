@@ -83,6 +83,7 @@ class Channels {
     if (list.contains(user) == false) {
       list.add(user);
     }
+    me = await Account.getUserFromDB(privkey: privkey);
     me!.blockedList = jsonEncode(list);
     await DB.sharedInstance.insert<UserDB>(me!);
   }
@@ -118,6 +119,7 @@ class Channels {
     subscriptionId = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event) async {
       Lists lists = Nip51.getLists(event, privkey);
+      me = await Account.getUserFromDB(privkey: privkey);
       me!.channelsList = jsonEncode(lists.bookmarks);
       DB.sharedInstance.insert<UserDB>(me!);
       await syncChannelsFromRelay(lists.owner, lists.bookmarks);
@@ -200,6 +202,7 @@ class Channels {
 
   Future<void> _syncMyChannelListToDB() async {
     List<String> list = myChannels.keys.toList();
+    me = await Account.getUserFromDB(privkey: privkey);
     me!.channelsList = jsonEncode(list);
     await DB.sharedInstance.insert<UserDB>(me!);
   }

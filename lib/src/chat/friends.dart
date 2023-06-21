@@ -91,6 +91,7 @@ class Friends {
   }
 
   Future<void> _syncFriendsListToDB(String list) async {
+    me = await Account.getUserFromDB(privkey: privkey);
     me?.friendsList = list;
     await DB.sharedInstance.insert<UserDB>(me!);
   }

@@ -19,6 +19,9 @@ class Connect {
   factory Connect() => sharedInstance;
   static final Connect sharedInstance = Connect._internal();
 
+  // 15 seconds time out
+  static final int timeout = 15;
+
   NoticeCallBack? noticeCallBack;
   ConnectStatusCallBack? connectStatusCallBack;
 
@@ -58,7 +61,7 @@ class Connect {
     var now = DateTime.now().millisecondsSinceEpoch;
     for (var eventId in okMap.keys) {
       var start = okMap[eventId]![1];
-      if (now - start > 15 * 1000) {
+      if (now - start > timeout * 1000) {
         // timeout
         OKEvent ok = OKEvent(eventId, false, 'Time Out');
         okMap[eventId]![0](ok);
@@ -67,7 +70,7 @@ class Connect {
     }
     for (var subscriptionId in requestMap.keys) {
       var start = requestMap[subscriptionId]![3];
-      if (start > 0 && now - start > 15 * 1000) {
+      if (start > 0 && now - start > timeout * 1000) {
         // timeout
         EOSECallBack? callBack = requestMap[subscriptionId]![1];
         if (callBack != null) callBack(requestMap[subscriptionId]![2]);
@@ -151,7 +154,8 @@ class Connect {
       0,
       (needTimeout != null && needTimeout)
           ? DateTime.now().millisecondsSinceEpoch
-          : 0
+          : 0,
+      webSockets.keys.toList()
     ];
     return requestWithFilter.subscriptionId;
   }
@@ -185,14 +189,14 @@ class Connect {
     });
   }
 
-  void _handleMessage(String message) {
+  void _handleMessage(String message, String relay) {
     var m = Message.deserialize(message);
     switch (m.type) {
       case "EVENT":
         _handleEvent(m.message);
         break;
       case "EOSE":
-        _handleEOSE(m.message);
+        _handleEOSE(m.message, relay);
         break;
       case "NOTICE":
         _handleNotice(m.message);
@@ -218,12 +222,17 @@ class Connect {
     }
   }
 
-  void _handleEOSE(String eose) {
+  void _handleEOSE(String eose, String relay) {
     print('receive EOSE: $eose');
     String subscriptionId = jsonDecode(eose)[0];
     if (subscriptionId.isNotEmpty && requestMap.containsKey(subscriptionId)) {
-      EOSECallBack? callBack = requestMap[subscriptionId]![1];
-      if (callBack != null) callBack(requestMap[subscriptionId]![2]);
+      List<String> relays = requestMap[subscriptionId]![4];
+      relays.remove(relay);
+      if (relays.isEmpty) {
+        // all relays have EOSE
+        EOSECallBack? callBack = requestMap[subscriptionId]![1];
+        if (callBack != null) callBack(requestMap[subscriptionId]![2]);
+      }
     }
   }
 
@@ -244,7 +253,7 @@ class Connect {
 
   void _listenEvent(WebSocket socket, String relay) {
     socket.listen((message) {
-      _handleMessage(message);
+      _handleMessage(message, relay);
     }, onDone: () {
       print("connect aborted");
       _setConnectStatus(relay, 3); // closed
