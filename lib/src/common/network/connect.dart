@@ -110,7 +110,7 @@ class Connect {
 
   Future connectRelays(List<String> relays) async {
     for (String relay in relays) {
-      await connect(relay);
+       connect(relay);
     }
   }
 
