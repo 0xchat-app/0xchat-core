@@ -202,7 +202,7 @@ class Messages {
     return {'theLastTime': theLastTime, 'messages': messages};
   }
 
-  static saveMessagesToDB(List<MessageDB> messages) async {
+  static Future<void> saveMessagesToDB(List<MessageDB> messages) async {
     for (var message in messages) {
       await DB.sharedInstance.insert<MessageDB>(message);
     }

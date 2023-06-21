@@ -91,7 +91,7 @@ class Channels {
     ChannelMessage channelMessage = Nip28.getChannelMessage(event);
     if (_checkBlockedList(channelMessage.sender)) return;
     MessageDB messageDB = MessageDB(
-      messageId: channelMessage.channelId,
+      messageId: event.id,
       sender: channelMessage.sender,
       receiver: '',
       groupId: channelMessage.channelId,
@@ -104,7 +104,7 @@ class Channels {
         MessageDB.decodeContent(messageDB.content!)['content'];
     messageDB.type = MessageDB.decodeContent(messageDB.content!)['contentType'];
     if (channelMessageCallBack != null) channelMessageCallBack!(messageDB);
-    Messages.saveMessagesToDB([messageDB]);
+    await Messages.saveMessagesToDB([messageDB]);
   }
 
   Future<void> _loadMyChannelsFromRelay() async {
