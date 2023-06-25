@@ -96,7 +96,7 @@ class Friends {
     await DB.sharedInstance.insert<UserDB>(me!);
   }
 
-  void _syncFriendsToRelay() {
+  void _syncFriendsToRelay({OKCallBack? okCallBack}) {
     List<People> friendList = [];
     for (UserDB user in allFriends.values) {
       People p =
@@ -105,7 +105,7 @@ class Friends {
     }
     Event event = Nip51.createCategorizedPeople(
         identifier, [], friendList, privkey, pubkey);
-    Connect.sharedInstance.sendEvent(event);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: okCallBack);
     _syncFriendsListToDB(event.content);
   }
 
@@ -301,10 +301,10 @@ class Friends {
 
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) {
-       if(status == 1){
-         _friendRequestSubscription();
-         _updateFriendsSubscription();
-       }
+      if (status == 1) {
+        _friendRequestSubscription();
+        _updateFriendsSubscription();
+      }
     });
   }
 
@@ -365,6 +365,20 @@ class Friends {
       });
     }
     _deleteFriend(friendPubkey);
+    return completer.future;
+  }
+
+  Future<OKEvent> updateFriendNickName(
+      String friendPubkey, String nickName) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+
+    UserDB? friend = allFriends[friendPubkey];
+    if (friend != null && friend.aliasPubkey!.isNotEmpty) {
+      friend.nickName = nickName;
+      _syncFriendsToRelay(okCallBack: (ok) {
+        completer.complete(ok);
+      });
+    }
     return completer.future;
   }
 
