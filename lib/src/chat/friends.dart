@@ -58,7 +58,7 @@ class Friends {
           friend.toAliasPrivkey =
               Friends.getAliasPrivkey(friend.pubKey!, privkey);
           friend.toAliasPubkey = Keychain.getPublicKey(friend.toAliasPrivkey!);
-          allFriends[pubkey] = friend;
+          allFriends[p.pubkey] = friend;
         }
       }
     }
