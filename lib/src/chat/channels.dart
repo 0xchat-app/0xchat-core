@@ -13,7 +13,8 @@ class Channels {
   static final Channels sharedInstance = Channels._internal();
 
   static final String identifier = 'Chat-Channels';
-  String subscription = '';
+  // {relay1:subscriptionID1, relay2:subscriptionID2, ...}
+  Map<String, String> channelMessageSubscription = {};
 
   // memory storage
   UserDB? me;
@@ -34,35 +35,43 @@ class Channels {
   }
 
   void _updateSubscription() {
-    if (subscription.isNotEmpty) {
-      Connect.sharedInstance.closeSubscription(subscription);
-    }
+    for (String relay in Connect.sharedInstance.relays()) {
+      if (channelMessageSubscription.containsKey(relay) &&
+          channelMessageSubscription[relay] != null) {
+        Connect.sharedInstance
+            .closeSubscription(channelMessageSubscription[relay]!);
+      }
 
-    if (myChannels.keys.isNotEmpty) {
-      Filter f = Filter(
-          e: myChannels.keys.toList(),
-          kinds: [42],
-          since: (me!.lastEventTimeStamp! + 1));
-      subscription =
-          Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
-        _updateLastEventTimeStamp(event.createdAt);
-
-        switch (event.kind) {
-          case 42:
-            _receiveChannelMessages(event);
-            break;
-          default:
-            print('unhandled message $event');
-            break;
-        }
-      });
+      if (myChannels.keys.isNotEmpty) {
+        int lastEventTimeStamp = me!.getUpdatedTimeStampForRelay(relay);
+        Filter f = Filter(
+            e: myChannels.keys.toList(),
+            kinds: [42],
+            limit: 100,
+            since: (lastEventTimeStamp + 1));
+        channelMessageSubscription[relay] = Connect.sharedInstance
+            .addSubscription([f], relay: relay, eventCallBack: (event) async {
+          await _updateLastEventTimeStamp(event.createdAt, relay);
+          switch (event.kind) {
+            case 42:
+              _receiveChannelMessages(event, relay);
+              break;
+            default:
+              print('unhandled message $event');
+              break;
+          }
+        });
+      }
     }
   }
 
-  void _updateLastEventTimeStamp(int updateTime) {
-    me!.lastEventTimeStamp = me!.lastEventTimeStamp! > updateTime
-        ? me!.lastEventTimeStamp
-        : updateTime;
+  Future<void> _updateLastEventTimeStamp(int updateTime, String relay) async {
+    me = await Account.getUserFromDB(privkey: privkey);
+    int lastEventTimeStamp = me!.getUpdatedTimeStampForRelay(relay);
+    lastEventTimeStamp =
+        lastEventTimeStamp > updateTime ? lastEventTimeStamp : updateTime;
+    me!.setUpdatedTimeStampForRelay(relay, updateTime);
+    await DB.sharedInstance.insert<UserDB>(me!);
   }
 
   bool _checkBlockedList(String user) {
@@ -88,7 +97,7 @@ class Channels {
     await DB.sharedInstance.insert<UserDB>(me!);
   }
 
-  Future<void> _receiveChannelMessages(Event event) async {
+  Future<void> _receiveChannelMessages(Event event, String relay) async {
     ChannelMessage channelMessage = Nip28.getChannelMessage(event);
     if (_checkBlockedList(channelMessage.sender)) return;
     MessageDB messageDB = MessageDB(
@@ -228,7 +237,7 @@ class Channels {
 
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) {
-      if(status == 1){
+      if (status == 1) {
         _updateSubscription();
       }
     });

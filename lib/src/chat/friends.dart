@@ -24,8 +24,9 @@ class Friends {
   String pubkey = '';
   String privkey = '';
   Map<String, UserDB> allFriends = {};
-  String friendRequestSubscription = '';
-  String friendsSubscription = '';
+
+  Map<String, String> friendRequestSubscription = {};
+  Map<String, String> friendMessageSubscription = {};
 
   /// callbacks
   FriendRequestCallBack? friendRequestCallBack;
@@ -126,7 +127,7 @@ class Friends {
         }
       }
       // subscript friend accept, reject, delete, private messages
-      _updateFriendsSubscription();
+      _updateFriendMessageSubscription();
       if (friendUpdatedCallBack != null) friendUpdatedCallBack!();
     }
   }
@@ -141,81 +142,99 @@ class Friends {
     friend.aliasPubkey = friendAliasPubkey;
     allFriends[friendPubkey] = friend;
     await DB.sharedInstance.insert<UserDB>(friend);
-    _updateFriendsSubscription();
+    _updateFriendMessageSubscription();
     _syncFriendsToRelay();
   }
 
   void _deleteFriend(String friendPubkey) {
     UserDB? friend = allFriends.remove(friendPubkey);
     if (friend != null) {
-      _updateFriendsSubscription();
+      _updateFriendMessageSubscription();
       _syncFriendsToRelay();
     }
   }
 
-  void _friendRequestSubscription() {
-    Filter f = Filter(
-        kinds: [10100], p: [pubkey], since: (me!.lastEventTimeStamp! + 1));
-    friendRequestSubscription =
-        Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
-      _updateLastEventTimeStamp(event.createdAt);
-      switch (event.kind) {
-        case 10100:
-          _handleFriendRequest(event);
-          break;
-        default:
-          print('unhandled message $event');
-          break;
-      }
-    });
+  Future<void> _updateLastEventTimeStamp(int updateTime, String relay) async {
+    me = await Account.getUserFromDB(privkey: privkey);
+    int lastEventTimeStamp = me!.getUpdatedTimeStampForRelay(relay);
+    lastEventTimeStamp =
+        lastEventTimeStamp > updateTime ? lastEventTimeStamp : updateTime;
+    me!.setUpdatedTimeStampForRelay(relay, updateTime);
+    await DB.sharedInstance.insert<UserDB>(me!);
   }
 
-  void _updateLastEventTimeStamp(int updateTime) {
-    me!.lastEventTimeStamp = me!.lastEventTimeStamp! > updateTime
-        ? me!.lastEventTimeStamp
-        : updateTime;
-  }
-
-  void _updateFriendsSubscription() {
-    if (friendsSubscription.isNotEmpty) {
-      Connect.sharedInstance.closeSubscription(friendsSubscription);
-    }
-
-    List<String> pubkeys = [];
-    allFriends.forEach((key, f) {
-      if (f.toAliasPubkey != null && f.toAliasPubkey!.isNotEmpty) {
-        pubkeys.add(f.toAliasPubkey!);
+  void _updateFriendRequestSubscription() {
+    for (String relay in Connect.sharedInstance.relays()) {
+      if (friendRequestSubscription.containsKey(relay) &&
+          friendRequestSubscription[relay] != null) {
+        Connect.sharedInstance
+            .closeSubscription(friendRequestSubscription[relay]!);
       }
-    });
-    if (pubkeys.isNotEmpty) {
-      Filter f1 = Filter(
-          kinds: [10101, 10102, 10103, 4],
-          p: pubkeys,
-          since: (me!.lastEventTimeStamp! + 1));
-      Filter f2 = Filter(
-          kinds: [4], authors: pubkeys, since: (me!.lastEventTimeStamp! + 1));
-      friendsSubscription = Connect.sharedInstance.addSubscription([f1, f2],
-          eventCallBack: (event) {
-        _updateLastEventTimeStamp(event.createdAt);
 
+      int lastEventTimeStamp = me!.getUpdatedTimeStampForRelay(relay);
+      Filter f =
+          Filter(kinds: [10100], p: [pubkey], since: (lastEventTimeStamp + 1));
+      friendRequestSubscription[relay] =
+          Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+        _updateLastEventTimeStamp(event.createdAt, relay);
         switch (event.kind) {
-          case 10101:
-            _handleFriendAccept(event);
-            break;
-          case 10102:
-            _handleFriendReject(event);
-            break;
-          case 10103:
-            _handleFriendRemove(event);
-            break;
-          case 4:
-            _handlePrivateMessage(event);
+          case 10100:
+            _handleFriendRequest(event);
             break;
           default:
             print('unhandled message $event');
             break;
         }
       });
+    }
+  }
+
+  void _updateFriendMessageSubscription() {
+    for (String relay in Connect.sharedInstance.relays()) {
+      if (friendMessageSubscription.containsKey(relay) &&
+          friendMessageSubscription[relay] != null) {
+        Connect.sharedInstance
+            .closeSubscription(friendMessageSubscription[relay]!);
+      }
+
+      List<String> pubkeys = [];
+      allFriends.forEach((key, f) {
+        if (f.toAliasPubkey != null && f.toAliasPubkey!.isNotEmpty) {
+          pubkeys.add(f.toAliasPubkey!);
+        }
+      });
+      if (pubkeys.isNotEmpty) {
+        int lastEventTimeStamp = me!.getUpdatedTimeStampForRelay(relay);
+
+        Filter f1 = Filter(
+            kinds: [10101, 10102, 10103, 4],
+            p: pubkeys,
+            since: (lastEventTimeStamp + 1));
+        Filter f2 = Filter(
+            kinds: [4], authors: pubkeys, since: (lastEventTimeStamp + 1));
+        friendMessageSubscription[relay] = Connect.sharedInstance
+            .addSubscription([f1, f2], eventCallBack: (event) {
+          _updateLastEventTimeStamp(event.createdAt, relay);
+
+          switch (event.kind) {
+            case 10101:
+              _handleFriendAccept(event);
+              break;
+            case 10102:
+              _handleFriendReject(event);
+              break;
+            case 10103:
+              _handleFriendRemove(event);
+              break;
+            case 4:
+              _handlePrivateMessage(event);
+              break;
+            default:
+              print('unhandled message $event');
+              break;
+          }
+        });
+      }
     }
   }
 
@@ -302,8 +321,8 @@ class Friends {
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) {
       if (status == 1) {
-        _friendRequestSubscription();
-        _updateFriendsSubscription();
+        _updateFriendRequestSubscription();
+        _updateFriendMessageSubscription();
       }
     });
   }

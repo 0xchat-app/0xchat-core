@@ -100,11 +100,15 @@ class Connect {
     }
   }
 
+  List<String> relays() {
+    return webSockets.keys.toList();
+  }
+
   Future connect(String relay) async {
     // connecting or open
     if (connectStatus[relay] == 0 || connectStatus[relay] == 1) return;
     WebSocket socket;
-    if (webSockets.containsKey(relay)) {
+    if (webSockets.containsKey(relay) && webSockets[relay] != null) {
       socket = webSockets[relay]!;
       _setConnectStatus(relay, socket.readyState);
       print('status =  ${connectStatus[relay]}');
@@ -137,7 +141,8 @@ class Connect {
   }
 
   String addSubscription(List<Filter> filters,
-      {EventCallBack? eventCallBack,
+      {String? relay,
+      EventCallBack? eventCallBack,
       EOSECallBack? eoseCallBack,
       bool? needTimeout}) {
     /// Create a subscription message request with one or many filters
@@ -145,7 +150,7 @@ class Connect {
     String subscriptionString = requestWithFilter.serialize();
 
     /// Send a request message to the WebSocket server
-    _send(subscriptionString);
+    _send(subscriptionString, relay: relay);
 
     /// store subscriptionId & callBack mapping
     requestMap[requestWithFilter.subscriptionId] = [
@@ -155,15 +160,15 @@ class Connect {
       (needTimeout != null && needTimeout)
           ? DateTime.now().millisecondsSinceEpoch
           : 0,
-      webSockets.keys.toList()
+      relay == null ? webSockets.keys.toList() : [relay]
     ];
     return requestWithFilter.subscriptionId;
   }
 
-  Future closeSubscription(String subscriptionId) async {
+  Future closeSubscription(String subscriptionId, {String? relay}) async {
     print(Close(subscriptionId).serialize());
     if (subscriptionId.isNotEmpty) {
-      _send(Close(subscriptionId).serialize());
+      _send(Close(subscriptionId).serialize(), relay: relay);
 
       /// remove the mapping
       requestMap.remove(subscriptionId);
@@ -181,12 +186,21 @@ class Connect {
     _send(event.serialize());
   }
 
-  void _send(String data) {
-    webSockets.forEach((relay, socket) {
-      if (connectStatus[relay] == 1 && socket != null) {
-        socket.add(data);
+  void _send(String data, {String? relay}) {
+    if (relay != null) {
+      if (webSockets.containsKey(relay)) {
+        var socket = webSockets[relay];
+        if (connectStatus[relay] == 1 && socket != null) {
+          socket.add(data);
+        }
       }
-    });
+    } else {
+      webSockets.forEach((url, socket) {
+        if (connectStatus[url] == 1 && socket != null) {
+          socket.add(data);
+        }
+      });
+    }
   }
 
   void _handleMessage(String message, String relay) {

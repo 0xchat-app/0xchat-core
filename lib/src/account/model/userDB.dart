@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
@@ -41,7 +43,8 @@ class UserDB extends DBObject {
   String? blockedList; // blocked users list
 
   /// last event update timestamp
-  int? lastEventTimeStamp;
+  /// {relay1:timestamp1, relay2:timestamp2...}
+  String? updatedTimeStamp;
 
   bool? mute;
 
@@ -68,7 +71,7 @@ class UserDB extends DBObject {
     this.groupsList = '',
     this.badgesList = '',
     this.blockedList = '',
-    this.lastEventTimeStamp = 0,
+    this.updatedTimeStamp = '',
     this.mute = false,
   });
 
@@ -107,6 +110,28 @@ class UserDB extends DBObject {
   String get encodedPrivkey {
     return Nip19.encodePrivkey(privkey!);
   }
+
+  int getUpdatedTimeStampForRelay(String relay) {
+    try {
+      Map map = jsonDecode(updatedTimeStamp!);
+      if (map.containsKey(relay)) {
+        return map[relay];
+      }
+    } catch (e) {
+      return 0;
+    }
+    return 0;
+  }
+
+  void setUpdatedTimeStampForRelay(String relay, int timeStamp) {
+    try {
+      Map map = jsonDecode(updatedTimeStamp!);
+      map[relay] = timeStamp;
+      updatedTimeStamp = jsonEncode(map);
+    } catch (e) {
+      updatedTimeStamp = jsonEncode({relay: timeStamp});
+    }
+  }
 }
 
 UserDB _userInfoFromMap(Map<String, dynamic> map) {
@@ -129,7 +154,7 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
       groupsList: map['groupsList'].toString(),
       badgesList: map['badgesList'].toString(),
       blockedList: map['blockedList'].toString(),
-      lastEventTimeStamp: map['lastEventTimeStamp'],
+      updatedTimeStamp: map['updatedTimeStamp'].toString(),
       aliasPubkey: map['aliasPubkey'],
       mute: map['mute'] > 0 ? true : false);
 }
@@ -153,7 +178,7 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'groupsList': instance.groupsList,
       'badgesList': instance.badgesList,
       'blockedList': instance.blockedList,
-      'lastEventTimeStamp': instance.lastEventTimeStamp,
+      'updatedTimeStamp': instance.updatedTimeStamp,
       'aliasPubkey': instance.aliasPubkey,
       'mute': instance.mute
     };

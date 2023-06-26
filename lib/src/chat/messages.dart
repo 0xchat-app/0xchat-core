@@ -12,7 +12,6 @@ class Messages {
 
   static final int maxReportCount = 3;
 
-  UserDB? me;
   String pubkey = '';
   String privkey = '';
   String messageSubscription = '';
@@ -21,8 +20,6 @@ class Messages {
   Future<void> initWithPrivkey(String key) async {
     privkey = key;
     pubkey = Keychain.getPublicKey(privkey);
-    me = await Account.getUserFromDB(privkey: key);
-    me ??= UserDB(pubKey: pubkey, privkey: privkey);
 
     // delete event
     List<DeleteEvent> deleteEvents = await _loadDeleteMessagesFromDB();
