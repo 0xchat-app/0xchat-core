@@ -316,11 +316,11 @@ class Friends {
 
     // sync friend list from DB & relays
     await _syncFriendsFromDB();
-    await _syncFriendsFromRelay();
 
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) {
       if (status == 1) {
+        _syncFriendsFromRelay();
         _updateFriendRequestSubscription();
         _updateFriendMessageSubscription();
       }

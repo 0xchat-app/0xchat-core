@@ -233,11 +233,11 @@ class Channels {
     myChannelsUpdatedCallBack = callBack;
 
     await _loadAllChannelsFromDB();
-    await _loadMyChannelsFromRelay();
 
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) {
       if (status == 1) {
+        _loadMyChannelsFromRelay();
         _updateSubscription();
       }
     });
