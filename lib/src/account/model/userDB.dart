@@ -36,15 +36,15 @@ class UserDB extends DBObject {
 
   /// lists for me
   String? friendsList;
-  String? channelsList;
-  String? groupsList;
-  String? badgesList;
+  List<String>? channelsList;
+  List<String>? groupsList;
+  List<String>? badgesList;
 
-  String? blockedList; // blocked users list
+  List<String>? blockedList; // blocked users list
 
   /// last event update timestamp
   /// {relay1:timestamp1, relay2:timestamp2...}
-  String? updatedTimeStamp;
+  Map<String, dynamic>? updatedTimeStamp;
 
   bool? mute;
 
@@ -66,12 +66,12 @@ class UserDB extends DBObject {
     this.aliasPubkey = '',
     this.toAliasPubkey = '',
     this.toAliasPrivkey = '',
-    this.friendsList = '',
-    this.channelsList = '',
-    this.groupsList = '',
-    this.badgesList = '',
-    this.blockedList = '',
-    this.updatedTimeStamp = '',
+    this.friendsList,
+    this.channelsList,
+    this.groupsList,
+    this.badgesList,
+    this.blockedList,
+    this.updatedTimeStamp,
     this.mute = false,
   });
 
@@ -113,9 +113,8 @@ class UserDB extends DBObject {
 
   int getUpdatedTimeStampForRelay(String relay) {
     try {
-      Map map = jsonDecode(updatedTimeStamp!);
-      if (map.containsKey(relay)) {
-        return map[relay];
+      if (updatedTimeStamp != null && updatedTimeStamp!.containsKey(relay)) {
+        return updatedTimeStamp![relay] ?? 0;
       }
     } catch (e) {
       return 0;
@@ -124,12 +123,19 @@ class UserDB extends DBObject {
   }
 
   void setUpdatedTimeStampForRelay(String relay, int timeStamp) {
+    if (updatedTimeStamp != null) {
+      updatedTimeStamp![relay] = timeStamp;
+    } else {
+      updatedTimeStamp = {relay: timeStamp};
+    }
+  }
+
+  static List<String> decodeStringList(String list) {
     try {
-      Map map = jsonDecode(updatedTimeStamp!);
-      map[relay] = timeStamp;
-      updatedTimeStamp = jsonEncode(map);
+      List<dynamic> result = jsonDecode(list);
+      return result.map((e) => e.toString()).toList();
     } catch (e) {
-      updatedTimeStamp = jsonEncode({relay: timeStamp});
+      return [];
     }
   }
 }
@@ -150,11 +156,11 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
       about: map['about'].toString(),
       picture: map['picture'].toString(),
       friendsList: map['friendsList'].toString(),
-      channelsList: map['channelsList'].toString(),
-      groupsList: map['groupsList'].toString(),
-      badgesList: map['badgesList'].toString(),
-      blockedList: map['blockedList'].toString(),
-      updatedTimeStamp: map['updatedTimeStamp'].toString(),
+      channelsList: UserDB.decodeStringList(map['channelsList'].toString()),
+      groupsList: UserDB.decodeStringList(map['groupsList'].toString()),
+      badgesList: UserDB.decodeStringList(map['badgesList'].toString()),
+      blockedList: UserDB.decodeStringList(map['blockedList'].toString()),
+      updatedTimeStamp: jsonDecode(map['updatedTimeStamp'].toString()),
       aliasPubkey: map['aliasPubkey'],
       mute: map['mute'] > 0 ? true : false);
 }
@@ -174,11 +180,11 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'about': instance.about,
       'picture': instance.picture,
       'friendsList': instance.friendsList,
-      'channelsList': instance.channelsList,
-      'groupsList': instance.groupsList,
-      'badgesList': instance.badgesList,
-      'blockedList': instance.blockedList,
-      'updatedTimeStamp': instance.updatedTimeStamp,
+      'channelsList': jsonEncode(instance.channelsList),
+      'groupsList': jsonEncode(instance.groupsList),
+      'badgesList': jsonEncode(instance.badgesList),
+      'blockedList': jsonEncode(instance.blockedList),
+      'updatedTimeStamp': jsonEncode(instance.updatedTimeStamp ?? {}),
       'aliasPubkey': instance.aliasPubkey,
       'mute': instance.mute
     };

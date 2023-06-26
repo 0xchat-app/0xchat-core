@@ -149,6 +149,7 @@ class Account {
         db.area = map['area'];
         db.about = map['about'];
         db.picture = map['picture'];
+        db.dns = map['nip05'];
         await DB.sharedInstance.insert<UserDB>(db);
       }
       completer.complete(users);

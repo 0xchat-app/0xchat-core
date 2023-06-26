@@ -161,9 +161,7 @@ class BadgesHelper {
     if (userDB != null &&
         userDB.badgesList != null &&
         userDB.badgesList!.isNotEmpty) {
-      List<dynamic> badgesList = jsonDecode(userDB.badgesList!);
-      List<BadgeDB?> badges = await getBadgeInfosFromDB(
-          badgesList.map((e) => e.toString()).toList());
+      List<BadgeDB?> badges = await getBadgeInfosFromDB(userDB.badgesList!);
       completer.complete(badges);
     } else {
       completer.complete(null);
@@ -189,7 +187,7 @@ class BadgesHelper {
       for (BadgeDB badgeDB in badges) {
         badgesList.add(badgeDB.id!);
       }
-      userDB.badgesList = jsonEncode(badgesList);
+      userDB.badgesList = badgesList;
       await DB.sharedInstance.insert<UserDB>(userDB);
     }
   }
@@ -218,7 +216,12 @@ class BadgesHelper {
     }
     if (badgeAwards.isNotEmpty) {
       Event event = Nip58.setProfileBadges(badgeAwards, privkey);
-      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) async {
+        if (ok.status) {
+          UserDB? userDB = await Account.getUserFromDB(privkey: privkey);
+          userDB!.badges = jsonEncode(badgeIds);
+          await DB.sharedInstance.insert<UserDB>(userDB);
+        }
         completer.complete(ok);
       });
 
@@ -243,6 +246,10 @@ class BadgesHelper {
             badgeAward.creator!, badgeAward.identifies!);
         if (badgeDB != null) result.add(badgeDB);
         if (profileBadges.last == badgeAward) {
+          // todo: sync profile badge to db
+          UserDB? userDB = await Account.getUserFromDB(privkey: userPubkey);
+          userDB!.badges = '';
+          await DB.sharedInstance.insert<UserDB>(userDB);
           completer.complete(result);
         }
       }

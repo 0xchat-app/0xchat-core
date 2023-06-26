@@ -124,6 +124,10 @@ class DBHelper {
     if (typename == String) {
       return "TEXT";
     }
+    if (typename.toString().startsWith('Map') ||
+        typename.toString().startsWith('List')) {
+      return "TEXT";
+    }
     if (classMirror.staticMembers.keys.contains("isBlobColumn")) {
       var isBlobColumn =
           classMirror.invoke("isBlobColumn", [variableMirror.simpleName]);

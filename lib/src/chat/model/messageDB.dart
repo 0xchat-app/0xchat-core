@@ -23,21 +23,20 @@ class MessageDB extends DBObject {
 
   List<String>? reportList; // hide message ids list, not save to DB
 
-  MessageDB({
-    this.messageId = '',
-    this.sender = '',
-    this.receiver = '',
-    this.groupId = '',
-    this.kind = 0,
-    this.tags = '',
-    this.content = '',
-    this.createTime = 0,
-    this.read = false,
-    this.replyId = '',
-    this.decryptContent = '',
-    this.type = 'text',
-    this.status = 1
-  });
+  MessageDB(
+      {this.messageId = '',
+      this.sender = '',
+      this.receiver = '',
+      this.groupId = '',
+      this.kind = 0,
+      this.tags = '',
+      this.content = '',
+      this.createTime = 0,
+      this.read = false,
+      this.replyId = '',
+      this.decryptContent = '',
+      this.type = 'text',
+      this.status = 1});
 
   @override
   Map<String, Object?> toMap() {
@@ -125,9 +124,9 @@ class MessageDB extends DBObject {
             sender = Friends.sharedInstance.me!.pubKey!;
             receiver = friend.pubKey!;
           }
-          if(sender.isNotEmpty && receiver.isNotEmpty){
-            EDMessage message =
-            Nip4.decode(event, friend.toAliasPubkey!, friend.toAliasPrivkey!);
+          if (sender.isNotEmpty && receiver.isNotEmpty) {
+            EDMessage message = Nip4.decode(
+                event, friend.toAliasPubkey!, friend.toAliasPrivkey!);
             MessageDB messageDB = MessageDB(
                 messageId: event.id,
                 sender: sender,
@@ -138,7 +137,8 @@ class MessageDB extends DBObject {
                 content: event.content,
                 createTime: event.createdAt,
                 replyId: message.replyId);
-            messageDB.decryptContent = decodeContent(message.content)['content'];
+            messageDB.decryptContent =
+                decodeContent(message.content)['content'];
             messageDB.type = decodeContent(message.content)['contentType'];
             return messageDB;
           }
@@ -162,8 +162,8 @@ Map<String, dynamic> _messageInfoToMap(MessageDB instance) => <String, dynamic>{
       'replyId': instance.replyId,
       'decryptContent': instance.decryptContent,
       'type': instance.type,
-  'status': instance.status,
-};
+      'status': instance.status,
+    };
 
 MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
   return MessageDB(

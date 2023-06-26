@@ -51,15 +51,17 @@ class Friends {
   Future<void> _syncFriendsFromDB() async {
     String? list = me?.friendsList;
     if (list != null && list.isNotEmpty) {
-      Map map = Nip51.fromContent(list, privkey, pubkey);
-      List<People> friendsList = map['people'];
-      for (People p in friendsList) {
-        UserDB? friend = await Account.getUserFromDB(pubkey: p.pubkey);
-        if (friend != null) {
-          friend.toAliasPrivkey =
-              Friends.getAliasPrivkey(friend.pubKey!, privkey);
-          friend.toAliasPubkey = Keychain.getPublicKey(friend.toAliasPrivkey!);
-          allFriends[p.pubkey] = friend;
+      Map? map = Nip51.fromContent(list, privkey, pubkey);
+      if(map != null){
+        List<People> friendsList = map['people'];
+        for (People p in friendsList) {
+          UserDB? friend = await Account.getUserFromDB(pubkey: p.pubkey);
+          if (friend != null) {
+            friend.toAliasPrivkey =
+                Friends.getAliasPrivkey(friend.pubKey!, privkey);
+            friend.toAliasPubkey = Keychain.getPublicKey(friend.toAliasPrivkey!);
+            allFriends[p.pubkey] = friend;
+          }
         }
       }
     }
@@ -308,6 +310,7 @@ class Friends {
 
   Future<void> initWithPrikey(String key,
       {FriendUpdatedCallBack? callBack}) async {
+    print('initWithPrikey');
     privkey = key;
     pubkey = Keychain.getPublicKey(privkey);
     me = await Account.getUserFromDB(privkey: key);

@@ -74,32 +74,25 @@ class Channels {
     await DB.sharedInstance.insert<UserDB>(me!);
   }
 
-  bool _checkBlockedList(String user) {
-    String? blockedList = me!.blockedList;
-    if (blockedList != null && blockedList.isNotEmpty) {
-      List<String> list = jsonDecode(blockedList);
-      return list.contains(user);
+  Future<bool> _checkBlockedList(String user) async {
+    me = await Account.getUserFromDB(privkey: privkey);
+    if (me!.blockedList != null && me!.blockedList!.isNotEmpty) {
+      return me!.blockedList!.contains(user);
     }
     return false;
   }
 
   Future<void> handleMuteUser(String user) async {
-    String? blockedList = me!.blockedList;
-    List<String> list = [];
-    if (blockedList != null && blockedList.isNotEmpty) {
-      list = jsonDecode(blockedList);
-    }
-    if (list.contains(user) == false) {
-      list.add(user);
-    }
     me = await Account.getUserFromDB(privkey: privkey);
-    me!.blockedList = jsonEncode(list);
+    if (me!.blockedList != null && me!.blockedList!.contains(user) == false) {
+      me!.blockedList!.add(user);
+    }
     await DB.sharedInstance.insert<UserDB>(me!);
   }
 
   Future<void> _receiveChannelMessages(Event event, String relay) async {
     ChannelMessage channelMessage = Nip28.getChannelMessage(event);
-    if (_checkBlockedList(channelMessage.sender)) return;
+    if (await _checkBlockedList(channelMessage.sender)) return;
     MessageDB messageDB = MessageDB(
       messageId: event.id,
       sender: channelMessage.sender,
@@ -129,7 +122,7 @@ class Channels {
         eventCallBack: (event) async {
       Lists lists = Nip51.getLists(event, privkey);
       me = await Account.getUserFromDB(privkey: privkey);
-      me!.channelsList = jsonEncode(lists.bookmarks);
+      me!.channelsList = lists.bookmarks;
       DB.sharedInstance.insert<UserDB>(me!);
       await syncChannelsFromRelay(lists.owner, lists.bookmarks);
       myChannels = _myChannels();
@@ -152,7 +145,7 @@ class Channels {
     if (me != null &&
         me!.channelsList != null &&
         me!.channelsList!.isNotEmpty) {
-      List<dynamic> channelList = jsonDecode(me!.channelsList!);
+      List<String> channelList = me!.channelsList!;
       for (String channelId in channelList) {
         if (channels.containsKey(channelId)) {
           result[channelId] = channels[channelId]!;
@@ -212,7 +205,7 @@ class Channels {
   Future<void> _syncMyChannelListToDB() async {
     List<String> list = myChannels.keys.toList();
     me = await Account.getUserFromDB(privkey: privkey);
-    me!.channelsList = jsonEncode(list);
+    me!.channelsList = list;
     await DB.sharedInstance.insert<UserDB>(me!);
   }
 
