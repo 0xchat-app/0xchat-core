@@ -11,6 +11,9 @@ class Zaps {
       List<dynamic> parts = lnaddr.split('@');
       String name = parts[0];
       String domain = parts[1];
+      if(name.isEmpty || domain.isEmpty){
+        throw Exception('invalid lnaddr');
+      }
       String url = 'https://$domain/.well-known/lnurlp/$name';
       List<int> bytes = utf8.encode(url);
       String hex = bytesToHex(Uint8List.fromList(bytes));
