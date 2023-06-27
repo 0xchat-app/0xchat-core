@@ -319,15 +319,21 @@ class Friends {
 
     // sync friend list from DB & relays
     await _syncFriendsFromDB();
+    _updateSubscriptions();
 
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) {
+      print('addConnectStatusListener $status');
       if (status == 1) {
-        _syncFriendsFromRelay();
-        _updateFriendRequestSubscription();
-        _updateFriendMessageSubscription();
+        _updateSubscriptions();
       }
     });
+  }
+
+  void _updateSubscriptions(){
+    _syncFriendsFromRelay();
+    _updateFriendRequestSubscription();
+    _updateFriendMessageSubscription();
   }
 
   Future<OKEvent> requestFriend(String friendPubkey, String content) async {

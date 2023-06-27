@@ -226,17 +226,22 @@ class Channels {
     myChannelsUpdatedCallBack = callBack;
 
     await _loadAllChannelsFromDB();
+    _updateSubscriptions();
 
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) {
       if (status == 1) {
-        _loadMyChannelsFromRelay();
-        _updateSubscription();
+        _updateSubscriptions();
       }
     });
   }
 
-  Future<ChannelDB?> createChannel(String name, String about, String picture,
+  void _updateSubscriptions() {
+    _loadMyChannelsFromRelay();
+    _updateSubscription();
+  }
+
+    Future<ChannelDB?> createChannel(String name, String about, String picture,
       List<String>? badges, String relay,
       {OKCallBack? callBack}) async {
     Completer<ChannelDB?> completer = Completer<ChannelDB?>();
