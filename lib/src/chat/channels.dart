@@ -241,7 +241,7 @@ class Channels {
     _updateSubscription();
   }
 
-    Future<ChannelDB?> createChannel(String name, String about, String picture,
+  Future<ChannelDB?> createChannel(String name, String about, String picture,
       List<String>? badges, String relay,
       {OKCallBack? callBack}) async {
     Completer<ChannelDB?> completer = Completer<ChannelDB?>();
@@ -304,7 +304,7 @@ class Channels {
         channelDB.name!,
         channelDB.about!,
         channelDB.picture!,
-        channelDB.badges!.isNotEmpty ? {'badges':channelDB.badges!} : null,
+        channelDB.badges!.isNotEmpty ? {'badges': channelDB.badges!} : null,
         channelDB.channelId!,
         channelDB.relayURL!,
         privkey);
@@ -468,5 +468,22 @@ class Channels {
       channelDB.mute = mute;
       await _syncChannelToDB(channelDB);
     }
+  }
+
+  static String encodeChannel(
+      String channelId, List<String>? relays, String? author) {
+    return Nip19.encodeShareableEntity('nevent', channelId, relays, author);
+  }
+
+  static Map<String, dynamic>? decodeChannel(String encodedChannel) {
+    Map result = Nip19.decodeShareableEntity(encodedChannel);
+    if (result['prefix'] == 'nevent') {
+      return {
+        'channelId': result['special'],
+        'relays': result['relays'],
+        'author': result['author']
+      };
+    }
+    return null;
   }
 }

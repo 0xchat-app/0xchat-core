@@ -150,6 +150,7 @@ class Account {
         db.about = map['about'];
         db.picture = map['picture'];
         db.dns = map['nip05'];
+        db.lnurl = map['lnurl'];
         await DB.sharedInstance.insert<UserDB>(db);
       }
       completer.complete(users);
@@ -183,6 +184,7 @@ class Account {
       'area': updateDB.area,
       'picture': updateDB.picture,
       'nip05': updateDB.dns,
+      'lnurl': updateDB.lnurl
     };
     Event event = Nip1.setMetadata(jsonEncode(map), privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
@@ -219,10 +221,14 @@ class Account {
   }
 
   static String encodeProfile(String pubkey, List<String> relays) {
-    return Nip19.encodeProfile(pubkey, relays);
+    return Nip19.encodeShareableEntity('nprofile', pubkey, relays, null);
   }
 
-  static Map<String, dynamic> decodeProfile(String profile) {
-    return Nip19.decodeProfile(profile);
+  static Map<String, dynamic>? decodeProfile(String profile) {
+    Map result = Nip19.decodeShareableEntity(profile);
+    if(result['prefix'] == 'nprofile'){
+      return {'pubkey': result['special'], 'relays': result['relays']};
+    }
+    return null;
   }
 }
