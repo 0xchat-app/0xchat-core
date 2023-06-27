@@ -173,6 +173,7 @@ class Account {
     db.about = updateDB.about;
     db.picture = updateDB.picture;
     db.dns = updateDB.dns;
+    db.lnurl = updateDB.lnurl;
     db.privkey = privkey;
     await DB.sharedInstance.update<UserDB>(db);
 
