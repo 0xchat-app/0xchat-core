@@ -415,11 +415,14 @@ class Channels {
   }
 
   // get 20 latest channels
-  Future<List<ChannelDB>> getLatestChannels() async {
+  Future<List<ChannelDB>> getChannelsFromRelay(
+      {List<String>? channelIds}) async {
     Completer<List<ChannelDB>> completer = Completer<List<ChannelDB>>();
 
     String subscriptionId = '';
-    Filter f = Filter(kinds: [40], limit: 20);
+    Filter f = channelIds == null
+        ? Filter(kinds: [40], limit: 20)
+        : Filter(ids: channelIds, kinds: [40]);
     List<ChannelDB> result = [];
     subscriptionId =
         Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {

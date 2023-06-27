@@ -122,7 +122,7 @@ Future<void> testChannel() async {
 
   await Channels.sharedInstance.initWithPrivkey(user1.private);
 
-  var channels = await Channels.sharedInstance.getLatestChannels();
+  var channels = await Channels.sharedInstance.getChannelsFromRelay();
   for (ChannelDB channelDB in channels) {
     print(channelDB.name);
   }
