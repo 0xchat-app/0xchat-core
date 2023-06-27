@@ -40,7 +40,7 @@ At present, the repository supports the following modules and functionalities:
 
 
 ### Nips for 0xchat
-- [x] [NIP 101 Alias Key Exchange]()
+- [x] [NIP 101 Alias Key Exchange](https://github.com/water783/nips/blob/nip101/101.md)
 
 
 With the foundation of this core repository, developers can focus on building intuitive and innovative user interfaces, enhancing the user experience and allowing for the delivery of high-quality 0xChat services.
