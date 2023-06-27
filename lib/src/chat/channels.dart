@@ -242,7 +242,7 @@ class Channels {
   }
 
   Future<ChannelDB?> createChannel(String name, String about, String picture,
-      List<String>? badges, String relay,
+      List<String> badges, String relay,
       {OKCallBack? callBack}) async {
     Completer<ChannelDB?> completer = Completer<ChannelDB?>();
     Map<String, String> additional = {'badges': jsonEncode(badges)};
