@@ -14,7 +14,7 @@ class Zaps {
       String url = 'https://$domain/.well-known/lnurlp/$name';
       List<int> bytes = utf8.encode(url);
       String hex = bytesToHex(Uint8List.fromList(bytes));
-      return bech32Encode('lnurl', hex);
+      return bech32Encode('lnurl', hex, maxLength: 200);
     } catch (e) {
       throw Exception(e);
     }
