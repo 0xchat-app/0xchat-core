@@ -178,7 +178,7 @@ class Channels {
 
       String badges = '';
       if (channel.additional.containsKey('badges')) {
-        badges = jsonEncode(channel.additional['badges']);
+        badges = channel.additional['badges']!;
       }
 
       ChannelDB channelDB = ChannelDB(
@@ -304,7 +304,7 @@ class Channels {
         channelDB.name!,
         channelDB.about!,
         channelDB.picture!,
-        channelDB.badges!.isNotEmpty ? jsonDecode(channelDB.badges!) : [],
+        channelDB.badges!.isNotEmpty ? {'badges':channelDB.badges!} : null,
         channelDB.channelId!,
         channelDB.relayURL!,
         privkey);
@@ -426,7 +426,7 @@ class Channels {
       Channel channel = Nip28.getChannelCreation(event);
       String badges = '';
       if (channel.additional.containsKey('badges')) {
-        badges = jsonEncode(channel.additional['badges']);
+        badges = channel.additional['badges']!;
       }
       ChannelDB channelDB = ChannelDB(
         channelId: event.id,
