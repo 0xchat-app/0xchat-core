@@ -21,7 +21,7 @@ class Zaps {
   }
 
   static Future<ZapsDB?> getZapsInfoFromLnurl(String lnurl) async {
-    Map map = bech32Decode(lnurl);
+    Map map = bech32Decode(lnurl, maxLength: lnurl.length);
     if (map['prefix'] == 'lnurl') {
       String hexURL = map['data'];
       String url = utf8.decode(hexToBytes(hexURL));
