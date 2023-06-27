@@ -59,7 +59,8 @@ class Connect {
 
   void _checkTimeout() {
     var now = DateTime.now().millisecondsSinceEpoch;
-    for (var eventId in okMap.keys) {
+    Iterable<String> okMapKeys = okMap.keys;
+    for (var eventId in okMapKeys) {
       var start = okMap[eventId]![1];
       if (now - start > timeout * 1000) {
         // timeout
