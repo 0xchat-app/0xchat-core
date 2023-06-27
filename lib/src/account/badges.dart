@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
+typedef BadgeAwardsCallBack = void Function(List<BadgeAward?>?);
+
 class BadgesHelper {
   static BadgeDB _badgeToBadgeDB(Badge badge) {
     return BadgeDB(
@@ -248,7 +250,7 @@ class BadgesHelper {
         if (profileBadges.last == badgeAward) {
           // todo: sync profile badge to db
           UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
-          if(userDB != null){
+          if (userDB != null) {
             userDB.badges = jsonEncode(result.map((e) => e?.id).toList());
             await DB.sharedInstance.insert<UserDB>(userDB);
           }
@@ -260,5 +262,34 @@ class BadgesHelper {
       if (status == 0) completer.complete(result);
     });
     return completer.future;
+  }
+
+  /// subscript Chat Badge Awards
+  static void subscriptChatBadgeAwards(
+      int since, String serverPubkey, BadgeAwardsCallBack? callBack) async {
+    Filter f = Filter(kinds: [8], authors: [serverPubkey], since: since);
+    Connect.sharedInstance.addSubscription([f], eventCallBack: (event) async {
+      BadgeAward? badgeAward = Nip58.getBadgeAward(event);
+      if (badgeAward != null) {
+        // cache to DB
+        BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
+        await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB);
+        List<BadgeDB> badges = await searchBadgeInfosFromDB([badgeAward]);
+        if (badges.isEmpty) {
+          badges = await searchBadgesInfoFromRelay([badgeAward]);
+        }
+        if (badges.isNotEmpty) {
+          for (var p in badgeAward.users!) {
+            UserDB? userDB = await Account.getUserFromDB(pubkey: p.pubkey);
+            String badgeId = badges[0].id!;
+            if (userDB != null && !userDB.badgesList!.contains(badgeId)) {
+              userDB.badgesList!.add(badgeId);
+              await DB.sharedInstance.insert<UserDB>(userDB);
+            }
+          }
+          if (callBack != null) callBack([badgeAward]);
+        }
+      }
+    }, eoseCallBack: (status) async {});
   }
 }
