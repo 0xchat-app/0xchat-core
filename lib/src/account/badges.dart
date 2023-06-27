@@ -247,9 +247,11 @@ class BadgesHelper {
         if (badgeDB != null) result.add(badgeDB);
         if (profileBadges.last == badgeAward) {
           // todo: sync profile badge to db
-          UserDB? userDB = await Account.getUserFromDB(privkey: userPubkey);
-          userDB!.badges = '';
-          await DB.sharedInstance.insert<UserDB>(userDB);
+          UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
+          if(userDB != null){
+            userDB.badges = jsonEncode(result.map((e) => e?.id).toList());
+            await DB.sharedInstance.insert<UserDB>(userDB);
+          }
           completer.complete(result);
         }
       }
