@@ -52,14 +52,15 @@ class Friends {
     String? list = me?.friendsList;
     if (list != null && list.isNotEmpty) {
       Map? map = Nip51.fromContent(list, privkey, pubkey);
-      if(map != null){
+      if (map != null) {
         List<People> friendsList = map['people'];
         for (People p in friendsList) {
           UserDB? friend = await Account.getUserFromDB(pubkey: p.pubkey);
           if (friend != null) {
             friend.toAliasPrivkey =
                 Friends.getAliasPrivkey(friend.pubKey!, privkey);
-            friend.toAliasPubkey = Keychain.getPublicKey(friend.toAliasPrivkey!);
+            friend.toAliasPubkey =
+                Keychain.getPublicKey(friend.toAliasPrivkey!);
             allFriends[p.pubkey] = friend;
           }
         }
@@ -330,7 +331,7 @@ class Friends {
     });
   }
 
-  void _updateSubscriptions(){
+  void _updateSubscriptions() {
     _syncFriendsFromRelay();
     _updateFriendRequestSubscription();
     _updateFriendMessageSubscription();
@@ -414,7 +415,10 @@ class Friends {
     if (keyword.isNotEmpty) {
       RegExp regex = RegExp(keyword, caseSensitive: false);
       List<UserDB> filteredFriends = allFriends.values
-          .where((person) => regex.hasMatch(person.name!))
+          .where((person) =>
+              regex.hasMatch(person.name!) ||
+              regex.hasMatch(person.dns!) ||
+              regex.hasMatch(person.nickName!))
           .toList();
       return filteredFriends;
     }
