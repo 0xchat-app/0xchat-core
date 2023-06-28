@@ -94,6 +94,17 @@ class BadgesHelper {
     return result;
   }
 
+  static Future<List<BadgeAwardDB?>> getBadgeAwardInfosFromDB(
+      List<String> badgeIds, String owner) async {
+    List<BadgeAwardDB?> result = [];
+    for(var badgeId in badgeIds){
+      List<BadgeAwardDB?> maps = await DB.sharedInstance
+          .objects<BadgeAwardDB>(where: 'badgeId = ? && badgeOwner = ?', whereArgs: [badgeId, owner]);
+      result.add(maps.first);
+    }
+    return result;
+  }
+
   static Future<List<BadgeDB>> searchBadgeInfosFromDB(
       List<BadgeAward> awards) async {
     List<BadgeDB> result = [];
@@ -170,14 +181,14 @@ class BadgesHelper {
     }
   }
 
-  static Future<List<BadgeDB?>?> getUserBadgesFromDB(String userPubkey) async {
-    Completer<List<BadgeDB?>?> completer = Completer<List<BadgeDB?>?>();
+  static Future<List<BadgeAwardDB?>?> getUserBadgesFromDB(String userPubkey) async {
+    Completer<List<BadgeAwardDB?>?> completer = Completer<List<BadgeAwardDB?>?>();
 
     UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
     if (userDB != null &&
         userDB.badgesList != null &&
         userDB.badgesList!.isNotEmpty) {
-      List<BadgeDB?> badges = await getBadgeInfosFromDB(userDB.badgesList!);
+      List<BadgeAwardDB?> badges = await getBadgeAwardInfosFromDB(userDB.badgesList!, userPubkey);
       completer.complete(badges);
     } else {
       completer.complete(null);
