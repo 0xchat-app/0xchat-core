@@ -196,9 +196,9 @@ Future<void> testBadges() async {
       '8b6846785424eab24a9a36957df1cb77d3348a4db91019274fb9a1bfa86f1daf');
   var result2 = await BadgesHelper.getProfileBadgesFromRelay(
       '792ed3a7a45d564f1ad9b21d2da26d0093ec3042475b01a84de206d53e4680b6');
-  for (BadgeDB? badgeDB in result2!) {
-    print('getProfileBadgesFromRelay:${badgeDB!.d}');
-  }
+  // for (BadgeDB? badgeDB in result2!) {
+  //   print('getProfileBadgesFromRelay:${badgeDB!.d}');
+  // }
 }
 
 Future<void> testNotification() async {

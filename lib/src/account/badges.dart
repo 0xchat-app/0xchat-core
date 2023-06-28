@@ -233,25 +233,33 @@ class BadgesHelper {
     return completer.future;
   }
 
-  static Future<List<BadgeDB?>?> getProfileBadgesFromRelay(
+  static Future<List<BadgeAwardDB?>?> getProfileBadgesFromRelay(
       String userPubkey) async {
-    Completer<List<BadgeDB?>?> completer = Completer<List<BadgeDB?>?>();
+    Completer<List<BadgeAwardDB?>?> completer = Completer<List<BadgeAwardDB?>?>();
     String subscriptionId = '';
-    List<BadgeDB?> result = [];
+    List<BadgeAwardDB?> result = [];
     Filter f =
         Filter(kinds: [30008], d: ['profile_badges'], authors: [userPubkey]);
     subscriptionId = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event) async {
       List<BadgeAward> profileBadges = Nip58.getProfileBadges(event);
       for (BadgeAward badgeAward in profileBadges) {
-        BadgeDB? badgeDB = await _searchBadgeFromRelay(
+        List<BadgeDB> badges = await searchBadgeInfosFromDB([badgeAward]);
+        BadgeDB? badgeDB;
+        if (badges.isNotEmpty) badgeDB = badges.first;
+        badgeDB ??= await _searchBadgeFromRelay(
             badgeAward.creator!, badgeAward.identifies!);
-        if (badgeDB != null) result.add(badgeDB);
+        if (badgeDB != null){
+          // save to DB
+          BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
+          badgeAwardDB.badgeId = badgeDB.id;
+          await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB);
+          result.add(badgeAwardDB);
+        }
         if (profileBadges.last == badgeAward) {
-          // todo: sync profile badge to db
           UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
           if (userDB != null) {
-            userDB.badges = jsonEncode(result.map((e) => e?.id).toList());
+            userDB.badges = jsonEncode(result.map((e) => e?.badgeId).toList());
             await DB.sharedInstance.insert<UserDB>(userDB);
           }
           completer.complete(result);

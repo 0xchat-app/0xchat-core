@@ -8,6 +8,7 @@ class BadgeAwardDB extends DBObject {
   String? creator;
   String? relay;
   String? badgeOwner;
+  String? badgeId;
 
   BadgeAwardDB({
     this.awardId = '',
@@ -16,6 +17,7 @@ class BadgeAwardDB extends DBObject {
     this.creator = '',
     this.relay = '',
     this.badgeOwner = '',
+    this.badgeId = '',
   });
 
   @override
@@ -42,6 +44,7 @@ BadgeAwardDB _badgeAwardInfoFromMap(Map<String, dynamic> map) {
     creator: map['creator'].toString(),
     relay: map['relay'].toString(),
     badgeOwner: map['badgeOwner'].toString(),
+    badgeId: map['badgeId'].toString(),
   );
 }
 
@@ -53,4 +56,5 @@ Map<String, dynamic> _badgeAwardInfoToMap(BadgeAwardDB instance) =>
       'creator': instance.creator,
       'relay': instance.relay,
       'badgeOwner': instance.badgeOwner,
+      'badgeId': instance.badgeId,
     };
