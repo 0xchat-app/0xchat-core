@@ -97,7 +97,7 @@ class BadgesHelper {
       List<BadgeDB?> maps = await DB.sharedInstance.objects<BadgeDB>(
           where: 'creator = ? AND d = ?',
           whereArgs: [badgeAward.creator, badgeAward.identifies]);
-      if (maps.first != null) {
+      if (maps.isNotEmpty) {
         result.add(maps.first!);
       }
     }
