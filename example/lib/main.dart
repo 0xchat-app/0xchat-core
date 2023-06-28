@@ -187,9 +187,9 @@ Future<void> testBadges() async {
 
   var result = await BadgesHelper.getUserBadgeAwardsFromRelay(
       '792ed3a7a45d564f1ad9b21d2da26d0093ec3042475b01a84de206d53e4680b6');
-  for (BadgeDB? b in result!) {
-    print(b!.d!);
-  }
+  // for (BadgeDB? b in result!) {
+  //   print(b!.d!);
+  // }
   await BadgesHelper.setProfileBadges(
       ['3422277673444894c9a78d578641c27a966baa21f04b969ce2753452f5febe23'],
       '792ed3a7a45d564f1ad9b21d2da26d0093ec3042475b01a84de206d53e4680b6',

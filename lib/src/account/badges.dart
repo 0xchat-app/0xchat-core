@@ -105,27 +105,37 @@ class BadgesHelper {
   }
 
   /// badge award
-  static Future<List<BadgeDB?>?> getUserBadgeAwardsFromRelay(
+  static Future<List<BadgeAwardDB?>?> getUserBadgeAwardsFromRelay(
       String userPubkey) async {
-    Completer<List<BadgeDB?>?> completer = Completer<List<BadgeDB?>?>();
+    Completer<List<BadgeAwardDB?>?> completer =
+        Completer<List<BadgeAwardDB?>?>();
     String subscriptionId = '';
-    List<BadgeAward> badgeAwards = [];
+    List<BadgeAwardDB> badgeAwardsDB = [];
+
     Filter f = Filter(kinds: [8], p: [userPubkey]);
     subscriptionId = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event) async {
       BadgeAward? badgeAward = Nip58.getBadgeAward(event);
       if (badgeAward != null) {
-        badgeAwards.add(badgeAward);
-        // cache to DB
-        BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
-        await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB);
+        List<BadgeDB> badges = await searchBadgeInfosFromDB([badgeAward]);
+        BadgeDB? badgeDB;
+        if (badges.isNotEmpty) badgeDB = badges.first;
+        badgeDB ??= await _searchBadgeFromRelay(
+            badgeAward.creator!, badgeAward.identifies!);
+        if (badgeDB != null) {
+          // save to DB
+          BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
+          badgeAwardDB.badgeId = badgeDB.id;
+          await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB);
+          badgeAwardsDB.add(badgeAwardDB);
+        }
       }
     }, eoseCallBack: (status) async {
       Connect.sharedInstance.closeSubscription(subscriptionId);
-      List<BadgeDB> badges = await searchBadgesInfoFromRelay(badgeAwards);
       // cache to DB
-      await syncUserBadgesToDB(userPubkey, badges);
-      completer.complete(badges);
+      await syncUserBadgesToDB(
+          userPubkey, badgeAwardsDB.map((e) => e.badgeId!).toList());
+      completer.complete(badgeAwardsDB);
     });
     return completer.future;
   }
@@ -182,14 +192,10 @@ class BadgesHelper {
   }
 
   static Future<void> syncUserBadgesToDB(
-      String userPubkey, List<BadgeDB> badges) async {
+      String userPubkey, List<String> badges) async {
     UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
     if (userDB != null && badges.isNotEmpty) {
-      List<String> badgesList = [];
-      for (BadgeDB badgeDB in badges) {
-        badgesList.add(badgeDB.id!);
-      }
-      userDB.badgesList = badgesList;
+      userDB.badgesList = badges;
       await DB.sharedInstance.insert<UserDB>(userDB);
     }
   }
@@ -233,11 +239,11 @@ class BadgesHelper {
     return completer.future;
   }
 
-  static Future<List<BadgeAwardDB?>?> getProfileBadgesFromRelay(
+  static Future<List<BadgeDB?>?> getProfileBadgesFromRelay(
       String userPubkey) async {
-    Completer<List<BadgeAwardDB?>?> completer = Completer<List<BadgeAwardDB?>?>();
+    Completer<List<BadgeDB?>?> completer = Completer<List<BadgeDB?>?>();
     String subscriptionId = '';
-    List<BadgeAwardDB?> result = [];
+    List<BadgeDB?> result = [];
     Filter f =
         Filter(kinds: [30008], d: ['profile_badges'], authors: [userPubkey]);
     subscriptionId = Connect.sharedInstance.addSubscription([f],
@@ -249,17 +255,17 @@ class BadgesHelper {
         if (badges.isNotEmpty) badgeDB = badges.first;
         badgeDB ??= await _searchBadgeFromRelay(
             badgeAward.creator!, badgeAward.identifies!);
-        if (badgeDB != null){
+        if (badgeDB != null) {
           // save to DB
           BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
           badgeAwardDB.badgeId = badgeDB.id;
           await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB);
-          result.add(badgeAwardDB);
+          result.add(badgeDB);
         }
         if (profileBadges.last == badgeAward) {
           UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
           if (userDB != null) {
-            userDB.badges = jsonEncode(result.map((e) => e?.badgeId).toList());
+            userDB.badges = jsonEncode(result.map((e) => e?.id).toList());
             await DB.sharedInstance.insert<UserDB>(userDB);
           }
           completer.complete(result);
