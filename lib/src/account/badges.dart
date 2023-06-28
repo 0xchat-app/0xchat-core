@@ -85,9 +85,13 @@ class BadgesHelper {
 
   static Future<List<BadgeDB?>> getBadgeInfosFromDB(
       List<String> badgeIds) async {
-    List<BadgeDB?> maps = await DB.sharedInstance
-        .objects<BadgeDB>(where: 'id = ?', whereArgs: badgeIds);
-    return maps;
+    List<BadgeDB?> result = [];
+    for(var badgeId in badgeIds){
+      List<BadgeDB?> maps = await DB.sharedInstance
+          .objects<BadgeDB>(where: 'id = ?', whereArgs: [badgeId]);
+      result.add(maps.first);
+    }
+    return result;
   }
 
   static Future<List<BadgeDB>> searchBadgeInfosFromDB(
