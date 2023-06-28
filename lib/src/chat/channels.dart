@@ -160,14 +160,12 @@ class Channels {
     String subscriptionId = '';
     Filter f = updateInfos
         ? Filter(
-            // authors: [owner], //todo check channel owner
             kinds: [41],
             e: channelIds,
             limit: 1,
           )
         : Filter(
             ids: channelIds,
-            // authors: [owner],
             kinds: [40],
           );
     subscriptionId =
@@ -190,8 +188,14 @@ class Channels {
         picture: channel.picture,
         badges: badges,
       );
-      channels[channelDB.channelId!] = channelDB;
-      _syncChannelToDB(channelDB);
+      // check the owner for kind 41
+      if (event.kind == 40 ||
+          (event.kind == 41 &&
+              channels.containsKey(channelDB.channelId!) &&
+              channels[channelDB.channelId!]!.creator == channelDB.creator)) {
+        channels[channelDB.channelId!] = channelDB;
+        _syncChannelToDB(channelDB);
+      }
     }, eoseCallBack: (status) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
       eoseCallBack(status);
