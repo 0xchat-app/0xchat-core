@@ -69,15 +69,19 @@ class Account {
   }
 
   static Future<bool> checkDNS(DNS dns) async {
-    final response = await http.get(Uri.parse(
-        'https://${dns.domain}/.well-known/nostr.json?name=${dns.name}'));
+    String? pubkey = await getDNSPubkey(dns.name, dns.domain);
+    return (pubkey != null && pubkey == dns.pubkey);
+  }
+
+  static Future<String?> getDNSPubkey(String name, String domain) async {
+    final response = await http
+        .get(Uri.parse('https://$domain/.well-known/nostr.json?name=$name'));
 
     if (response.statusCode == 200) {
       var jsonResponse = jsonDecode(response.body);
-      String pubkey = jsonResponse["names"][dns.name];
-      return pubkey == dns.pubkey;
+      return jsonResponse["names"][name];
     } else {
-      throw Exception(response.toString());
+      return null;
     }
   }
 
@@ -227,7 +231,7 @@ class Account {
 
   static Map<String, dynamic>? decodeProfile(String profile) {
     Map result = Nip19.decodeShareableEntity(profile);
-    if(result['prefix'] == 'nprofile'){
+    if (result['prefix'] == 'nprofile') {
       return {'pubkey': result['special'], 'relays': result['relays']};
     }
     return null;
