@@ -93,11 +93,19 @@ class Account {
     return encryptPrivateKey(hexToBytes(map['privkey']), map['password']);
   }
 
-  static Future<UserDB> newAccount() async {
+  static Keychain generateNewKeychain() {
+    return Keychain.generate();
+  }
+
+  static String getPublicKey(String privkey) {
+    return Keychain.getPublicKey(privkey);
+  }
+
+  static Future<UserDB> newAccount({Keychain? user}) async {
+    user ?? Keychain.generate();
     String defaultPassword = generateStrongPassword(16);
-    var user = Keychain.generate();
     Uint8List enPrivkey = await compute(encryptPrivateKeyWithMap,
-        {'privkey': user.private, 'password': defaultPassword});
+        {'privkey': user!.private, 'password': defaultPassword});
     UserDB db = UserDB();
     db.pubKey = user.public;
     db.encryptedPrivKey = bytesToHex(enPrivkey);
