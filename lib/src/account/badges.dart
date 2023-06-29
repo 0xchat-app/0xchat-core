@@ -86,7 +86,7 @@ class BadgesHelper {
   static Future<List<BadgeDB?>> getBadgeInfosFromDB(
       List<String> badgeIds) async {
     List<BadgeDB?> result = [];
-    for(var badgeId in badgeIds){
+    for (var badgeId in badgeIds) {
       List<BadgeDB?> maps = await DB.sharedInstance
           .objects<BadgeDB>(where: 'id = ?', whereArgs: [badgeId]);
       result.add(maps.first);
@@ -97,10 +97,10 @@ class BadgesHelper {
   static Future<List<BadgeAwardDB?>> getBadgeAwardInfosFromDB(
       List<String> badgeIds, String owner) async {
     List<BadgeAwardDB?> result = [];
-    for(var badgeId in badgeIds){
-      List<BadgeAwardDB?> maps = await DB.sharedInstance
-          .objects<BadgeAwardDB>(where: 'badgeId = ? AND badgeOwner = ?', whereArgs: [badgeId, owner]);
-      if(maps.isNotEmpty) result.add(maps.first);
+    for (var badgeId in badgeIds) {
+      List<BadgeAwardDB?> maps = await DB.sharedInstance.objects<BadgeAwardDB>(
+          where: 'badgeId = ? AND badgeOwner = ?', whereArgs: [badgeId, owner]);
+      if (maps.isNotEmpty) result.add(maps.first);
     }
     return result;
   }
@@ -125,6 +125,7 @@ class BadgesHelper {
     Completer<List<BadgeAwardDB?>?> completer =
         Completer<List<BadgeAwardDB?>?>();
     String subscriptionId = '';
+    List<BadgeAward> badgeAwards = [];
     List<BadgeAwardDB> badgeAwardsDB = [];
 
     Filter f = Filter(kinds: [8], p: [userPubkey]);
@@ -132,6 +133,11 @@ class BadgesHelper {
         eventCallBack: (event) async {
       BadgeAward? badgeAward = Nip58.getBadgeAward(event);
       if (badgeAward != null) {
+        badgeAwards.add(badgeAward);
+      }
+    }, eoseCallBack: (status) async {
+      Connect.sharedInstance.closeSubscription(subscriptionId);
+      for (var badgeAward in badgeAwards) {
         List<BadgeDB> badges = await searchBadgeInfosFromDB([badgeAward]);
         BadgeDB? badgeDB;
         if (badges.isNotEmpty) badgeDB = badges.first;
@@ -141,12 +147,10 @@ class BadgesHelper {
           // save to DB
           BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
           badgeAwardDB.badgeId = badgeDB.id;
-          await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB);
           badgeAwardsDB.add(badgeAwardDB);
+          await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB);
         }
       }
-    }, eoseCallBack: (status) async {
-      Connect.sharedInstance.closeSubscription(subscriptionId);
       // cache to DB
       await syncUserBadgesToDB(
           userPubkey, badgeAwardsDB.map((e) => e.badgeId!).toList());
@@ -181,14 +185,18 @@ class BadgesHelper {
     }
   }
 
-  static Future<List<BadgeAwardDB?>?> getUserBadgesFromDB(String userPubkey) async {
-    Completer<List<BadgeAwardDB?>?> completer = Completer<List<BadgeAwardDB?>?>();
+  static Future<List<BadgeAwardDB?>?> getUserBadgesFromDB(
+      String userPubkey) async {
+    Completer<List<BadgeAwardDB?>?> completer =
+        Completer<List<BadgeAwardDB?>?>();
 
     UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
     if (userDB != null &&
         userDB.badgesList != null &&
         userDB.badgesList!.isNotEmpty) {
-      List<BadgeAwardDB?> badges = await getBadgeAwardInfosFromDB(userDB.badgesList!, userPubkey);
+      print('getUserBadgesFromDB ${userDB.badgesList!.length}');
+      List<BadgeAwardDB?> badges =
+          await getBadgeAwardInfosFromDB(userDB.badgesList!, userPubkey);
       completer.complete(badges);
     } else {
       completer.complete(null);
