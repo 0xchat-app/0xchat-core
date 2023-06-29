@@ -144,8 +144,8 @@ class Friends {
     }
     friend.aliasPubkey = friendAliasPubkey;
     allFriends[friendPubkey] = friend;
-    await DB.sharedInstance.insert<UserDB>(friend);
     _updateFriendMessageSubscription();
+    await DB.sharedInstance.insert<UserDB>(friend);
     _syncFriendsToRelay();
   }
 
