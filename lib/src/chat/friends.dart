@@ -312,7 +312,6 @@ class Friends {
 
   Future<void> initWithPrikey(String key,
       {FriendUpdatedCallBack? callBack}) async {
-    print('initWithPrikey');
     privkey = key;
     pubkey = Keychain.getPublicKey(privkey);
     me = await Account.getUserFromDB(privkey: key);
@@ -325,7 +324,6 @@ class Friends {
 
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) {
-      print('addConnectStatusListener $status');
       if (status == 1) {
         _updateSubscriptions();
       }
@@ -361,7 +359,6 @@ class Friends {
     Event event = Nip101.accept(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) async {
-      print('acceptFriend $friendPubkey, $friendAliasPubkey');
       if(ok.status) await _addFriend(friendPubkey, friendAliasPubkey);
       completer.complete(ok);
     });
