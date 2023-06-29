@@ -249,14 +249,15 @@ class Friends {
     if (friendRequestCallBack != null) friendRequestCallBack!(alias);
   }
 
-  void _handleFriendAccept(Event event) {
+  Future<void> _handleFriendAccept(Event event) async {
     String toAliasPubkey = Nip101.getP(event);
     for (UserDB user in allFriends.values) {
       if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
         Alias alias = Nip101.getAccept(
             event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
         user.aliasPubkey = alias.toAliasPubkey;
-        DB.sharedInstance.insert<UserDB>(user);
+        await DB.sharedInstance.insert<UserDB>(user);
+        await _addFriend(user.pubKey!, user.aliasPubkey!);
         if (friendAcceptCallBack != null) friendAcceptCallBack!(alias);
         return;
       }
