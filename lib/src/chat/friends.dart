@@ -360,10 +360,11 @@ class Friends {
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.accept(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) async {
+      print('acceptFriend $friendPubkey, $friendAliasPubkey');
+      if(ok.status) await _addFriend(friendPubkey, friendAliasPubkey);
       completer.complete(ok);
     });
-    await _addFriend(friendPubkey, friendAliasPubkey);
     return completer.future;
   }
 
