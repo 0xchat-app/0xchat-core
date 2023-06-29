@@ -163,14 +163,13 @@ class Account {
         db.picture = map['picture'];
         db.dns = map['nip05'];
         db.lnurl = map['lnurl'];
+      }
+    }, eoseCallBack: (status) async {
+      Connect.sharedInstance.closeSubscription(subscriptionId);
+      for (var db in users.values) {
         await DB.sharedInstance.insert<UserDB>(db);
       }
       completer.complete(users);
-    }, eoseCallBack: (status) {
-      Connect.sharedInstance.closeSubscription(subscriptionId);
-      if (status == 0) {
-        completer.complete(users);
-      }
     }, needTimeout: true);
     return completer.future;
   }
