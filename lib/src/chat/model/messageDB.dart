@@ -98,7 +98,7 @@ class MessageDB extends DBObject {
     try {
       return jsonDecode(content);
     } catch (e) {
-      print(e.toString());
+      print('decodeContent fail: $content, error msg: ${e.toString()}');
       return {'contentType': 'text', 'content': content};
     }
   }

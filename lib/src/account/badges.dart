@@ -194,7 +194,6 @@ class BadgesHelper {
     if (userDB != null &&
         userDB.badgesList != null &&
         userDB.badgesList!.isNotEmpty) {
-      print('getUserBadgesFromDB ${userDB.badgesList!.length}');
       List<BadgeAwardDB?> badges =
           await getBadgeAwardInfosFromDB(userDB.badgesList!, userPubkey);
       completer.complete(badges);
