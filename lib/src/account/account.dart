@@ -223,12 +223,12 @@ class Account {
   }
 
   static Future<int> logout(String privkey) async {
-    return delete(privkey);
+    return await delete(privkey);
   }
 
   static Future<int> delete(String privkey) async {
     String pubkey = Keychain.getPublicKey(privkey);
-    return DB.sharedInstance
+    return await DB.sharedInstance
         .delete<UserDB>(where: 'pubKey = ?', whereArgs: [pubkey]);
   }
 
