@@ -41,11 +41,6 @@ class UserDB extends DBObject {
   List<String>? badgesList;
 
   List<String>? blockedList; // blocked users list
-
-  /// last event update timestamp
-  /// {relay1:timestamp1, relay2:timestamp2...}
-  Map<String, dynamic>? updatedTimeStamp;
-
   bool? mute;
 
   UserDB({
@@ -71,7 +66,6 @@ class UserDB extends DBObject {
     this.groupsList,
     this.badgesList,
     this.blockedList,
-    this.updatedTimeStamp,
     this.mute = false,
   });
 
@@ -111,25 +105,6 @@ class UserDB extends DBObject {
     return Nip19.encodePrivkey(privkey!);
   }
 
-  int getUpdatedTimeStampForRelay(String relay) {
-    try {
-      if (updatedTimeStamp != null && updatedTimeStamp!.containsKey(relay)) {
-        return updatedTimeStamp![relay] ?? 0;
-      }
-    } catch (e) {
-      return 0;
-    }
-    return 0;
-  }
-
-  void setUpdatedTimeStampForRelay(String relay, int timeStamp) {
-    if (updatedTimeStamp != null) {
-      updatedTimeStamp![relay] = timeStamp;
-    } else {
-      updatedTimeStamp = {relay: timeStamp};
-    }
-  }
-
   static List<String> decodeStringList(String list) {
     try {
       List<dynamic> result = jsonDecode(list);
@@ -160,7 +135,6 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
       groupsList: UserDB.decodeStringList(map['groupsList'].toString()),
       badgesList: UserDB.decodeStringList(map['badgesList'].toString()),
       blockedList: UserDB.decodeStringList(map['blockedList'].toString()),
-      updatedTimeStamp: jsonDecode(map['updatedTimeStamp'].toString()),
       aliasPubkey: map['aliasPubkey'],
       mute: map['mute'] > 0 ? true : false);
 }
@@ -184,7 +158,6 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'groupsList': jsonEncode(instance.groupsList),
       'badgesList': jsonEncode(instance.badgesList),
       'blockedList': jsonEncode(instance.blockedList),
-      'updatedTimeStamp': jsonEncode(instance.updatedTimeStamp ?? {}),
       'aliasPubkey': instance.aliasPubkey,
       'mute': instance.mute
     };

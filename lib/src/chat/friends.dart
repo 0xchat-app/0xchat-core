@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/account/relays.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 typedef FriendRequestCallBack = void Function(Alias);
@@ -24,7 +25,7 @@ class Friends {
   String pubkey = '';
   String privkey = '';
   Map<String, UserDB> allFriends = {};
-
+  Map<String, FriendRequestDB> friendRequestMap = {};
   Map<String, String> friendRequestSubscription = {};
   Map<String, String> friendMessageSubscription = {};
 
@@ -241,11 +242,12 @@ class Friends {
     }
   }
 
-  void _handleFriendRequest(Event event) {
+  void _handleFriendRequest(Event event, String relay) {
     Alias alias = Nip101.getRequest(event, pubkey, privkey);
     String aliasPrivkey = Friends.getAliasPrivkey(alias.toPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     alias.fromAliasPubkey = aliasPubkey;
+
     if (friendRequestCallBack != null) friendRequestCallBack!(alias);
   }
 
@@ -359,7 +361,7 @@ class Friends {
     Event event = Nip101.accept(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) async {
-      if(ok.status) await _addFriend(friendPubkey, friendAliasPubkey);
+      if (ok.status) await _addFriend(friendPubkey, friendAliasPubkey);
       completer.complete(ok);
     });
     return completer.future;
@@ -491,4 +493,78 @@ class Friends {
     }
     return null;
   }
+
+  Future<void> initFriendRequestList() async {
+    // 0: sync all request from DB
+    await _syncAllFriendRequestFromDB();
+
+    // 1: sync friend request from relay
+    await _syncAddFriendRequestsFromRelay();
+
+    // 2: sync friend actions from relay (accept, reject, remove)
+    List<String> myAliasPubkeys =
+        friendRequestMap.values.map((e) => e.myAliasPubkey!).toList();
+    await _syncRequestActionsFromRelay(myAliasPubkeys);
+
+    // 3: update subscriptions
+    List<String> friendAliasPubkeys =
+    friendRequestMap.values.map((e) => e.friendAliasPubkey!).toList();
+    _updateFriendsSubscription(friendAliasPubkeys);
+  }
+
+  Future<void> _syncAllFriendRequestFromDB() async {
+    List<FriendRequestDB> friendRequestList = await DB.sharedInstance
+        .objects<FriendRequestDB>(orderBy: "lastUpdateTime desc");
+    if (friendRequestList.isNotEmpty) {
+      friendRequestMap = { for (FriendRequestDB item in friendRequestList) item.friendPubkey! : item };
+    }
+  }
+
+  Future<List<FriendRequestDB>?> _syncAddFriendRequestsFromRelay() async {
+    Completer<List<FriendRequestDB>?> completer =
+        Completer<List<FriendRequestDB>?>();
+
+    Map<String, String> subscriptions = {};
+    List<FriendRequestDB> result = [];
+    for (String relayURL in Connect.sharedInstance.relays()) {
+      int friendRequestUntil =
+          Relays.sharedInstance.relays.containsKey(relayURL)
+              ? Relays.sharedInstance.relays[relayURL]!.friendRequestUntil
+              : 0;
+      Filter f1 =
+          Filter(kinds: [10100], p: [pubkey], since: (friendRequestUntil + 1));
+      Filter f2 = Filter(
+          kinds: [10100], authors: [pubkey], since: (friendRequestUntil + 1));
+      subscriptions[relayURL] = Connect.sharedInstance
+          .addSubscription([f1, f2], relay: relayURL, eventCallBack: (event) {
+        _handleFriendRequest(event, relayURL);
+      }, eoseCallBack: (status) async {
+        Connect.sharedInstance.closeSubscription(subscriptions[relayURL]!);
+        if (status == 1) {
+          await Relays.sharedInstance.syncRelaysToDB();
+          completer.complete(result);
+        }
+      });
+    }
+    return completer.future;
+  }
+
+  Future<List<FriendRequestDB>?> _syncRequestActionsFromRelay(
+      List<String> myAliasPubkeys) async {
+    return null;
+  }
+
+  Future<void> _updateFriendsSubscription(
+      List<String> friendAliasPubkeys) async {
+    // _addRequestList
+  }
+
+  List<FriendRequestDB> _mergeRequestList(List<FriendRequestDB> list) {
+    _syncRequestListToDB(list);
+    return list;
+  }
+
+  Future<void> _syncRequestListToDB(List<FriendRequestDB> list) async {}
+
+  Future<void> _addRequest(FriendRequestDB request) async {}
 }
