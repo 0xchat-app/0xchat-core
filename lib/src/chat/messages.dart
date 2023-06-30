@@ -50,7 +50,7 @@ class Messages {
 
     Filter f = Filter(kinds: [5, 43, 44], since: lastUpdated);
     messageSubscription =
-        Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+        Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
       lastUpdated =
           lastUpdated > event.createdAt ? lastUpdated : event.createdAt;
       switch (event.kind) {
@@ -226,7 +226,7 @@ class Messages {
 
     /// send delete event to relay
     Event event = Nip9.encode(messageIds, reason, privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       completer.complete(ok);
     });
     return completer.future;

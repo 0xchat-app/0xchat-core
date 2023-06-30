@@ -4,12 +4,12 @@ import 'dart:core';
 import 'dart:io';
 import 'package:nostr_core_dart/nostr.dart';
 
-typedef EventCallBack = void Function(Event event);
+typedef EventCallBack = void Function(Event event, String relay);
 
 /// 0:end without event, 1:end with events
-typedef EOSECallBack = void Function(int status);
-typedef NoticeCallBack = void Function(String notice);
-typedef OKCallBack = void Function(OKEvent ok);
+typedef EOSECallBack = void Function(int status, String relay);
+typedef NoticeCallBack = void Function(String notice, String relay);
+typedef OKCallBack = void Function(OKEvent ok, String relay);
 typedef ConnectStatusCallBack = void Function(String relay, int status);
 
 class Connect {
@@ -75,7 +75,9 @@ class Connect {
       if (start > 0 && now - start > timeout * 1000) {
         // timeout
         EOSECallBack? callBack = requestMap[subscriptionId]![1];
-        if (callBack != null) callBack(requestMap[subscriptionId]![2]);
+        for(var relay in requestMap[subscriptionId]![4]){
+          if (callBack != null) callBack(requestMap[subscriptionId]![2], relay);
+        }
       }
     }
   }
@@ -209,13 +211,13 @@ class Connect {
     var m = Message.deserialize(message);
     switch (m.type) {
       case "EVENT":
-        _handleEvent(m.message);
+        _handleEvent(m.message, relay);
         break;
       case "EOSE":
         _handleEOSE(m.message, relay);
         break;
       case "NOTICE":
-        _handleNotice(m.message);
+        _handleNotice(m.message, relay);
         break;
       case "OK":
         _handleOk(message);
@@ -226,7 +228,7 @@ class Connect {
     }
   }
 
-  void _handleEvent(Event event) {
+  void _handleEvent(Event event, String relay) {
     print('Received event: ${event.serialize()}');
     String? subscriptionId = event.subscriptionId;
     if (subscriptionId != null &&
@@ -234,7 +236,7 @@ class Connect {
         requestMap.containsKey(subscriptionId)) {
       EventCallBack? callBack = requestMap[subscriptionId]![0];
       requestMap[subscriptionId]![2] = 1;
-      if (callBack != null) callBack(event);
+      if (callBack != null) callBack(event, relay);
     }
   }
 
@@ -247,15 +249,15 @@ class Connect {
       if (relays.isEmpty) {
         // all relays have EOSE
         EOSECallBack? callBack = requestMap[subscriptionId]![1];
-        if (callBack != null) callBack(requestMap[subscriptionId]![2]);
+        if (callBack != null) callBack(requestMap[subscriptionId]![2], relay);
       }
     }
   }
 
-  void _handleNotice(String notice) {
+  void _handleNotice(String notice, String relay) {
     print('receive notice: $notice');
     String n = jsonDecode(notice)[0];
-    if (noticeCallBack != null) noticeCallBack!(n);
+    if (noticeCallBack != null) noticeCallBack!(n, relay);
   }
 
   void _handleOk(String message) {

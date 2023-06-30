@@ -78,12 +78,12 @@ class Friends {
       limit: 1,
     );
     subscriptionId =
-        Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+        Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
       // clear friends data
       allFriends.clear();
       Lists lists = Nip51.getLists(event, privkey);
       _syncFriendsProfiles(lists.people);
-    }, eoseCallBack: (status) {
+    }, eoseCallBack: (status, relay) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
       if (status == 0) {
         // no friend list
@@ -179,7 +179,7 @@ class Friends {
       Filter f =
           Filter(kinds: [10100], p: [pubkey], since: (lastEventTimeStamp + 1));
       friendRequestSubscription[relay] =
-          Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+          Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
         _updateLastEventTimeStamp(event.createdAt, relay);
         switch (event.kind) {
           case 10100:
@@ -217,7 +217,7 @@ class Friends {
         Filter f2 = Filter(
             kinds: [4], authors: pubkeys, since: (lastEventTimeStamp + 1));
         friendMessageSubscription[relay] = Connect.sharedInstance
-            .addSubscription([f1, f2], eventCallBack: (event) {
+            .addSubscription([f1, f2], eventCallBack: (event, relay) {
           _updateLastEventTimeStamp(event.createdAt, relay);
 
           switch (event.kind) {
@@ -345,7 +345,7 @@ class Friends {
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.request(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendPubkey, content);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       completer.complete(ok);
     });
     await _addFriend(friendPubkey, '');
@@ -360,7 +360,7 @@ class Friends {
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.accept(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) async {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (ok.status) await _addFriend(friendPubkey, friendAliasPubkey);
       completer.complete(ok);
     });
@@ -377,7 +377,7 @@ class Friends {
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.reject(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       completer.complete(ok);
     });
     return completer.future;
@@ -390,7 +390,7 @@ class Friends {
     if (friend != null && friend.aliasPubkey!.isNotEmpty) {
       Event event = Nip101.remove(pubkey, privkey, friend.toAliasPubkey!,
           friend.toAliasPrivkey!, friend.aliasPubkey!);
-      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
         completer.complete(ok);
       });
     }
@@ -405,7 +405,7 @@ class Friends {
     UserDB? friend = allFriends[friendPubkey];
     if (friend != null && friend.aliasPubkey!.isNotEmpty) {
       friend.nickName = nickName;
-      _syncFriendsToRelay(okCallBack: (ok) {
+      _syncFriendsToRelay(okCallBack: (ok, relay) {
         completer.complete(ok);
       });
     }
@@ -454,7 +454,7 @@ class Friends {
           type: MessageDB.messageTypeToString(type),
           status: 0);
       Messages.saveMessagesToDB([messageDB]);
-      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
         completer.complete(ok);
       });
       return completer.future;
@@ -536,9 +536,9 @@ class Friends {
       Filter f2 = Filter(
           kinds: [10100], authors: [pubkey], since: (friendRequestUntil + 1));
       subscriptions[relayURL] = Connect.sharedInstance
-          .addSubscription([f1, f2], relay: relayURL, eventCallBack: (event) {
+          .addSubscription([f1, f2], relay: relayURL, eventCallBack: (event, relay) {
         _handleFriendRequest(event, relayURL);
-      }, eoseCallBack: (status) async {
+      }, eoseCallBack: (status, relay) async {
         Connect.sharedInstance.closeSubscription(subscriptions[relayURL]!);
         if (status == 1) {
           await Relays.sharedInstance.syncRelaysToDB();

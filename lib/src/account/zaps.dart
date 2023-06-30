@@ -83,12 +83,12 @@ class Zaps {
       f = Filter(kinds: [9735], authors: [zapper], e: [eventId]);
     }
     subscriptionId = Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event) async {
+        eventCallBack: (event, relay) async {
       ZapReceipt zapReceipt = Nip57.getZapReceipt(event);
 
       /// check invoiceAmount, lnurl?
       completer.complete(zapReceipt);
-    }, eoseCallBack: (status) {
+    }, eoseCallBack: (status, relay) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
       if (status == 0) completer.complete(null);
     });

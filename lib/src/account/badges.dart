@@ -25,14 +25,14 @@ class BadgesHelper {
     Filter f = Filter(ids: ids);
     List<BadgeDB> badges = [];
     subscriptionId = Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event) async {
+        eventCallBack: (event, relay) async {
       Badge? badge = Nip58.getBadgeDefinition(event);
       if (badge != null) {
         BadgeDB badgeDB = _badgeToBadgeDB(badge);
         syncBadgeInfoToDB(badgeDB);
         badges.add(badgeDB);
       }
-    }, eoseCallBack: (status) {
+    }, eoseCallBack: (status, relay) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
       completer.complete(badges);
     });
@@ -64,7 +64,7 @@ class BadgesHelper {
     String subscriptionId = '';
     Filter f = Filter(kinds: [30009], d: [identifies], authors: [creator]);
     subscriptionId = Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event) async {
+        eventCallBack: (event, relay) async {
       Badge? badge = Nip58.getBadgeDefinition(event);
       if (badge != null) {
         BadgeDB badgeDB = _badgeToBadgeDB(badge);
@@ -73,7 +73,7 @@ class BadgesHelper {
       } else {
         completer.complete(null);
       }
-    }, eoseCallBack: (status) {
+    }, eoseCallBack: (status, relay) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
     });
     return completer.future;
@@ -130,12 +130,12 @@ class BadgesHelper {
 
     Filter f = Filter(kinds: [8], p: [userPubkey]);
     subscriptionId = Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event) async {
+        eventCallBack: (event, relay) async {
       BadgeAward? badgeAward = Nip58.getBadgeAward(event);
       if (badgeAward != null) {
         badgeAwards.add(badgeAward);
       }
-    }, eoseCallBack: (status) async {
+    }, eoseCallBack: (status, relay) async {
       Connect.sharedInstance.closeSubscription(subscriptionId);
       for (var badgeAward in badgeAwards) {
         List<BadgeDB> badges = await searchBadgeInfosFromDB([badgeAward]);
@@ -246,7 +246,7 @@ class BadgesHelper {
     }
     if (badgeAwards.isNotEmpty) {
       Event event = Nip58.setProfileBadges(badgeAwards, privkey);
-      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) async {
+      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         if (ok.status) {
           UserDB? userDB = await Account.getUserFromDB(privkey: privkey);
           userDB!.badges = jsonEncode(badgeIds);
@@ -269,7 +269,7 @@ class BadgesHelper {
     Filter f =
         Filter(kinds: [30008], d: ['profile_badges'], authors: [userPubkey]);
     subscriptionId = Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event) async {
+        eventCallBack: (event, relay) async {
       List<BadgeAward> profileBadges = Nip58.getProfileBadges(event);
       for (BadgeAward badgeAward in profileBadges) {
         List<BadgeDB> badges = await searchBadgeInfosFromDB([badgeAward]);
@@ -293,7 +293,7 @@ class BadgesHelper {
           completer.complete(result);
         }
       }
-    }, eoseCallBack: (status) {
+    }, eoseCallBack: (status, relay) {
       Connect.sharedInstance.closeSubscription(subscriptionId);
       if (status == 0) completer.complete(result);
     });
@@ -304,7 +304,7 @@ class BadgesHelper {
   static void subscriptChatBadgeAwards(
       int since, String serverPubkey, BadgeAwardsCallBack? callBack) async {
     Filter f = Filter(kinds: [8], authors: [serverPubkey], since: since);
-    Connect.sharedInstance.addSubscription([f], eventCallBack: (event) async {
+    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
       BadgeAward? badgeAward = Nip58.getBadgeAward(event);
       if (badgeAward != null) {
         // cache to DB
@@ -326,6 +326,6 @@ class BadgesHelper {
           if (callBack != null) callBack([badgeAward]);
         }
       }
-    }, eoseCallBack: (status) async {});
+    }, eoseCallBack: (status, relay) async {});
   }
 }

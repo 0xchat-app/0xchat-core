@@ -152,7 +152,7 @@ class Account {
       users[key] = db;
     }
     subscriptionId = Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event) async {
+        eventCallBack: (event, relay) async {
       Map map = jsonDecode(event.content);
       UserDB? db = users[event.pubkey];
       if (db != null) {
@@ -164,7 +164,7 @@ class Account {
         db.dns = map['nip05'];
         db.lnurl = map['lnurl'];
       }
-    }, eoseCallBack: (status) async {
+    }, eoseCallBack: (status, relay) async {
       Connect.sharedInstance.closeSubscription(subscriptionId);
       for (var db in users.values) {
         await DB.sharedInstance.insert<UserDB>(db);
@@ -199,7 +199,7 @@ class Account {
       'lnurl': updateDB.lnurl
     };
     Event event = Nip1.setMetadata(jsonEncode(map), privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (ok.status) {
         completer.complete(db);
       } else {
