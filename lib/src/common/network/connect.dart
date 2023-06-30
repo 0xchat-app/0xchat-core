@@ -69,7 +69,8 @@ class Connect {
         okMap.remove(eventId);
       }
     }
-    for (var subscriptionId in requestMap.keys) {
+    Iterable<String> requestMapKeys = List<String>.from(requestMap.keys);
+    for (var subscriptionId in requestMapKeys) {
       var start = requestMap[subscriptionId]![3];
       if (start > 0 && now - start > timeout * 1000) {
         // timeout
