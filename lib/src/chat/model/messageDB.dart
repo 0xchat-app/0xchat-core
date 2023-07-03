@@ -2,7 +2,18 @@ import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
-enum MessageType { text, image, video, audio, file, template }
+enum MessageType {
+  text,
+  image,
+  video,
+  audio,
+  file,
+  template,
+  encryptedImage,
+  encryptedVideo,
+  encryptedAudio,
+  encryptedFile
+}
 
 @reflector
 class MessageDB extends DBObject {
@@ -70,6 +81,14 @@ class MessageDB extends DBObject {
         return 'file';
       case MessageType.template:
         return 'template';
+      case MessageType.encryptedImage:
+        return 'encryptedImage';
+      case MessageType.encryptedVideo:
+        return 'encryptedVideo';
+      case MessageType.encryptedAudio:
+        return 'encryptedAudio';
+      case MessageType.encryptedFile:
+        return 'encryptedFile';
       default:
         return 'text';
     }
@@ -89,6 +108,14 @@ class MessageDB extends DBObject {
         return MessageType.file;
       case 'template':
         return MessageType.template;
+      case 'encryptedImage':
+        return MessageType.encryptedImage;
+      case 'encryptedVideo':
+        return MessageType.encryptedVideo;
+      case 'encryptedAudio':
+        return MessageType.encryptedAudio;
+      case 'encryptedFile':
+        return MessageType.encryptedFile;
       default:
         return MessageType.text;
     }
