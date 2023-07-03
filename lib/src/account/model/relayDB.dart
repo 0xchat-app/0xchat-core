@@ -25,10 +25,6 @@ class RelayDB extends DBObject {
   Map<String, int>? friendMessageSince;
   Map<String, int>? friendMessageUntil;
 
-  // channel list
-  int channelListSince;
-  int channelListUntil;
-
   // channel messages {channelID1: time1, channelID2: time2,...}
   Map<String, int>? channelMessageSince;
   Map<String, int>? channelMessageUntil;
@@ -36,10 +32,6 @@ class RelayDB extends DBObject {
   // delete message, hide message, mute user
   int commonMessagesSince;
   int commonMessagesUntil;
-
-  // group list
-  int groupListSince;
-  int groupListUntil;
 
   // group messages {groupID1: time1, groupID2: time2,...}
   Map<String, int>? groupMessageSince;
@@ -62,14 +54,10 @@ class RelayDB extends DBObject {
       this.friendRequestUntil = 0,
       this.friendMessageSince,
       this.friendMessageUntil,
-      this.channelListSince = 0,
-      this.channelListUntil = 0,
       this.channelMessageSince,
       this.channelMessageUntil,
       this.commonMessagesSince = 0,
       this.commonMessagesUntil = 0,
-      this.groupListSince = 0,
-      this.groupListUntil = 0,
       this.groupMessageSince,
       this.groupMessageUntil});
 
@@ -94,7 +82,7 @@ class RelayDB extends DBObject {
       return result
           .map((key, value) => MapEntry(key, int.parse(value.toString())));
     } catch (e) {
-      return null;
+      return {};
     }
   }
 }
@@ -117,16 +105,12 @@ RelayDB _relayDBInfoFromMap(Map<String, dynamic> map) {
     friendRequestUntil: map['friendRequestUntil'],
     friendMessageSince: RelayDB.decodeMap(map['friendMessageSince'].toString()),
     friendMessageUntil: RelayDB.decodeMap(map['friendMessageUntil'].toString()),
-    channelListSince: map['channelListSince'],
-    channelListUntil: map['channelListUntil'],
     channelMessageSince:
         RelayDB.decodeMap(map['channelMessageSince'].toString()),
     channelMessageUntil:
         RelayDB.decodeMap(map['channelMessageUntil'].toString()),
     commonMessagesSince: map['commonMessagesSince'],
     commonMessagesUntil: map['commonMessagesUntil'],
-    groupListSince: map['groupListSince'],
-    groupListUntil: map['groupListUntil'],
     groupMessageSince: RelayDB.decodeMap(map['groupMessageSince'].toString()),
     groupMessageUntil: RelayDB.decodeMap(map['groupMessageUntil'].toString()),
   );
@@ -149,14 +133,10 @@ Map<String, dynamic> _relayDBInfoToMap(RelayDB instance) => <String, dynamic>{
       'friendRequestUntil': instance.friendRequestUntil,
       'friendMessageSince': jsonEncode(instance.friendMessageSince),
       'friendMessageUntil': jsonEncode(instance.friendMessageUntil),
-      'channelListSince': instance.channelListSince,
-      'channelListUntil': instance.channelListUntil,
       'channelMessageSince': jsonEncode(instance.channelMessageSince),
       'channelMessageUntil': jsonEncode(instance.channelMessageUntil),
       'commonMessagesSince': instance.commonMessagesSince,
       'commonMessagesUntil': instance.commonMessagesUntil,
-      'groupListSince': instance.groupListSince,
-      'groupListUntil': instance.groupListUntil,
       'groupMessageSince': jsonEncode(instance.groupMessageSince),
       'groupMessageUntil': jsonEncode(instance.groupMessageUntil),
     };

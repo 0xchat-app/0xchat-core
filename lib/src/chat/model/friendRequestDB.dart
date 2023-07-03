@@ -10,14 +10,14 @@ class FriendRequestDB extends DBObject {
   bool? isFriend;
 
   /// 0: default value
-  /// 1: reqeust by me
-  /// 2: accept by me
-  /// 3: reject by me
-  /// 4: delete by me
-  /// 5: reqeust by friend
-  /// 6: accept by friend
-  /// 7: reject by friend
-  /// 8: delete by friend
+  /// 1: reqeust by friend
+  /// 2: accept by friend
+  /// 3: reject by friend
+  /// 4: delete by friend
+  /// 5: reqeust by me
+  /// 6: accept by me
+  /// 7: reject by me
+  /// 8: delete by me
   int? status;
 
   /// [[time1, content1], [time2, content2],...]
