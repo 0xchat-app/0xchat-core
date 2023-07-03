@@ -111,10 +111,10 @@ class Channels {
       Relays.sharedInstance.relays[relay]!.channelMessageSince![relay] =
           event.createdAt < since ? event.createdAt : since;
     } else {
-      Relays.sharedInstance.relays[relay]!.channelMessageUntil![relay] =
-          event.createdAt;
-      Relays.sharedInstance.relays[relay]!.channelMessageSince![relay] =
-          event.createdAt;
+      Relays.sharedInstance.relays[relay] = RelayDB(
+          url: relay,
+          channelMessageUntil: {relay: event.createdAt},
+          channelMessageSince: {relay: event.createdAt});
     }
 
     if (channelMessageCallBack != null) channelMessageCallBack!(messageDB);

@@ -141,8 +141,10 @@ class Friends {
       Relays.sharedInstance.relays[relay]!.friendRequestSince =
           event.createdAt < since ? event.createdAt : since;
     } else {
-      Relays.sharedInstance.relays[relay]!.friendRequestUntil = event.createdAt;
-      Relays.sharedInstance.relays[relay]!.friendRequestSince = event.createdAt;
+      Relays.sharedInstance.relays[relay] = RelayDB(
+          url: relay,
+          friendRequestUntil: event.createdAt,
+          friendRequestSince: event.createdAt);
     }
 
     /// callback
@@ -526,10 +528,10 @@ class Friends {
         Relays.sharedInstance.relays[relay]!.friendMessageSince![relay] =
             event.createdAt < since ? event.createdAt : since;
       } else {
-        Relays.sharedInstance.relays[relay]!.friendMessageUntil![relay] =
-            event.createdAt;
-        Relays.sharedInstance.relays[relay]!.friendMessageSince![relay] =
-            event.createdAt;
+        Relays.sharedInstance.relays[relay] = RelayDB(
+            url: relay,
+            friendMessageUntil: {relay: event.createdAt},
+            friendMessageSince: {relay: event.createdAt});
       }
 
       switch (event.kind) {
