@@ -63,8 +63,8 @@ class NotificationHelper {
       '#p': toAliasPubkeys
     };
     Event event = Nip4.encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay){
-      completer.complete(ok);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay, unRelays){
+      if(unRelays.isEmpty) completer.complete(ok);
     });
     return completer.future;
   }

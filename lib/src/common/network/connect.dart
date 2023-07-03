@@ -12,8 +12,7 @@ typedef OKCallBack = void Function(
     OKEvent ok, String relay, List<String> unCompletedRelays);
 
 /// request callback
-typedef EventCallBack = void Function(
-    String requestId, Event event, String relay);
+typedef EventCallBack = void Function(Event event, String relay);
 typedef EOSECallBack = void Function(
     String requestId, OKEvent ok, String relay, List<String> unCompletedRelays);
 
@@ -184,16 +183,21 @@ class Connect {
     }
   }
 
-  void addSubscription(Map<String, List<Filter>> filters,
+  String addSubscription(List<Filter> filters,
+      {EventCallBack? eventCallBack, EOSECallBack? eoseCallBack}) {
+    Map<String, List<Filter>> result = {};
+    for (var relay in Connect.sharedInstance.relays()) {
+      result[relay] = filters;
+    }
+    return addSubscriptions(result, eventCallBack: eventCallBack, eoseCallBack: eoseCallBack);
+  }
+
+  String addSubscriptions(Map<String, List<Filter>> filters,
       {EventCallBack? eventCallBack, EOSECallBack? eoseCallBack}) {
     /// Create a subscription message request with one or many filters
-    Requests requests = Requests(
-        generate64RandomHexChars(),
-        filters.keys.toList(),
-        DateTime.now().millisecondsSinceEpoch,
-        {},
-        eventCallBack,
-        eoseCallBack);
+    String requestsId = generate64RandomHexChars();
+    Requests requests = Requests(requestsId, filters.keys.toList(),
+        DateTime.now().millisecondsSinceEpoch, {}, eventCallBack, eoseCallBack);
     for (String relay in filters.keys) {
       Request requestWithFilter =
           Request(generate64RandomHexChars(), filters[relay]!);
@@ -206,6 +210,7 @@ class Connect {
       /// Send a request message to the WebSocket server
       _send(subscriptionString, relay: relay);
     }
+    return requestsId;
   }
 
   Future closeSubscription(String subscriptionId, String relay) async {
@@ -217,6 +222,19 @@ class Connect {
       requestsMap.remove(subscriptionId + relay);
     } else {
       throw Exception("null subscriptionId");
+    }
+  }
+
+  Future closeRequests(String requestId) async {
+    Iterable<String> requestsMapKeys = List<String>.from(requestsMap.keys);
+    for (var key in requestsMapKeys) {
+      var requests = requestsMap[key];
+      if (requests!.requestId == requestId) {
+        for (var relay in relays()) {
+          await closeSubscription(requests.subscriptions[relay]!, relay);
+        }
+        return;
+      }
     }
   }
 
@@ -275,7 +293,7 @@ class Connect {
       if (subscriptionId.isNotEmpty &&
           requestsMap.containsKey(requestsMapKey)) {
         EventCallBack? callBack = requestsMap[requestsMapKey]!.eventCallBack;
-        if (callBack != null) callBack(subscriptionId, event, relay);
+        if (callBack != null) callBack(event, relay);
       }
     }
   }

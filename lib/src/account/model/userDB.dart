@@ -43,6 +43,8 @@ class UserDB extends DBObject {
   List<String>? blockedList; // blocked users list
   bool? mute;
 
+  int lastUpdatedTime;
+
   UserDB({
     this.pubKey = '',
     this.encryptedPrivKey = '',
@@ -67,6 +69,7 @@ class UserDB extends DBObject {
     this.badgesList,
     this.blockedList,
     this.mute = false,
+    this.lastUpdatedTime = 0,
   });
 
   @override
@@ -117,26 +120,28 @@ class UserDB extends DBObject {
 
 UserDB _userInfoFromMap(Map<String, dynamic> map) {
   return UserDB(
-      pubKey: map['pubKey'].toString(),
-      encryptedPrivKey: map['encryptedPrivKey'].toString(),
-      defaultPassword: map['defaultPassword'].toString(),
-      name: map['name'].toString(),
-      nickName: map['nickName'].toString(),
-      mainRelay: map['mainRelay'].toString(),
-      dns: map['dns'].toString(),
-      lnurl: map['lnurl'].toString(),
-      badges: map['badges'].toString(),
-      gender: map['gender'].toString(),
-      area: map['area'].toString(),
-      about: map['about'].toString(),
-      picture: map['picture'].toString(),
-      friendsList: map['friendsList'].toString(),
-      channelsList: UserDB.decodeStringList(map['channelsList'].toString()),
-      groupsList: UserDB.decodeStringList(map['groupsList'].toString()),
-      badgesList: UserDB.decodeStringList(map['badgesList'].toString()),
-      blockedList: UserDB.decodeStringList(map['blockedList'].toString()),
-      aliasPubkey: map['aliasPubkey'],
-      mute: map['mute'] > 0 ? true : false);
+    pubKey: map['pubKey'].toString(),
+    encryptedPrivKey: map['encryptedPrivKey'].toString(),
+    defaultPassword: map['defaultPassword'].toString(),
+    name: map['name'].toString(),
+    nickName: map['nickName'].toString(),
+    mainRelay: map['mainRelay'].toString(),
+    dns: map['dns'].toString(),
+    lnurl: map['lnurl'].toString(),
+    badges: map['badges'].toString(),
+    gender: map['gender'].toString(),
+    area: map['area'].toString(),
+    about: map['about'].toString(),
+    picture: map['picture'].toString(),
+    friendsList: map['friendsList'].toString(),
+    channelsList: UserDB.decodeStringList(map['channelsList'].toString()),
+    groupsList: UserDB.decodeStringList(map['groupsList'].toString()),
+    badgesList: UserDB.decodeStringList(map['badgesList'].toString()),
+    blockedList: UserDB.decodeStringList(map['blockedList'].toString()),
+    aliasPubkey: map['aliasPubkey'],
+    mute: map['mute'] > 0 ? true : false,
+    lastUpdatedTime: map['lastUpdatedTime'],
+  );
 }
 
 Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
@@ -159,5 +164,6 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'badgesList': jsonEncode(instance.badgesList),
       'blockedList': jsonEncode(instance.blockedList),
       'aliasPubkey': instance.aliasPubkey,
-      'mute': instance.mute
+      'mute': instance.mute,
+      'lastUpdatedTime': instance.lastUpdatedTime,
     };

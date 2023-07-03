@@ -11,7 +11,7 @@ class Zaps {
       List<dynamic> parts = lnaddr.split('@');
       String name = parts[0];
       String domain = parts[1];
-      if(name.isEmpty || domain.isEmpty){
+      if (name.isEmpty || domain.isEmpty) {
         throw Exception('invalid lnaddr');
       }
       String url = 'https://$domain/.well-known/lnurlp/$name';
@@ -70,11 +70,9 @@ class Zaps {
     return completer.future;
   }
 
-  static Future<ZapReceipt?> getZapReceipt(
-      String zapper,
+  static Future<ZapReceipt?> getZapReceipt(String zapper,
       {String? recipient, String? eventId}) async {
     Completer<ZapReceipt?> completer = Completer<ZapReceipt?>();
-    String subscriptionId = '';
     Filter f = Filter(kinds: [9735], authors: [zapper]);
     if (recipient != null) {
       f = Filter(kinds: [9735], authors: [zapper], p: [recipient]);
@@ -82,15 +80,15 @@ class Zaps {
     if (eventId != null) {
       f = Filter(kinds: [9735], authors: [zapper], e: [eventId]);
     }
-    subscriptionId = Connect.sharedInstance.addSubscription([f],
+    Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       ZapReceipt zapReceipt = Nip57.getZapReceipt(event);
 
       /// check invoiceAmount, lnurl?
       completer.complete(zapReceipt);
-    }, eoseCallBack: (status, relay) {
-      Connect.sharedInstance.closeSubscription(subscriptionId);
-      if (status == 0) completer.complete(null);
+    }, eoseCallBack: (requestId, status, relay, unRelays) {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+      if (unRelays.isEmpty) completer.complete(null);
     });
     return completer.future;
   }

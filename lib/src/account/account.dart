@@ -136,7 +136,6 @@ class Account {
       List<String> pubkeys) async {
     Completer<Map<String, UserDB>> completer = Completer<Map<String, UserDB>>();
 
-    String subscriptionId = '';
     Filter f = Filter(
       kinds: [0],
       authors: pubkeys,
@@ -151,11 +150,12 @@ class Account {
       }
       users[key] = db;
     }
-    subscriptionId = Connect.sharedInstance.addSubscription([f],
+
+    Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       Map map = jsonDecode(event.content);
       UserDB? db = users[event.pubkey];
-      if (db != null) {
+      if (db != null && db.lastUpdatedTime < event.createdAt) {
         db.name = map['name'];
         db.gender = map['gender'];
         db.area = map['area'];
@@ -163,14 +163,17 @@ class Account {
         db.picture = map['picture'];
         db.dns = map['nip05'];
         db.lnurl = map['lnurl'];
+        db.lastUpdatedTime = event.createdAt;
       }
-    }, eoseCallBack: (status, relay) async {
-      Connect.sharedInstance.closeSubscription(subscriptionId);
-      for (var db in users.values) {
-        await DB.sharedInstance.insert<UserDB>(db);
+    }, eoseCallBack: (requestId, ok, relay, unRelays) async {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+      if(unRelays.isEmpty){
+        for (var db in users.values) {
+          await DB.sharedInstance.insert<UserDB>(db);
+        }
+        completer.complete(users);
       }
-      completer.complete(users);
-    }, needTimeout: true);
+    });
     return completer.future;
   }
 
@@ -199,11 +202,9 @@ class Account {
       'lnurl': updateDB.lnurl
     };
     Event event = Nip1.setMetadata(jsonEncode(map), privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
-      if (ok.status) {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay, unRelays) {
+      if(unRelays.isEmpty){
         completer.complete(db);
-      } else {
-        completer.complete(null);
       }
     });
     return completer.future;
