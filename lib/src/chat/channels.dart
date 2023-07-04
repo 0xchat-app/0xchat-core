@@ -117,6 +117,7 @@ class Channels {
   }
 
   Future<void> _loadMyChannelsFromRelay() async {
+    Completer<void> completer = Completer<void>();
     Filter f = Filter(
       kinds: [30001],
       d: [identifier],
@@ -142,9 +143,11 @@ class Channels {
           channels.clear();
           _updateSubscription();
         }
+        completer.complete();
         if (myChannelsUpdatedCallBack != null) myChannelsUpdatedCallBack!();
       }
     });
+    return completer.future;
   }
 
   Map<String, ChannelDB> _myChannels() {
@@ -235,18 +238,18 @@ class Channels {
     myChannelsUpdatedCallBack = callBack;
 
     await _loadAllChannelsFromDB();
-    _updateSubscriptions();
+    await _updateSubscriptions();
 
     // subscript friend requests
-    Connect.sharedInstance.addConnectStatusListener((relay, status) {
+    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1) {
-        _updateSubscriptions();
+        await _updateSubscriptions();
       }
     });
   }
 
-  void _updateSubscriptions() {
-    _loadMyChannelsFromRelay();
+  Future<void> _updateSubscriptions() async {
+    await _loadMyChannelsFromRelay();
     _updateSubscription();
   }
 
