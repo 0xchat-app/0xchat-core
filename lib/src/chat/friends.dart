@@ -26,7 +26,7 @@ class Friends {
   String privkey = '';
   Map<String, UserDB> allFriends = {};
   Map<String, FriendRequestDB> friendRequestMap = {};
-  Map<String, String> friendRequestSubscription = {};
+  String friendRequestSubscription = '';
   String friendMessageSubscription = '';
 
   /// callbacks
@@ -131,21 +131,7 @@ class Friends {
         lastUpdateTime: alias.createTime);
     friendRequestMap[requestDB.friendPubkey!] = requestDB;
 
-    /// set friendRequestUntil friendRequestSince
-    if (Relays.sharedInstance.relays.containsKey(relay)) {
-      int until = Relays.sharedInstance.relays[relay]!.friendRequestUntil;
-      int since = Relays.sharedInstance.relays[relay]!.friendRequestSince;
-
-      Relays.sharedInstance.relays[relay]!.friendRequestUntil =
-          event.createdAt > until ? event.createdAt : until;
-      Relays.sharedInstance.relays[relay]!.friendRequestSince =
-          event.createdAt < since ? event.createdAt : since;
-    } else {
-      Relays.sharedInstance.relays[relay] = RelayDB(
-          url: relay,
-          friendRequestUntil: event.createdAt,
-          friendRequestSince: event.createdAt);
-    }
+    _updateFriendRequestTime(event.createdAt, relay);
 
     /// callback
     if (friendRequestCallBack != null) friendRequestCallBack!(alias);
@@ -232,9 +218,10 @@ class Friends {
     });
   }
 
-  void _updateSubscriptions() {
-    _syncFriendsFromRelay();
-    _syncRequestActionsFromRelay();
+  Future<void> _updateSubscriptions() async {
+    await _syncFriendsFromRelay();
+    await _syncAddFriendRequestsFromRelay();
+    await _syncRequestActionsFromRelay();
   }
 
   Future<OKEvent> requestFriend(String friendPubkey, String content) async {
@@ -443,6 +430,9 @@ class Friends {
   }
 
   Future<void> _syncAddFriendRequestsFromRelay() async {
+    if (friendRequestSubscription.isNotEmpty) {
+      Connect.sharedInstance.closeRequests(friendRequestSubscription);
+    }
     Completer<void> completer = Completer<void>();
     Map<String, List<Filter>> subscriptions = {};
     for (String relayURL in Connect.sharedInstance.relays()) {
@@ -454,8 +444,8 @@ class Friends {
           Filter(kinds: [10100], p: [pubkey], since: (friendRequestUntil + 1));
       subscriptions[relayURL] = [f1];
     }
-    Connect.sharedInstance.addSubscriptions(subscriptions,
-        eventCallBack: (event, relay) {
+    friendRequestSubscription = Connect.sharedInstance
+        .addSubscriptions(subscriptions, eventCallBack: (event, relay) {
       _handleFriendRequest(event, relay);
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
       if (unRelays.isEmpty) {
@@ -491,7 +481,9 @@ class Friends {
   }
 
   Future<void> _syncRequestActionsFromRelay() async {
-    Connect.sharedInstance.closeRequests(friendMessageSubscription);
+    if (friendMessageSubscription.isNotEmpty) {
+      Connect.sharedInstance.closeRequests(friendMessageSubscription);
+    }
 
     Map<String, List<Filter>> subscriptions = {};
     List<String> pubkeys = [];
@@ -516,24 +508,7 @@ class Friends {
     }
     friendMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) {
-      /// set friendMessageUntil friendMessageSince
-      if (Relays.sharedInstance.relays.containsKey(relay)) {
-        int until =
-            Relays.sharedInstance.relays[relay]!.friendMessageUntil![relay]!;
-        int since =
-            Relays.sharedInstance.relays[relay]!.friendMessageSince![relay]!;
-
-        Relays.sharedInstance.relays[relay]!.friendMessageUntil![relay] =
-            event.createdAt > until ? event.createdAt : until;
-        Relays.sharedInstance.relays[relay]!.friendMessageSince![relay] =
-            event.createdAt < since ? event.createdAt : since;
-      } else {
-        Relays.sharedInstance.relays[relay] = RelayDB(
-            url: relay,
-            friendMessageUntil: {relay: event.createdAt},
-            friendMessageSince: {relay: event.createdAt});
-      }
-
+      _updateFriendMessageTime(event.createdAt, relay);
       switch (event.kind) {
         case 10101:
           _handleFriendAccept(event);
@@ -552,6 +527,44 @@ class Friends {
           break;
       }
     });
+  }
+
+  void _updateFriendMessageTime(int eventTime, String relay) {
+    /// set friendMessageUntil friendMessageSince
+    if (Relays.sharedInstance.relays.containsKey(relay)) {
+      int until =
+          Relays.sharedInstance.relays[relay]!.friendMessageUntil![relay]!;
+      int since =
+          Relays.sharedInstance.relays[relay]!.friendMessageSince![relay]!;
+
+      Relays.sharedInstance.relays[relay]!.friendMessageUntil![relay] =
+          eventTime > until ? eventTime : until;
+      Relays.sharedInstance.relays[relay]!.friendMessageSince![relay] =
+          eventTime < since ? eventTime : since;
+    } else {
+      Relays.sharedInstance.relays[relay] = RelayDB(
+          url: relay,
+          friendMessageUntil: {relay: eventTime},
+          friendMessageSince: {relay: eventTime});
+    }
+  }
+
+  void _updateFriendRequestTime(int eventTime, String relay) {
+    /// set friendRequestUntil friendRequestSince
+    if (Relays.sharedInstance.relays.containsKey(relay)) {
+      int until = Relays.sharedInstance.relays[relay]!.friendRequestUntil;
+      int since = Relays.sharedInstance.relays[relay]!.friendRequestSince;
+
+      Relays.sharedInstance.relays[relay]!.friendRequestUntil =
+          eventTime > until ? eventTime : until;
+      Relays.sharedInstance.relays[relay]!.friendRequestSince =
+          eventTime < since ? eventTime : since;
+    } else {
+      Relays.sharedInstance.relays[relay] = RelayDB(
+          url: relay,
+          friendRequestUntil: eventTime,
+          friendRequestSince: eventTime);
+    }
   }
 
   Future<void> _syncRequestListToDB(List<FriendRequestDB> list) async {}
