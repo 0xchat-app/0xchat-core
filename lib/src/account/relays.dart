@@ -117,7 +117,7 @@ class Relays {
     int since = Relays.sharedInstance.getCommonMessageSince(relay);
     if (!relays.containsKey(relay)) relays[relay] = RelayDB();
     relays[relay]!.commonMessagesSince =
-    updateTime < since ? updateTime : since;
+        updateTime < since ? updateTime : since;
   }
 
   void setFriendMessageSince(int updateTime, String relay) {
