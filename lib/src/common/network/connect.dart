@@ -125,9 +125,7 @@ class Connect {
 
   void _setConnectStatus(String relay, int status) {
     connectStatus[relay] = status;
-    if (connectStatusCallBack != null) {
-      connectStatusCallBack!(relay, status);
-    }
+    connectStatusCallBack?.call(relay, status);
     for (var callBack in connectStatusListeners) {
       callBack(relay, status);
     }
@@ -317,7 +315,7 @@ class Connect {
   void _handleNotice(String notice, String relay) {
     print('receive notice: $notice');
     String n = jsonDecode(notice)[0];
-    if (noticeCallBack != null) noticeCallBack!(n, relay);
+    noticeCallBack?.call(n, relay);
   }
 
   void _handleOk(String message, String relay) {

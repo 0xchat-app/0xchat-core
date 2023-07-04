@@ -85,7 +85,7 @@ class Friends {
       }
       // subscript friend accept, reject, delete, private messages
       _syncRequestActionsFromRelay();
-      if (friendUpdatedCallBack != null) friendUpdatedCallBack!();
+      friendUpdatedCallBack?.call();
     }
   }
 
@@ -134,7 +134,7 @@ class Friends {
     _updateFriendRequestTime(event.createdAt, relay);
 
     /// callback
-    if (friendRequestCallBack != null) friendRequestCallBack!(alias);
+    friendRequestCallBack?.call(alias);
   }
 
   Future<void> _handleFriendAccept(Event event) async {
@@ -146,7 +146,7 @@ class Friends {
         user.aliasPubkey = alias.toAliasPubkey;
         await DB.sharedInstance.insert<UserDB>(user);
         await _addFriend(user.pubKey!, user.aliasPubkey!);
-        if (friendAcceptCallBack != null) friendAcceptCallBack!(alias);
+        friendAcceptCallBack?.call(alias);
         return;
       }
     }
@@ -159,7 +159,7 @@ class Friends {
         Alias alias = Nip101.getReject(
             event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
         removeFriend(user.pubKey!);
-        if (friendRejectCallBack != null) friendRejectCallBack!(alias);
+        friendRejectCallBack?.call(alias);
         return;
       }
     }
@@ -174,7 +174,7 @@ class Friends {
         // check is real friend(aliasPubkey can't not be null)
         if (user.aliasPubkey != null && user.aliasPubkey!.isNotEmpty) {
           removeFriend(user.pubKey!);
-          if (friendRemoveCallBack != null) friendRemoveCallBack!(alias);
+          friendRemoveCallBack?.call(alias);
         }
         return;
       }
@@ -185,9 +185,7 @@ class Friends {
     MessageDB? messageDB = MessageDB.fromPrivateMessage(event);
     if (messageDB != null) {
       Messages.saveMessagesToDB([messageDB]);
-      if (friendMessageCallBack != null) {
-        friendMessageCallBack!(messageDB);
-      }
+      friendMessageCallBack?.call(messageDB);
     }
   }
 
@@ -473,7 +471,7 @@ class Friends {
           allFriends.clear();
           _syncFriendsProfiles(result!.people);
         }
-        if (friendUpdatedCallBack != null) friendUpdatedCallBack!();
+        friendUpdatedCallBack?.call();
       }
     });
   }

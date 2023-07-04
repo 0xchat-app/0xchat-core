@@ -101,7 +101,7 @@ class Channels {
 
     _updateChannelMessageTime(event.createdAt, relay);
 
-    if (channelMessageCallBack != null) channelMessageCallBack!(messageDB);
+    channelMessageCallBack?.call(messageDB);
     await Relays.sharedInstance.syncRelaysToDB();
     await Messages.saveMessagesToDB([messageDB]);
   }
@@ -147,7 +147,7 @@ class Channels {
           _updateSubscription();
         }
         completer.complete();
-        if (myChannelsUpdatedCallBack != null) myChannelsUpdatedCallBack!();
+        myChannelsUpdatedCallBack?.call();
       }
     });
     return completer.future;
