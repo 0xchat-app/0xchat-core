@@ -527,13 +527,8 @@ class Friends {
   void _updateFriendMessageTime(int eventTime, String relay) {
     /// set friendMessageUntil friendMessageSince
     if (Relays.sharedInstance.relays.containsKey(relay)) {
-      int until = Relays.sharedInstance.getFriendMessageUntil(relay);
-      int since = Relays.sharedInstance.getFriendMessageSince(relay);
-
-      Relays.sharedInstance.relays[relay]!.friendMessageUntil![relay] =
-          eventTime > until ? eventTime : until;
-      Relays.sharedInstance.relays[relay]!.friendMessageSince![relay] =
-          eventTime < since ? eventTime : since;
+      Relays.sharedInstance.setFriendMessageUntil(eventTime, relay);
+      Relays.sharedInstance.setFriendMessageSince(eventTime, relay);
     } else {
       Relays.sharedInstance.relays[relay] = RelayDB(
           url: relay,
@@ -545,13 +540,8 @@ class Friends {
   void _updateFriendRequestTime(int eventTime, String relay) {
     /// set friendRequestUntil friendRequestSince
     if (Relays.sharedInstance.relays.containsKey(relay)) {
-      int until = Relays.sharedInstance.relays[relay]!.friendRequestUntil;
-      int since = Relays.sharedInstance.relays[relay]!.friendRequestSince;
-
-      Relays.sharedInstance.relays[relay]!.friendRequestUntil =
-          eventTime > until ? eventTime : until;
-      Relays.sharedInstance.relays[relay]!.friendRequestSince =
-          eventTime < since ? eventTime : since;
+      Relays.sharedInstance.setFriendRequestUntil(eventTime, relay);
+      Relays.sharedInstance.setFriendRequestSince(eventTime, relay);
     } else {
       Relays.sharedInstance.relays[relay] = RelayDB(
           url: relay,

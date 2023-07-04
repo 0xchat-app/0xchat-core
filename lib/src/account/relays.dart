@@ -65,4 +65,52 @@ class Relays {
         ? relays[relayURL]!.getGroupMessageUntil(relayURL)
         : 0;
   }
+
+  void setFriendMessageUntil(int updateTime, String relay) {
+    int until = Relays.sharedInstance.getFriendMessageUntil(relay);
+    Relays.sharedInstance.relays[relay]!.friendMessageUntil![relay] =
+        updateTime > until ? updateTime : until;
+  }
+
+  void setFriendRequestUntil(int updateTime, String relay) {
+    int until = Relays.sharedInstance.relays[relay]!.friendRequestUntil;
+    Relays.sharedInstance.relays[relay]!.friendRequestUntil =
+        updateTime > until ? updateTime : until;
+  }
+
+  void setChannelMessageUntil(int updateTime, String relay) {
+    int until = Relays.sharedInstance.getChannelMessageUntil(relay);
+    Relays.sharedInstance.relays[relay]!.channelMessageUntil![relay] =
+        updateTime > until ? updateTime : until;
+  }
+
+  void setGroupMessageUntil(int updateTime, String relay) {
+    int until = Relays.sharedInstance.getGroupMessageUntil(relay);
+    Relays.sharedInstance.relays[relay]!.groupMessageUntil![relay] =
+        updateTime > until ? updateTime : until;
+  }
+
+  void setFriendMessageSince(int updateTime, String relay) {
+    int since = Relays.sharedInstance.getFriendMessageSince(relay);
+    Relays.sharedInstance.relays[relay]!.friendMessageSince![relay] =
+        updateTime < since ? updateTime : since;
+  }
+
+  void setFriendRequestSince(int updateTime, String relay) {
+    int since = Relays.sharedInstance.relays[relay]!.friendRequestSince;
+    Relays.sharedInstance.relays[relay]!.friendRequestSince =
+        updateTime < since ? updateTime : since;
+  }
+
+  void setChannelMessageSince(int updateTime, String relay) {
+    int since = Relays.sharedInstance.getChannelMessageSince(relay);
+    Relays.sharedInstance.relays[relay]!.channelMessageSince![relay] =
+        updateTime < since ? updateTime : since;
+  }
+
+  void setGroupMessageSince(int updateTime, String relay) {
+    int since = Relays.sharedInstance.getGroupMessageSince(relay);
+    Relays.sharedInstance.relays[relay]!.groupMessageSince![relay] =
+        updateTime < since ? updateTime : since;
+  }
 }

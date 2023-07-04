@@ -106,13 +106,8 @@ class Channels {
   void _updateChannelMessageTime(int eventTime, String relay) {
     /// set channelMessageUntil channelMessageSince
     if (Relays.sharedInstance.relays.containsKey(relay)) {
-      int until = Relays.sharedInstance.getChannelMessageUntil(relay);
-      int since = Relays.sharedInstance.getChannelMessageSince(relay);
-
-      Relays.sharedInstance.relays[relay]!.channelMessageUntil![relay] =
-          eventTime > until ? eventTime : until;
-      Relays.sharedInstance.relays[relay]!.channelMessageSince![relay] =
-          eventTime < since ? eventTime : since;
+      Relays.sharedInstance.setChannelMessageUntil(eventTime, relay);
+      Relays.sharedInstance.setChannelMessageSince(eventTime, relay);
     } else {
       Relays.sharedInstance.relays[relay] = RelayDB(
           url: relay,
