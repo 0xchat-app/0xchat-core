@@ -42,10 +42,10 @@ class Channels {
     Map<String, List<Filter>> subscriptions = {};
     for (String relayURL in Connect.sharedInstance.relays()) {
       int channelMessageUntil =
-          Relays.sharedInstance.relays.containsKey(relayURL)
-              ? Relays.sharedInstance.relays[relayURL]!
-                  .channelMessageUntil![relayURL]!
-              : 0;
+      Relays.sharedInstance.relays.containsKey(relayURL)
+          ? Relays.sharedInstance.relays[relayURL]!
+          .channelMessageUntil![relayURL]!
+          : 0;
       Filter f = Filter(
           e: myChannels.keys.toList(),
           kinds: [42],
@@ -99,6 +99,14 @@ class Channels {
         MessageDB.decodeContent(messageDB.content!)['content'];
     messageDB.type = MessageDB.decodeContent(messageDB.content!)['contentType'];
 
+    _updateChannelMessageTime(event.createdAt, relay);
+
+    if (channelMessageCallBack != null) channelMessageCallBack!(messageDB);
+    await Relays.sharedInstance.syncRelaysToDB();
+    await Messages.saveMessagesToDB([messageDB]);
+  }
+
+  void _updateChannelMessageTime(int eventTime, String relay) {
     /// set channelMessageUntil channelMessageSince
     if (Relays.sharedInstance.relays.containsKey(relay)) {
       int until =
@@ -107,19 +115,15 @@ class Channels {
           Relays.sharedInstance.relays[relay]!.channelMessageSince![relay]!;
 
       Relays.sharedInstance.relays[relay]!.channelMessageUntil![relay] =
-          event.createdAt > until ? event.createdAt : until;
+          eventTime > until ? eventTime : until;
       Relays.sharedInstance.relays[relay]!.channelMessageSince![relay] =
-          event.createdAt < since ? event.createdAt : since;
+          eventTime < since ? eventTime : since;
     } else {
       Relays.sharedInstance.relays[relay] = RelayDB(
           url: relay,
-          channelMessageUntil: {relay: event.createdAt},
-          channelMessageSince: {relay: event.createdAt});
+          channelMessageUntil: {relay: eventTime},
+          channelMessageSince: {relay: eventTime});
     }
-
-    if (channelMessageCallBack != null) channelMessageCallBack!(messageDB);
-    await Relays.sharedInstance.syncRelaysToDB();
-    await Messages.saveMessagesToDB([messageDB]);
   }
 
   Future<void> _loadMyChannelsFromRelay() async {

@@ -105,18 +105,20 @@ class Connect {
     }
     Iterable<String> requestMapKeys = List<String>.from(requestsMap.keys);
     for (var subscriptionId in requestMapKeys) {
-      var start = requestsMap[subscriptionId]!.requestTime;
-      if (start > 0 && now - start > timeout * 1000) {
-        // timeout
-        EOSECallBack? callBack = requestsMap[subscriptionId]!.eoseCallBack;
-        OKEvent ok = OKEvent(subscriptionId, false, 'Time Out');
-        for (var relay in requestsMap[subscriptionId]!.relays) {
-          if (callBack != null) {
-            callBack(requestsMap[subscriptionId]!.subscriptions[relay]!, ok,
-                relay, []);
+      if(requestsMap[subscriptionId] != null){
+        var start = requestsMap[subscriptionId]!.requestTime;
+        if (start > 0 && now - start > timeout * 1000) {
+          // timeout
+          EOSECallBack? callBack = requestsMap[subscriptionId]!.eoseCallBack;
+          OKEvent ok = OKEvent(subscriptionId, false, 'Time Out');
+          for (var relay in requestsMap[subscriptionId]!.relays) {
+            if (callBack != null) {
+              callBack(requestsMap[subscriptionId]!.subscriptions[relay]!, ok,
+                  relay, []);
+            }
           }
+          requestsMap.remove(subscriptionId);
         }
-        requestsMap.remove(subscriptionId);
       }
     }
   }

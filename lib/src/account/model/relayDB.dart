@@ -52,14 +52,14 @@ class RelayDB extends DBObject {
       this.icon = '',
       this.friendRequestSince = 0,
       this.friendRequestUntil = 0,
-      this.friendMessageSince,
-      this.friendMessageUntil,
-      this.channelMessageSince,
-      this.channelMessageUntil,
+      this.friendMessageSince = const {},
+      this.friendMessageUntil = const {},
+      this.channelMessageSince = const {},
+      this.channelMessageUntil = const {},
       this.commonMessagesSince = 0,
       this.commonMessagesUntil = 0,
-      this.groupMessageSince,
-      this.groupMessageUntil});
+      this.groupMessageSince = const {},
+      this.groupMessageUntil = const {}});
 
   @override
   //Map
