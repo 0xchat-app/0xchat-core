@@ -237,15 +237,15 @@ class Channels {
     me ??= UserDB(pubKey: pubkey, privkey: privkey);
     myChannelsUpdatedCallBack = callBack;
 
-    await _loadAllChannelsFromDB();
-    await _updateSubscriptions();
-
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1) {
         await _updateSubscriptions();
       }
     });
+
+    await _loadAllChannelsFromDB();
+    await _updateSubscriptions();
   }
 
   Future<void> _updateSubscriptions() async {
