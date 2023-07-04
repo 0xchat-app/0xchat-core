@@ -52,19 +52,67 @@ class RelayDB extends DBObject {
       this.icon = '',
       this.friendRequestSince = 0,
       this.friendRequestUntil = 0,
-      this.friendMessageSince = const {},
-      this.friendMessageUntil = const {},
-      this.channelMessageSince = const {},
-      this.channelMessageUntil = const {},
+      this.friendMessageSince,
+      this.friendMessageUntil,
+      this.channelMessageSince,
+      this.channelMessageUntil,
       this.commonMessagesSince = 0,
       this.commonMessagesUntil = 0,
-      this.groupMessageSince = const {},
-      this.groupMessageUntil = const {}});
+      this.groupMessageSince,
+      this.groupMessageUntil});
 
   @override
   //Map
   Map<String, Object?> toMap() {
     return _relayDBInfoToMap(this);
+  }
+
+  int getFriendMessageUntil(String relay) {
+    friendMessageUntil ??= {};
+    if (friendMessageUntil!.containsKey(relay)) {
+      return friendMessageUntil![relay]!;
+    }
+    return 0;
+  }
+
+  int getFriendMessageSince(String relay) {
+    friendMessageSince ??= {};
+    if (friendMessageSince!.containsKey(relay)) {
+      return friendMessageSince![relay]!;
+    }
+    return 0;
+  }
+
+  int getChannelMessageSince(String relay) {
+    channelMessageSince ??= {};
+    if (channelMessageSince!.containsKey(relay)) {
+      return channelMessageSince![relay]!;
+    }
+    return 0;
+  }
+
+  int getChannelMessageUntil(String relay) {
+    channelMessageUntil ??= {};
+    if (channelMessageUntil!.containsKey(relay)) {
+      return channelMessageUntil![relay]!;
+    }
+    return 0;
+  }
+
+  int getGroupMessageSince(String relay) {
+    groupMessageSince ??= {};
+    if (groupMessageSince!.containsKey(relay)) {
+      return groupMessageSince![relay]!;
+    }
+    return 0;
+  }
+
+  int getGroupMessageUntil(String relay) {
+    groupMessageUntil ??= {};
+    if (groupMessageUntil!.containsKey(relay)) {
+      return groupMessageUntil![relay]!;
+    }
+    return 0;
   }
 
   static RelayDB fromMap(Map<String, Object?> map) {
@@ -76,7 +124,7 @@ class RelayDB extends DBObject {
     return ['url'];
   }
 
-  static Map<String, int>? decodeMap(String map) {
+  static Map<String, int> decodeMap(String map) {
     try {
       Map<String, dynamic> result = jsonDecode(map);
       return result

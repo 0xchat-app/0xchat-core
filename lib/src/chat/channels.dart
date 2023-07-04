@@ -42,10 +42,7 @@ class Channels {
     Map<String, List<Filter>> subscriptions = {};
     for (String relayURL in Connect.sharedInstance.relays()) {
       int channelMessageUntil =
-      Relays.sharedInstance.relays.containsKey(relayURL)
-          ? Relays.sharedInstance.relays[relayURL]!
-          .channelMessageUntil![relayURL]!
-          : 0;
+          Relays.sharedInstance.getChannelMessageUntil(relayURL);
       Filter f = Filter(
           e: myChannels.keys.toList(),
           kinds: [42],
@@ -109,10 +106,8 @@ class Channels {
   void _updateChannelMessageTime(int eventTime, String relay) {
     /// set channelMessageUntil channelMessageSince
     if (Relays.sharedInstance.relays.containsKey(relay)) {
-      int until =
-          Relays.sharedInstance.relays[relay]!.channelMessageUntil![relay]!;
-      int since =
-          Relays.sharedInstance.relays[relay]!.channelMessageSince![relay]!;
+      int until = Relays.sharedInstance.getChannelMessageUntil(relay);
+      int since = Relays.sharedInstance.getChannelMessageSince(relay);
 
       Relays.sharedInstance.relays[relay]!.channelMessageUntil![relay] =
           eventTime > until ? eventTime : until;

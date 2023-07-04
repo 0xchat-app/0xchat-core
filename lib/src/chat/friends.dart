@@ -437,9 +437,7 @@ class Friends {
     Map<String, List<Filter>> subscriptions = {};
     for (String relayURL in Connect.sharedInstance.relays()) {
       int friendRequestUntil =
-          Relays.sharedInstance.relays.containsKey(relayURL)
-              ? Relays.sharedInstance.relays[relayURL]!.friendRequestUntil
-              : 0;
+          Relays.sharedInstance.getFriendMessageUntil(relayURL);
       Filter f1 =
           Filter(kinds: [10100], p: [pubkey], since: (friendRequestUntil + 1));
       subscriptions[relayURL] = [f1];
@@ -494,10 +492,7 @@ class Friends {
     });
     for (String relayURL in Connect.sharedInstance.relays()) {
       int friendMessageUntil =
-          Relays.sharedInstance.relays.containsKey(relayURL)
-              ? Relays.sharedInstance.relays[relayURL]!
-                  .friendMessageUntil![relayURL]!
-              : 0;
+          Relays.sharedInstance.getFriendMessageUntil(relayURL);
       Filter f1 = Filter(
           kinds: [10101, 10102, 10103, 4],
           p: pubkeys,
@@ -532,10 +527,8 @@ class Friends {
   void _updateFriendMessageTime(int eventTime, String relay) {
     /// set friendMessageUntil friendMessageSince
     if (Relays.sharedInstance.relays.containsKey(relay)) {
-      int until =
-          Relays.sharedInstance.relays[relay]!.friendMessageUntil![relay]!;
-      int since =
-          Relays.sharedInstance.relays[relay]!.friendMessageSince![relay]!;
+      int until = Relays.sharedInstance.getFriendMessageUntil(relay);
+      int since = Relays.sharedInstance.getFriendMessageSince(relay);
 
       Relays.sharedInstance.relays[relay]!.friendMessageUntil![relay] =
           eventTime > until ? eventTime : until;

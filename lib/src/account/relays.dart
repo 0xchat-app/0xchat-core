@@ -29,4 +29,40 @@ class Relays {
     var relay = relays[url];
     if (relay != null) await DB.sharedInstance.insert(relay);
   }
+
+  int getFriendMessageUntil(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.getFriendMessageUntil(relayURL)
+        : 0;
+  }
+
+  int getFriendMessageSince(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.getFriendMessageSince(relayURL)
+        : 0;
+  }
+
+  int getChannelMessageSince(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.getChannelMessageSince(relayURL)
+        : 0;
+  }
+
+  int getChannelMessageUntil(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.getChannelMessageUntil(relayURL)
+        : 0;
+  }
+
+  int getGroupMessageSince(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.getGroupMessageSince(relayURL)
+        : 0;
+  }
+
+  int getGroupMessageUntil(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.getGroupMessageUntil(relayURL)
+        : 0;
+  }
 }
