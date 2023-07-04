@@ -14,7 +14,7 @@ class Messages {
 
   String pubkey = '';
   String privkey = '';
-  String messageSubscription = '';
+  String messageRequestsId = '';
   int lastUpdated = 0;
 
   Future<void> initWithPrivkey(String key) async {
@@ -44,13 +44,14 @@ class Messages {
   }
 
   void _initSubscription() {
-    if (messageSubscription.isNotEmpty) {
-      Connect.sharedInstance.closeSubscription(messageSubscription);
+    if (messageRequestsId.isNotEmpty) {
+      Connect.sharedInstance.closeRequests(messageRequestsId);
     }
 
     Filter f = Filter(kinds: [5, 43, 44], since: lastUpdated);
-    messageSubscription =
-        Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+
+    messageRequestsId =
+        Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
       lastUpdated =
           lastUpdated > event.createdAt ? lastUpdated : event.createdAt;
       switch (event.kind) {
@@ -226,7 +227,7 @@ class Messages {
 
     /// send delete event to relay
     Event event = Nip9.encode(messageIds, reason, privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay, unRelays) {
       completer.complete(ok);
     });
     return completer.future;

@@ -41,12 +41,9 @@ class UserDB extends DBObject {
   List<String>? badgesList;
 
   List<String>? blockedList; // blocked users list
-
-  /// last event update timestamp
-  /// {relay1:timestamp1, relay2:timestamp2...}
-  Map<String, dynamic>? updatedTimeStamp;
-
   bool? mute;
+
+  int lastUpdatedTime;
 
   UserDB({
     this.pubKey = '',
@@ -71,8 +68,8 @@ class UserDB extends DBObject {
     this.groupsList,
     this.badgesList,
     this.blockedList,
-    this.updatedTimeStamp,
     this.mute = false,
+    this.lastUpdatedTime = 0,
   });
 
   @override
@@ -111,25 +108,6 @@ class UserDB extends DBObject {
     return Nip19.encodePrivkey(privkey!);
   }
 
-  int getUpdatedTimeStampForRelay(String relay) {
-    try {
-      if (updatedTimeStamp != null && updatedTimeStamp!.containsKey(relay)) {
-        return updatedTimeStamp![relay] ?? 0;
-      }
-    } catch (e) {
-      return 0;
-    }
-    return 0;
-  }
-
-  void setUpdatedTimeStampForRelay(String relay, int timeStamp) {
-    if (updatedTimeStamp != null) {
-      updatedTimeStamp![relay] = timeStamp;
-    } else {
-      updatedTimeStamp = {relay: timeStamp};
-    }
-  }
-
   static List<String> decodeStringList(String list) {
     try {
       List<dynamic> result = jsonDecode(list);
@@ -142,27 +120,28 @@ class UserDB extends DBObject {
 
 UserDB _userInfoFromMap(Map<String, dynamic> map) {
   return UserDB(
-      pubKey: map['pubKey'].toString(),
-      encryptedPrivKey: map['encryptedPrivKey'].toString(),
-      defaultPassword: map['defaultPassword'].toString(),
-      name: map['name'].toString(),
-      nickName: map['nickName'].toString(),
-      mainRelay: map['mainRelay'].toString(),
-      dns: map['dns'].toString(),
-      lnurl: map['lnurl'].toString(),
-      badges: map['badges'].toString(),
-      gender: map['gender'].toString(),
-      area: map['area'].toString(),
-      about: map['about'].toString(),
-      picture: map['picture'].toString(),
-      friendsList: map['friendsList'].toString(),
-      channelsList: UserDB.decodeStringList(map['channelsList'].toString()),
-      groupsList: UserDB.decodeStringList(map['groupsList'].toString()),
-      badgesList: UserDB.decodeStringList(map['badgesList'].toString()),
-      blockedList: UserDB.decodeStringList(map['blockedList'].toString()),
-      updatedTimeStamp: jsonDecode(map['updatedTimeStamp'].toString()),
-      aliasPubkey: map['aliasPubkey'],
-      mute: map['mute'] > 0 ? true : false);
+    pubKey: map['pubKey'].toString(),
+    encryptedPrivKey: map['encryptedPrivKey'].toString(),
+    defaultPassword: map['defaultPassword'].toString(),
+    name: map['name'].toString(),
+    nickName: map['nickName'].toString(),
+    mainRelay: map['mainRelay'].toString(),
+    dns: map['dns'].toString(),
+    lnurl: map['lnurl'].toString(),
+    badges: map['badges'].toString(),
+    gender: map['gender'].toString(),
+    area: map['area'].toString(),
+    about: map['about'].toString(),
+    picture: map['picture'].toString(),
+    friendsList: map['friendsList'].toString(),
+    channelsList: UserDB.decodeStringList(map['channelsList'].toString()),
+    groupsList: UserDB.decodeStringList(map['groupsList'].toString()),
+    badgesList: UserDB.decodeStringList(map['badgesList'].toString()),
+    blockedList: UserDB.decodeStringList(map['blockedList'].toString()),
+    aliasPubkey: map['aliasPubkey'],
+    mute: map['mute'] > 0 ? true : false,
+    lastUpdatedTime: map['lastUpdatedTime'],
+  );
 }
 
 Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
@@ -184,7 +163,7 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'groupsList': jsonEncode(instance.groupsList),
       'badgesList': jsonEncode(instance.badgesList),
       'blockedList': jsonEncode(instance.blockedList),
-      'updatedTimeStamp': jsonEncode(instance.updatedTimeStamp ?? {}),
       'aliasPubkey': instance.aliasPubkey,
-      'mute': instance.mute
+      'mute': instance.mute,
+      'lastUpdatedTime': instance.lastUpdatedTime,
     };

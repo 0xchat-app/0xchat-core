@@ -40,7 +40,7 @@ Future<void> testConnect() async {
       "bb4beecb9cbd06786506204eff2841387c286a058019fc8de8042d2151bada3d"
     ],
   );
-  Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
+  Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
     print(event.content);
   });
   // UserDB db = await Account.newAccount();

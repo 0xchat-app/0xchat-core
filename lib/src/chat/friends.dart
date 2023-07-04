@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/account/relays.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 typedef FriendRequestCallBack = void Function(Alias);
@@ -24,9 +25,9 @@ class Friends {
   String pubkey = '';
   String privkey = '';
   Map<String, UserDB> allFriends = {};
-
-  Map<String, String> friendRequestSubscription = {};
-  Map<String, String> friendMessageSubscription = {};
+  Map<String, FriendRequestDB> friendRequestMap = {};
+  String friendRequestSubscription = '';
+  String friendMessageSubscription = '';
 
   /// callbacks
   FriendRequestCallBack? friendRequestCallBack;
@@ -45,53 +46,6 @@ class Friends {
       allFriends.entries.where((entry) => (entry.value.aliasPubkey != null &&
           entry.value.aliasPubkey!.isNotEmpty)),
     );
-  }
-
-  /// sync friends
-  Future<void> _syncFriendsFromDB() async {
-    String? list = me?.friendsList;
-    if (list != null && list.isNotEmpty) {
-      Map? map = Nip51.fromContent(list, privkey, pubkey);
-      if (map != null) {
-        List<People> friendsList = map['people'];
-        for (People p in friendsList) {
-          UserDB? friend = await Account.getUserFromDB(pubkey: p.pubkey);
-          if (friend != null) {
-            friend.toAliasPrivkey =
-                Friends.getAliasPrivkey(friend.pubKey!, privkey);
-            friend.toAliasPubkey =
-                Keychain.getPublicKey(friend.toAliasPrivkey!);
-            allFriends[p.pubkey] = friend;
-          }
-        }
-      }
-    }
-  }
-
-  Future<void> _syncFriendsFromRelay() async {
-    String subscriptionId = '';
-    Filter f = Filter(
-      kinds: [30000],
-      d: [identifier],
-      authors: [pubkey],
-      limit: 1,
-    );
-    subscriptionId =
-        Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
-      // clear friends data
-      allFriends.clear();
-      Lists lists = Nip51.getLists(event, privkey);
-      _syncFriendsProfiles(lists.people);
-    }, eoseCallBack: (status) {
-      Connect.sharedInstance.closeSubscription(subscriptionId);
-      if (status == 0) {
-        // no friend list
-        print('no friend list online!');
-        allFriends.clear();
-        _syncFriendsListToDB('');
-        if (friendUpdatedCallBack != null) friendUpdatedCallBack!();
-      }
-    });
   }
 
   Future<void> _syncFriendsListToDB(String list) async {
@@ -130,7 +84,7 @@ class Friends {
         }
       }
       // subscript friend accept, reject, delete, private messages
-      _updateFriendMessageSubscription();
+      _syncRequestActionsFromRelay();
       if (friendUpdatedCallBack != null) friendUpdatedCallBack!();
     }
   }
@@ -144,7 +98,7 @@ class Friends {
     }
     friend.aliasPubkey = friendAliasPubkey;
     allFriends[friendPubkey] = friend;
-    _updateFriendMessageSubscription();
+    _syncRequestActionsFromRelay();
     await DB.sharedInstance.insert<UserDB>(friend);
     _syncFriendsToRelay();
   }
@@ -152,100 +106,34 @@ class Friends {
   void _deleteFriend(String friendPubkey) {
     UserDB? friend = allFriends.remove(friendPubkey);
     if (friend != null) {
-      _updateFriendMessageSubscription();
+      _syncRequestActionsFromRelay();
       _syncFriendsToRelay();
     }
   }
 
-  Future<void> _updateLastEventTimeStamp(int updateTime, String relay) async {
-    me = await Account.getUserFromDB(privkey: privkey);
-    int lastEventTimeStamp = me!.getUpdatedTimeStampForRelay(relay);
-    lastEventTimeStamp =
-        lastEventTimeStamp > updateTime ? lastEventTimeStamp : updateTime;
-    me!.setUpdatedTimeStampForRelay(relay, updateTime);
-    await DB.sharedInstance.insert<UserDB>(me!);
-  }
-
-  void _updateFriendRequestSubscription() {
-    for (String relay in Connect.sharedInstance.relays()) {
-      if (friendRequestSubscription.containsKey(relay) &&
-          friendRequestSubscription[relay] != null) {
-        Connect.sharedInstance
-            .closeSubscription(friendRequestSubscription[relay]!);
-      }
-
-      int lastEventTimeStamp = me!.getUpdatedTimeStampForRelay(relay);
-      Filter f =
-          Filter(kinds: [10100], p: [pubkey], since: (lastEventTimeStamp + 1));
-      friendRequestSubscription[relay] =
-          Connect.sharedInstance.addSubscription([f], eventCallBack: (event) {
-        _updateLastEventTimeStamp(event.createdAt, relay);
-        switch (event.kind) {
-          case 10100:
-            _handleFriendRequest(event);
-            break;
-          default:
-            print('unhandled message $event');
-            break;
-        }
-      });
-    }
-  }
-
-  void _updateFriendMessageSubscription() {
-    for (String relay in Connect.sharedInstance.relays()) {
-      if (friendMessageSubscription.containsKey(relay) &&
-          friendMessageSubscription[relay] != null) {
-        Connect.sharedInstance
-            .closeSubscription(friendMessageSubscription[relay]!);
-      }
-
-      List<String> pubkeys = [];
-      allFriends.forEach((key, f) {
-        if (f.toAliasPubkey != null && f.toAliasPubkey!.isNotEmpty) {
-          pubkeys.add(f.toAliasPubkey!);
-        }
-      });
-      if (pubkeys.isNotEmpty) {
-        int lastEventTimeStamp = me!.getUpdatedTimeStampForRelay(relay);
-
-        Filter f1 = Filter(
-            kinds: [10101, 10102, 10103, 4],
-            p: pubkeys,
-            since: (lastEventTimeStamp + 1));
-        Filter f2 = Filter(
-            kinds: [4], authors: pubkeys, since: (lastEventTimeStamp + 1));
-        friendMessageSubscription[relay] = Connect.sharedInstance
-            .addSubscription([f1, f2], eventCallBack: (event) {
-          _updateLastEventTimeStamp(event.createdAt, relay);
-
-          switch (event.kind) {
-            case 10101:
-              _handleFriendAccept(event);
-              break;
-            case 10102:
-              _handleFriendReject(event);
-              break;
-            case 10103:
-              _handleFriendRemove(event);
-              break;
-            case 4:
-              _handlePrivateMessage(event);
-              break;
-            default:
-              print('unhandled message $event');
-              break;
-          }
-        });
-      }
-    }
-  }
-
-  void _handleFriendRequest(Event event) {
+  void _handleFriendRequest(Event event, String relay) {
+    /// get alias
     Alias alias = Nip101.getRequest(event, pubkey, privkey);
     String aliasPrivkey = Friends.getAliasPrivkey(alias.toPubkey, privkey);
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     alias.fromAliasPubkey = aliasPubkey;
+
+    /// get requestDB
+    FriendRequestDB requestDB = FriendRequestDB(
+        friendPubkey: alias.toPubkey,
+        friendAliasPubkey: alias.toAliasPubkey,
+        myAliasPubkey: aliasPubkey,
+        myAliasPrivkey: aliasPrivkey,
+        status: 1,
+        requestContent: [
+          [alias.createTime.toString(), alias.content]
+        ],
+        lastUpdateTime: alias.createTime);
+    friendRequestMap[requestDB.friendPubkey!] = requestDB;
+
+    _updateFriendRequestTime(event.createdAt, relay);
+
+    /// callback
     if (friendRequestCallBack != null) friendRequestCallBack!(alias);
   }
 
@@ -320,7 +208,7 @@ class Friends {
 
     // sync friend list from DB & relays
     await _syncFriendsFromDB();
-    _updateSubscriptions();
+    initFriendRequestList();
 
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) {
@@ -330,10 +218,10 @@ class Friends {
     });
   }
 
-  void _updateSubscriptions() {
-    _syncFriendsFromRelay();
-    _updateFriendRequestSubscription();
-    _updateFriendMessageSubscription();
+  Future<void> _updateSubscriptions() async {
+    await _syncFriendsFromRelay();
+    await _syncAddFriendRequestsFromRelay();
+    await _syncRequestActionsFromRelay();
   }
 
   Future<OKEvent> requestFriend(String friendPubkey, String content) async {
@@ -343,7 +231,8 @@ class Friends {
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.request(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendPubkey, content);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+    Connect.sharedInstance.sendEvent(event,
+        sendCallBack: (ok, relay, unRelays) {
       completer.complete(ok);
     });
     await _addFriend(friendPubkey, '');
@@ -358,8 +247,9 @@ class Friends {
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.accept(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) async {
-      if(ok.status) await _addFriend(friendPubkey, friendAliasPubkey);
+    Connect.sharedInstance.sendEvent(event,
+        sendCallBack: (ok, relay, unRelays) async {
+      if (ok.status) await _addFriend(friendPubkey, friendAliasPubkey);
       completer.complete(ok);
     });
     return completer.future;
@@ -375,7 +265,8 @@ class Friends {
     String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
     Event event = Nip101.reject(
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+    Connect.sharedInstance.sendEvent(event,
+        sendCallBack: (ok, relay, unRelays) {
       completer.complete(ok);
     });
     return completer.future;
@@ -388,7 +279,8 @@ class Friends {
     if (friend != null && friend.aliasPubkey!.isNotEmpty) {
       Event event = Nip101.remove(pubkey, privkey, friend.toAliasPubkey!,
           friend.toAliasPrivkey!, friend.aliasPubkey!);
-      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+      Connect.sharedInstance.sendEvent(event,
+          sendCallBack: (ok, relay, unRelays) {
         completer.complete(ok);
       });
     }
@@ -403,7 +295,7 @@ class Friends {
     UserDB? friend = allFriends[friendPubkey];
     if (friend != null && friend.aliasPubkey!.isNotEmpty) {
       friend.nickName = nickName;
-      _syncFriendsToRelay(okCallBack: (ok) {
+      _syncFriendsToRelay(okCallBack: (ok, relay, unRelays) {
         completer.complete(ok);
       });
     }
@@ -452,7 +344,8 @@ class Friends {
           type: MessageDB.messageTypeToString(type),
           status: 0);
       Messages.saveMessagesToDB([messageDB]);
-      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok) {
+      Connect.sharedInstance.sendEvent(event,
+          sendCallBack: (ok, relay, unRelays) {
         completer.complete(ok);
       });
       return completer.future;
@@ -491,4 +384,190 @@ class Friends {
     }
     return null;
   }
+
+  Future<void> initFriendRequestList() async {
+    // 0: sync all request & friends from DB
+    await _syncAllFriendRequestFromDB();
+    await _syncFriendsFromDB();
+
+    // 1: sync friend request & friend list from relay
+    await _syncAddFriendRequestsFromRelay();
+    await _syncFriendsFromRelay();
+
+    // 2: sync friend actions from relay (accept, reject, remove, sendMsg)
+    await _syncRequestActionsFromRelay();
+  }
+
+  Future<void> _syncAllFriendRequestFromDB() async {
+    List<FriendRequestDB> friendRequestList =
+        await DB.sharedInstance.objects<FriendRequestDB>();
+    if (friendRequestList.isNotEmpty) {
+      friendRequestMap = {
+        for (FriendRequestDB item in friendRequestList) item.friendPubkey!: item
+      };
+    }
+  }
+
+  /// sync friends
+  Future<void> _syncFriendsFromDB() async {
+    String? list = me?.friendsList;
+    if (list != null && list.isNotEmpty) {
+      Map? map = Nip51.fromContent(list, privkey, pubkey);
+      if (map != null) {
+        List<People> friendsList = map['people'];
+        for (People p in friendsList) {
+          UserDB? friend = await Account.getUserFromDB(pubkey: p.pubkey);
+          if (friend != null) {
+            friend.toAliasPrivkey =
+                Friends.getAliasPrivkey(friend.pubKey!, privkey);
+            friend.toAliasPubkey =
+                Keychain.getPublicKey(friend.toAliasPrivkey!);
+            allFriends[p.pubkey] = friend;
+          }
+        }
+      }
+    }
+  }
+
+  Future<void> _syncAddFriendRequestsFromRelay() async {
+    if (friendRequestSubscription.isNotEmpty) {
+      Connect.sharedInstance.closeRequests(friendRequestSubscription);
+    }
+    Completer<void> completer = Completer<void>();
+    Map<String, List<Filter>> subscriptions = {};
+    for (String relayURL in Connect.sharedInstance.relays()) {
+      int friendRequestUntil =
+          Relays.sharedInstance.relays.containsKey(relayURL)
+              ? Relays.sharedInstance.relays[relayURL]!.friendRequestUntil
+              : 0;
+      Filter f1 =
+          Filter(kinds: [10100], p: [pubkey], since: (friendRequestUntil + 1));
+      subscriptions[relayURL] = [f1];
+    }
+    friendRequestSubscription = Connect.sharedInstance
+        .addSubscriptions(subscriptions, eventCallBack: (event, relay) {
+      _handleFriendRequest(event, relay);
+    }, eoseCallBack: (requestId, status, relay, unRelays) async {
+      if (unRelays.isEmpty) {
+        await Relays.sharedInstance.syncRelaysToDB();
+        completer.complete();
+      }
+    });
+    return completer.future;
+  }
+
+  Future<void> _syncFriendsFromRelay() async {
+    Filter f = Filter(
+      kinds: [30000],
+      d: [identifier],
+      authors: [pubkey],
+      limit: 1,
+    );
+    Lists? result;
+    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
+      if (result == null || result!.createTime < event.createdAt) {
+        result = Nip51.getLists(event, privkey);
+      }
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+      if (unCompletedRelays.isEmpty) {
+        if (result != null) {
+          allFriends.clear();
+          _syncFriendsProfiles(result!.people);
+        }
+        if (friendUpdatedCallBack != null) friendUpdatedCallBack!();
+      }
+    });
+  }
+
+  Future<void> _syncRequestActionsFromRelay() async {
+    if (friendMessageSubscription.isNotEmpty) {
+      Connect.sharedInstance.closeRequests(friendMessageSubscription);
+    }
+
+    Map<String, List<Filter>> subscriptions = {};
+    List<String> pubkeys = [];
+    allFriends.forEach((key, f) {
+      if (f.toAliasPubkey != null && f.toAliasPubkey!.isNotEmpty) {
+        pubkeys.add(f.toAliasPubkey!);
+      }
+    });
+    for (String relayURL in Connect.sharedInstance.relays()) {
+      int friendMessageUntil =
+          Relays.sharedInstance.relays.containsKey(relayURL)
+              ? Relays.sharedInstance.relays[relayURL]!
+                  .friendMessageUntil![relayURL]!
+              : 0;
+      Filter f1 = Filter(
+          kinds: [10101, 10102, 10103, 4],
+          p: pubkeys,
+          since: (friendMessageUntil + 1));
+      Filter f2 =
+          Filter(kinds: [4], authors: pubkeys, since: (friendMessageUntil + 1));
+      subscriptions[relayURL] = [f1, f2];
+    }
+    friendMessageSubscription = Connect.sharedInstance
+        .addSubscriptions(subscriptions, eventCallBack: (event, relay) {
+      _updateFriendMessageTime(event.createdAt, relay);
+      switch (event.kind) {
+        case 10101:
+          _handleFriendAccept(event);
+          break;
+        case 10102:
+          _handleFriendReject(event);
+          break;
+        case 10103:
+          _handleFriendRemove(event);
+          break;
+        case 4:
+          _handlePrivateMessage(event);
+          break;
+        default:
+          print('unhandled message $event');
+          break;
+      }
+    });
+  }
+
+  void _updateFriendMessageTime(int eventTime, String relay) {
+    /// set friendMessageUntil friendMessageSince
+    if (Relays.sharedInstance.relays.containsKey(relay)) {
+      int until =
+          Relays.sharedInstance.relays[relay]!.friendMessageUntil![relay]!;
+      int since =
+          Relays.sharedInstance.relays[relay]!.friendMessageSince![relay]!;
+
+      Relays.sharedInstance.relays[relay]!.friendMessageUntil![relay] =
+          eventTime > until ? eventTime : until;
+      Relays.sharedInstance.relays[relay]!.friendMessageSince![relay] =
+          eventTime < since ? eventTime : since;
+    } else {
+      Relays.sharedInstance.relays[relay] = RelayDB(
+          url: relay,
+          friendMessageUntil: {relay: eventTime},
+          friendMessageSince: {relay: eventTime});
+    }
+  }
+
+  void _updateFriendRequestTime(int eventTime, String relay) {
+    /// set friendRequestUntil friendRequestSince
+    if (Relays.sharedInstance.relays.containsKey(relay)) {
+      int until = Relays.sharedInstance.relays[relay]!.friendRequestUntil;
+      int since = Relays.sharedInstance.relays[relay]!.friendRequestSince;
+
+      Relays.sharedInstance.relays[relay]!.friendRequestUntil =
+          eventTime > until ? eventTime : until;
+      Relays.sharedInstance.relays[relay]!.friendRequestSince =
+          eventTime < since ? eventTime : since;
+    } else {
+      Relays.sharedInstance.relays[relay] = RelayDB(
+          url: relay,
+          friendRequestUntil: eventTime,
+          friendRequestSince: eventTime);
+    }
+  }
+
+  Future<void> _syncRequestListToDB(List<FriendRequestDB> list) async {}
+
+  Future<void> _addRequest(FriendRequestDB request) async {}
 }

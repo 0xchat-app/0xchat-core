@@ -4,13 +4,43 @@ import 'dart:core';
 import 'dart:io';
 import 'package:nostr_core_dart/nostr.dart';
 
-typedef EventCallBack = void Function(Event event);
+/// notice callback
+typedef NoticeCallBack = void Function(String notice, String relay);
 
-/// 0:end without event, 1:end with events
-typedef EOSECallBack = void Function(int status);
-typedef NoticeCallBack = void Function(String notice);
-typedef OKCallBack = void Function(OKEvent ok);
+/// send event callback
+typedef OKCallBack = void Function(
+    OKEvent ok, String relay, List<String> unCompletedRelays);
+
+/// request callback
+typedef EventCallBack = void Function(Event event, String relay);
+typedef EOSECallBack = void Function(
+    String requestId, OKEvent ok, String relay, List<String> unCompletedRelays);
+
+/// connect callback
 typedef ConnectStatusCallBack = void Function(String relay, int status);
+
+class Sends {
+  String sendsId;
+  List<String> relays;
+  int sendsTime;
+  String eventId;
+  OKCallBack? okCallBack;
+
+  Sends(
+      this.sendsId, this.relays, this.sendsTime, this.eventId, this.okCallBack);
+}
+
+class Requests {
+  String requestId;
+  List<String> relays;
+  int requestTime;
+  Map<String, String> subscriptions;
+  EventCallBack? eventCallBack;
+  EOSECallBack? eoseCallBack;
+
+  Requests(this.requestId, this.relays, this.requestTime, this.subscriptions,
+      this.eventCallBack, this.eoseCallBack);
+}
 
 class Connect {
   Connect._internal() {
@@ -34,10 +64,10 @@ class Connect {
   /// closed = 3;
   Map<String, int> connectStatus = {};
 
-  // subscriptionId, EventCallBack
-  Map<String, List> requestMap = {};
+  // subscriptionId+relay, Requests
+  Map<String, Requests> requestsMap = {};
   // send event callback
-  Map<String, List> okMap = {};
+  Map<String, Sends> sendsMap = {};
   // ConnectStatus listeners
   List<ConnectStatusCallBack> connectStatusListeners = [];
   // for timeout
@@ -59,23 +89,34 @@ class Connect {
 
   void _checkTimeout() {
     var now = DateTime.now().millisecondsSinceEpoch;
-    Iterable<String> okMapKeys = List<String>.from(okMap.keys);
+    Iterable<String> okMapKeys = List<String>.from(sendsMap.keys);
     for (var eventId in okMapKeys) {
-      var start = okMap[eventId]![1];
+      var start = sendsMap[eventId]!.sendsTime;
       if (now - start > timeout * 1000) {
         // timeout
         OKEvent ok = OKEvent(eventId, false, 'Time Out');
-        okMap[eventId]![0](ok);
-        okMap.remove(eventId);
+        if (sendsMap[eventId]!.okCallBack != null) {
+          for (var relay in sendsMap[eventId]!.relays) {
+            sendsMap[eventId]!.okCallBack!(ok, relay, []);
+          }
+          sendsMap.remove(eventId);
+        }
       }
     }
-    Iterable<String> requestMapKeys = List<String>.from(requestMap.keys);
+    Iterable<String> requestMapKeys = List<String>.from(requestsMap.keys);
     for (var subscriptionId in requestMapKeys) {
-      var start = requestMap[subscriptionId]![3];
+      var start = requestsMap[subscriptionId]!.requestTime;
       if (start > 0 && now - start > timeout * 1000) {
         // timeout
-        EOSECallBack? callBack = requestMap[subscriptionId]![1];
-        if (callBack != null) callBack(requestMap[subscriptionId]![2]);
+        EOSECallBack? callBack = requestsMap[subscriptionId]!.eoseCallBack;
+        OKEvent ok = OKEvent(subscriptionId, false, 'Time Out');
+        for (var relay in requestsMap[subscriptionId]!.relays) {
+          if (callBack != null) {
+            callBack(requestsMap[subscriptionId]!.subscriptions[relay]!, ok,
+                relay, []);
+          }
+        }
+        requestsMap.remove(subscriptionId);
       }
     }
   }
@@ -143,48 +184,66 @@ class Connect {
   }
 
   String addSubscription(List<Filter> filters,
-      {String? relay,
-      EventCallBack? eventCallBack,
-      EOSECallBack? eoseCallBack,
-      bool? needTimeout}) {
-    /// Create a subscription message request with one or many filters
-    Request requestWithFilter = Request(generate64RandomHexChars(), filters);
-    String subscriptionString = requestWithFilter.serialize();
-
-    /// Send a request message to the WebSocket server
-    _send(subscriptionString, relay: relay);
-
-    /// store subscriptionId & callBack mapping
-    requestMap[requestWithFilter.subscriptionId] = [
-      eventCallBack,
-      eoseCallBack,
-      0,
-      (needTimeout != null && needTimeout)
-          ? DateTime.now().millisecondsSinceEpoch
-          : 0,
-      relay == null ? webSockets.keys.toList() : [relay]
-    ];
-    return requestWithFilter.subscriptionId;
+      {EventCallBack? eventCallBack, EOSECallBack? eoseCallBack}) {
+    Map<String, List<Filter>> result = {};
+    for (var relay in Connect.sharedInstance.relays()) {
+      result[relay] = filters;
+    }
+    return addSubscriptions(result, eventCallBack: eventCallBack, eoseCallBack: eoseCallBack);
   }
 
-  Future closeSubscription(String subscriptionId, {String? relay}) async {
+  String addSubscriptions(Map<String, List<Filter>> filters,
+      {EventCallBack? eventCallBack, EOSECallBack? eoseCallBack}) {
+    /// Create a subscription message request with one or many filters
+    String requestsId = generate64RandomHexChars();
+    Requests requests = Requests(requestsId, filters.keys.toList(),
+        DateTime.now().millisecondsSinceEpoch, {}, eventCallBack, eoseCallBack);
+    for (String relay in filters.keys) {
+      Request requestWithFilter =
+          Request(generate64RandomHexChars(), filters[relay]!);
+      String subscriptionString = requestWithFilter.serialize();
+
+      /// add request to request map
+      requests.subscriptions[relay] = requestWithFilter.subscriptionId;
+      requestsMap[requestWithFilter.subscriptionId + relay] = requests;
+
+      /// Send a request message to the WebSocket server
+      _send(subscriptionString, relay: relay);
+    }
+    return requestsId;
+  }
+
+  Future closeSubscription(String subscriptionId, String relay) async {
     print(Close(subscriptionId).serialize());
     if (subscriptionId.isNotEmpty) {
       _send(Close(subscriptionId).serialize(), relay: relay);
 
       /// remove the mapping
-      requestMap.remove(subscriptionId);
+      requestsMap.remove(subscriptionId + relay);
     } else {
       throw Exception("null subscriptionId");
     }
   }
 
-  /// send an event to relay
+  Future closeRequests(String requestId) async {
+    Iterable<String> requestsMapKeys = List<String>.from(requestsMap.keys);
+    for (var key in requestsMapKeys) {
+      var requests = requestsMap[key];
+      if (requests!.requestId == requestId) {
+        for (var relay in relays()) {
+          await closeSubscription(requests.subscriptions[relay]!, relay);
+        }
+        return;
+      }
+    }
+  }
+
+  /// send an event to relay/relays
   void sendEvent(Event event, {OKCallBack? sendCallBack}) {
     print(event.serialize());
-    if (sendCallBack != null) {
-      okMap[event.id] = [sendCallBack, DateTime.now().millisecondsSinceEpoch];
-    }
+    Sends sends = Sends(generate64RandomHexChars(), relays(),
+        DateTime.now().millisecondsSinceEpoch, event.id, sendCallBack);
+    sendsMap[event.id] = sends;
     _send(event.serialize());
   }
 
@@ -209,16 +268,16 @@ class Connect {
     var m = Message.deserialize(message);
     switch (m.type) {
       case "EVENT":
-        _handleEvent(m.message);
+        _handleEvent(m.message, relay);
         break;
       case "EOSE":
         _handleEOSE(m.message, relay);
         break;
       case "NOTICE":
-        _handleNotice(m.message);
+        _handleNotice(m.message, relay);
         break;
       case "OK":
-        _handleOk(message);
+        _handleOk(message, relay);
         break;
       default:
         print('Received message not supported: $message');
@@ -226,44 +285,49 @@ class Connect {
     }
   }
 
-  void _handleEvent(Event event) {
+  void _handleEvent(Event event, String relay) {
     print('Received event: ${event.serialize()}');
     String? subscriptionId = event.subscriptionId;
-    if (subscriptionId != null &&
-        subscriptionId.isNotEmpty &&
-        requestMap.containsKey(subscriptionId)) {
-      EventCallBack? callBack = requestMap[subscriptionId]![0];
-      requestMap[subscriptionId]![2] = 1;
-      if (callBack != null) callBack(event);
+    if (subscriptionId != null) {
+      String requestsMapKey = subscriptionId + relay;
+      if (subscriptionId.isNotEmpty &&
+          requestsMap.containsKey(requestsMapKey)) {
+        EventCallBack? callBack = requestsMap[requestsMapKey]!.eventCallBack;
+        if (callBack != null) callBack(event, relay);
+      }
     }
   }
 
   void _handleEOSE(String eose, String relay) {
     print('receive EOSE: $eose');
     String subscriptionId = jsonDecode(eose)[0];
-    if (subscriptionId.isNotEmpty && requestMap.containsKey(subscriptionId)) {
-      List<String> relays = requestMap[subscriptionId]![4];
+    String requestsMapKey = subscriptionId + relay;
+    if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
+      var relays = requestsMap[requestsMapKey]!.relays;
       relays.remove(relay);
-      if (relays.isEmpty) {
-        // all relays have EOSE
-        EOSECallBack? callBack = requestMap[subscriptionId]![1];
-        if (callBack != null) callBack(requestMap[subscriptionId]![2]);
-      }
+      // all relays have EOSE
+      EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
+      OKEvent ok = OKEvent(subscriptionId, true, '');
+      if (callBack != null) callBack(subscriptionId, ok, relay, relays);
     }
   }
 
-  void _handleNotice(String notice) {
+  void _handleNotice(String notice, String relay) {
     print('receive notice: $notice');
     String n = jsonDecode(notice)[0];
-    if (noticeCallBack != null) noticeCallBack!(n);
+    if (noticeCallBack != null) noticeCallBack!(n, relay);
   }
 
-  void _handleOk(String message) {
+  void _handleOk(String message, String relay) {
     print('receive ok: $message');
     OKEvent? ok = Nip20.getOk(message);
-    if (ok != null && okMap.containsKey(ok.eventId)) {
-      okMap[ok.eventId]![0](ok);
-      okMap.remove(ok.eventId);
+    if (ok != null && sendsMap.containsKey(ok.eventId)) {
+      if (sendsMap[ok.eventId]!.okCallBack != null) {
+        var relays = sendsMap[ok.eventId]!.relays;
+        relays.remove(relay);
+        sendsMap[ok.eventId]!.okCallBack!(ok, relay, relays);
+        if (relays.isEmpty) sendsMap.remove(ok.eventId);
+      }
     }
   }
 
