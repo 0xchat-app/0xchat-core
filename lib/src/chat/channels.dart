@@ -37,7 +37,10 @@ class Channels {
   }
 
   void _updateSubscription() {
-    Connect.sharedInstance.closeRequests(channelMessageSubscription);
+    if (myChannels.isEmpty) return;
+    if (channelMessageSubscription.isNotEmpty) {
+      Connect.sharedInstance.closeRequests(channelMessageSubscription);
+    }
 
     Map<String, List<Filter>> subscriptions = {};
     for (String relayURL in Connect.sharedInstance.relays()) {
