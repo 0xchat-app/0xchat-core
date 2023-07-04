@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
+import '../account/relays.dart';
+
 class Messages {
   /// singleton
   Messages._internal();
@@ -15,7 +17,6 @@ class Messages {
   String pubkey = '';
   String privkey = '';
   String messageRequestsId = '';
-  int lastUpdated = 0;
 
   Future<void> initWithPrivkey(String key) async {
     privkey = key;
@@ -37,7 +38,7 @@ class Messages {
 
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) {
-      if(status == 1){
+      if (status == 1) {
         _initSubscription();
       }
     });
@@ -48,12 +49,18 @@ class Messages {
       Connect.sharedInstance.closeRequests(messageRequestsId);
     }
 
-    Filter f = Filter(kinds: [5, 43, 44], since: lastUpdated);
+    Map<String, List<Filter>> subscriptions = {};
+    for (String relayURL in Connect.sharedInstance.relays()) {
+      int commonMessagesUntil =
+          Relays.sharedInstance.getCommonMessageUntil(relayURL);
+      Filter f = Filter(kinds: [5, 43, 44], since: commonMessagesUntil);
+      subscriptions[relayURL] = [f];
+    }
 
-    messageRequestsId =
-        Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
-      lastUpdated =
-          lastUpdated > event.createdAt ? lastUpdated : event.createdAt;
+    messageRequestsId = Connect.sharedInstance.addSubscriptions(subscriptions,
+        eventCallBack: (event, relay) {
+      Relays.sharedInstance.setCommonMessageUntil(event.createdAt, relay);
+      Relays.sharedInstance.setCommonMessageSince(event.createdAt, relay);
       switch (event.kind) {
         case 5:
           _handleDeleteEvent(event);
@@ -113,9 +120,6 @@ class Messages {
           DeleteEvent deleteEvent = DeleteEvent(message.sender!, deleteEventIds,
               message.content!, message.createTime!);
           deleteEvents.add(deleteEvent);
-          lastUpdated = lastUpdated > deleteEvent.deleteTime
-              ? lastUpdated
-              : deleteEvent.deleteTime;
         }
       }
     }
@@ -227,7 +231,8 @@ class Messages {
 
     /// send delete event to relay
     Event event = Nip9.encode(messageIds, reason, privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay, unRelays) {
+    Connect.sharedInstance.sendEvent(event,
+        sendCallBack: (ok, relay, unRelays) {
       completer.complete(ok);
     });
     return completer.future;

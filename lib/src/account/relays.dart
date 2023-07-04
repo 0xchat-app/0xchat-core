@@ -66,50 +66,84 @@ class Relays {
         : 0;
   }
 
+  int getCommonMessageUntil(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.commonMessagesUntil
+        : 0;
+  }
+
+  int getCommonMessageSince(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.commonMessagesSince
+        : 0;
+  }
+
+  void setCommonMessageUntil(int updateTime, String relay) {
+    int until = Relays.sharedInstance.getCommonMessageUntil(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB();
+    relays[relay]!.commonMessagesUntil =
+        updateTime > until ? updateTime : until;
+  }
+
   void setFriendMessageUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.getFriendMessageUntil(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB();
     Relays.sharedInstance.relays[relay]!.friendMessageUntil![relay] =
         updateTime > until ? updateTime : until;
   }
 
   void setFriendRequestUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.relays[relay]!.friendRequestUntil;
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB();
     Relays.sharedInstance.relays[relay]!.friendRequestUntil =
         updateTime > until ? updateTime : until;
   }
 
   void setChannelMessageUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.getChannelMessageUntil(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB();
     Relays.sharedInstance.relays[relay]!.channelMessageUntil![relay] =
         updateTime > until ? updateTime : until;
   }
 
   void setGroupMessageUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.getGroupMessageUntil(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB();
     Relays.sharedInstance.relays[relay]!.groupMessageUntil![relay] =
         updateTime > until ? updateTime : until;
   }
 
+  void setCommonMessageSince(int updateTime, String relay) {
+    int since = Relays.sharedInstance.getCommonMessageSince(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB();
+    relays[relay]!.commonMessagesSince =
+    updateTime < since ? updateTime : since;
+  }
+
   void setFriendMessageSince(int updateTime, String relay) {
     int since = Relays.sharedInstance.getFriendMessageSince(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB();
     Relays.sharedInstance.relays[relay]!.friendMessageSince![relay] =
         updateTime < since ? updateTime : since;
   }
 
   void setFriendRequestSince(int updateTime, String relay) {
     int since = Relays.sharedInstance.relays[relay]!.friendRequestSince;
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB();
     Relays.sharedInstance.relays[relay]!.friendRequestSince =
         updateTime < since ? updateTime : since;
   }
 
   void setChannelMessageSince(int updateTime, String relay) {
     int since = Relays.sharedInstance.getChannelMessageSince(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB();
     Relays.sharedInstance.relays[relay]!.channelMessageSince![relay] =
         updateTime < since ? updateTime : since;
   }
 
   void setGroupMessageSince(int updateTime, String relay) {
     int since = Relays.sharedInstance.getGroupMessageSince(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB();
     Relays.sharedInstance.relays[relay]!.groupMessageSince![relay] =
         updateTime < since ? updateTime : since;
   }
