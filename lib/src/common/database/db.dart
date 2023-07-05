@@ -106,11 +106,12 @@ class DB {
     await db.execute(sql, arguments);
   }
 
-  Future<int> insert<T extends DBObject>(T object) async {
+  Future<int> insert<T extends DBObject>(T object,
+      {ConflictAlgorithm? conflictAlgorithm}) async {
     String tableName = DBHelper.getTableName(T);
     await createTableForDBObject<T>(tableName);
     return await db.insert(tableName, object.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace);
+        conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.replace);
   }
 
   Future<int> insertObjects<T extends DBObject>(List<T> objects) async {

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
+import 'package:sqflite/sqflite.dart';
 
 import '../account/relays.dart';
 
@@ -213,7 +214,7 @@ class Messages {
 
   static Future<void> saveMessagesToDB(List<MessageDB> messages) async {
     for (var message in messages) {
-      await DB.sharedInstance.insert<MessageDB>(message);
+      await DB.sharedInstance.insert<MessageDB>(message, conflictAlgorithm: ConflictAlgorithm.ignore);
     }
   }
 
