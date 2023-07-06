@@ -91,12 +91,20 @@ class UserDB extends DBObject {
     return ['pubKey'];
   }
 
-  static String decodePubkey(String pubkey) {
-    return Nip19.decodePubkey(pubkey);
+  static String? decodePubkey(String pubkey) {
+    try {
+      return Nip19.decodePubkey(pubkey);
+    } catch (e) {
+      return null;
+    }
   }
 
-  static String decodePrivkey(String privkey) {
-    return Nip19.decodePrivkey(privkey);
+  static String? decodePrivkey(String privkey) {
+    try {
+      return Nip19.decodePrivkey(privkey);
+    } catch (e) {
+      return null;
+    }
   }
 
   /// nip19 encode
