@@ -117,7 +117,6 @@ class Connect {
                   relay, []);
             }
           }
-          requestsMap.remove(subscriptionId);
         }
       }
     }

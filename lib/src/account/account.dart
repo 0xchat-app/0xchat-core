@@ -78,8 +78,13 @@ class Account {
         .get(Uri.parse('https://$domain/.well-known/nostr.json?name=$name'));
 
     if (response.statusCode == 200) {
-      var jsonResponse = jsonDecode(response.body);
-      return jsonResponse["names"][name];
+      try {
+        var jsonResponse = jsonDecode(response.body);
+        return jsonResponse["names"][name];
+      } catch (e) {
+        print(e);
+        return null;
+      }
     } else {
       return null;
     }
@@ -167,7 +172,7 @@ class Account {
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
-      if(unRelays.isEmpty){
+      if (unRelays.isEmpty) {
         for (var db in users.values) {
           await DB.sharedInstance.insert<UserDB>(db);
         }
@@ -202,8 +207,9 @@ class Account {
       'lnurl': updateDB.lnurl
     };
     Event event = Nip1.setMetadata(jsonEncode(map), privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay, unRelays) {
-      if(unRelays.isEmpty){
+    Connect.sharedInstance.sendEvent(event,
+        sendCallBack: (ok, relay, unRelays) {
+      if (unRelays.isEmpty) {
         completer.complete(db);
       }
     });
