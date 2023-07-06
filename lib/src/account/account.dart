@@ -226,6 +226,7 @@ class Account {
   static Future<int> logout(String privkey) async {
     Friends.sharedInstance.allFriends = {};
     Channels.sharedInstance.channels = {};
+    Channels.sharedInstance.myChannels = {};
     return await delete(privkey);
   }
 
