@@ -12,7 +12,7 @@ dev_dependencies:
 dependencies:
   flutter:
     sdk: flutter
-  sqflite: ^2.0.0+3
+  sqflite_sqlcipher: ^2.1.1+1
   reflectable: ^3.0.1
   built_value_generator: any
   json_annotation: ^4.0.1

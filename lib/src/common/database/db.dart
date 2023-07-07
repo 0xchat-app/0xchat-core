@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:reflectable/reflectable.dart';
 import 'db_helper.dart';
 import 'db_object.dart';

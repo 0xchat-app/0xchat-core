@@ -1,6 +1,6 @@
 import 'dart:core';
 import 'package:reflectable/mirrors.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'db.dart';
 import 'db_object.dart';
 
