@@ -384,6 +384,9 @@ class Friends {
   }
 
   Future<void> initFriendRequestList() async {
+    // close subscriptions
+    await _closeAllSubscriptions();
+
     // 0: sync all request & friends from DB
     await _syncAllFriendRequestFromDB();
     await _syncFriendsFromDB();
@@ -394,6 +397,15 @@ class Friends {
 
     // 2: sync friend actions from relay (accept, reject, remove, sendMsg)
     await _syncRequestActionsFromRelay();
+  }
+
+  Future<void> _closeAllSubscriptions() async {
+    if (friendRequestSubscription.isNotEmpty) {
+      await Connect.sharedInstance.closeRequests(friendRequestSubscription);
+    }
+    if (friendMessageSubscription.isNotEmpty) {
+      await Connect.sharedInstance.closeRequests(friendMessageSubscription);
+    }
   }
 
   Future<void> _syncAllFriendRequestFromDB() async {

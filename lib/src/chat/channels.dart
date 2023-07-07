@@ -234,6 +234,10 @@ class Channels {
 
   Future<void> initWithPrivkey(String key,
       {ChannelsUpdatedCallBack? callBack}) async {
+    if (channelMessageSubscription.isNotEmpty) {
+      Connect.sharedInstance.closeRequests(channelMessageSubscription);
+    }
+    
     privkey = key;
     pubkey = Keychain.getPublicKey(privkey);
     me = await Account.getUserFromDB(privkey: key);
