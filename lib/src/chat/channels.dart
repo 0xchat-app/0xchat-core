@@ -237,7 +237,7 @@ class Channels {
     if (channelMessageSubscription.isNotEmpty) {
       Connect.sharedInstance.closeRequests(channelMessageSubscription);
     }
-    
+
     privkey = key;
     pubkey = Keychain.getPublicKey(privkey);
     me = await Account.getUserFromDB(privkey: key);
@@ -376,6 +376,8 @@ class Channels {
     Messages.saveMessagesToDB([messageDB]);
     Connect.sharedInstance.sendEvent(event,
         sendCallBack: (ok, relay, unRelays) {
+      messageDB.status = ok.status ? 1 : 2;
+      Messages.saveMessagesToDB([messageDB]);
       completer.complete(ok);
     });
     return completer.future;
