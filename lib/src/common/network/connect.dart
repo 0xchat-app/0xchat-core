@@ -152,7 +152,7 @@ class Connect {
     WebSocket socket;
     if (webSockets.containsKey(relay) && webSockets[relay] != null) {
       socket = webSockets[relay]!;
-      _setConnectStatus(relay, socket.readyState);
+      // _setConnectStatus(relay, socket.readyState);
       print('status =  ${connectStatus[relay]}');
       if (connectStatus[relay] != 3) {
         /// not closed
