@@ -85,7 +85,6 @@ class Friends {
       }
       // subscript friend accept, reject, delete, private messages
       _syncRequestActionsFromRelay();
-      friendUpdatedCallBack?.call();
     }
   }
 
@@ -478,12 +477,12 @@ class Friends {
       if (result == null || result!.createTime < event.createdAt) {
         result = Nip51.getLists(event, privkey);
       }
-    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty) {
         if (result != null) {
           allFriends.clear();
-          _syncFriendsProfiles(result!.people);
+          await _syncFriendsProfiles(result!.people);
         }
         friendUpdatedCallBack?.call();
       }
