@@ -180,10 +180,10 @@ class Friends {
     }
   }
 
-  void _handlePrivateMessage(Event event) {
+  Future<void> _handlePrivateMessage(Event event) async {
     MessageDB? messageDB = MessageDB.fromPrivateMessage(event);
     if (messageDB != null) {
-      Messages.saveMessagesToDB([messageDB]);
+      await Messages.saveMessagesToDB([messageDB]);
       friendMessageCallBack?.call(messageDB);
     }
   }
