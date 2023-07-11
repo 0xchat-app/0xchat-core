@@ -142,7 +142,7 @@ class Channels {
           await syncChannelsFromRelay(result!.owner, result!.bookmarks);
           myChannels = _myChannels();
           _updateSubscription();
-        } else if (me!.channelsList == null || me!.channelsList!.isEmpty) {
+        } else {
           myChannels = _myChannels();
           _updateSubscription();
         }
