@@ -142,8 +142,8 @@ class Channels {
           await syncChannelsFromRelay(result!.owner, result!.bookmarks);
           myChannels = _myChannels();
           _updateSubscription();
-        } else {
-          channels.clear();
+        } else if (me!.channelsList == null || me!.channelsList!.isEmpty) {
+          myChannels = _myChannels();
           _updateSubscription();
         }
         completer.complete();
@@ -244,14 +244,13 @@ class Channels {
     me ??= UserDB(pubKey: pubkey, privkey: privkey);
     myChannelsUpdatedCallBack = callBack;
 
+    await _loadAllChannelsFromDB();
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1) {
         await _updateSubscriptions();
       }
     });
-
-    await _loadAllChannelsFromDB();
     await _updateSubscriptions();
   }
 
@@ -416,6 +415,9 @@ class Channels {
           print(ok.eventId);
           completer.complete(ok);
         });
+      } else {
+        OKEvent okEvent = OKEvent(channelId, false, 'channel not found');
+        completer.complete(okEvent);
       }
     });
     return completer.future;
