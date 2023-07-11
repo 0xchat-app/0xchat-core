@@ -546,6 +546,7 @@ class Friends {
           friendMessageUntil: {relay: eventTime},
           friendMessageSince: {relay: eventTime});
     }
+    Relays.sharedInstance.syncRelaysToDB();
   }
 
   void _updateFriendRequestTime(int eventTime, String relay) {
@@ -559,6 +560,7 @@ class Friends {
           friendRequestUntil: eventTime,
           friendRequestSince: eventTime);
     }
+    Relays.sharedInstance.syncRelaysToDB();
   }
 
   Future<void> _syncRequestListToDB(List<FriendRequestDB> list) async {}

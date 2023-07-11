@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
-import '../account/relays.dart';
-
 typedef ChannelsUpdatedCallBack = void Function();
 typedef ChannelMessageCallBack = void Function(MessageDB);
 
@@ -117,6 +115,7 @@ class Channels {
           channelMessageUntil: {relay: eventTime},
           channelMessageSince: {relay: eventTime});
     }
+    Relays.sharedInstance.syncRelaysToDB();
   }
 
   Future<void> _loadMyChannelsFromRelay() async {
