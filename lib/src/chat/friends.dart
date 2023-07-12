@@ -36,6 +36,8 @@ class Friends {
   FriendRemoveCallBack? friendRemoveCallBack;
   FriendMessageCallBack? friendMessageCallBack;
   FriendUpdatedCallBack? friendUpdatedCallBack;
+  Function(String friend, SignalingState state, String data)? onCallStateChange;
+
 
   static String getAliasPrivkey(String friendPubkey, String privkey) {
     return Nip101.aliasPrivkey(friendPubkey, privkey);
@@ -505,7 +507,7 @@ class Friends {
       int friendMessageUntil =
           Relays.sharedInstance.getFriendMessageUntil(relayURL);
       Filter f1 = Filter(
-          kinds: [10101, 10102, 10103, 4],
+          kinds: [10101, 10102, 10103, 4, 25050],
           p: pubkeys,
           since: (friendMessageUntil + 1));
       Filter f2 =
@@ -527,6 +529,9 @@ class Friends {
           break;
         case 4:
           _handlePrivateMessage(event);
+          break;
+        case 25050:
+          _handleCallEvent(event, relay);
           break;
         default:
           print('unhandled message $event');

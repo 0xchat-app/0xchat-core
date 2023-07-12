@@ -3,28 +3,7 @@ import 'dart:async';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
-class Calling {
-  /// singleton
-  Calling._internal();
-  factory Calling() => sharedInstance;
-  static final Calling sharedInstance = Calling._internal();
-
-  String pubkey = '';
-  String privkey = '';
-  Function(String friend, SignalingState state, String data)? onCallStateChange;
-
-  Future<void> initWithPrivkey(String key) async {
-    privkey = key;
-    pubkey = Keychain.getPublicKey(privkey);
-  }
-
-  Future<void> handleCallEvent(Event event, String relay) async {
-    UserDB? friend = _getFriendFromEvent(event);
-    if (friend == null) return;
-    Signaling signaling = Nip100.decode(event, friend.toAliasPrivkey!);
-    onCallStateChange?.call(friend.pubKey!, signaling.state, signaling.content);
-  }
-
+extension Calling on Friends{
   Future<OKEvent> sendDisconnect(String friendPubkey, String content) async {
     return await _sendSignaling(
         friendPubkey, SignalingState.disconnect, content);
@@ -94,5 +73,12 @@ class Calling {
 
   UserDB? _getFriendFromPubkey(String pubkey) {
     return Friends.sharedInstance.friends[pubkey];
+  }
+
+  Future<void> _handleCallEvent(Event event, String relay) async {
+    UserDB? friend = _getFriendFromEvent(event);
+    if (friend == null) return;
+    Signaling signaling = Nip100.decode(event, friend.toAliasPrivkey!);
+    onCallStateChange?.call(friend.pubKey!, signaling.state, signaling.content);
   }
 }
