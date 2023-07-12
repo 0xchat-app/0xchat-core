@@ -35,7 +35,7 @@ class Friends {
   FriendRemoveCallBack? friendRemoveCallBack;
   FriendMessageCallBack? friendMessageCallBack;
   FriendUpdatedCallBack? friendUpdatedCallBack;
-  Function(String friend, SignalingState state, String data)? onCallStateChange;
+  void Function(String friend, SignalingState state, String data)? onCallStateChange;
 
 
   static String getAliasPrivkey(String friendPubkey, String privkey) {

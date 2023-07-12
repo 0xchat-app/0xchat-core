@@ -210,6 +210,12 @@ class Messages {
     return {'theLastTime': theLastTime, 'messages': messages};
   }
 
+  static Future<void> updateMessagesReadStatus(
+      {String? where, List<Object?>? whereArgs, bool? read}) async {
+    await DB.sharedInstance
+        .rawUpdate('UPDATE MessageDB SET read = $read WHERE $where', whereArgs);
+  }
+
   static Future<void> saveMessagesToDB(List<MessageDB> messages) async {
     for (var message in messages) {
       await DB.sharedInstance.insert<MessageDB>(message,
