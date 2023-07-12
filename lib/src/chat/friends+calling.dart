@@ -75,7 +75,7 @@ extension Calling on Friends{
     return Friends.sharedInstance.friends[pubkey];
   }
 
-  Future<void> _handleCallEvent(Event event, String relay) async {
+  Future<void> handleCallEvent(Event event, String relay) async {
     UserDB? friend = _getFriendFromEvent(event);
     if (friend == null) return;
     Signaling signaling = Nip100.decode(event, friend.toAliasPrivkey!);

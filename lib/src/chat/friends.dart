@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/account/relays.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 typedef FriendRequestCallBack = void Function(Alias);
@@ -531,7 +530,7 @@ class Friends {
           _handlePrivateMessage(event);
           break;
         case 25050:
-          _handleCallEvent(event, relay);
+          handleCallEvent(event, relay);
           break;
         default:
           print('unhandled message $event');
