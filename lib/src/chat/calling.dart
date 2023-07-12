@@ -3,14 +3,6 @@ import 'dart:async';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
-enum CallState {
-  newCall,
-  ringing,
-  invite,
-  connected,
-  bye,
-}
-
 class Calling {
   /// singleton
   Calling._internal();
@@ -19,7 +11,7 @@ class Calling {
 
   String pubkey = '';
   String privkey = '';
-  Function(String friend, CallState state, String data)? onCallStateChange;
+  Function(String friend, SignalingState state, String data)? onCallStateChange;
 
   Future<void> initWithPrivkey(String key) async {
     privkey = key;
@@ -30,23 +22,7 @@ class Calling {
     UserDB? friend = _getFriendFromEvent(event);
     if (friend == null) return;
     Signaling signaling = Nip100.decode(event, friend.toAliasPrivkey!);
-    switch (signaling.state) {
-      case SignalingState.disconnect:
-        _handleDisconnect(friend.pubKey!, signaling.content);
-        break;
-      case SignalingState.offer:
-        _handleOffer(friend.pubKey!, signaling.content);
-        break;
-      case SignalingState.answer:
-        _handleAnswer(friend.pubKey!, signaling.content);
-        break;
-      case SignalingState.candidate:
-        _handleCandidate(friend.pubKey!, signaling.content);
-        break;
-      default:
-        print('unknown state');
-        break;
-    }
+    onCallStateChange?.call(friend.pubKey!, signaling.state, signaling.content);
   }
 
   Future<OKEvent> sendDisconnect(String friendPubkey, String content) async {
@@ -119,16 +95,4 @@ class Calling {
   UserDB? _getFriendFromPubkey(String pubkey) {
     return Friends.sharedInstance.friends[pubkey];
   }
-
-  Future<void> _handleDisconnect(String friendPubkey, String content) async {
-    onCallStateChange?.call(friendPubkey, CallState.bye, content);
-  }
-
-  Future<void> _handleOffer(String friendPubkey, String content) async {
-    onCallStateChange?.call(friendPubkey, CallState.newCall, content);
-    onCallStateChange?.call(friendPubkey, CallState.invite, content);
-  }
-
-  Future<void> _handleAnswer(String friendPubkey, String content) async {}
-  Future<void> _handleCandidate(String friendPubkey, String content) async {}
 }
