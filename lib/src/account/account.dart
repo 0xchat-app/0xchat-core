@@ -176,7 +176,7 @@ class Account {
         for (var db in users.values) {
           await DB.sharedInstance.insert<UserDB>(db);
         }
-        completer.complete(users);
+        if (!completer.isCompleted) completer.complete(users);
       }
     });
     return completer.future;
@@ -210,7 +210,7 @@ class Account {
     Connect.sharedInstance.sendEvent(event,
         sendCallBack: (ok, relay, unRelays) {
       if (unRelays.isEmpty) {
-        completer.complete(db);
+        if (!completer.isCompleted) completer.complete(db);
       }
     });
     return completer.future;

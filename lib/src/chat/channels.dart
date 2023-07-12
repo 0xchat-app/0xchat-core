@@ -145,7 +145,7 @@ class Channels {
           myChannels = _myChannels();
           _updateSubscription();
         }
-        completer.complete();
+        if (!completer.isCompleted) completer.complete();
         myChannelsUpdatedCallBack?.call();
       }
     });
@@ -288,9 +288,9 @@ class Channels {
         await _syncChannelToDB(channelDB);
         // update my channel list
         await _syncMyChannelListToRelay();
-        completer.complete(channelDB);
+        if (!completer.isCompleted) completer.complete(channelDB);
       } else {
-        completer.complete(null);
+        if (!completer.isCompleted) completer.complete(null);
       }
     });
 
@@ -308,10 +308,10 @@ class Channels {
         _syncChannelsInfos(owner, channelIds, true,
             (requestId, status, relay, unRelays) {
           // update finished
-          completer.complete();
+          if (!completer.isCompleted) completer.complete();
         });
       } else {
-        completer.complete();
+        if (!completer.isCompleted) completer.complete();
       }
     });
     return completer.future;
@@ -330,7 +330,7 @@ class Channels {
         privkey);
     Connect.sharedInstance.sendEvent(event,
         sendCallBack: (ok, relay, unRelays) {
-      completer.complete(ok);
+      if (!completer.isCompleted) completer.complete(ok);
     });
 
     // update channel
@@ -376,7 +376,7 @@ class Channels {
         sendCallBack: (ok, relay, unRelays) {
       messageDB.status = ok.status ? 1 : 2;
       Messages.saveMessagesToDB([messageDB]);
-      completer.complete(ok);
+      if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
   }
@@ -388,7 +388,7 @@ class Channels {
     Event event = Nip28.hideChannelMessage(messageId, reason, privkey);
     Connect.sharedInstance.sendEvent(event,
         sendCallBack: (ok, relay, unRelays) {
-      completer.complete(ok);
+      if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
   }
@@ -398,7 +398,7 @@ class Channels {
     Event event = Nip28.muteUser(userPubkey, reason, privkey);
     Connect.sharedInstance.sendEvent(event,
         sendCallBack: (ok, relay, unRelays) {
-      completer.complete(ok);
+      if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
   }
@@ -412,11 +412,11 @@ class Channels {
         _updateSubscription();
         _syncMyChannelListToRelay(callBack: (ok, relay, unRelays) {
           print(ok.eventId);
-          completer.complete(ok);
+          if (!completer.isCompleted) completer.complete(ok);
         });
       } else {
         OKEvent okEvent = OKEvent(channelId, false, 'channel not found');
-        completer.complete(okEvent);
+        if (!completer.isCompleted) completer.complete(okEvent);
       }
     });
     return completer.future;
@@ -427,7 +427,7 @@ class Channels {
     myChannels.remove(channelId);
     _updateSubscription();
     _syncMyChannelListToRelay(callBack: (ok, relay, unRelays) {
-      completer.complete(ok);
+      if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
   }

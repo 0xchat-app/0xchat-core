@@ -60,12 +60,12 @@ class Zaps {
       final result = await http.get(Uri.parse(url));
       if (result.statusCode == 200) {
         String pr = jsonDecode(result.body)['pr'];
-        completer.complete(pr);
+        if (!completer.isCompleted) completer.complete(pr);
       } else {
-        completer.complete(null);
+        if (!completer.isCompleted) completer.complete(null);
       }
     } else {
-      completer.complete(null);
+      if (!completer.isCompleted) completer.complete(null);
     }
     return completer.future;
   }
@@ -85,10 +85,12 @@ class Zaps {
       ZapReceipt zapReceipt = Nip57.getZapReceipt(event);
 
       /// check invoiceAmount, lnurl?
-      completer.complete(zapReceipt);
+      if (!completer.isCompleted) completer.complete(zapReceipt);
     }, eoseCallBack: (requestId, status, relay, unRelays) {
       Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unRelays.isEmpty) completer.complete(null);
+      if (unRelays.isEmpty) {
+        if (!completer.isCompleted) completer.complete(null);
+      }
     });
     return completer.future;
   }

@@ -50,7 +50,8 @@ class Calling {
   }
 
   Future<OKEvent> sendDisconnect(String friendPubkey, String content) async {
-    return await _sendSignaling(friendPubkey, SignalingState.disconnect, content);
+    return await _sendSignaling(
+        friendPubkey, SignalingState.disconnect, content);
   }
 
   Future<OKEvent> sendOffer(String friendPubkey, String content) async {
@@ -62,7 +63,8 @@ class Calling {
   }
 
   Future<OKEvent> sendCandidate(String friendPubkey, String content) async {
-    return await _sendSignaling(friendPubkey, SignalingState.candidate, content);
+    return await _sendSignaling(
+        friendPubkey, SignalingState.candidate, content);
   }
 
   Future<OKEvent> _sendSignaling(
@@ -93,11 +95,11 @@ class Calling {
       }
       Connect.sharedInstance.sendEvent(event,
           sendCallBack: (ok, relay, unRelays) async {
-        completer.complete(ok);
+        if (!completer.isCompleted) completer.complete(ok);
       });
     } else {
       OKEvent ok = OKEvent(friendPubkey, false, 'no friend');
-      completer.complete(ok);
+      if (!completer.isCompleted) completer.complete(ok);
     }
     return completer.future;
   }

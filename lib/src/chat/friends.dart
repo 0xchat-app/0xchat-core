@@ -230,7 +230,7 @@ class Friends {
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendPubkey, content);
     Connect.sharedInstance.sendEvent(event,
         sendCallBack: (ok, relay, unRelays) {
-      completer.complete(ok);
+      if (!completer.isCompleted) completer.complete(ok);
     });
     await _addFriend(friendPubkey, '');
     return completer.future;
@@ -247,7 +247,7 @@ class Friends {
     Connect.sharedInstance.sendEvent(event,
         sendCallBack: (ok, relay, unRelays) async {
       if (ok.status) await _addFriend(friendPubkey, friendAliasPubkey);
-      completer.complete(ok);
+      if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
   }
@@ -264,7 +264,7 @@ class Friends {
         pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
     Connect.sharedInstance.sendEvent(event,
         sendCallBack: (ok, relay, unRelays) {
-      completer.complete(ok);
+      if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
   }
@@ -278,7 +278,7 @@ class Friends {
           friend.toAliasPrivkey!, friend.aliasPubkey!);
       Connect.sharedInstance.sendEvent(event,
           sendCallBack: (ok, relay, unRelays) {
-        completer.complete(ok);
+        if (!completer.isCompleted) completer.complete(ok);
       });
     }
     _deleteFriend(friendPubkey);
@@ -293,7 +293,7 @@ class Friends {
     if (friend != null && friend.aliasPubkey!.isNotEmpty) {
       friend.nickName = nickName;
       _syncFriendsToRelay(okCallBack: (ok, relay, unRelays) {
-        completer.complete(ok);
+        if (!completer.isCompleted) completer.complete(ok);
       });
     }
     return completer.future;
@@ -345,7 +345,7 @@ class Friends {
           sendCallBack: (ok, relay, unRelays) {
         messageDB.status = ok.status ? 1 : 2;
         Messages.saveMessagesToDB([messageDB]);
-        completer.complete(ok);
+        if (!completer.isCompleted) completer.complete(ok);
       });
       return completer.future;
     }
@@ -442,7 +442,7 @@ class Friends {
 
   Future<void> _syncAddFriendRequestsFromRelay() async {
     if (friendRequestSubscription.isNotEmpty) {
-      Connect.sharedInstance.closeRequests(friendRequestSubscription);
+      await Connect.sharedInstance.closeRequests(friendRequestSubscription);
     }
     Completer<void> completer = Completer<void>();
     Map<String, List<Filter>> subscriptions = {};
@@ -459,7 +459,7 @@ class Friends {
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
       if (unRelays.isEmpty) {
         await Relays.sharedInstance.syncRelaysToDB();
-        completer.complete();
+        if (!completer.isCompleted) completer.complete();
       }
     });
     return completer.future;

@@ -34,7 +34,7 @@ class BadgesHelper {
     }, eoseCallBack: (requestId, status, relay, unRelays) {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        completer.complete(badges);
+        if (!completer.isCompleted) completer.complete(badges);
       }
     });
     return completer.future;
@@ -51,7 +51,7 @@ class BadgesHelper {
       if (badgeDB != null) {
         result.add(badgeDB);
         if (awards.last == award) {
-          completer.complete(result);
+          if (!completer.isCompleted) completer.complete(result);
         }
       }
     }
@@ -72,9 +72,9 @@ class BadgesHelper {
       if (unRelays.isEmpty && badge != null) {
         BadgeDB badgeDB = _badgeToBadgeDB(badge!);
         syncBadgeInfoToDB(badgeDB);
-        completer.complete(badgeDB);
+        if (!completer.isCompleted) completer.complete(badgeDB);
       } else {
-        completer.complete(null);
+        if (!completer.isCompleted) completer.complete(null);
       }
     });
     return completer.future;
@@ -137,7 +137,7 @@ class BadgesHelper {
       }
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
-      if(unRelays.isEmpty){
+      if (unRelays.isEmpty) {
         for (var badgeAward in badgeAwards) {
           List<BadgeDB> badges = await searchBadgeInfosFromDB([badgeAward]);
           BadgeDB? badgeDB;
@@ -155,7 +155,7 @@ class BadgesHelper {
         // cache to DB
         await syncUserBadgesToDB(
             userPubkey, badgeAwardsDB.map((e) => e.badgeId!).toList());
-        completer.complete(badgeAwardsDB);
+        if (!completer.isCompleted) completer.complete(badgeAwardsDB);
       }
     });
     return completer.future;
@@ -198,9 +198,9 @@ class BadgesHelper {
         userDB.badgesList!.isNotEmpty) {
       List<BadgeAwardDB?> badges =
           await getBadgeAwardInfosFromDB(userDB.badgesList!, userPubkey);
-      completer.complete(badges);
+      if (!completer.isCompleted) completer.complete(badges);
     } else {
-      completer.complete(null);
+      if (!completer.isCompleted) completer.complete(null);
     }
     return completer.future;
   }
@@ -248,12 +248,13 @@ class BadgesHelper {
     }
     if (badgeAwards.isNotEmpty) {
       Event event = Nip58.setProfileBadges(badgeAwards, privkey);
-      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay, unRelays) async {
+      Connect.sharedInstance.sendEvent(event,
+          sendCallBack: (ok, relay, unRelays) async {
         if (unRelays.isEmpty) {
           UserDB? userDB = await Account.getUserFromDB(privkey: privkey);
           userDB!.badges = jsonEncode(badgeIds);
           await DB.sharedInstance.insert<UserDB>(userDB);
-          completer.complete(ok);
+          if (!completer.isCompleted) completer.complete(ok);
         }
       });
 
@@ -292,12 +293,14 @@ class BadgesHelper {
             userDB.badges = jsonEncode(result.map((e) => e?.id).toList());
             await DB.sharedInstance.insert<UserDB>(userDB);
           }
-          completer.complete(result);
+          if (!completer.isCompleted) completer.complete(result);
         }
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
       Connect.sharedInstance.closeSubscription(requestId, relay);
-      if(unRelays.isEmpty) completer.complete(result);
+      if (unRelays.isEmpty) {
+        if (!completer.isCompleted) completer.complete(result);
+      }
     });
     return completer.future;
   }

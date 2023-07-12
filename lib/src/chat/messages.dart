@@ -212,7 +212,8 @@ class Messages {
 
   static Future<void> saveMessagesToDB(List<MessageDB> messages) async {
     for (var message in messages) {
-      await DB.sharedInstance.insert<MessageDB>(message, conflictAlgorithm: ConflictAlgorithm.ignore);
+      await DB.sharedInstance.insert<MessageDB>(message,
+          conflictAlgorithm: ConflictAlgorithm.ignore);
     }
   }
 
@@ -232,7 +233,7 @@ class Messages {
     Event event = Nip9.encode(messageIds, reason, privkey);
     Connect.sharedInstance.sendEvent(event,
         sendCallBack: (ok, relay, unRelays) {
-      completer.complete(ok);
+      if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
   }
