@@ -60,12 +60,10 @@ extension Calling on Friends{
   }
 
   UserDB? _getFriendFromEvent(Event event) {
-    String toAliasPubkey = Nip101.getP(event);
+    String aliasPubkey = event.pubkey;
     for (UserDB friend in Friends.sharedInstance.friends.values) {
-      if (friend.toAliasPubkey != null) {
-        if (friend.toAliasPubkey == toAliasPubkey) {
-          return friend;
-        }
+      if (friend.aliasPubkey == aliasPubkey) {
+        return friend;
       }
     }
     return null;

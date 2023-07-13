@@ -22,6 +22,11 @@ class Account {
           return db;
         }
       }
+      else{
+        db = UserDB(pubKey: pubkey);
+        await DB.sharedInstance.insert<UserDB>(db);
+        return db;
+      }
     }
     return null;
   }
