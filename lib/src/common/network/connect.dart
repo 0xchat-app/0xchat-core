@@ -105,14 +105,14 @@ class Connect {
     }
     Iterable<String> requestMapKeys = List<String>.from(requestsMap.keys);
     for (var subscriptionId in requestMapKeys) {
-      if(requestsMap[subscriptionId] != null){
+      if (requestsMap[subscriptionId] != null) {
         var start = requestsMap[subscriptionId]!.requestTime;
         if (start > 0 && now - start > timeout * 1000) {
           // timeout
           EOSECallBack? callBack = requestsMap[subscriptionId]!.eoseCallBack;
           OKEvent ok = OKEvent(subscriptionId, false, 'Time Out');
           for (var relay in requestsMap[subscriptionId]!.relays) {
-            if (callBack != null) {
+            if (callBack != null && requestsMap[subscriptionId] != null) {
               callBack(requestsMap[subscriptionId]!.subscriptions[relay]!, ok,
                   relay, []);
             }
@@ -143,7 +143,11 @@ class Connect {
   }
 
   List<String> relays() {
-    return webSockets.keys.toList();
+    List<String> result = [];
+    for (var relay in webSockets.keys) {
+      if (connectStatus[relay] == 1) result.add(relay);
+    }
+    return result;
   }
 
   Future connect(String relay) async {
@@ -188,7 +192,8 @@ class Connect {
     for (var relay in Connect.sharedInstance.relays()) {
       result[relay] = filters;
     }
-    return addSubscriptions(result, eventCallBack: eventCallBack, eoseCallBack: eoseCallBack);
+    return addSubscriptions(result,
+        eventCallBack: eventCallBack, eoseCallBack: eoseCallBack);
   }
 
   String addSubscriptions(Map<String, List<Filter>> filters,
@@ -230,7 +235,9 @@ class Connect {
       var requests = requestsMap[key];
       if (requests!.requestId == requestId) {
         for (var relay in relays()) {
-          await closeSubscription(requests.subscriptions[relay]!, relay);
+          if (requests.subscriptions[relay] != null) {
+            await closeSubscription(requests.subscriptions[relay]!, relay);
+          }
         }
         return;
       }
