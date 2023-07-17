@@ -52,7 +52,7 @@ class Messages {
     for (String relayURL in Connect.sharedInstance.relays()) {
       int commonMessagesUntil =
           Relays.sharedInstance.getCommonMessageUntil(relayURL);
-      Filter f = Filter(kinds: [5, 43, 44], since: commonMessagesUntil);
+      Filter f = Filter(kinds: [43, 44], since: commonMessagesUntil + 1);
       subscriptions[relayURL] = [f];
     }
 
