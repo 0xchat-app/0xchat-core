@@ -74,6 +74,9 @@ class Messages {
           print('unhandled message $event');
           break;
       }
+    }, eoseCallBack: (String requestId, OKEvent ok, String relay,
+            List<String> unCompletedRelays) {
+      Relays.sharedInstance.syncRelaysToDB();
     });
   }
 
@@ -216,7 +219,8 @@ class Messages {
         .rawUpdate('UPDATE MessageDB SET read = $read WHERE $where', whereArgs);
   }
 
-  static Future<void> saveMessagesToDB(List<MessageDB> messages, {ConflictAlgorithm? conflictAlgorithm}) async {
+  static Future<void> saveMessagesToDB(List<MessageDB> messages,
+      {ConflictAlgorithm? conflictAlgorithm}) async {
     for (var message in messages) {
       await DB.sharedInstance.insert<MessageDB>(message,
           conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.ignore);
