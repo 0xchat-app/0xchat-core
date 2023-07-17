@@ -180,8 +180,8 @@ class Connect {
   }
 
   Future closeConnect(String relay) async {
-    if (webSockets.containsKey(relay) && webSockets[relay] != null) {
-      webSockets[relay]!.close();
+    if (webSockets.containsKey(relay)) {
+      if (webSockets[relay] != null) webSockets[relay]!.close();
       webSockets.remove(relay);
     }
   }
@@ -358,8 +358,10 @@ class Connect {
     } catch (e) {
       print("Error! can not connect WS connectWs $e");
       _setConnectStatus(relay, 3); // closed
-      await Future.delayed(Duration(milliseconds: 3000));
-      return await _connectWs(relay);
+      if (webSockets.containsKey(relay)) {
+        await Future.delayed(Duration(milliseconds: 3000));
+        return await _connectWs(relay);
+      }
     }
   }
 

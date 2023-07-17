@@ -41,9 +41,17 @@ class NotificationHelper {
     }
   }
 
+  Event _encode(
+      String receiver, String content, String replyId, String privkey) {
+    String enContent = Nip4.encryptContent(content, privkey, receiver);
+    Event event =
+    Event.from(kind: 52456, tags: [], content: enContent, privkey: privkey);
+    return event;
+  }
+
   void _heartBeat(String serverPubkey, String privkey) {
     Map map = {'online': 1};
-    Event event = Nip4.encode(serverPubkey, jsonEncode(map), '', privkey);
+    Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
     Connect.sharedInstance.sendEvent(event);
   }
 
@@ -63,7 +71,7 @@ class NotificationHelper {
       '#e': channels,
       '#p': toAliasPubkeys
     };
-    Event event = Nip4.encode(serverPubkey, jsonEncode(map), '', privkey);
+    Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
     Connect.sharedInstance.sendEvent(event,
         sendCallBack: (ok, relay, unRelays) {
       if (unRelays.isEmpty) {
