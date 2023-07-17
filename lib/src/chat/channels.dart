@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 typedef ChannelsUpdatedCallBack = void Function();
 typedef ChannelMessageCallBack = void Function(MessageDB);
@@ -47,7 +48,7 @@ class Channels {
       Filter f = Filter(
           e: myChannels.keys.toList(),
           kinds: [42],
-          limit: 100,
+          limit: 1000,
           since: (channelMessageUntil + 1));
       subscriptions[relayURL] = [f];
     }
@@ -231,6 +232,30 @@ class Channels {
     _syncMyChannelListToDB();
   }
 
+  void _loadChannelPreMessages(String channelId, int until, int maxAmount) {
+    Filter f = Filter(
+        e: [channelId],
+        kinds: [42],
+        limit: maxAmount,
+        until: until);
+    Connect.sharedInstance.addSubscription([f],
+        eventCallBack: (event, relay) async {
+      switch (event.kind) {
+        case 42:
+          _receiveChannelMessages(event, relay);
+          break;
+        default:
+          print('unhandled message $event');
+          break;
+      }
+    }, eoseCallBack: (String requestId, OKEvent ok, String relay,
+            List<String> unCompletedRelays) {
+      if(unCompletedRelays.isEmpty) {
+        Connect.sharedInstance.closeRequests(requestId);
+      }
+    });
+  }
+
   Future<void> initWithPrivkey(String key,
       {ChannelsUpdatedCallBack? callBack}) async {
     if (channelMessageSubscription.isNotEmpty) {
@@ -375,7 +400,8 @@ class Channels {
     Connect.sharedInstance.sendEvent(event,
         sendCallBack: (ok, relay, unRelays) {
       messageDB.status = ok.status ? 1 : 2;
-      Messages.saveMessagesToDB([messageDB]);
+      Messages.saveMessagesToDB([messageDB],
+          conflictAlgorithm: ConflictAlgorithm.replace);
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
@@ -409,9 +435,9 @@ class Channels {
         (requestId, ok, relay, unRelays) {
       if (channels.containsKey(channelId)) {
         myChannels[channelId] = channels[channelId]!;
+        _loadChannelPreMessages(channelId, DateTime.now().millisecondsSinceEpoch ~/ 1000, 100);
         _updateSubscription();
         _syncMyChannelListToRelay(callBack: (ok, relay, unRelays) {
-          print(ok.eventId);
           if (!completer.isCompleted) completer.complete(ok);
         });
       } else {
