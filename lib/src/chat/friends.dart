@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 typedef FriendRequestCallBack = void Function(Alias);
 typedef FriendAcceptCallBack = void Function(Alias);
@@ -343,9 +344,9 @@ class Friends {
           status: 0);
       Messages.saveMessagesToDB([messageDB]);
       Connect.sharedInstance.sendEvent(event,
-          sendCallBack: (ok, relay, unRelays) {
+          sendCallBack: (ok, relay, unRelays) async {
         messageDB.status = ok.status ? 1 : 2;
-        Messages.saveMessagesToDB([messageDB]);
+        Messages.saveMessagesToDB([messageDB], conflictAlgorithm: ConflictAlgorithm.replace);
         if (!completer.isCompleted) completer.complete(ok);
       });
       return completer.future;

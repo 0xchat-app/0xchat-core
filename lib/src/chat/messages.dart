@@ -216,10 +216,10 @@ class Messages {
         .rawUpdate('UPDATE MessageDB SET read = $read WHERE $where', whereArgs);
   }
 
-  static Future<void> saveMessagesToDB(List<MessageDB> messages) async {
+  static Future<void> saveMessagesToDB(List<MessageDB> messages, {ConflictAlgorithm? conflictAlgorithm}) async {
     for (var message in messages) {
       await DB.sharedInstance.insert<MessageDB>(message,
-          conflictAlgorithm: ConflictAlgorithm.ignore);
+          conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.ignore);
     }
   }
 
