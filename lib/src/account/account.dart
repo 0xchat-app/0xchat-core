@@ -201,6 +201,24 @@ class Account {
     return completer.future;
   }
 
+  static Future<List<String>> syncRelaysMetadataFromRelay(String pubkey) {
+    Completer<List<String>> completer = Completer<List<String>>();
+
+    Filter f = Filter(kinds: [10002], authors: [pubkey], limit: 1);
+    List<Relay> result = [];
+    Connect.sharedInstance.addSubscription([f],
+        eventCallBack: (event, relay) async {
+      result = Nip65.decode(event);
+    }, eoseCallBack: (requestId, ok, relay, unRelays) async {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+      if (unRelays.isEmpty) {
+        List<String> relayList = result.map((e) => e.url).toList();
+        if (!completer.isCompleted) completer.complete(relayList);
+      }
+    });
+    return completer.future;
+  }
+
   static Future<UserDB?> updateProfile(String privkey, UserDB updateDB) async {
     Completer<UserDB?> completer = Completer<UserDB?>();
 
@@ -232,6 +250,23 @@ class Account {
         sendCallBack: (ok, relay, unRelays) {
       if (unRelays.isEmpty) {
         if (!completer.isCompleted) completer.complete(db);
+      }
+    });
+    return completer.future;
+  }
+
+  static Future<OKEvent> updateRelaysMetadata(
+      List<String> relays, String privkey) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    List<Relay> list = [];
+    for (var relay in relays) {
+      list.add(Relay(relay, null));
+    }
+    Event event = Nip65.encode(list, privkey);
+    Connect.sharedInstance.sendEvent(event,
+        sendCallBack: (ok, relay, unRelays) {
+      if (unRelays.isEmpty) {
+        if (!completer.isCompleted) completer.complete(ok);
       }
     });
     return completer.future;
