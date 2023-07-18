@@ -21,8 +21,7 @@ class Account {
           db.privkey = privkey;
           return db;
         }
-      }
-      else{
+      } else {
         db = UserDB(pubKey: pubkey);
         await DB.sharedInstance.insert<UserDB>(db);
         return db;
@@ -173,7 +172,22 @@ class Account {
         db.picture = map['picture'];
         db.dns = map['nip05'];
         db.lnurl = map['lnurl'];
+        db.lnurl ?? map['lud16'];
         db.lastUpdatedTime = event.createdAt;
+
+        var keysToRemove = {
+          'name',
+          'gender',
+          'area',
+          'about',
+          'picture',
+          'nip05',
+          'lnurl',
+          'lud16'
+        };
+        Map filteredMap = Map.from(map)
+          ..removeWhere((key, value) => keysToRemove.contains(key));
+        db.otherField = jsonEncode(filteredMap);
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
@@ -211,6 +225,8 @@ class Account {
       'nip05': updateDB.dns,
       'lnurl': updateDB.lnurl
     };
+    Map additionMap = jsonDecode(db.otherField ?? '{}');
+    map.addAll(additionMap);
     Event event = Nip1.setMetadata(jsonEncode(map), privkey);
     Connect.sharedInstance.sendEvent(event,
         sendCallBack: (ok, relay, unRelays) {

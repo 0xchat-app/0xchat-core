@@ -45,32 +45,35 @@ class UserDB extends DBObject {
 
   int lastUpdatedTime;
 
-  UserDB({
-    this.pubKey = '',
-    this.encryptedPrivKey = '',
-    this.privkey = '',
-    this.defaultPassword = '',
-    this.name = '',
-    this.nickName = '',
-    this.mainRelay = '',
-    this.dns = '',
-    this.lnurl = '',
-    this.badges = '',
-    this.gender = '',
-    this.area = '',
-    this.about = '',
-    this.picture = '',
-    this.aliasPubkey = '',
-    this.toAliasPubkey = '',
-    this.toAliasPrivkey = '',
-    this.friendsList,
-    this.channelsList,
-    this.groupsList,
-    this.badgesList,
-    this.blockedList,
-    this.mute = false,
-    this.lastUpdatedTime = 0,
-  });
+  // banner, website, display_name
+  String? otherField;
+
+  UserDB(
+      {this.pubKey = '',
+      this.encryptedPrivKey = '',
+      this.privkey = '',
+      this.defaultPassword = '',
+      this.name = '',
+      this.nickName = '',
+      this.mainRelay = '',
+      this.dns = '',
+      this.lnurl = '',
+      this.badges = '',
+      this.gender = '',
+      this.area = '',
+      this.about = '',
+      this.picture = '',
+      this.aliasPubkey = '',
+      this.toAliasPubkey = '',
+      this.toAliasPrivkey = '',
+      this.friendsList,
+      this.channelsList,
+      this.groupsList,
+      this.badgesList,
+      this.blockedList,
+      this.mute = false,
+      this.lastUpdatedTime = 0,
+      this.otherField = '{}'});
 
   @override
   //Map
@@ -89,6 +92,11 @@ class UserDB extends DBObject {
   //primaryKey
   static List<String?> primaryKey() {
     return ['pubKey'];
+  }
+
+  //'ALTER TABLE Company ADD description TEXT'
+  static Map<String, String?> updateTable() {
+    return {"2": '''alter table UserDB add otherField TEXT;'''};
   }
 
   static String? decodePubkey(String pubkey) {
@@ -149,6 +157,7 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     aliasPubkey: map['aliasPubkey'],
     mute: map['mute'] > 0 ? true : false,
     lastUpdatedTime: map['lastUpdatedTime'],
+    otherField: map['otherField'].toString(),
   );
 }
 
@@ -174,4 +183,5 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'aliasPubkey': instance.aliasPubkey,
       'mute': instance.mute,
       'lastUpdatedTime': instance.lastUpdatedTime,
+      'otherField': instance.otherField
     };
