@@ -245,12 +245,16 @@ class Connect {
   }
 
   /// send an event to relay/relays
-  void sendEvent(Event event, {OKCallBack? sendCallBack}) {
+  void sendEvent(Event event, {OKCallBack? sendCallBack, String? relay}) {
     print(event.serialize());
-    Sends sends = Sends(generate64RandomHexChars(), relays(),
-        DateTime.now().millisecondsSinceEpoch, event.id, sendCallBack);
+    Sends sends = Sends(
+        generate64RandomHexChars(),
+        relay == null ? relays() : [relay],
+        DateTime.now().millisecondsSinceEpoch,
+        event.id,
+        sendCallBack);
     sendsMap[event.id] = sends;
-    _send(event.serialize());
+    _send(event.serialize(), relay: relay);
   }
 
   void _send(String data, {String? relay}) {

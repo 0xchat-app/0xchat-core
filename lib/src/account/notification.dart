@@ -78,7 +78,7 @@ class NotificationHelper {
       if (unRelays.isEmpty) {
         if (!completer.isCompleted) completer.complete(ok);
       }
-    });
+    }, relay: 'wss://relay.0xchat.com');
     return completer.future;
   }
 }
