@@ -296,7 +296,7 @@ class Connect {
   }
 
   void _handleEvent(Event event, String relay) {
-    print('Received event: ${event.serialize()}');
+    print('Received event: ${event.serialize()}, $relay');
     String? subscriptionId = event.subscriptionId;
     if (subscriptionId != null) {
       String requestsMapKey = subscriptionId + relay;
@@ -309,7 +309,7 @@ class Connect {
   }
 
   void _handleEOSE(String eose, String relay) {
-    print('receive EOSE: $eose');
+    print('receive EOSE: $eose, $relay');
     String subscriptionId = jsonDecode(eose)[0];
     String requestsMapKey = subscriptionId + relay;
     if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
@@ -323,13 +323,13 @@ class Connect {
   }
 
   void _handleNotice(String notice, String relay) {
-    print('receive notice: $notice');
+    print('receive notice: $notice', $relay);
     String n = jsonDecode(notice)[0];
     noticeCallBack?.call(n, relay);
   }
 
   void _handleOk(String message, String relay) {
-    print('receive ok: $message');
+    print('receive ok: $message, $relay');
     OKEvent? ok = Nip20.getOk(message);
     if (ok != null && sendsMap.containsKey(ok.eventId)) {
       if (sendsMap[ok.eventId]!.okCallBack != null) {
