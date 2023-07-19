@@ -323,7 +323,7 @@ class Connect {
   }
 
   void _handleNotice(String notice, String relay) {
-    print('receive notice: $notice', $relay);
+    print('receive notice: $notice, $relay');
     String n = jsonDecode(notice)[0];
     noticeCallBack?.call(n, relay);
   }
