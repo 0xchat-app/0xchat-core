@@ -208,7 +208,6 @@ class Account {
   }
 
   static Future<List<String>> syncRelaysMetadataFromRelay(String pubkey) async{
-    return [];
     Completer<List<String>> completer = Completer<List<String>>();
 
     Filter f = Filter(kinds: [10002], authors: [pubkey], limit: 1);
@@ -264,7 +263,6 @@ class Account {
 
   static Future<OKEvent> updateRelaysMetadata(
       List<String> relays, String privkey) async {
-    return OKEvent('', true, '');
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<Relay> list = [];
     for (var relay in relays) {
