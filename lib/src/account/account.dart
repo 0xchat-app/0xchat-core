@@ -201,7 +201,7 @@ class Account {
     return completer.future;
   }
 
-  static Future<List<String>> syncRelaysMetadataFromRelay(String pubkey) {
+  static Future<List<String>> syncRelaysMetadataFromRelay(String pubkey) async{
     Completer<List<String>> completer = Completer<List<String>>();
 
     Filter f = Filter(kinds: [10002], authors: [pubkey], limit: 1);
