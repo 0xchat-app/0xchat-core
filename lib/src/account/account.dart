@@ -23,6 +23,7 @@ class Account {
         }
       } else {
         db = UserDB(pubKey: pubkey);
+        db.name = db.shortEncodedPubkey;
         await DB.sharedInstance.insert<UserDB>(db);
         return db;
       }
@@ -174,6 +175,7 @@ class Account {
         db.lnurl = map['lnurl'];
         db.lnurl ?? map['lud16'];
         db.lastUpdatedTime = event.createdAt;
+        db.name ??= db.shortEncodedPubkey;
 
         var keysToRemove = {
           'name',

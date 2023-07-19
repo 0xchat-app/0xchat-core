@@ -124,6 +124,14 @@ class UserDB extends DBObject {
     return Nip19.encodePrivkey(privkey!);
   }
 
+  String get shortEncodedPubkey{
+    String k = encodedPubkey;
+    final String start = k.substring(0, 6);
+    final String end = k.substring(k.length - 6);
+
+    return '$start:$end';
+  }
+
   static List<String> decodeStringList(String list) {
     try {
       List<dynamic> result = jsonDecode(list);
