@@ -158,6 +158,9 @@ class Account {
         db = UserDB();
         db.pubKey = key;
       }
+      if(db.name == null || db.name!.isEmpty) {
+        db.name = db.shortEncodedPubkey;
+      }
       users[key] = db;
     }
 
@@ -175,8 +178,9 @@ class Account {
         db.lnurl = map['lnurl'];
         db.lnurl ?? map['lud16'];
         db.lastUpdatedTime = event.createdAt;
-        db.name ??= db.shortEncodedPubkey;
-
+        if(db.name == null || db.name!.isEmpty) {
+          db.name = db.shortEncodedPubkey;
+        }
         var keysToRemove = {
           'name',
           'gender',
