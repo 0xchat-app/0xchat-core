@@ -36,8 +36,8 @@ class Friends {
   FriendRemoveCallBack? friendRemoveCallBack;
   FriendMessageCallBack? friendMessageCallBack;
   FriendUpdatedCallBack? friendUpdatedCallBack;
-  void Function(String friend, SignalingState state, String data)? onCallStateChange;
-
+  void Function(String friend, SignalingState state, String data)?
+      onCallStateChange;
 
   static String getAliasPrivkey(String friendPubkey, String privkey) {
     return Nip101.aliasPrivkey(friendPubkey, privkey);
@@ -294,6 +294,7 @@ class Friends {
     UserDB? friend = allFriends[friendPubkey];
     if (friend != null && friend.aliasPubkey!.isNotEmpty) {
       friend.nickName = nickName;
+      await DB.sharedInstance.update<UserDB>(friend);
       _syncFriendsToRelay(okCallBack: (ok, relay, unRelays) {
         if (!completer.isCompleted) completer.complete(ok);
       });
@@ -315,13 +316,8 @@ class Friends {
     return null;
   }
 
-  Future<OKEvent> sendMessage(
-    String friendPubkey,
-    String replayId,
-    MessageType type,
-    String content,
-  ) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
+  Event? getSendMessageEvent(
+      String friendPubkey, String replayId, MessageType type, String content) {
     UserDB? friend = allFriends[friendPubkey];
     if (friend != null) {
       Event event = Nip4.encode(
@@ -329,9 +325,26 @@ class Friends {
           MessageDB.encodeContent(type, content),
           replayId,
           friend.toAliasPrivkey!);
+      return event;
+    }
+    return null;
+  }
+
+  Future<OKEvent> sendMessage(
+      String friendPubkey, String replayId, MessageType type, String content,
+      {Event? event}) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    UserDB? friend = allFriends[friendPubkey];
+    if (friend != null) {
+      event ??
+          Nip4.encode(
+              friend.aliasPubkey!,
+              MessageDB.encodeContent(type, content),
+              replayId,
+              friend.toAliasPrivkey!);
 
       MessageDB messageDB = MessageDB(
-          messageId: event.id,
+          messageId: event!.id,
           sender: pubkey,
           receiver: friendPubkey,
           groupId: '',
@@ -346,7 +359,8 @@ class Friends {
       Connect.sharedInstance.sendEvent(event,
           sendCallBack: (ok, relay, unRelays) async {
         messageDB.status = ok.status ? 1 : 2;
-        Messages.saveMessagesToDB([messageDB], conflictAlgorithm: ConflictAlgorithm.replace);
+        Messages.saveMessagesToDB([messageDB],
+            conflictAlgorithm: ConflictAlgorithm.replace);
         if (!completer.isCompleted) completer.complete(ok);
       });
       return completer.future;

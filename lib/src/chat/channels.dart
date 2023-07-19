@@ -233,11 +233,8 @@ class Channels {
   }
 
   void _loadChannelPreMessages(String channelId, int until, int maxAmount) {
-    Filter f = Filter(
-        e: [channelId],
-        kinds: [42],
-        limit: maxAmount,
-        until: until);
+    Filter f =
+        Filter(e: [channelId], kinds: [42], limit: maxAmount, until: until);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       switch (event.kind) {
@@ -250,7 +247,7 @@ class Channels {
       }
     }, eoseCallBack: (String requestId, OKEvent ok, String relay,
             List<String> unCompletedRelays) {
-      if(unCompletedRelays.isEmpty) {
+      if (unCompletedRelays.isEmpty) {
         Connect.sharedInstance.closeRequests(requestId);
       }
     });
@@ -370,14 +367,13 @@ class Channels {
     return completer.future;
   }
 
-  Future<OKEvent> sendChannelMessage(
+  Event? getSendChannelMessageEvent(
       String channelId, MessageType type, String content,
       {String? channelRelay,
       String? replyMessage,
       String? replyMessageRelay,
       String? replyUser,
-      String? replyUserRelay}) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
+      String? replyUserRelay}) {
     Event event = Nip28.sendChannelMessage(
         channelId, MessageDB.encodeContent(type, content), privkey,
         channelRelay: channelRelay,
@@ -385,9 +381,29 @@ class Channels {
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay);
+    return event;
+  }
+
+  Future<OKEvent> sendChannelMessage(
+      String channelId, MessageType type, String content,
+      {String? channelRelay,
+      String? replyMessage,
+      String? replyMessageRelay,
+      String? replyUser,
+      String? replyUserRelay,
+      Event? event}) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    event ??
+        Nip28.sendChannelMessage(
+            channelId, MessageDB.encodeContent(type, content), privkey,
+            channelRelay: channelRelay,
+            replyMessage: replyMessage,
+            replyMessageRelay: replyMessageRelay,
+            replyUser: replyUser,
+            replyUserRelay: replyUserRelay);
 
     MessageDB messageDB = MessageDB(
-        messageId: event.id,
+        messageId: event!.id,
         sender: event.pubkey,
         receiver: '',
         groupId: channelId,
@@ -435,7 +451,8 @@ class Channels {
         (requestId, ok, relay, unRelays) {
       if (channels.containsKey(channelId)) {
         myChannels[channelId] = channels[channelId]!;
-        _loadChannelPreMessages(channelId, DateTime.now().millisecondsSinceEpoch ~/ 1000, 100);
+        _loadChannelPreMessages(
+            channelId, DateTime.now().millisecondsSinceEpoch ~/ 1000, 100);
         _updateSubscription();
         _syncMyChannelListToRelay(callBack: (ok, relay, unRelays) {
           if (!completer.isCompleted) completer.complete(ok);

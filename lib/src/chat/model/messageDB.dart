@@ -121,18 +121,87 @@ class MessageDB extends DBObject {
     }
   }
 
+  static MessageType _identifyUrl(String urlString) {
+    final Uri uri;
+
+    try {
+      uri = Uri.parse(urlString);
+    } catch (e) {
+      return MessageType.text;
+    }
+
+    if (!uri.isAbsolute) {
+      return MessageType.text;
+    }
+
+    final String path = uri.path.toLowerCase();
+
+    if (path.endsWith('.jpg') ||
+        path.endsWith('.jpeg') ||
+        path.endsWith('.png') ||
+        path.endsWith('.gif') ||
+        path.endsWith('.bmp') ||
+        path.endsWith('.svg') ||
+        path.endsWith('.webp')) {
+      return MessageType.image;
+    } else if (path.endsWith('.mp3') ||
+        path.endsWith('.wav') ||
+        path.endsWith('.flac') ||
+        path.endsWith('.m4a') ||
+        path.endsWith('.aac') ||
+        path.endsWith('.ogg')) {
+      return MessageType.audio;
+    } else if (path.endsWith('.mp4') ||
+        path.endsWith('.avi') ||
+        path.endsWith('.mov') ||
+        path.endsWith('.flv') ||
+        path.endsWith('.wmv') ||
+        path.endsWith('.mkv') ||
+        path.endsWith('.webm')) {
+      return MessageType.video;
+    } else if (path.endsWith('.pdf') ||
+        path.endsWith('.doc') ||
+        path.endsWith('.docx') ||
+        path.endsWith('.xls') ||
+        path.endsWith('.xlsx') ||
+        path.endsWith('.ppt') ||
+        path.endsWith('.pptx') ||
+        path.endsWith('.txt') ||
+        path.endsWith('.csv')) {
+      return MessageType.file;
+    } else {
+      return MessageType.text;
+    }
+  }
+
   static Map<String, dynamic> decodeContent(String content) {
     try {
       return jsonDecode(content);
     } catch (e) {
       print('decodeContent fail: $content, error msg: ${e.toString()}');
-      return {'contentType': 'text', 'content': content};
+      MessageType type = _identifyUrl(content);
+      return {'contentType': messageTypeToString(type), 'content': content};
     }
   }
 
   static String encodeContent(MessageType type, String content) {
-    return jsonEncode(
-        {'contentType': messageTypeToString(type), 'content': content});
+    switch (type) {
+      case MessageType.text:
+      case MessageType.image:
+      case MessageType.video:
+      case MessageType.audio:
+        return content;
+      case MessageType.file:
+      case MessageType.template:
+      case MessageType.encryptedImage:
+      case MessageType.encryptedVideo:
+      case MessageType.encryptedAudio:
+      case MessageType.encryptedFile:
+        return jsonEncode(
+            {'contentType': messageTypeToString(type), 'content': content});
+      default:
+        return content;
+    }
   }
 
   static MessageDB? fromPrivateMessage(Event event) {
