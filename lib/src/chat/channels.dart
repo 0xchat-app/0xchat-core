@@ -393,8 +393,7 @@ class Channels {
       String? replyUserRelay,
       Event? event}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    event ??
-        Nip28.sendChannelMessage(
+    event ??= Nip28.sendChannelMessage(
             channelId, MessageDB.encodeContent(type, content), privkey,
             channelRelay: channelRelay,
             replyMessage: replyMessage,
@@ -403,7 +402,7 @@ class Channels {
             replyUserRelay: replyUserRelay);
 
     MessageDB messageDB = MessageDB(
-        messageId: event!.id,
+        messageId: event.id,
         sender: event.pubkey,
         receiver: '',
         groupId: channelId,

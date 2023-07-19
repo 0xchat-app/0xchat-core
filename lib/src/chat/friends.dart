@@ -336,15 +336,14 @@ class Friends {
     Completer<OKEvent> completer = Completer<OKEvent>();
     UserDB? friend = allFriends[friendPubkey];
     if (friend != null) {
-      event ??
-          Nip4.encode(
-              friend.aliasPubkey!,
-              MessageDB.encodeContent(type, content),
-              replayId,
-              friend.toAliasPrivkey!);
+      event ??= Nip4.encode(
+          friend.aliasPubkey!,
+          MessageDB.encodeContent(type, content),
+          replayId,
+          friend.toAliasPrivkey!);
 
       MessageDB messageDB = MessageDB(
-          messageId: event!.id,
+          messageId: event.id,
           sender: pubkey,
           receiver: friendPubkey,
           groupId: '',
