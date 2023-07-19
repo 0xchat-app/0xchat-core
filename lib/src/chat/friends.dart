@@ -485,7 +485,6 @@ class Friends {
       kinds: [30000],
       d: [identifier],
       authors: [pubkey],
-      limit: 1,
     );
     Lists? result;
     Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
