@@ -28,6 +28,7 @@ class Friends {
   Map<String, FriendRequestDB> friendRequestMap = {};
   String friendRequestSubscription = '';
   String friendMessageSubscription = '';
+  int lastFriendListUpdateTime = 0;
 
   /// callbacks
   FriendRequestCallBack? friendRequestCallBack;
@@ -104,10 +105,10 @@ class Friends {
     _syncFriendsToRelay();
   }
 
-  void _deleteFriend(String friendPubkey) {
+  Future<void> _deleteFriend(String friendPubkey) async {
     UserDB? friend = allFriends.remove(friendPubkey);
     if (friend != null) {
-      _syncRequestActionsFromRelay();
+      await _syncRequestActionsFromRelay();
       _syncFriendsToRelay();
     }
   }
@@ -146,7 +147,9 @@ class Friends {
             event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
         user.aliasPubkey = alias.toAliasPubkey;
         await DB.sharedInstance.insert<UserDB>(user);
-        await _addFriend(user.pubKey!, user.aliasPubkey!);
+        if (event.createdAt > lastFriendListUpdateTime) {
+          await _addFriend(user.pubKey!, user.aliasPubkey!);
+        }
         friendAcceptCallBack?.call(alias);
         return;
       }
@@ -159,7 +162,9 @@ class Friends {
       if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
         Alias alias = Nip101.getReject(
             event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
-        removeFriend(user.pubKey!);
+        if (event.createdAt > lastFriendListUpdateTime) {
+          removeFriend(user.pubKey!);
+        }
         friendRejectCallBack?.call(alias);
         return;
       }
@@ -174,7 +179,9 @@ class Friends {
             event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
         // check is real friend(aliasPubkey can't not be null)
         if (user.aliasPubkey != null && user.aliasPubkey!.isNotEmpty) {
-          removeFriend(user.pubKey!);
+          if (event.createdAt > lastFriendListUpdateTime) {
+            removeFriend(user.pubKey!);
+          }
           friendRemoveCallBack?.call(alias);
         }
         return;
@@ -481,15 +488,14 @@ class Friends {
   }
 
   Future<void> _syncFriendsFromRelay() async {
-    Filter f = Filter(
-      kinds: [30000],
-      d: [identifier],
-      authors: [pubkey],
-    );
+    Completer<void> completer = Completer<void>();
+    Filter f =
+        Filter(kinds: [30000], d: [identifier], authors: [pubkey], limit: 1);
     Lists? result;
     Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
       if (result == null || result!.createTime < event.createdAt) {
         result = Nip51.getLists(event, privkey);
+        lastFriendListUpdateTime = event.createdAt;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
@@ -499,8 +505,10 @@ class Friends {
           await _syncFriendsProfiles(result!.people);
         }
         friendUpdatedCallBack?.call();
+        if (!completer.isCompleted) completer.complete();
       }
     });
+    return completer.future;
   }
 
   Future<void> _syncRequestActionsFromRelay() async {
