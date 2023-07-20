@@ -71,6 +71,26 @@ class Friends {
   }
 
   Future<void> _syncFriendsProfiles(List<People> peoples) async {
+    await _syncFriendsProfilesFromDB(peoples);
+    // subscript friend accept, reject, delete, private messages
+    _syncRequestActionsFromRelay();
+    _syncFriendsProfilesFromRelay(peoples);
+  }
+
+  Future<void> _syncFriendsProfilesFromDB(List<People> peoples) async {
+    for (People p in peoples) {
+      UserDB? user = await Account.getUserFromDB(pubkey: p.pubkey);
+      if (user != null) {
+        user.toAliasPrivkey = Friends.getAliasPrivkey(user.pubKey!, privkey);
+        user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
+        user.aliasPubkey = p.aliasPubKey;
+        user.nickName = p.petName;
+        allFriends[user.pubKey!] = user;
+      }
+    }
+  }
+
+  Future<void> _syncFriendsProfilesFromRelay(List<People> peoples) async {
     if (peoples.isNotEmpty) {
       List<String> pubkeys = peoples.map((p) => p.pubkey).toList();
       var usersMap = await Account.syncProfilesFromRelay(pubkeys);
@@ -86,8 +106,6 @@ class Friends {
           allFriends[user.pubKey!] = user;
         }
       }
-      // subscript friend accept, reject, delete, private messages
-      _syncRequestActionsFromRelay();
     }
   }
 
