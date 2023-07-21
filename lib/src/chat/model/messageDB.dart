@@ -176,7 +176,21 @@ class MessageDB extends DBObject {
 
   static Map<String, dynamic> decodeContent(String content) {
     try {
-      return jsonDecode(content);
+      Map<String, dynamic> map = jsonDecode(content);
+      if (map.containsKey('contentType') && map.containsKey('content')) {
+        String type = map['contentType'];
+        if (type == 'text' ||
+            type == 'image' ||
+            type == 'video' ||
+            type == 'audio' ||
+            type == 'file' ||
+            type == 'template' ||
+            type == 'encryptedImage' ||
+            type == 'encryptedVideo' ||
+            type == 'encryptedAudio' ||
+            type == 'encryptedFile') return map;
+      }
+      return {'contentType': 'text', 'content': content};
     } catch (e) {
       print('decodeContent fail: $content, error msg: ${e.toString()}');
       MessageType type = _identifyUrl(content);
