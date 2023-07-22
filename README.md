@@ -2,6 +2,11 @@
 
 Welcome to the 0xChat-Core Repository. This repository houses the core code of 0xChat App, dealing with all data requests and local data storage. With this repository at your disposal, you can effortlessly build your own user interface, without the need to manage any underlying logic.
 
+0xchat Download links:
+
+  - [0xchat on iOS](https://apps.apple.com/app/0xchat/id1637607169)
+  - [0xchat on Android](https://play.google.com/store/apps/details?id=com.oxchat.nostr)
+
 ## Language & Platforms
 The repository is primarily implemented in Dart, allowing you to swiftly create versions for iOS, Android, and Desktop.
 
