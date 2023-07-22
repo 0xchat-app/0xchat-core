@@ -27,7 +27,7 @@ At present, the repository supports the following modules and functionalities:
 
 	0xchat has optimized private messaging based on NIP04 to prevent leakage of users' real public keys (pubkeys) during private chats. This is achieved by implementing the [NIP101](https://github.com/water783/nips/blob/nip101/101.md) protocol, which creates an alias for users during private conversations.
 	
-	```
+```
 User A                    User B
   |                          |
   |--> [Create Alias A']-----|
@@ -50,7 +50,7 @@ User A                    User B
 
 	0xchat proposes a method for message push notifications, includes the sending and processing of heartbeat signals to detect online status and provide timely push notifications.
 	
-	```mermaid
+```mermaid
 flowchart LR
     NostrClients --> |Kind 22456 event| Relay  
     Relay --> |Req response| PushServer--> |Notification| APNs --> |iOS notification| NostrClients
