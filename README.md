@@ -7,6 +7,8 @@ Welcome to the 0xChat-Core Repository. This repository houses the core code of 0
   - [0xchat on iOS](https://apps.apple.com/app/0xchat/id1637607169)
   - [0xchat on Android](https://play.google.com/store/apps/details?id=com.oxchat.nostr)
 
+![](https://pbs.twimg.com/media/F1qNxgIaIAEJQYT?format=jpg&name=large)
+
 ## Language & Platforms
 The repository is primarily implemented in Dart, allowing you to swiftly create versions for iOS, Android, and Desktop.
 
