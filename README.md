@@ -70,10 +70,10 @@ We continuously aim to improve and enhance the features provided by this reposit
 
 Some important planned features:
 
-- P2P audio/video calling
-- Private group
-- Audio/video chat room
-- Lightning wallet Integration
+- [ ] P2P audio/video calling
+- [ ] Private group
+- [ ] Audio/video chat room
+- [ ] Lightning wallet Integration
 
 ## Support
 
