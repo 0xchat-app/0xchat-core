@@ -64,11 +64,6 @@ flowchart LR
 - [x] [NIP 100 WebRTC](https://github.com/jacany/nips/blob/webrtc/100.md)
 
 
-With the foundation of this core repository, developers can focus on building intuitive and innovative user interfaces, enhancing the user experience and allowing for the delivery of high-quality 0xChat services.
-
-
-## Contributing
-We encourage contributions from the developer community! To contribute, please fork this repository, make your changes, and submit a pull request. 
 
 ## Future Enhancements
 We continuously aim to improve and enhance the features provided by this repository. Stay tuned for future updates!
@@ -81,6 +76,8 @@ Some important planned features:
 - Lightning wallet Integration
 
 ## Support
-If you encounter any issues or have questions, feel free to open an issue in this repository. Our team will do their best to provide you with the necessary assistance.
+
+We encourage contributions from the developer community! To contribute, please fork this repository, make your changes, and submit a pull request. 
+If you encounter any issues or have questions, feel free to open an issue in this repository.
 
 For more details and updates, please visit the official [0xChat website](https://www.0xchat.com).
