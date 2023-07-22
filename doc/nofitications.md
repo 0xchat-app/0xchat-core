@@ -8,6 +8,17 @@ This NIP proposes a method for message push notifications using the NIP protocol
 
 The process includes the sending and processing of heartbeat signals to detect online status and provide timely push notifications.
 
+##Architecture
+
+
+```mermaid
+flowchart LR
+    NostrClients --> |custom registration topics| Relay  
+    Relay --> |Req response| PushServer--> |notification| APNs --> |iOS notification| NostrClients
+    PushServer --> |notification| FCM--> |Android notification| NostrClients
+    PushServer --> |Subscription |Relay
+```
+
 ## Specification
 
 Push settings:
@@ -51,15 +62,6 @@ This method makes full use of the NIP protocol to implement a push notification 
 
 The use of heartbeat detection can timely and accurately determine the online status of the device, and it can provide efficient and accurate push notification services.
 
-##Architecture
-
-```mermaid
-flowchart LR
-    NostrClients --> |custom registration topics| Relay  
-    Relay --> |Req response| PushServer--> |notification| APNs --> |iOS push notification| NostrClients
-    PushServer --> |notification| FCM--> |Android push notification| NostrClients
-    PushServer --> |Subscription |Relay
-```
 
 
 ##Implementation
