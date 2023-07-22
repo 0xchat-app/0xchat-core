@@ -20,6 +20,43 @@ At present, the repository supports the following modules and functionalities:
 2. **Chat Module**: The chat module offers encrypted private chatting, encrypted contact lists, and open channels.
 3. **Common Module**: The Common Module provides database integration and establishes connections with relay services.
 
+## Features
+
+1. [Secured Private Messages](https://github.com/0xchat-app/0xchat-core/blob/main/doc/friends.md)
+
+
+	0xchat has optimized private messaging based on NIP04 to prevent leakage of users' real public keys (pubkeys) during private chats. This is achieved by implementing the [NIP101](https://github.com/water783/nips/blob/nip101/101.md) protocol, which creates an alias for users during private conversations.
+	
+	```
+User A                    User B
+  |                          |
+  |--> [Create Alias A']-----|
+  |    [Initiate Friend Req] |
+  |    [Listen to A']        |
+  |                          |
+  |<---- [Create Alias B'] --|
+  |     [Accept Friend Req]  |
+  |     [Update Friend List] |
+  |     [Listen to B']       |
+  |                          |
+  |--- [Receive Acceptance] -|
+  |    [Update Friend List]  |
+  |                          |
+  V                          V
+[A' and B' for future chats]
+```
+
+2. [Push Notifications](https://github.com/0xchat-app/0xchat-core/blob/main/doc/nofitications.md)
+
+	0xchat proposes a method for message push notifications, includes the sending and processing of heartbeat signals to detect online status and provide timely push notifications.
+	
+	```mermaid
+flowchart LR
+    NostrClients --> |Kind 22456 event| Relay  
+    Relay --> |Req response| PushServer--> |Notification| APNs --> |iOS notification| NostrClients
+    PushServer --> |Notification| FCM--> |Android notification| NostrClients
+    PushServer --> |Subscription |Relay
+```
 
 ## Nips Supported
 - [x] [NIP 01 Basic protocol flow description](https://github.com/nostr-protocol/nips/blob/master/01.md)
