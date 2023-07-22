@@ -26,25 +26,7 @@ At present, the repository supports the following modules and functionalities:
 
 
 	0xchat has optimized private messaging based on NIP04 to prevent leakage of users' real public keys (pubkeys) during private chats. This is achieved by implementing the [NIP101](https://github.com/water783/nips/blob/nip101/101.md) protocol, which creates an alias for users during private conversations.
-	
-```
-User A                    User B
-  |                          |
-  |--> [Create Alias A']-----|
-  |    [Initiate Friend Req] |
-  |    [Listen to A']        |
-  |                          |
-  |<---- [Create Alias B'] --|
-  |     [Accept Friend Req]  |
-  |     [Update Friend List] |
-  |     [Listen to B']       |
-  |                          |
-  |--- [Receive Acceptance] -|
-  |    [Update Friend List]  |
-  |                          |
-  V                          V
-[A' and B' for future chats]
-```
+
 
 2. [Push Notifications](https://github.com/0xchat-app/0xchat-core/blob/main/doc/nofitications.md)
 
