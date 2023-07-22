@@ -60,6 +60,8 @@ flowchart LR
 
 ### Nips for 0xchat
 - [x] [NIP 101 Alias Key Exchange](https://github.com/water783/nips/blob/nip101/101.md)
+- [x] [NIP XXX Push Notifications](https://github.com/0xchat-app/0xchat-core/blob/main/doc/nofitications.md)
+- [x] [NIP 100 WebRTC](https://github.com/jacany/nips/blob/webrtc/100.md)
 
 
 With the foundation of this core repository, developers can focus on building intuitive and innovative user interfaces, enhancing the user experience and allowing for the delivery of high-quality 0xChat services.
@@ -70,6 +72,13 @@ We encourage contributions from the developer community! To contribute, please f
 
 ## Future Enhancements
 We continuously aim to improve and enhance the features provided by this repository. Stay tuned for future updates!
+
+Some important planned features:
+
+- P2P audio/video calling
+- Private group
+- Audio/video chat room
+- Lightning wallet Integration
 
 ## Support
 If you encounter any issues or have questions, feel free to open an issue in this repository. Our team will do their best to provide you with the necessary assistance.
