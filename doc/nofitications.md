@@ -23,11 +23,11 @@ flowchart LR
 
 ```json
 {
-	"kind": 22456,
- 	"tags": [
-   		["p", "push server pubkey"],
-  	],
- 	"content": "<encrypted_text>?iv=<initialization_vector>"
+"kind": 22456,
+ "tags": [
+   	["p", "push server pubkey"],
+  ],
+ "content": "<encrypted_text>?iv=<initialization_vector>"
 }
 ```
 The 'content' is encrypted using the NIP04 protocol. The decrypted content is as follows:
