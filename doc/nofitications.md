@@ -11,10 +11,10 @@ This NIP proposes a method for message push notifications using the NIP protocol
 
 ```mermaid
 flowchart LR
-    NostrClients --> |custom registration topics| Relay  
+    NostrClients --> |kind 22456 event with custom registration topics| Relay  
     Relay --> |Req response| PushServer--> |notification| APNs --> |iOS notification| NostrClients
     PushServer --> |notification| FCM--> |Android notification| NostrClients
-    PushServer --> |Subscription |Relay
+    PushServer --> |subscription |Relay
 ```
 
 ## Specification
