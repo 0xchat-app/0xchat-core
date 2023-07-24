@@ -77,6 +77,8 @@ We continuously aim to improve and enhance the features provided by this reposit
 
 Some important planned features:
 
+- [ ] Threads, mentions, reactions
+- [ ] Zap Red Envelopes between friends
 - [ ] P2P audio/video calling
 - [ ] Private group
 - [ ] Audio/video chat room
