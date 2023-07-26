@@ -95,7 +95,7 @@ class Friends {
     if (peoples.isNotEmpty) {
       List<String> pubkeys = peoples.map((p) => p.pubkey).toList();
       var usersMap = await Account.syncProfilesFromRelay(pubkeys);
-      for (People p in peoples) {
+      await Future.forEach(peoples, (p) async {
         UserDB? user = usersMap[p.pubkey];
         if (user != null) {
           user.toAliasPrivkey = Friends.getAliasPrivkey(user.pubKey!, privkey);
@@ -106,7 +106,7 @@ class Friends {
           await DB.sharedInstance.insert<UserDB>(user);
           allFriends[user.pubKey!] = user;
         }
-      }
+      });
     }
   }
 
