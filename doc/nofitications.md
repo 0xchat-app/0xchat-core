@@ -55,6 +55,31 @@ Upon receiving the encrypted message of 'kind' 22456, the push server decrypts i
 ```
 The heartbeat is sent at regular intervals, with the duration determined by the push service. If there is no heartbeat after a timeout, the device is considered offline. The push server will then start the push service.
 
+### Offline
+
+```json
+{
+    "online": 0
+}
+
+```
+When a device needs to go offline immediately, set 'online' to 0 and the push server will promptly initiate message push. 
+
+Note: If 'online' is not set to 0, but the heartbeat timeout has occurred, it will also be treated as an offline state.
+
+
+### Logout
+
+```json
+{
+    "online": 0,
+    "deviceId": ""
+}
+
+```
+
+When a user logs out, there is no longer a need to receive push notifications, so the 'deviceId' should be set to an empty string.
+
 ## Rationale
 This method makes full use of the NIP protocol to implement a push notification mechanism. By using the encrypted content in NIP04, it ensures the privacy and security of the user's data.
 
