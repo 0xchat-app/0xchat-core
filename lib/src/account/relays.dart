@@ -1,4 +1,5 @@
 import 'package:chatcore/chat-core.dart';
+import 'package:http/http.dart' as http;
 
 class Relays {
   /// singleton
@@ -146,5 +147,20 @@ class Relays {
     if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
     Relays.sharedInstance.relays[relay]!.groupMessageSince![relay] =
         updateTime < since ? updateTime : since;
+  }
+
+  static Future<RelayDB?> getRelayDetails(String relayURL) async{
+    var url = Uri.parse(relayURL).replace(scheme: 'https');
+    var response = await http.get(url, headers: {'Accept': 'application/nostr+json'});
+
+    if (response.statusCode == 200) {
+      RelayDB? relayDB = Relays.sharedInstance.relays.containsKey(relayURL) ? Relays.sharedInstance.relays[relayURL] : RelayDB(url: relayURL);
+      relayDB = RelayDB.relayDBInfoFromJSON(response.body, relayDB!);
+      await DB.sharedInstance.insert(relayDB);
+    } else {
+      print('Request failed with status: ${response.statusCode}.');
+      return null;
+    }
+    return null;
   }
 }

@@ -133,6 +133,23 @@ class RelayDB extends DBObject {
       return {};
     }
   }
+
+  static RelayDB relayDBInfoFromJSON(String json, RelayDB relayDB) {
+    Map map = jsonDecode(json);
+    relayDB.pubkey = map.containsKey('pubkey') ? map['pubkey'].toString() : '';
+    relayDB.description = map.containsKey('description') ? map['description'].toString() : '';
+    relayDB.contact = map.containsKey('contact') ? map['contact'].toString() : '';
+    relayDB.supportedNips = map.containsKey('supportedNips') ? map['supportedNips'].toString() : '';
+    relayDB.supportedNipExtensions = map.containsKey('supportedNipExtensions') ? map['supportedNipExtensions'].toString() : '';
+    relayDB.software = map.containsKey('software') ? map['software'].toString() : '';
+    relayDB.version = map.containsKey('version') ? map['version'].toString() : '';
+    relayDB.limitation = map.containsKey('limitation') ? map['limitation'].toString() : '';
+    relayDB.paymentsUrl = map.containsKey('paymentsUrl') ? map['paymentsUrl'].toString() : '';
+    relayDB.fees = map.containsKey('fees') ? map['fees'].toString() : '';
+    relayDB.icon = map.containsKey('icon') ? map['icon'].toString() : '';
+
+    return relayDB;
+  }
 }
 
 RelayDB _relayDBInfoFromMap(Map<String, dynamic> map) {
