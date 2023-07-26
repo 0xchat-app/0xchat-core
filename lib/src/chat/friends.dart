@@ -78,7 +78,8 @@ class Friends {
   }
 
   Future<void> _syncFriendsProfilesFromDB(List<People> peoples) async {
-    for (People p in peoples) {
+    allFriends.clear();
+    await Future.forEach(peoples, (p) async {
       UserDB? user = await Account.getUserFromDB(pubkey: p.pubkey);
       if (user != null) {
         user.toAliasPrivkey = Friends.getAliasPrivkey(user.pubKey!, privkey);
@@ -87,7 +88,7 @@ class Friends {
         user.nickName = p.petName;
         allFriends[user.pubKey!] = user;
       }
-    }
+    });
   }
 
   Future<void> _syncFriendsProfilesFromRelay(List<People> peoples) async {
@@ -466,7 +467,7 @@ class Friends {
       Map? map = Nip51.fromContent(list, privkey, pubkey);
       if (map != null) {
         List<People> friendsList = map['people'];
-        for (People p in friendsList) {
+        await Future.forEach(friendsList, (p) async {
           UserDB? friend = await Account.getUserFromDB(pubkey: p.pubkey);
           if (friend != null) {
             friend.toAliasPrivkey =
@@ -475,7 +476,7 @@ class Friends {
                 Keychain.getPublicKey(friend.toAliasPrivkey!);
             allFriends[p.pubkey] = friend;
           }
-        }
+        });
       }
     }
   }
@@ -519,7 +520,6 @@ class Friends {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty) {
         if (result != null) {
-          allFriends.clear();
           await _syncFriendsProfiles(result!.people);
         }
         friendUpdatedCallBack?.call();
