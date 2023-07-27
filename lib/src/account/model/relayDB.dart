@@ -139,12 +139,12 @@ class RelayDB extends DBObject {
     relayDB.pubkey = map.containsKey('pubkey') ? map['pubkey'].toString() : '';
     relayDB.description = map.containsKey('description') ? map['description'].toString() : '';
     relayDB.contact = map.containsKey('contact') ? map['contact'].toString() : '';
-    relayDB.supportedNips = map.containsKey('supportedNips') ? map['supportedNips'].toString() : '';
-    relayDB.supportedNipExtensions = map.containsKey('supportedNipExtensions') ? map['supportedNipExtensions'].toString() : '';
+    relayDB.supportedNips = map.containsKey('supported_nips') ? map['supported_nips'].toString() : '';
+    relayDB.supportedNipExtensions = map.containsKey('supported_nip_extensions') ? map['supported_nip_extensions'].toString() : '';
     relayDB.software = map.containsKey('software') ? map['software'].toString() : '';
     relayDB.version = map.containsKey('version') ? map['version'].toString() : '';
     relayDB.limitation = map.containsKey('limitation') ? map['limitation'].toString() : '';
-    relayDB.paymentsUrl = map.containsKey('paymentsUrl') ? map['paymentsUrl'].toString() : '';
+    relayDB.paymentsUrl = map.containsKey('payments_url') ? map['payments_url'].toString() : '';
     relayDB.fees = map.containsKey('fees') ? map['fees'].toString() : '';
     relayDB.icon = map.containsKey('icon') ? map['icon'].toString() : '';
 
