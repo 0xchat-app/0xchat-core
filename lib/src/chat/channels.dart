@@ -266,13 +266,13 @@ class Channels {
     myChannelsUpdatedCallBack = callBack;
 
     await _loadAllChannelsFromDB();
+    await _updateSubscriptions();
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1) {
-        await _updateSubscriptions();
+        _updateSubscriptions();
       }
     });
-    await _updateSubscriptions();
   }
 
   Future<void> _updateSubscriptions() async {
@@ -394,12 +394,12 @@ class Channels {
       Event? event}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= Nip28.sendChannelMessage(
-            channelId, MessageDB.encodeContent(type, content), privkey,
-            channelRelay: channelRelay,
-            replyMessage: replyMessage,
-            replyMessageRelay: replyMessageRelay,
-            replyUser: replyUser,
-            replyUserRelay: replyUserRelay);
+        channelId, MessageDB.encodeContent(type, content), privkey,
+        channelRelay: channelRelay,
+        replyMessage: replyMessage,
+        replyMessageRelay: replyMessageRelay,
+        replyUser: replyUser,
+        replyUserRelay: replyUserRelay);
 
     MessageDB messageDB = MessageDB(
         messageId: event.id,
