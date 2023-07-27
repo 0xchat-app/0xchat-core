@@ -266,7 +266,7 @@ class Channels {
     myChannelsUpdatedCallBack = callBack;
 
     await _loadAllChannelsFromDB();
-    await _updateSubscriptions();
+    _updateSubscriptions();
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1) {
