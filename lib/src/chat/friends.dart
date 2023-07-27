@@ -66,8 +66,13 @@ class Friends {
     }
     Event event = Nip51.createCategorizedPeople(
         identifier, [], friendList, privkey, pubkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: okCallBack);
-    _syncFriendsListToDB(event.content);
+    if(event.content != ''){
+      Connect.sharedInstance.sendEvent(event, sendCallBack: okCallBack);
+      _syncFriendsListToDB(event.content);
+    }
+    else{
+      throw Exception('_syncFriendsToRelay error content!, $friendList');
+    }
   }
 
   Future<void> _syncFriendsProfiles(List<People> peoples) async {
@@ -509,10 +514,10 @@ class Friends {
   Future<void> _syncFriendsFromRelay() async {
     Completer<void> completer = Completer<void>();
     Filter f =
-        Filter(kinds: [30000], d: [identifier], authors: [pubkey], limit: 1);
+        Filter(kinds: [30000], d: [identifier], authors: [pubkey], limit: 2);
     Lists? result;
     Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
-      if (result == null || result!.createTime < event.createdAt) {
+      if (event.content != '' && (result == null || result!.createTime < event.createdAt)) {
         result = Nip51.getLists(event, privkey);
         lastFriendListUpdateTime = event.createdAt;
       }
