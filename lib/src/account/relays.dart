@@ -157,10 +157,10 @@ class Relays {
       RelayDB? relayDB = Relays.sharedInstance.relays.containsKey(relayURL) ? Relays.sharedInstance.relays[relayURL] : RelayDB(url: relayURL);
       relayDB = RelayDB.relayDBInfoFromJSON(response.body, relayDB!);
       await DB.sharedInstance.insert(relayDB);
+      return relayDB;
     } else {
       print('Request failed with status: ${response.statusCode}.');
       return null;
     }
-    return null;
   }
 }
