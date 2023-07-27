@@ -514,7 +514,7 @@ class Friends {
   Future<void> _syncFriendsFromRelay() async {
     Completer<void> completer = Completer<void>();
     Filter f =
-        Filter(kinds: [30000], d: [identifier], authors: [pubkey], limit: 2);
+        Filter(kinds: [30000], d: [identifier], authors: [pubkey], limit: 1);
     Lists? result;
     Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
       if (event.content != '' && (result == null || result!.createTime < event.createdAt)) {
