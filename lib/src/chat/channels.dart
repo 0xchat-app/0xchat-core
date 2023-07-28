@@ -351,19 +351,12 @@ class Channels {
         channelDB.relayURL!,
         privkey);
     Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
+        sendCallBack: (ok, relay, unRelays) async {
+      channels[channelDB.channelId!] = channelDB;
+      myChannels[channelDB.channelId!] = channelDB;
+      await _syncChannelToDB(channelDB);
       if (!completer.isCompleted) completer.complete(ok);
     });
-
-    // update channel
-    channelDB.channelId = event.id;
-    channelDB.creator = pubkey;
-    channelDB.createTime = event.createdAt;
-    channels[channelDB.channelId!] = channelDB;
-    myChannels[channelDB.channelId!] = channelDB;
-    _syncChannelToDB(channelDB);
-    // update my channel list
-    _syncMyChannelListToRelay();
     return completer.future;
   }
 
