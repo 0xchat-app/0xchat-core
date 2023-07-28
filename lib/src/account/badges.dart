@@ -90,7 +90,7 @@ class BadgesHelper {
     for (var badgeId in badgeIds) {
       List<BadgeDB?> maps = await DB.sharedInstance
           .objects<BadgeDB>(where: 'id = ?', whereArgs: [badgeId]);
-      result.add(maps.first);
+      if(maps.isNotEmpty) result.add(maps.first);
     }
     return result;
   }

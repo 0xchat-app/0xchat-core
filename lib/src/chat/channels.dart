@@ -488,7 +488,8 @@ class Channels {
         ? Filter(kinds: [40], limit: 20)
         : Filter(ids: channelIds, kinds: [40]);
     List<ChannelDB> result = [];
-    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
+    Connect.sharedInstance.addSubscription([f],
+        eventCallBack: (event, relay) async {
       Channel channel = Nip28.getChannelCreation(event);
       String badges = '';
       if (channel.additional.containsKey('badges')) {
@@ -503,12 +504,16 @@ class Channels {
         picture: channel.picture,
         badges: badges,
       );
-      channels[channelDB.channelId!] = channelDB;
       result.add(channelDB);
-      _syncChannelToDB(channelDB);
-    }, eoseCallBack: (requestId, status, relay, unRelays) {
+    }, eoseCallBack: (requestId, status, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unRelays.isEmpty) completer.complete(result);
+      if (unRelays.isEmpty) {
+        await Future.forEach(result, (channel) async {
+          await syncChannelsFromRelay(channel.creator!, [channel.channelId!]);
+          channel = channels[channel.channelId!]!;
+        });
+        completer.complete(result);
+      }
     });
     return completer.future;
   }
