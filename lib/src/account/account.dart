@@ -176,7 +176,9 @@ class Account {
         db.picture = map['picture'];
         db.dns = map['nip05'];
         db.lnurl = map['lnurl'];
-        db.lnurl ?? map['lud16'];
+        if(db.lnurl == null || db.lnurl == 'null') db.lnurl = null;
+        db.lnurl ??= map['lud06'];
+        db.lnurl ??= map['lud16'];
         db.lastUpdatedTime = event.createdAt;
         if(db.name == null || db.name!.isEmpty) {
           db.name = db.shortEncodedPubkey;
@@ -189,12 +191,19 @@ class Account {
           'picture',
           'nip05',
           'lnurl',
-          'lud16'
+          'lud16',
+          'lud06'
         };
         Map filteredMap = Map.from(map)
           ..removeWhere((key, value) => keysToRemove.contains(key));
         db.otherField = jsonEncode(filteredMap);
       }
+      else{
+        if(db?.lnurl == null || db?.lnurl == 'null') db?.lnurl = null;
+        db?.lnurl ??= map['lud16'];
+        db?.lnurl ??= map['lud06'];
+      }
+
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
