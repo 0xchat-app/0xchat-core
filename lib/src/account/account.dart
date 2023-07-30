@@ -250,13 +250,13 @@ class Account {
 
     /// send metadata event
     Map map = {
-      'name': updateDB.name,
-      'about': updateDB.about,
-      'gender': updateDB.gender,
-      'area': updateDB.area,
-      'picture': updateDB.picture,
-      'nip05': updateDB.dns,
-      'lud16': updateDB.lnurl
+      'name': updateDB.name ?? '',
+      'about': updateDB.about ?? '',
+      'gender': updateDB.gender ?? '',
+      'area': updateDB.area ?? '',
+      'picture': updateDB.picture ?? '',
+      'nip05': updateDB.dns ?? '',
+      'lud16': updateDB.lnurl ?? ''
     };
     Map additionMap = jsonDecode(db.otherField ?? '{}');
     map.addAll(additionMap);
