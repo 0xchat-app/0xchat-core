@@ -256,7 +256,7 @@ class Account {
       'area': updateDB.area,
       'picture': updateDB.picture,
       'nip05': updateDB.dns,
-      'lnurl': updateDB.lnurl
+      'lud16': updateDB.lnurl
     };
     Map additionMap = jsonDecode(db.otherField ?? '{}');
     map.addAll(additionMap);
