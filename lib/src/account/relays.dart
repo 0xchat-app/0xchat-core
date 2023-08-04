@@ -149,7 +149,25 @@ class Relays {
         updateTime < since ? updateTime : since;
   }
 
-  static Future<RelayDB?> getRelayDetails(String relayURL) async{
+  static Future<RelayDB?> getRelayDetailsFromDB(String relayURL) async {
+    List<Object?> maps = await DB.sharedInstance
+        .objects<RelayDB>(where: 'url = ?', whereArgs: [relayURL]);
+    RelayDB? db;
+    if (maps.isNotEmpty) {
+      db = maps.first as RelayDB?;
+      if (db != null) {
+        return db;
+      }
+    }
+    return null;
+  }
+
+  static Future<RelayDB?> getRelayDetails(String relayURL, {bool? refresh}) async{
+    if(refresh != null && refresh == false){
+      RelayDB? relayDB = await getRelayDetailsFromDB(relayURL);
+      if(relayDB != null) return relayDB;
+    }
+
     var url = Uri.parse(relayURL).replace(scheme: 'https');
     var response = await http.get(url, headers: {'Accept': 'application/nostr+json'});
 
