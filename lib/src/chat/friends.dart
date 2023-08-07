@@ -66,7 +66,7 @@ class Friends {
     }
     Event event = Nip51.createCategorizedPeople(
         identifier, [], friendList, privkey, pubkey);
-    if(event.content != ''){
+    if(event.content.isNotEmpty){
       Connect.sharedInstance.sendEvent(event, sendCallBack: okCallBack);
       _syncFriendsListToDB(event.content);
     }
@@ -77,8 +77,6 @@ class Friends {
 
   Future<void> _syncFriendsProfiles(List<People> peoples) async {
     await _syncFriendsProfilesFromDB(peoples);
-    // subscript friend accept, reject, delete, private messages
-    _syncRequestActionsFromRelay();
     _syncFriendsProfilesFromRelay(peoples);
   }
 
@@ -187,7 +185,7 @@ class Friends {
         Alias alias = Nip101.getReject(
             event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
         if (event.createdAt > lastFriendListUpdateTime) {
-          removeFriend(user.pubKey!);
+          // removeFriend(user.pubKey!);
         }
         friendRejectCallBack?.call(alias);
         return;
@@ -517,7 +515,7 @@ class Friends {
         Filter(kinds: [30000], d: [identifier], authors: [pubkey], limit: 1);
     Lists? result;
     Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
-      if (event.content != '' && (result == null || result!.createTime < event.createdAt)) {
+      if (event.content.isNotEmpty && (result == null || result!.createTime < event.createdAt)) {
         result = Nip51.getLists(event, privkey);
         lastFriendListUpdateTime = event.createdAt;
       }
