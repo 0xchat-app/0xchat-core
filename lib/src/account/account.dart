@@ -158,7 +158,7 @@ class Account {
         db = UserDB();
         db.pubKey = key;
       }
-      if(db.name == null || db.name!.isEmpty) {
+      if (db.name == null || db.name!.isEmpty) {
         db.name = db.shortEncodedPubkey;
       }
       users[key] = db;
@@ -176,11 +176,11 @@ class Account {
         db.picture = map['picture'];
         db.dns = map['nip05'];
         db.lnurl = map['lnurl'];
-        if(db.lnurl == null || db.lnurl == 'null') db.lnurl = null;
+        if (db.lnurl == null || db.lnurl == 'null') db.lnurl = null;
         db.lnurl ??= map['lud06'];
         db.lnurl ??= map['lud16'];
         db.lastUpdatedTime = event.createdAt;
-        if(db.name == null || db.name!.isEmpty) {
+        if (db.name == null || db.name!.isEmpty) {
           db.name = db.shortEncodedPubkey;
         }
         var keysToRemove = {
@@ -197,13 +197,11 @@ class Account {
         Map filteredMap = Map.from(map)
           ..removeWhere((key, value) => keysToRemove.contains(key));
         db.otherField = jsonEncode(filteredMap);
-      }
-      else{
-        if(db?.lnurl == null || db?.lnurl == 'null') db?.lnurl = null;
+      } else {
+        if (db?.lnurl == null || db?.lnurl == 'null') db?.lnurl = null;
         db?.lnurl ??= map['lud16'];
         db?.lnurl ??= map['lud06'];
       }
-
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
@@ -216,7 +214,59 @@ class Account {
     return completer.future;
   }
 
-  static Future<List<String>> syncRelaysMetadataFromRelay(String pubkey) async{
+  static Future<List<UserDB>> syncContactListFromRelay(String pubkey) async {
+    Completer<List<UserDB>> completer = Completer<List<UserDB>>();
+    Filter f = Filter(kinds: [3], authors: [pubkey], limit: 1);
+    List<Profile> profiles = [];
+    int lastTimeStamp = 0;
+    Connect.sharedInstance.addSubscription([f],
+        eventCallBack: (event, relay) async {
+      if (event.createdAt > lastTimeStamp) {
+        profiles = Nip2.decode(event);
+        lastTimeStamp = event.createdAt;
+      }
+    }, eoseCallBack: (requestId, ok, relay, unRelays) async {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+      if (unRelays.isEmpty) {
+        List<UserDB> result = [];
+        for (var p in profiles) {
+          UserDB? userDB = await getUserFromDB(pubkey: p.key);
+          if (userDB != null) result.add(userDB);
+        }
+        if (!completer.isCompleted) completer.complete(result);
+      }
+    });
+    return completer.future;
+  }
+
+  static Future<List<String>> syncRelaysMetadataFromKind3(String pubkey) async {
+    Completer<List<String>> completer = Completer<List<String>>();
+    Filter f = Filter(kinds: [3], authors: [pubkey], limit: 1);
+    String content = '';
+    int lastTimeStamp = 0;
+    Connect.sharedInstance.addSubscription([f],
+        eventCallBack: (event, relay) async {
+      if (event.createdAt > lastTimeStamp) {
+        content = event.content;
+        lastTimeStamp = event.createdAt;
+      }
+    }, eoseCallBack: (requestId, ok, relay, unRelays) async {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+      if (unRelays.isEmpty) {
+        List<String> result = [];
+        try {
+          Map map = jsonDecode(content);
+          List<String> result = map.keys.map((e) => e.toString()).toList();
+          if (!completer.isCompleted) completer.complete(result);
+        } catch (e) {
+          if (!completer.isCompleted) completer.complete(result);
+        }
+      }
+    });
+    return completer.future;
+  }
+
+  static Future<List<String>> syncRelaysMetadataFromRelay(String pubkey) async {
     Completer<List<String>> completer = Completer<List<String>>();
 
     Filter f = Filter(kinds: [10002], authors: [pubkey], limit: 1);
@@ -228,6 +278,10 @@ class Account {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         List<String> relayList = result.map((e) => e.url).toList();
+        if (relayList.isEmpty) {
+          relayList = await syncRelaysMetadataFromKind3(pubkey);
+        }
+
         if (!completer.isCompleted) completer.complete(relayList);
       }
     });
