@@ -51,6 +51,7 @@ class Friends {
     );
   }
 
+  /// friend list
   Future<void> _syncFriendsListToDB(String list) async {
     me = await Account.getUserFromDB(privkey: privkey);
     me?.friendsList = list;
@@ -135,82 +136,6 @@ class Friends {
     }
   }
 
-  void _handleFriendRequest(Event event, String relay) {
-    /// get alias
-    Alias alias = Nip101.getRequest(event, pubkey, privkey);
-    String aliasPrivkey = Friends.getAliasPrivkey(alias.toPubkey, privkey);
-    String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
-    alias.fromAliasPubkey = aliasPubkey;
-
-    /// get requestDB
-    FriendRequestDB requestDB = FriendRequestDB(
-        friendPubkey: alias.toPubkey,
-        friendAliasPubkey: alias.toAliasPubkey,
-        myAliasPubkey: aliasPubkey,
-        myAliasPrivkey: aliasPrivkey,
-        status: 1,
-        requestContent: [
-          [alias.createTime.toString(), alias.content]
-        ],
-        lastUpdateTime: alias.createTime);
-    friendRequestMap[requestDB.friendPubkey!] = requestDB;
-
-    _updateFriendRequestTime(event.createdAt, relay);
-
-    /// callback
-    friendRequestCallBack?.call(alias);
-  }
-
-  Future<void> _handleFriendAccept(Event event) async {
-    String toAliasPubkey = Nip101.getP(event);
-    for (UserDB user in allFriends.values) {
-      if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
-        Alias alias = Nip101.getAccept(
-            event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
-        user.aliasPubkey = alias.toAliasPubkey;
-        await DB.sharedInstance.insert<UserDB>(user);
-        if (event.createdAt > lastFriendListUpdateTime) {
-          await _addFriend(user.pubKey!, user.aliasPubkey!);
-        }
-        friendAcceptCallBack?.call(alias);
-        return;
-      }
-    }
-  }
-
-  void _handleFriendReject(Event event) {
-    String toAliasPubkey = Nip101.getP(event);
-    for (UserDB user in allFriends.values) {
-      if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
-        Alias alias = Nip101.getReject(
-            event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
-        if (event.createdAt > lastFriendListUpdateTime) {
-          // removeFriend(user.pubKey!);
-        }
-        friendRejectCallBack?.call(alias);
-        return;
-      }
-    }
-  }
-
-  void _handleFriendRemove(Event event) {
-    String toAliasPubkey = Nip101.getP(event);
-    for (UserDB user in allFriends.values) {
-      if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
-        Alias alias = Nip101.getRemove(
-            event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
-        // check is real friend(aliasPubkey can't not be null)
-        if (user.aliasPubkey != null && user.aliasPubkey!.isNotEmpty) {
-          if (event.createdAt > lastFriendListUpdateTime) {
-            removeFriend(user.pubKey!);
-          }
-          friendRemoveCallBack?.call(alias);
-        }
-        return;
-      }
-    }
-  }
-
   Future<void> _handlePrivateMessage(Event event) async {
     MessageDB? messageDB = MessageDB.fromPrivateMessage(event);
     if (messageDB != null) {
@@ -252,69 +177,7 @@ class Friends {
     await _syncRequestActionsFromRelay();
   }
 
-  Future<OKEvent> requestFriend(String friendPubkey, String content) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
 
-    String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
-    String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
-    Event event = Nip101.request(
-        pubkey, privkey, aliasPubkey, aliasPrivkey, friendPubkey, content);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
-      if (!completer.isCompleted) completer.complete(ok);
-    });
-    await _addFriend(friendPubkey, '');
-    return completer.future;
-  }
-
-  Future<OKEvent> acceptFriend(
-      String friendPubkey, String friendAliasPubkey) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
-
-    String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
-    String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
-    Event event = Nip101.accept(
-        pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) async {
-      if (ok.status) await _addFriend(friendPubkey, friendAliasPubkey);
-      if (!completer.isCompleted) completer.complete(ok);
-    });
-    return completer.future;
-  }
-
-  Future<OKEvent> rejectFriend(
-    String friendPubkey,
-    String friendAliasPubkey,
-  ) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
-
-    String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
-    String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
-    Event event = Nip101.reject(
-        pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
-      if (!completer.isCompleted) completer.complete(ok);
-    });
-    return completer.future;
-  }
-
-  Future<OKEvent> removeFriend(String friendPubkey) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
-
-    UserDB? friend = allFriends[friendPubkey];
-    if (friend != null && friend.aliasPubkey!.isNotEmpty) {
-      Event event = Nip101.remove(pubkey, privkey, friend.toAliasPubkey!,
-          friend.toAliasPrivkey!, friend.aliasPubkey!);
-      Connect.sharedInstance.sendEvent(event,
-          sendCallBack: (ok, relay, unRelays) {
-        if (!completer.isCompleted) completer.complete(ok);
-      });
-    }
-    _deleteFriend(friendPubkey);
-    return completer.future;
-  }
 
   Future<OKEvent> updateFriendNickName(
       String friendPubkey, String nickName) async {
