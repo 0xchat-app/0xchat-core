@@ -218,44 +218,30 @@ class MessageDB extends DBObject {
     }
   }
 
-  static MessageDB? fromPrivateMessage(Event event) {
+  static Future<MessageDB?> fromPrivateMessage(
+      Event event, String privkey) async {
+    late EDMessage message;
     if (event.kind == 4) {
-      String toAliasPubkey = Nip101.getP(event);
-      String author = event.pubkey;
-      for (UserDB friend in Friends.sharedInstance.friends.values) {
-        if (friend.toAliasPubkey != null) {
-          String sender = '', receiver = '';
-          if (friend.toAliasPubkey == toAliasPubkey) {
-            // friends message
-            sender = friend.pubKey!;
-            receiver = Friends.sharedInstance.me!.pubKey!;
-          } else if (friend.toAliasPubkey == author) {
-            // my message
-            sender = Friends.sharedInstance.me!.pubKey!;
-            receiver = friend.pubKey!;
-          }
-          if (sender.isNotEmpty && receiver.isNotEmpty) {
-            EDMessage message = Nip4.decode(
-                event, friend.toAliasPubkey!, friend.toAliasPrivkey!);
-            MessageDB messageDB = MessageDB(
-                messageId: event.id,
-                sender: sender,
-                receiver: receiver,
-                groupId: '',
-                kind: 4,
-                tags: event.tags.toString(),
-                content: event.content,
-                createTime: event.createdAt,
-                replyId: message.replyId);
-            messageDB.decryptContent =
-                decodeContent(message.content)['content'];
-            messageDB.type = decodeContent(message.content)['contentType'];
-            return messageDB;
-          }
-        }
-      }
+      message = Nip4.decode(event, event.pubkey, privkey);
+    } else if (event.kind == 44) {
+      message = await Nip44.decode(event, event.pubkey, privkey);
     }
-    return null;
+    else{
+      return null;
+    }
+    MessageDB messageDB = MessageDB(
+        messageId: event.id,
+        sender: message.sender,
+        receiver: message.receiver,
+        groupId: '',
+        kind: 4,
+        tags: event.tags.toString(),
+        content: event.content,
+        createTime: event.createdAt,
+        replyId: message.replyId);
+    messageDB.decryptContent = decodeContent(message.content)['content'];
+    messageDB.type = decodeContent(message.content)['contentType'];
+    return messageDB;
   }
 }
 

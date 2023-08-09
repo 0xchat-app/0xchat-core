@@ -5,12 +5,12 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
-typedef FriendRequestCallBack = void Function(Alias);
-typedef FriendAcceptCallBack = void Function(Alias);
-typedef FriendRejectCallBack = void Function(Alias);
-typedef FriendRemoveCallBack = void Function(Alias);
-typedef FriendMessageCallBack = void Function(MessageDB);
-typedef FriendUpdatedCallBack = void Function();
+typedef SecretChatRequestCallBack = void Function(SecretSessionDB);
+typedef SecretChatAcceptCallBack = void Function(SecretSessionDB);
+typedef SecretChatRejectCallBack = void Function(SecretSessionDB);
+typedef SecretChatCloseCallBack = void Function(SecretSessionDB);
+typedef SecretChatMessageCallBack = void Function(MessageDB);
+typedef ContactUpdatedCallBack = void Function();
 
 class Friends {
   static final String identifier = 'Chat-Friends';
@@ -31,18 +31,15 @@ class Friends {
   int lastFriendListUpdateTime = 0;
 
   /// callbacks
-  FriendRequestCallBack? friendRequestCallBack;
-  FriendAcceptCallBack? friendAcceptCallBack;
-  FriendRejectCallBack? friendRejectCallBack;
-  FriendRemoveCallBack? friendRemoveCallBack;
-  FriendMessageCallBack? friendMessageCallBack;
-  FriendUpdatedCallBack? friendUpdatedCallBack;
+  SecretChatRequestCallBack? secretChatRequestCallBack;
+  SecretChatAcceptCallBack? secretChatAcceptCallBack;
+  SecretChatRejectCallBack? secretChatRejectCallBack;
+  SecretChatCloseCallBack? secretChatCloseCallBack;
+  SecretChatMessageCallBack? secretChatMessageCallBack;
+  ContactUpdatedCallBack? contactUpdatedCallBack;
+
   void Function(String friend, SignalingState state, String data)?
       onCallStateChange;
-
-  static String getAliasPrivkey(String friendPubkey, String privkey) {
-    return Nip101.aliasPrivkey(friendPubkey, privkey);
-  }
 
   Map<String, UserDB> get friends {
     return Map.fromEntries(
@@ -67,11 +64,10 @@ class Friends {
     }
     Event event = Nip51.createCategorizedPeople(
         identifier, [], friendList, privkey, pubkey);
-    if(event.content.isNotEmpty){
+    if (event.content.isNotEmpty) {
       Connect.sharedInstance.sendEvent(event, sendCallBack: okCallBack);
       _syncFriendsListToDB(event.content);
-    }
-    else{
+    } else {
       throw Exception('_syncFriendsToRelay error content!, $friendList');
     }
   }
@@ -136,13 +132,7 @@ class Friends {
     }
   }
 
-  Future<void> _handlePrivateMessage(Event event) async {
-    MessageDB? messageDB = MessageDB.fromPrivateMessage(event);
-    if (messageDB != null) {
-      await Messages.saveMessagesToDB([messageDB]);
-      friendMessageCallBack?.call(messageDB);
-    }
-  }
+
 
   // Alias userDBToAlias(UserDB userDB) {
   //   String aliasPrivkey = Friends.getAliasPrivkey(userDB.pubKey!, privkey);
@@ -176,8 +166,6 @@ class Friends {
     await _syncAddFriendRequestsFromRelay();
     await _syncRequestActionsFromRelay();
   }
-
-
 
   Future<OKEvent> updateFriendNickName(
       String friendPubkey, String nickName) async {
@@ -222,42 +210,7 @@ class Friends {
     return null;
   }
 
-  Future<OKEvent> sendMessage(
-      String friendPubkey, String replayId, MessageType type, String content,
-      {Event? event}) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
-    UserDB? friend = allFriends[friendPubkey];
-    if (friend != null) {
-      event ??= Nip4.encode(
-          friend.aliasPubkey!,
-          MessageDB.encodeContent(type, content),
-          replayId,
-          friend.toAliasPrivkey!);
 
-      MessageDB messageDB = MessageDB(
-          messageId: event.id,
-          sender: pubkey,
-          receiver: friendPubkey,
-          groupId: '',
-          kind: event.kind,
-          tags: jsonEncode(event.tags),
-          content: event.content,
-          createTime: event.createdAt,
-          decryptContent: content,
-          type: MessageDB.messageTypeToString(type),
-          status: 0);
-      Messages.saveMessagesToDB([messageDB]);
-      Connect.sharedInstance.sendEvent(event,
-          sendCallBack: (ok, relay, unRelays) async {
-        messageDB.status = ok.status ? 1 : 2;
-        Messages.saveMessagesToDB([messageDB],
-            conflictAlgorithm: ConflictAlgorithm.replace);
-        if (!completer.isCompleted) completer.complete(ok);
-      });
-      return completer.future;
-    }
-    return completer.future;
-  }
 
   Future<void> muteFriend(String friendPubkey) async {
     _setMuteFriend(friendPubkey, true);
@@ -378,7 +331,8 @@ class Friends {
         Filter(kinds: [30000], d: [identifier], authors: [pubkey], limit: 1);
     Lists? result;
     Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
-      if (event.content.isNotEmpty && (result == null || result!.createTime < event.createdAt)) {
+      if (event.content.isNotEmpty &&
+          (result == null || result!.createTime < event.createdAt)) {
         result = Nip51.getLists(event, privkey);
         lastFriendListUpdateTime = event.createdAt;
       }

@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension SecretChat on Friends {
   Future<OKEvent> request(String friendPubkey) async {
@@ -24,7 +26,9 @@ extension SecretChat on Friends {
       String friendPubkey, String aliasPubkey) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = Nip101.request(aliasPubkey, friendPubkey, privkey);
-    Connect.sharedInstance.sendEvent(event,
+    Event sealedEvent =
+        await Nip24.encode(event, friendPubkey, kind: event.kind);
+    Connect.sharedInstance.sendEvent(sealedEvent,
         sendCallBack: (ok, relay, unRelays) {
       if (!completer.isCompleted) completer.complete(ok);
     });
@@ -58,7 +62,7 @@ extension SecretChat on Friends {
             Nip44.shareSecret(randomKey.private, db.fromAliasPubkey!));
         db.status = 2;
         db.lastUpdateTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-        await DB.sharedInstance.insert<SecretSessionDB>(db);
+        await DB.sharedInstance.update<SecretSessionDB>(db);
       }
       return okEvent;
     }
@@ -70,119 +74,190 @@ extension SecretChat on Friends {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     Event event = Nip101.accept(myAliasPubkey, toPubkey, sessionId, privkey);
-    Connect.sharedInstance.sendEvent(event,
+    Event sealedEvent = await Nip24.encode(event, toPubkey, kind: event.kind);
+    Connect.sharedInstance.sendEvent(sealedEvent,
         sendCallBack: (ok, relay, unRelays) async {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
   }
 
-  Future<OKEvent> rejectFriend(
-    String friendPubkey,
-    String friendAliasPubkey,
-  ) async {
+  Future<OKEvent> reject(String sessionId) async {
+    SecretSessionDB? db = await _getSecretSessionFromDB(sessionId);
+    if (db != null) {
+      OKEvent okEvent = await _sendRejectEvent(db.fromPubkey!, sessionId);
+      if (okEvent.status) {
+        await DB.sharedInstance.delete<SecretSessionDB>(
+            where: 'sessionId = ?', whereArgs: [sessionId]);
+      }
+      return okEvent;
+    }
+    return OKEvent(sessionId, false, 'sessionId not found');
+  }
+
+  Future<OKEvent> _sendRejectEvent(String toPubkey, String sessionId) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
-    String aliasPrivkey = Friends.getAliasPrivkey(friendPubkey, privkey);
-    String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
-    Event event = Nip101.reject(
-        pubkey, privkey, aliasPubkey, aliasPrivkey, friendAliasPubkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
+    Event event = Nip101.reject(toPubkey, sessionId, privkey);
+    Event sealedEvent = await Nip24.encode(event, toPubkey, kind: event.kind);
+    Connect.sharedInstance.sendEvent(sealedEvent,
+        sendCallBack: (ok, relay, unRelays) async {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
   }
 
-  Future<OKEvent> removeFriend(String friendPubkey) async {
+  Future<OKEvent> close(String sessionId) async {
+    SecretSessionDB? db = await _getSecretSessionFromDB(sessionId);
+    if (db != null) {
+      OKEvent okEvent = await _sendCloseEvent(db.fromPubkey!, sessionId);
+      if (okEvent.status) {
+        db.status = 4;
+        db.lastUpdateTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+        await DB.sharedInstance.update<SecretSessionDB>(db);
+      }
+      return okEvent;
+    }
+    return OKEvent(sessionId, false, 'sessionId not found');
+  }
+
+  Future<OKEvent> _sendCloseEvent(String toPubkey, String sessionId) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
-    UserDB? friend = allFriends[friendPubkey];
-    if (friend != null && friend.aliasPubkey!.isNotEmpty) {
-      Event event = Nip101.remove(pubkey, privkey, friend.toAliasPubkey!,
-          friend.toAliasPrivkey!, friend.aliasPubkey!);
-      Connect.sharedInstance.sendEvent(event,
-          sendCallBack: (ok, relay, unRelays) {
-        if (!completer.isCompleted) completer.complete(ok);
-      });
-    }
-    _deleteFriend(friendPubkey);
+    Event event = Nip101.close(toPubkey, sessionId, privkey);
+    Event sealedEvent = await Nip24.encode(event, toPubkey, kind: event.kind);
+    Connect.sharedInstance.sendEvent(sealedEvent,
+        sendCallBack: (ok, relay, unRelays) async {
+      if (!completer.isCompleted) completer.complete(ok);
+    });
     return completer.future;
   }
 
-  void _handleFriendRequest(Event event, String relay) {
+  SecretSessionDB _aliasToSessionDB(Alias alias) {
+    int status = 0;
+    switch (alias.kind) {
+      case 10100:
+        status = 1;
+        break;
+      case 10101:
+        status = 2;
+        break;
+      case 10102:
+        status = 3;
+        break;
+      case 10103:
+        status = 4;
+        break;
+    }
+    return SecretSessionDB(
+        sessionId: alias.sessionId,
+        fromPubkey: alias.fromPubkey,
+        fromAliasPubkey: alias.fromAliasPubkey,
+        toPubkey: alias.toPubkey,
+        toAliasPubkey: alias.toAliasPubkey,
+        lastUpdateTime: alias.createTime,
+        status: status);
+  }
+
+  Future<void> _handleRequest(Event event, String relay) async {
     /// get alias
-    Alias alias = Nip101.getRequest(event, pubkey, privkey);
-    String aliasPrivkey = Friends.getAliasPrivkey(alias.toPubkey, privkey);
-    String aliasPubkey = Keychain.getPublicKey(aliasPrivkey);
-    alias.fromAliasPubkey = aliasPubkey;
-
-    /// get requestDB
-    FriendRequestDB requestDB = FriendRequestDB(
-        friendPubkey: alias.toPubkey,
-        friendAliasPubkey: alias.toAliasPubkey,
-        myAliasPubkey: aliasPubkey,
-        myAliasPrivkey: aliasPrivkey,
-        status: 1,
-        requestContent: [
-          [alias.createTime.toString(), alias.content]
-        ],
-        lastUpdateTime: alias.createTime);
-    friendRequestMap[requestDB.friendPubkey!] = requestDB;
-
-    _updateFriendRequestTime(event.createdAt, relay);
+    Event decodeEvent = await Nip24.decode(event, privkey);
+    Alias alias = Nip101.getRequest(decodeEvent);
+    SecretSessionDB secretSessionDB = _aliasToSessionDB(alias);
+    await DB.sharedInstance.insert<SecretSessionDB>(secretSessionDB);
 
     /// callback
-    friendRequestCallBack?.call(alias);
+    secretChatRequestCallBack?.call(secretSessionDB);
   }
 
-  Future<void> _handleFriendAccept(Event event) async {
-    String toAliasPubkey = Nip101.getP(event);
-    for (UserDB user in allFriends.values) {
-      if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
-        Alias alias = Nip101.getAccept(
-            event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
-        user.aliasPubkey = alias.toAliasPubkey;
-        await DB.sharedInstance.insert<UserDB>(user);
-        if (event.createdAt > lastFriendListUpdateTime) {
-          await _addFriend(user.pubKey!, user.aliasPubkey!);
-        }
-        friendAcceptCallBack?.call(alias);
-        return;
-      }
+  Future<void> _handleAccept(Event event, String relay) async {
+    /// get alias
+    Event decodeEvent = await Nip24.decode(event, privkey);
+    Alias alias = Nip101.getAccept(decodeEvent);
+    SecretSessionDB? secretSessionDB =
+        await _getSecretSessionFromDB(alias.sessionId);
+    if (secretSessionDB != null) {
+      secretSessionDB.toAliasPubkey = alias.toAliasPubkey;
+      secretSessionDB.shareSecretKey = bytesToHex(Nip44.shareSecret(
+          secretSessionDB.fromAliasPrivkey!, secretSessionDB.toAliasPubkey!));
+      secretSessionDB.status = 2;
+      secretSessionDB.lastUpdateTime = alias.createTime;
+      await DB.sharedInstance.update<SecretSessionDB>(secretSessionDB);
+
+      /// callback
+      secretChatAcceptCallBack?.call(secretSessionDB);
     }
   }
 
-  void _handleFriendReject(Event event) {
-    String toAliasPubkey = Nip101.getP(event);
-    for (UserDB user in allFriends.values) {
-      if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
-        Alias alias = Nip101.getReject(
-            event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
-        if (event.createdAt > lastFriendListUpdateTime) {
-          // removeFriend(user.pubKey!);
-        }
-        friendRejectCallBack?.call(alias);
-        return;
-      }
+  Future<void> _handleReject(Event event, String relay) async {
+    /// get alias
+    Event decodeEvent = await Nip24.decode(event, privkey);
+    Alias alias = Nip101.getReject(decodeEvent);
+    SecretSessionDB? secretSessionDB =
+        await _getSecretSessionFromDB(alias.sessionId);
+    if (secretSessionDB != null) {
+      await DB.sharedInstance.delete<SecretSessionDB>(
+          where: 'sessionId = ?', whereArgs: [alias.sessionId]);
+
+      /// callback
+      secretChatRejectCallBack?.call(secretSessionDB);
     }
   }
 
-  void _handleFriendRemove(Event event) {
-    String toAliasPubkey = Nip101.getP(event);
-    for (UserDB user in allFriends.values) {
-      if (user.toAliasPubkey != null && user.toAliasPubkey == toAliasPubkey) {
-        Alias alias = Nip101.getRemove(
-            event, pubkey, user.toAliasPubkey!, user.toAliasPrivkey!);
-        // check is real friend(aliasPubkey can't not be null)
-        if (user.aliasPubkey != null && user.aliasPubkey!.isNotEmpty) {
-          if (event.createdAt > lastFriendListUpdateTime) {
-            removeFriend(user.pubKey!);
-          }
-          friendRemoveCallBack?.call(alias);
-        }
-        return;
-      }
+  Future<void> _handleClose(Event event, String relay) async {
+    /// get alias
+    Event decodeEvent = await Nip24.decode(event, privkey);
+    String sessionId = Nip101.getE(decodeEvent.tags);
+    SecretSessionDB? secretSessionDB = await _getSecretSessionFromDB(sessionId);
+    if (secretSessionDB != null) {
+      /// callback
+      secretChatCloseCallBack?.call(secretSessionDB);
     }
+  }
+
+  Future<void> _handleSecretMessage(Event event) async {
+    Event decodeEvent = await Nip24.decode(event, privkey);
+    MessageDB? messageDB =
+        await MessageDB.fromPrivateMessage(decodeEvent, privkey);
+    if (messageDB != null) {
+      await Messages.saveMessagesToDB([messageDB]);
+      secretChatMessageCallBack?.call(messageDB);
+    }
+  }
+
+  Future<OKEvent> sendSecretMessage(
+      String toPubkey, String replayId, MessageType type, String content,
+      {Event? event}) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    UserDB? toUserDB = allFriends[toPubkey];
+    if (toUserDB != null) {
+      event ??= await Nip44.encode(toUserDB.pubKey!,
+          MessageDB.encodeContent(type, content), replayId, privkey);
+
+      MessageDB messageDB = MessageDB(
+          messageId: event.id,
+          sender: pubkey,
+          receiver: toPubkey,
+          groupId: '',
+          kind: event.kind,
+          tags: jsonEncode(event.tags),
+          content: event.content,
+          createTime: event.createdAt,
+          decryptContent: content,
+          type: MessageDB.messageTypeToString(type),
+          status: 0);
+      Messages.saveMessagesToDB([messageDB]);
+
+      Event encodeEvent = await Nip24.encode(event, privkey);
+      Connect.sharedInstance.sendEvent(encodeEvent,
+          sendCallBack: (ok, relay, unRelays) async {
+        messageDB.status = ok.status ? 1 : 2;
+        Messages.saveMessagesToDB([messageDB],
+            conflictAlgorithm: ConflictAlgorithm.replace);
+        if (!completer.isCompleted) completer.complete(ok);
+      });
+      return completer.future;
+    }
+    return completer.future;
   }
 }
