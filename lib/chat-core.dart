@@ -18,7 +18,7 @@ export 'src/chat/model/friendRequestDB.dart';
 export 'src/chat/model/secretSessionDB.dart';
 export 'src/chat/contacts.dart';
 export 'src/chat/messages.dart';
-export 'src/chat/friends+calling.dart';
+export 'src/chat/contacts+calling.dart';
 export 'src/chat/contacts+secretchat.dart';
 export 'src/chat/channels.dart';
 export 'src/common/database/db.dart';

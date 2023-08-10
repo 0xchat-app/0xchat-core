@@ -22,7 +22,6 @@ class Contacts {
   static final Contacts sharedInstance = Contacts._internal();
 
   /// memory storage
-  UserDB? me;
   String pubkey = '';
   String privkey = '';
   Map<String, UserDB> allFriends = {};
@@ -42,6 +41,23 @@ class Contacts {
 
   void Function(String friend, SignalingState state, String data)?
       onCallStateChange;
+
+  Future<void> initContacts(ContactUpdatedCallBack? callBack) async {
+    privkey = Account.sharedInstance.privkey;
+    pubkey = Account.sharedInstance.pubkey;
+    contactUpdatedCallBack = callBack;
+
+    // sync friend list from DB & relays
+    await _syncContactsFromDB();
+    initFriendRequestList();
+
+    // subscript friend requests
+    Connect.sharedInstance.addConnectStatusListener((relay, status) {
+      if (status == 1) {
+        _updateSubscriptions();
+      }
+    });
+  }
 
   Map<String, UserDB> get friends {
     return Map.fromEntries(
@@ -143,25 +159,7 @@ class Contacts {
   //       "accept", 10101);
   // }
 
-  Future<void> initWithPrikey(String key,
-      {FriendUpdatedCallBack? callBack}) async {
-    privkey = key;
-    pubkey = Keychain.getPublicKey(privkey);
-    me = await Account.getUserFromDB(privkey: key);
-    me ??= UserDB(pubKey: pubkey, privkey: privkey);
-    friendUpdatedCallBack = callBack;
 
-    // sync friend list from DB & relays
-    await _syncFriendsFromDB();
-    initFriendRequestList();
-
-    // subscript friend requests
-    Connect.sharedInstance.addConnectStatusListener((relay, status) {
-      if (status == 1) {
-        _updateSubscriptions();
-      }
-    });
-  }
 
   Future<void> _updateSubscriptions() async {
     await _syncFriendsFromRelay();

@@ -6,6 +6,15 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class Account {
+  /// singleton
+  Account._internal();
+  factory Account() => sharedInstance;
+  static final Account sharedInstance = Account._internal();
+
+  UserDB? me;
+  String pubkey = '';
+  String privkey = '';
+
   static Future<UserDB?> getUserFromDB(
       {String pubkey = '', String privkey = ''}) async {
     if (privkey.isNotEmpty) {
@@ -44,7 +53,12 @@ class Account {
         Uint8List privkey =
             decryptPrivateKey(hexToBytes(encryptedPrivKey), password);
         db.privkey = bytesToHex(privkey);
-        if (Keychain.getPublicKey(bytesToHex(privkey)) == pubkey) return db;
+        if (Keychain.getPublicKey(bytesToHex(privkey)) == pubkey){
+          Account.sharedInstance.me = db;
+          Account.sharedInstance.privkey = db.privkey!;
+          Account.sharedInstance.pubkey = db.pubKey!;
+          return db;
+        }
       }
     }
     return null;
@@ -70,6 +84,9 @@ class Account {
       db.privkey = privkey;
       await DB.sharedInstance.insert<UserDB>(db);
     }
+    Account.sharedInstance.me = db;
+    Account.sharedInstance.privkey = db!.privkey!;
+    Account.sharedInstance.pubkey = db.pubKey!;
     return db;
   }
 
