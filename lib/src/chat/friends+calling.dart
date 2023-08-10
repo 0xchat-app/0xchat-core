@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
-extension Calling on Friends{
+extension Calling on Contacts{
   Future<OKEvent> sendDisconnect(String friendPubkey, String content) async {
     return await _sendSignaling(
         friendPubkey, SignalingState.disconnect, content);
@@ -61,7 +61,7 @@ extension Calling on Friends{
 
   UserDB? _getFriendFromEvent(Event event) {
     String aliasPubkey = event.pubkey;
-    for (UserDB friend in Friends.sharedInstance.friends.values) {
+    for (UserDB friend in Contacts.sharedInstance.friends.values) {
       if (friend.aliasPubkey == aliasPubkey) {
         return friend;
       }
@@ -70,7 +70,7 @@ extension Calling on Friends{
   }
 
   UserDB? _getFriendFromPubkey(String pubkey) {
-    return Friends.sharedInstance.friends[pubkey];
+    return Contacts.sharedInstance.friends[pubkey];
   }
 
   Future<void> handleCallEvent(Event event, String relay) async {

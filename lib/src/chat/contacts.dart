@@ -13,13 +13,13 @@ typedef SecretChatCloseCallBack = void Function(SecretSessionDB);
 typedef SecretChatMessageCallBack = void Function(MessageDB);
 typedef ContactUpdatedCallBack = void Function();
 
-class Friends {
+class Contacts {
   static final String identifier = 'Chat-Friends';
 
   /// singleton
-  Friends._internal();
-  factory Friends() => sharedInstance;
-  static final Friends sharedInstance = Friends._internal();
+  Contacts._internal();
+  factory Contacts() => sharedInstance;
+  static final Contacts sharedInstance = Contacts._internal();
 
   /// memory storage
   UserDB? me;
@@ -84,7 +84,7 @@ class Friends {
     await Future.forEach(peoples, (p) async {
       UserDB? user = await Account.getUserFromDB(pubkey: p.pubkey);
       if (user != null) {
-        user.toAliasPrivkey = Friends.getAliasPrivkey(user.pubKey!, privkey);
+        user.toAliasPrivkey = Contacts.getAliasPrivkey(user.pubKey!, privkey);
         user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
         user.aliasPubkey = p.aliasPubKey;
         user.nickName = p.petName;
@@ -100,7 +100,7 @@ class Friends {
       await Future.forEach(peoples, (p) async {
         UserDB? user = usersMap[p.pubkey];
         if (user != null) {
-          user.toAliasPrivkey = Friends.getAliasPrivkey(user.pubKey!, privkey);
+          user.toAliasPrivkey = Contacts.getAliasPrivkey(user.pubKey!, privkey);
           user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
           user.aliasPubkey = p.aliasPubKey;
           user.nickName = p.petName;
@@ -116,7 +116,7 @@ class Friends {
     UserDB? friend = await Account.getUserFromDB(pubkey: friendPubkey);
     friend ??= UserDB(pubKey: friendPubkey, aliasPubkey: friendAliasPubkey);
     if (friend.toAliasPubkey == null || friend.toAliasPubkey!.isEmpty) {
-      friend.toAliasPrivkey = Friends.getAliasPrivkey(friend.pubKey!, privkey);
+      friend.toAliasPrivkey = Contacts.getAliasPrivkey(friend.pubKey!, privkey);
       friend.toAliasPubkey = Keychain.getPublicKey(friend.toAliasPrivkey!);
     }
     friend.aliasPubkey = friendAliasPubkey;
@@ -292,7 +292,7 @@ class Friends {
           UserDB? friend = await Account.getUserFromDB(pubkey: p.pubkey);
           if (friend != null) {
             friend.toAliasPrivkey =
-                Friends.getAliasPrivkey(friend.pubKey!, privkey);
+                Contacts.getAliasPrivkey(friend.pubKey!, privkey);
             friend.toAliasPubkey =
                 Keychain.getPublicKey(friend.toAliasPrivkey!);
             allFriends[p.pubkey] = friend;

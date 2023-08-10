@@ -4,7 +4,7 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
-extension SecretChat on Friends {
+extension SecretChat on Contacts {
   Future<OKEvent> request(String friendPubkey) async {
     Keychain randomKey = Keychain.generate();
     OKEvent okEvent = await _sendRequestEvent(friendPubkey, randomKey.public);

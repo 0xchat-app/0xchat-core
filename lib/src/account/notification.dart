@@ -61,7 +61,7 @@ class NotificationHelper {
       String deviceId, List<int> kinds, List<String> relays) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<String> toAliasPubkeys =
-        Friends.sharedInstance.getAllUnMuteFriendsToAliasPubkey();
+        Contacts.sharedInstance.getAllUnMuteFriendsToAliasPubkey();
     List<String> channels = Channels.sharedInstance.getAllUnMuteChannels();
 
     Map map = {
