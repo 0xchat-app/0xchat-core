@@ -8,6 +8,7 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 typedef SecretChatRequestCallBack = void Function(SecretSessionDB);
 typedef SecretChatAcceptCallBack = void Function(SecretSessionDB);
 typedef SecretChatRejectCallBack = void Function(SecretSessionDB);
+typedef SecretChatUpdateCallBack = void Function(SecretSessionDB);
 typedef SecretChatCloseCallBack = void Function(SecretSessionDB);
 typedef SecretChatMessageCallBack = void Function(MessageDB);
 typedef ContactUpdatedCallBack = void Function();
@@ -34,6 +35,7 @@ class Friends {
   SecretChatRequestCallBack? secretChatRequestCallBack;
   SecretChatAcceptCallBack? secretChatAcceptCallBack;
   SecretChatRejectCallBack? secretChatRejectCallBack;
+  SecretChatUpdateCallBack? secretChatUpdateCallBack;
   SecretChatCloseCallBack? secretChatCloseCallBack;
   SecretChatMessageCallBack? secretChatMessageCallBack;
   ContactUpdatedCallBack? contactUpdatedCallBack;

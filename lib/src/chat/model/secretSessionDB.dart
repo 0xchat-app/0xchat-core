@@ -10,8 +10,10 @@ class SecretSessionDB extends DBObject {
   String? toAliasPubkey;
   String? toAliasPrivkey;
   String? shareSecretKey;
+  String? sharePubkey;
 
   int? lastUpdateTime;
+  int? expirationTime;
   int? status; // 0: init 1: request 2: accept 3: reject 4: close
 
   SecretSessionDB(

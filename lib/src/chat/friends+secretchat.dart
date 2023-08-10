@@ -107,6 +107,39 @@ extension SecretChat on Friends {
     return completer.future;
   }
 
+  Future<OKEvent> update(String sessionId) async {
+    SecretSessionDB? db = await _getSecretSessionFromDB(sessionId);
+    if (db != null) {
+      Keychain randomKey = Keychain.generate();
+      OKEvent okEvent =
+          await _sendUpdateEvent(randomKey.public, db.fromPubkey!, sessionId);
+      if (okEvent.status) {
+        db.toAliasPubkey = randomKey.public;
+        db.toAliasPrivkey = randomKey.private;
+        db.shareSecretKey = bytesToHex(
+            Nip44.shareSecret(randomKey.private, db.fromAliasPubkey!));
+        db.status = 2;
+        db.lastUpdateTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+        await DB.sharedInstance.update<SecretSessionDB>(db);
+      }
+      return okEvent;
+    }
+    return OKEvent(sessionId, false, 'sessionId not found');
+  }
+
+  Future<OKEvent> _sendUpdateEvent(
+      String myAliasPubkey, String toPubkey, String sessionId) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+
+    Event event = Nip101.update(myAliasPubkey, toPubkey, sessionId, privkey);
+    Event sealedEvent = await Nip24.encode(event, toPubkey, kind: event.kind);
+    Connect.sharedInstance.sendEvent(sealedEvent,
+        sendCallBack: (ok, relay, unRelays) async {
+      if (!completer.isCompleted) completer.complete(ok);
+    });
+    return completer.future;
+  }
+
   Future<OKEvent> close(String sessionId) async {
     SecretSessionDB? db = await _getSecretSessionFromDB(sessionId);
     if (db != null) {
@@ -201,6 +234,26 @@ extension SecretChat on Friends {
 
       /// callback
       secretChatRejectCallBack?.call(secretSessionDB);
+    }
+  }
+
+  Future<void> _handleUpdate(Event event, String relay) async {
+    /// get alias
+    Event decodeEvent = await Nip24.decode(event, privkey);
+    String sessionId = Nip101.getE(decodeEvent.tags);
+    SecretSessionDB? secretSessionDB = await _getSecretSessionFromDB(sessionId);
+
+    if (secretSessionDB != null) {
+      Alias alias = Nip101.getUpdate(decodeEvent, secretSessionDB.fromPubkey!);
+      secretSessionDB.toAliasPubkey = alias.toAliasPubkey;
+      secretSessionDB.shareSecretKey = bytesToHex(Nip44.shareSecret(
+          secretSessionDB.fromAliasPrivkey!, secretSessionDB.toAliasPubkey!));
+      secretSessionDB.status = 2;
+      secretSessionDB.lastUpdateTime = alias.createTime;
+      await DB.sharedInstance.update<SecretSessionDB>(secretSessionDB);
+
+      /// callback
+      secretChatUpdateCallBack?.call(secretSessionDB);
     }
   }
 
