@@ -269,8 +269,7 @@ extension SecretChat on Contacts {
   }
 
   Future<void> _handleSecretMessage(Event event) async {
-    MessageDB? messageDB =
-        await MessageDB.fromPrivateMessage(event, privkey);
+    MessageDB? messageDB = await MessageDB.fromPrivateMessage(event, privkey);
     if (messageDB != null) {
       await Messages.saveMessagesToDB([messageDB]);
       secretChatMessageCallBack?.call(messageDB);
@@ -323,48 +322,18 @@ extension SecretChat on Contacts {
     }
   }
 
-  Future<void> _syncSecretSessionFromRelay() async {
+  Future<void> _subscriptSecretChat() async {
     if (secretSessionSubscription.isNotEmpty) {
       await Connect.sharedInstance.closeRequests(secretSessionSubscription);
     }
-    Completer<void> completer = Completer<void>();
-    Map<String, List<Filter>> subscriptions = {};
-    for (String relayURL in Connect.sharedInstance.relays()) {
-      int friendRequestUntil =
-      Relays.sharedInstance.getFriendgetMessageUntil(relayURL);
-      Filter f1 =
-      Filter(kinds: [1059], p: [pubkey], since: (friendRequestUntil + 1));
-      subscriptions[relayURL] = [f1];
-    }
-    secretSessionSubscription = Connect.sharedInstance
-        .addSubscriptions(subscriptions, eventCallBack: (event, relay) {
-      _handleFriendRequest(event, relay);
-    }, eoseCallBack: (requestId, status, relay, unRelays) async {
-      if (unRelays.isEmpty) {
-        await Relays.sharedInstance.syncRelaysToDB();
-        if (!completer.isCompleted) completer.complete();
-      }
-    });
-    return completer.future;
-  }
 
-  Future<void> _subscriptSecretChat() async {
-    if (friendMessageSubscription.isNotEmpty) {
-      Connect.sharedInstance.closeRequests(friendMessageSubscription);
-    }
-
-    Map<String, List<Filter>> subscriptions = {};
     List<String> pubkeys = [pubkey];
     secretSessionMap.forEach((key, value) {
       pubkeys.add(value.sharePubkey!);
     });
-    Filter f = Filter(
-        kinds: [1059],
-        p: pubkeys,
-        since: (friendMessageUntil + 1));
-    friendMessageSubscription = Connect.sharedInstance
-        .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
-      _updateFriendMessageTime(event.createdAt, relay);
+    Filter f = Filter(kinds: [1059], p: pubkeys);
+    secretSessionSubscription = Connect.sharedInstance.addSubscription([f],
+        eventCallBack: (event, relay) async {
       event = await Nip24.decode(event, privkey);
       switch (event.kind) {
         case 44:

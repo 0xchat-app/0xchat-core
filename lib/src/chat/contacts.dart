@@ -63,7 +63,6 @@ class Contacts {
 
   Future<void> _updateSubscriptions() async {
     await _syncContactsFromRelay();
-    await _syncSecretSessionFromRelay();
     await _subscriptMessages();
   }
 
@@ -286,7 +285,7 @@ class Contacts {
 
     Map<String, List<Filter>> subscriptions = {};
     List<String> pubkeys = [pubkey];
-    allContacts.forEach((key, f) {
+    allContacts.forEach((key, value) {
       pubkeys.add(key);
     });
     for (String relayURL in Connect.sharedInstance.relays()) {
@@ -334,7 +333,7 @@ class Contacts {
 
   Future<void> _handlePrivateMessage(Event event, String relay) async {
     MessageDB? messageDB = await MessageDB.fromPrivateMessage(event, privkey);
-    if(messageDB != null) secretChatMessageCallBack?.call(messageDB);
+    if (messageDB != null) secretChatMessageCallBack?.call(messageDB);
   }
 
   Future<OKEvent> sendPrivateMessage(
@@ -362,11 +361,11 @@ class Contacts {
 
       Connect.sharedInstance.sendEvent(event,
           sendCallBack: (ok, relay, unRelays) async {
-            messageDB.status = ok.status ? 1 : 2;
-            await Messages.saveMessagesToDB([messageDB],
-                conflictAlgorithm: ConflictAlgorithm.replace);
-            if (!completer.isCompleted) completer.complete(ok);
-          });
+        messageDB.status = ok.status ? 1 : 2;
+        await Messages.saveMessagesToDB([messageDB],
+            conflictAlgorithm: ConflictAlgorithm.replace);
+        if (!completer.isCompleted) completer.complete(ok);
+      });
       return completer.future;
     }
     return completer.future;

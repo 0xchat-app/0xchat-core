@@ -21,6 +21,8 @@ class Messages {
     privkey = key;
     pubkey = Keychain.getPublicKey(privkey);
 
+    return;
+
     // delete event
     List<DeleteEvent> deleteEvents = await _loadDeleteMessagesFromDB();
     for (DeleteEvent deleteEvent in deleteEvents) {

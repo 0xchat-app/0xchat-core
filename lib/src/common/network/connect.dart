@@ -297,6 +297,10 @@ class Connect {
 
   void _handleEvent(Event event, String relay) {
     print('Received event: ${event.serialize()}, $relay');
+
+    /// ignore the expired event
+    if (Nip40.expired(event)) return;
+
     String? subscriptionId = event.subscriptionId;
     if (subscriptionId != null) {
       String requestsMapKey = subscriptionId + relay;
