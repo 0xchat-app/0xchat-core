@@ -15,6 +15,7 @@ typedef ContactUpdatedCallBack = void Function();
 
 class Contacts {
   static final String identifier = 'Chat-Friends';
+  static final String blockListidentifier = 'Chat-Block';
 
   /// singleton
   Contacts._internal();
@@ -29,6 +30,7 @@ class Contacts {
   String secretSessionSubscription = '';
   String friendMessageSubscription = '';
   int lastFriendListUpdateTime = 0;
+  List<String>? blockList;
 
   /// callbacks
   SecretChatRequestCallBack? secretChatRequestCallBack;
@@ -49,6 +51,7 @@ class Contacts {
 
     // sync friend list from DB & relays
     await _syncContactsFromDB();
+    await _syncBlockListFromDB();
     await _syncSecretSessionFromDB();
 
     _updateSubscriptions();
@@ -63,7 +66,9 @@ class Contacts {
 
   Future<void> _updateSubscriptions() async {
     await _syncContactsFromRelay();
+    await _syncBlockListFromRelay();
     await _subscriptMessages();
+    await _subscriptSecretChat();
   }
 
   /// contact list

@@ -199,6 +199,9 @@ extension SecretChat on Contacts {
     SecretSessionDB secretSessionDB = _aliasToSessionDB(alias);
     await DB.sharedInstance.insert<SecretSessionDB>(secretSessionDB);
 
+    /// add to secretSessionMap
+    secretSessionMap[secretSessionDB.sessionId!] = secretSessionDB;
+
     /// callback
     secretChatRequestCallBack?.call(secretSessionDB);
   }
@@ -215,7 +218,11 @@ extension SecretChat on Contacts {
           secretSessionDB.fromAliasPrivkey!, secretSessionDB.toAliasPubkey!));
       secretSessionDB.status = 2;
       secretSessionDB.lastUpdateTime = alias.createTime;
-      await DB.sharedInstance.update<SecretSessionDB>(secretSessionDB);
+      await DB.sharedInstance.insert<SecretSessionDB>(secretSessionDB);
+
+      /// add to secretSessionMap
+      secretSessionMap[secretSessionDB.sessionId!] = secretSessionDB;
+      _subscriptSecretChat();
 
       /// callback
       secretChatAcceptCallBack?.call(secretSessionDB);
@@ -231,6 +238,9 @@ extension SecretChat on Contacts {
     if (secretSessionDB != null) {
       await DB.sharedInstance.delete<SecretSessionDB>(
           where: 'sessionId = ?', whereArgs: [alias.sessionId]);
+
+      /// remove from secretSessionMap
+      secretSessionMap.remove(secretSessionDB.sessionId!);
 
       /// callback
       secretChatRejectCallBack?.call(secretSessionDB);
@@ -252,6 +262,9 @@ extension SecretChat on Contacts {
       secretSessionDB.lastUpdateTime = alias.createTime;
       await DB.sharedInstance.update<SecretSessionDB>(secretSessionDB);
 
+      /// update secretSessionMap
+      secretSessionMap[secretSessionDB.sessionId!] = secretSessionDB;
+
       /// callback
       secretChatUpdateCallBack?.call(secretSessionDB);
     }
@@ -263,6 +276,10 @@ extension SecretChat on Contacts {
     String sessionId = Nip101.getE(decodeEvent.tags);
     SecretSessionDB? secretSessionDB = await _getSecretSessionFromDB(sessionId);
     if (secretSessionDB != null) {
+      /// remove from secretSessionMap
+      secretSessionMap.remove(secretSessionDB.sessionId!);
+      _subscriptSecretChat();
+
       /// callback
       secretChatCloseCallBack?.call(secretSessionDB);
     }
@@ -329,7 +346,8 @@ extension SecretChat on Contacts {
 
     List<String> pubkeys = [pubkey];
     secretSessionMap.forEach((key, value) {
-      pubkeys.add(value.sharePubkey!);
+      if (value.status == 2 || value.status == 4)
+        pubkeys.add(value.sharePubkey!);
     });
     Filter f = Filter(kinds: [1059], p: pubkeys);
     secretSessionSubscription = Connect.sharedInstance.addSubscription([f],
