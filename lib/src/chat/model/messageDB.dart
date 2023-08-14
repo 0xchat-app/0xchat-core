@@ -234,7 +234,7 @@ class MessageDB extends DBObject {
         sender: message.sender,
         receiver: message.receiver,
         groupId: '',
-        kind: 4,
+        kind: event.kind,
         tags: event.tags.toString(),
         content: event.content,
         createTime: event.createdAt,

@@ -60,17 +60,11 @@ extension Calling on Contacts{
   }
 
   UserDB? _getFriendFromEvent(Event event) {
-    String aliasPubkey = event.pubkey;
-    for (UserDB friend in Contacts.sharedInstance.friends.values) {
-      if (friend.aliasPubkey == aliasPubkey) {
-        return friend;
-      }
-    }
-    return null;
+    return allContacts[event.pubkey];
   }
 
   UserDB? _getFriendFromPubkey(String pubkey) {
-    return Contacts.sharedInstance.friends[pubkey];
+    return allContacts[pubkey];
   }
 
   Future<void> handleCallEvent(Event event, String relay) async {

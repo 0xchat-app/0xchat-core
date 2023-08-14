@@ -192,7 +192,7 @@ extension SecretChat on Contacts {
         status: status);
   }
 
-  Future<void> _handleRequest(Event event, String relay) async {
+  Future<void> handleRequest(Event event, String relay) async {
     /// get alias
     Event decodeEvent = await Nip24.decode(event, privkey);
     Alias alias = Nip101.getRequest(decodeEvent);
@@ -203,7 +203,7 @@ extension SecretChat on Contacts {
     secretChatRequestCallBack?.call(secretSessionDB);
   }
 
-  Future<void> _handleAccept(Event event, String relay) async {
+  Future<void> handleAccept(Event event, String relay) async {
     /// get alias
     Event decodeEvent = await Nip24.decode(event, privkey);
     Alias alias = Nip101.getAccept(decodeEvent);
@@ -222,7 +222,7 @@ extension SecretChat on Contacts {
     }
   }
 
-  Future<void> _handleReject(Event event, String relay) async {
+  Future<void> handleReject(Event event, String relay) async {
     /// get alias
     Event decodeEvent = await Nip24.decode(event, privkey);
     Alias alias = Nip101.getReject(decodeEvent);
@@ -237,7 +237,7 @@ extension SecretChat on Contacts {
     }
   }
 
-  Future<void> _handleUpdate(Event event, String relay) async {
+  Future<void> handleUpdate(Event event, String relay) async {
     /// get alias
     Event decodeEvent = await Nip24.decode(event, privkey);
     String sessionId = Nip101.getE(decodeEvent.tags);
@@ -257,7 +257,7 @@ extension SecretChat on Contacts {
     }
   }
 
-  Future<void> _handleClose(Event event, String relay) async {
+  Future<void> handleClose(Event event, String relay) async {
     /// get alias
     Event decodeEvent = await Nip24.decode(event, privkey);
     String sessionId = Nip101.getE(decodeEvent.tags);
@@ -269,9 +269,8 @@ extension SecretChat on Contacts {
   }
 
   Future<void> _handleSecretMessage(Event event) async {
-    Event decodeEvent = await Nip24.decode(event, privkey);
     MessageDB? messageDB =
-        await MessageDB.fromPrivateMessage(decodeEvent, privkey);
+        await MessageDB.fromPrivateMessage(event, privkey);
     if (messageDB != null) {
       await Messages.saveMessagesToDB([messageDB]);
       secretChatMessageCallBack?.call(messageDB);
@@ -282,7 +281,7 @@ extension SecretChat on Contacts {
       String toPubkey, String replayId, MessageType type, String content,
       {Event? event}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    UserDB? toUserDB = allFriends[toPubkey];
+    UserDB? toUserDB = allContacts[toPubkey];
     if (toUserDB != null) {
       event ??= await Nip44.encode(toUserDB.pubKey!,
           MessageDB.encodeContent(type, content), replayId, privkey);
@@ -312,5 +311,69 @@ extension SecretChat on Contacts {
       return completer.future;
     }
     return completer.future;
+  }
+
+  Future<void> _syncSecretSessionFromDB() async {
+    List<SecretSessionDB> secretSessions =
+        await DB.sharedInstance.objects<SecretSessionDB>();
+    if (secretSessions.isNotEmpty) {
+      secretSessionMap = {
+        for (SecretSessionDB item in secretSessions) item.sessionId!: item
+      };
+    }
+  }
+
+  Future<void> _syncSecretSessionFromRelay() async {
+    if (secretSessionSubscription.isNotEmpty) {
+      await Connect.sharedInstance.closeRequests(secretSessionSubscription);
+    }
+    Completer<void> completer = Completer<void>();
+    Map<String, List<Filter>> subscriptions = {};
+    for (String relayURL in Connect.sharedInstance.relays()) {
+      int friendRequestUntil =
+      Relays.sharedInstance.getFriendgetMessageUntil(relayURL);
+      Filter f1 =
+      Filter(kinds: [1059], p: [pubkey], since: (friendRequestUntil + 1));
+      subscriptions[relayURL] = [f1];
+    }
+    secretSessionSubscription = Connect.sharedInstance
+        .addSubscriptions(subscriptions, eventCallBack: (event, relay) {
+      _handleFriendRequest(event, relay);
+    }, eoseCallBack: (requestId, status, relay, unRelays) async {
+      if (unRelays.isEmpty) {
+        await Relays.sharedInstance.syncRelaysToDB();
+        if (!completer.isCompleted) completer.complete();
+      }
+    });
+    return completer.future;
+  }
+
+  Future<void> _subscriptSecretChat() async {
+    if (friendMessageSubscription.isNotEmpty) {
+      Connect.sharedInstance.closeRequests(friendMessageSubscription);
+    }
+
+    Map<String, List<Filter>> subscriptions = {};
+    List<String> pubkeys = [pubkey];
+    secretSessionMap.forEach((key, value) {
+      pubkeys.add(value.sharePubkey!);
+    });
+    Filter f = Filter(
+        kinds: [1059],
+        p: pubkeys,
+        since: (friendMessageUntil + 1));
+    friendMessageSubscription = Connect.sharedInstance
+        .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
+      _updateFriendMessageTime(event.createdAt, relay);
+      event = await Nip24.decode(event, privkey);
+      switch (event.kind) {
+        case 44:
+          _handleSecretMessage(event);
+          break;
+        default:
+          print('unhandled message $event');
+          break;
+      }
+    });
   }
 }

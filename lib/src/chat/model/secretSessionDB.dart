@@ -14,7 +14,8 @@ class SecretSessionDB extends DBObject {
 
   int? lastUpdateTime;
   int? expirationTime;
-  int? status; // 0: init 1: request 2: accept 3: reject 4: close
+  String? chatRelay;
+  int? status; // 0: init 1: request 2: accept 3: reject 4: update 5: close
 
   SecretSessionDB(
       {this.sessionId = '',
@@ -26,6 +27,7 @@ class SecretSessionDB extends DBObject {
       this.toAliasPrivkey = '',
       this.shareSecretKey = '',
       this.lastUpdateTime = 0,
+      this.chatRelay = '',
       this.status = 0});
 
   @override
@@ -58,6 +60,7 @@ Map<String, dynamic> _secretSessionInfoToMap(SecretSessionDB instance) =>
       'toAliasPrivkey': instance.toAliasPrivkey,
       'shareSecretKey': instance.shareSecretKey,
       'lastUpdateTime': instance.lastUpdateTime,
+      'chatRelay': instance.chatRelay,
       'status': instance.status
     };
 
@@ -72,6 +75,7 @@ SecretSessionDB _secretSessionInfoFromMap(Map<String, dynamic> map) {
     toAliasPrivkey: map['toAliasPrivkey'].toString(),
     shareSecretKey: map['shareSecretKey'].toString(),
     lastUpdateTime: map['lastUpdateTime'],
+    chatRelay: map['chatRelay'].toString(),
     status: map['status'],
   );
 }

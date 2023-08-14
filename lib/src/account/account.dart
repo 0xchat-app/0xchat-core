@@ -15,6 +15,10 @@ class Account {
   String pubkey = '';
   String privkey = '';
 
+  Future<void> syncMe() async {
+    await DB.sharedInstance.update<UserDB>(me!);
+  }
+
   static Future<UserDB?> getUserFromDB(
       {String pubkey = '', String privkey = ''}) async {
     if (privkey.isNotEmpty) {
@@ -231,7 +235,7 @@ class Account {
     return completer.future;
   }
 
-  static Future<List<UserDB>> syncContactListFromRelay(String pubkey) async {
+  static Future<List<UserDB>> syncFollowListFromRelay(String pubkey) async {
     Completer<List<UserDB>> completer = Completer<List<UserDB>>();
     Filter f = Filter(kinds: [3], authors: [pubkey], limit: 1);
     List<Profile> profiles = [];
@@ -372,7 +376,7 @@ class Account {
   }
 
   static Future<int> logout(String privkey) async {
-    Contacts.sharedInstance.allFriends = {};
+    Contacts.sharedInstance.allContacts = {};
     Channels.sharedInstance.channels = {};
     Channels.sharedInstance.myChannels = {};
     return await delete(privkey);
