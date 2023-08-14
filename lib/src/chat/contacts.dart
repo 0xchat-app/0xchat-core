@@ -165,7 +165,7 @@ class Contacts {
     }
   }
 
-  Future<OKEvent> updateFriendNickName(
+  Future<OKEvent> updateContactNickName(
       String friendPubkey, String nickName) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
@@ -306,32 +306,33 @@ class Contacts {
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       _updateFriendMessageTime(event.createdAt, relay);
       if (event.kind == 4 || event.kind == 44) {
-        _handlePrivateMessage(event, relay);
+        if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       } else if (event.kind == 1059) {
         event = await Nip24.decode(event, privkey);
-        switch (event.kind) {
-          case 10100:
-            handleRequest(event, relay);
-            break;
-          case 10101:
-            handleAccept(event, relay);
-            break;
-          case 10102:
-            handleReject(event, relay);
-            break;
-          case 10103:
-            handleUpdate(event, relay);
-            break;
-          case 10104:
-            handleClose(event, relay);
-            break;
-          case 25050:
-            handleCallEvent(event, relay);
-            break;
-          default:
-            print('unhandled message $event');
-            break;
-        }
+        if (!inBlockList(event.pubkey))
+          switch (event.kind) {
+            case 10100:
+              handleRequest(event, relay);
+              break;
+            case 10101:
+              handleAccept(event, relay);
+              break;
+            case 10102:
+              handleReject(event, relay);
+              break;
+            case 10103:
+              handleUpdate(event, relay);
+              break;
+            case 10104:
+              handleClose(event, relay);
+              break;
+            case 25050:
+              handleCallEvent(event, relay);
+              break;
+            default:
+              print('unhandled message $event');
+              break;
+          }
       }
     });
   }
@@ -389,22 +390,4 @@ class Contacts {
     }
     Relays.sharedInstance.syncRelaysToDB();
   }
-
-  void _updateFriendRequestTime(int eventTime, String relay) {
-    /// set friendRequestUntil friendRequestSince
-    if (Relays.sharedInstance.relays.containsKey(relay)) {
-      Relays.sharedInstance.setFriendRequestUntil(eventTime, relay);
-      Relays.sharedInstance.setFriendRequestSince(eventTime, relay);
-    } else {
-      Relays.sharedInstance.relays[relay] = RelayDB(
-          url: relay,
-          friendRequestUntil: eventTime,
-          friendRequestSince: eventTime);
-    }
-    Relays.sharedInstance.syncRelaysToDB();
-  }
-
-  Future<void> _syncRequestListToDB(List<FriendRequestDB> list) async {}
-
-  Future<void> _addRequest(FriendRequestDB request) async {}
 }

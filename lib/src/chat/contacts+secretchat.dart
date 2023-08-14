@@ -181,6 +181,9 @@ extension SecretChat on Contacts {
       case 10103:
         status = 4;
         break;
+      case 10104:
+        status = 5;
+        break;
     }
     return SecretSessionDB(
         sessionId: alias.sessionId,
@@ -258,7 +261,7 @@ extension SecretChat on Contacts {
       secretSessionDB.toAliasPubkey = alias.toAliasPubkey;
       secretSessionDB.shareSecretKey = bytesToHex(Nip44.shareSecret(
           secretSessionDB.fromAliasPrivkey!, secretSessionDB.toAliasPubkey!));
-      secretSessionDB.status = 2;
+      secretSessionDB.status = 4;
       secretSessionDB.lastUpdateTime = alias.createTime;
       await DB.sharedInstance.update<SecretSessionDB>(secretSessionDB);
 
@@ -294,7 +297,7 @@ extension SecretChat on Contacts {
   }
 
   Future<OKEvent> sendSecretMessage(
-      String toPubkey, String replayId, MessageType type, String content,
+      String toPubkey, String replayId, MessageType type, String content, int expiration,
       {Event? event}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     UserDB? toUserDB = allContacts[toPubkey];

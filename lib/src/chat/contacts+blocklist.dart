@@ -4,6 +4,10 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension BlockList on Contacts {
+  bool inBlockList(String pubkey) {
+    return blockList != null && blockList!.contains(pubkey);
+  }
+
   /// sync
   Future<void> _syncBlockListFromDB() async {
     blockList = Account.sharedInstance.me?.blockedList;
