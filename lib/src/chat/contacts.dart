@@ -299,7 +299,7 @@ class Contacts {
       Filter f1 = Filter(
           kinds: [1059, 4, 44], p: pubkeys, since: (friendMessageUntil + 1));
       Filter f2 =
-          Filter(kinds: [4], authors: pubkeys, since: (friendMessageUntil + 1));
+          Filter(kinds: [4, 44], authors: pubkeys, since: (friendMessageUntil + 1));
       subscriptions[relayURL] = [f1, f2];
     }
     friendMessageSubscription = Connect.sharedInstance
