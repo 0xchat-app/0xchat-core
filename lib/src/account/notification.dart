@@ -60,8 +60,6 @@ class NotificationHelper {
   Future<OKEvent> setNotification(
       String deviceId, List<int> kinds, List<String> relays) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    List<String> toAliasPubkeys =
-        Contacts.sharedInstance.getAllUnMuteFriendsToAliasPubkey();
     List<String> channels = Channels.sharedInstance.getAllUnMuteChannels();
 
     Map map = {
@@ -70,7 +68,7 @@ class NotificationHelper {
       'deviceId': deviceId,
       'relays': relays,
       '#e': channels,
-      '#p': toAliasPubkeys
+      '#p': pubkey
     };
     Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
     Connect.sharedInstance.sendEvent(event,

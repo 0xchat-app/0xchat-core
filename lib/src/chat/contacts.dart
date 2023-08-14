@@ -213,10 +213,10 @@ class Contacts {
     _setMuteFriend(friendPubkey, false);
   }
 
-  List<String> getAllUnMuteFriendsToAliasPubkey() {
+  List<String> getAllUnMuteContacts() {
     return allContacts.entries
         .where((e) => e.value.mute == false)
-        .map((e) => e.value.toAliasPubkey!)
+        .map((e) => e.value.pubKey!)
         .toList();
   }
 

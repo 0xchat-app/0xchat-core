@@ -4,7 +4,7 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension BlockList on Contacts {
-  /// sync contacts
+  /// sync
   Future<void> _syncBlockListFromDB() async {
     blockList = Account.sharedInstance.me?.blockedList;
   }
@@ -56,7 +56,7 @@ extension BlockList on Contacts {
           okCallBack?.call(ok, relay, unCompletedRelays);
         });
       } else {
-        throw Exception('_syncFriendsToRelay error content!, $blockList');
+        throw Exception('_syncBlockListToRelay error!, $blockList');
       }
     }
   }
