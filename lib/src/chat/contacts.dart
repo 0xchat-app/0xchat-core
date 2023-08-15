@@ -292,14 +292,21 @@ class Contacts {
     List<String> pubkeys = [pubkey];
     allContacts.forEach((key, value) {
       pubkeys.add(key);
+      pubkeys.add(value.toAliasPubkey!);
     });
     for (String relayURL in Connect.sharedInstance.relays()) {
       int friendMessageUntil =
           Relays.sharedInstance.getFriendMessageUntil(relayURL);
+
+      /// contacts messages
       Filter f1 = Filter(
-          kinds: [1059, 4, 44], p: pubkeys, since: (friendMessageUntil + 1));
+          kinds: [1059, 4, 44],
+          authors: pubkeys,
+          since: (friendMessageUntil + 1));
+
+      /// unknown contacts messages
       Filter f2 =
-          Filter(kinds: [4, 44], authors: pubkeys, since: (friendMessageUntil + 1));
+          Filter(kinds: [4, 44], p: [pubkey], since: (friendMessageUntil + 1));
       subscriptions[relayURL] = [f1, f2];
     }
     friendMessageSubscription = Connect.sharedInstance
@@ -309,30 +316,29 @@ class Contacts {
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       } else if (event.kind == 1059) {
         event = await Nip24.decode(event, privkey);
-        if (!inBlockList(event.pubkey))
-          switch (event.kind) {
-            case 10100:
-              handleRequest(event, relay);
-              break;
-            case 10101:
-              handleAccept(event, relay);
-              break;
-            case 10102:
-              handleReject(event, relay);
-              break;
-            case 10103:
-              handleUpdate(event, relay);
-              break;
-            case 10104:
-              handleClose(event, relay);
-              break;
-            case 25050:
-              handleCallEvent(event, relay);
-              break;
-            default:
-              print('unhandled message $event');
-              break;
-          }
+        switch (event.kind) {
+          case 10100:
+            handleRequest(event, relay);
+            break;
+          case 10101:
+            handleAccept(event, relay);
+            break;
+          case 10102:
+            handleReject(event, relay);
+            break;
+          case 10103:
+            handleUpdate(event, relay);
+            break;
+          case 10104:
+            handleClose(event, relay);
+            break;
+          case 25050:
+            handleCallEvent(event, relay);
+            break;
+          default:
+            print('unhandled message $event');
+            break;
+        }
       }
     });
   }

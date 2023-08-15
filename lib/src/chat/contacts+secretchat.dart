@@ -22,12 +22,24 @@ extension SecretChat on Contacts {
     return okEvent;
   }
 
+  String _getSealedSenderKey(String friendPubkey) {
+    UserDB? friend = allContacts[friendPubkey];
+    late String sealedSenderPrivkey;
+    if (friend == null) {
+      sealedSenderPrivkey =
+          bytesToHex(Nip44.shareSecret(privkey, friendPubkey));
+    } else {
+      sealedSenderPrivkey = friend.toAliasPrivkey!;
+    }
+    return sealedSenderPrivkey;
+  }
+
   Future<OKEvent> _sendRequestEvent(
       String friendPubkey, String aliasPubkey) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = Nip101.request(aliasPubkey, friendPubkey, privkey);
-    Event sealedEvent =
-        await Nip24.encode(event, friendPubkey, kind: event.kind);
+    Event sealedEvent = await Nip24.encode(event, friendPubkey,
+        kind: event.kind, privkey: _getSealedSenderKey(friendPubkey));
     Connect.sharedInstance.sendEvent(sealedEvent,
         sendCallBack: (ok, relay, unRelays) {
       if (!completer.isCompleted) completer.complete(ok);
@@ -74,7 +86,8 @@ extension SecretChat on Contacts {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     Event event = Nip101.accept(myAliasPubkey, toPubkey, sessionId, privkey);
-    Event sealedEvent = await Nip24.encode(event, toPubkey, kind: event.kind);
+    Event sealedEvent = await Nip24.encode(event, toPubkey,
+        kind: event.kind, privkey: _getSealedSenderKey(toPubkey));
     Connect.sharedInstance.sendEvent(sealedEvent,
         sendCallBack: (ok, relay, unRelays) async {
       if (!completer.isCompleted) completer.complete(ok);
@@ -99,7 +112,8 @@ extension SecretChat on Contacts {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     Event event = Nip101.reject(toPubkey, sessionId, privkey);
-    Event sealedEvent = await Nip24.encode(event, toPubkey, kind: event.kind);
+    Event sealedEvent = await Nip24.encode(event, toPubkey,
+        kind: event.kind, privkey: _getSealedSenderKey(toPubkey));
     Connect.sharedInstance.sendEvent(sealedEvent,
         sendCallBack: (ok, relay, unRelays) async {
       if (!completer.isCompleted) completer.complete(ok);
@@ -132,7 +146,8 @@ extension SecretChat on Contacts {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     Event event = Nip101.update(myAliasPubkey, toPubkey, sessionId, privkey);
-    Event sealedEvent = await Nip24.encode(event, toPubkey, kind: event.kind);
+    Event sealedEvent = await Nip24.encode(event, toPubkey,
+        kind: event.kind, privkey: _getSealedSenderKey(toPubkey));
     Connect.sharedInstance.sendEvent(sealedEvent,
         sendCallBack: (ok, relay, unRelays) async {
       if (!completer.isCompleted) completer.complete(ok);
@@ -158,7 +173,8 @@ extension SecretChat on Contacts {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     Event event = Nip101.close(toPubkey, sessionId, privkey);
-    Event sealedEvent = await Nip24.encode(event, toPubkey, kind: event.kind);
+    Event sealedEvent = await Nip24.encode(event, toPubkey,
+        kind: event.kind, privkey: _getSealedSenderKey(toPubkey));
     Connect.sharedInstance.sendEvent(sealedEvent,
         sendCallBack: (ok, relay, unRelays) async {
       if (!completer.isCompleted) completer.complete(ok);
@@ -296,38 +312,46 @@ extension SecretChat on Contacts {
     }
   }
 
-  Future<OKEvent> sendSecretMessage(
-      String toPubkey, String replayId, MessageType type, String content, int expiration,
+  Future<OKEvent> sendSecretMessage(String sessionId, String toPubkey,
+      String replayId, MessageType type, String content, int expiration,
       {Event? event}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    UserDB? toUserDB = allContacts[toPubkey];
-    if (toUserDB != null) {
-      event ??= await Nip44.encode(toUserDB.pubKey!,
-          MessageDB.encodeContent(type, content), replayId, privkey);
 
-      MessageDB messageDB = MessageDB(
-          messageId: event.id,
-          sender: pubkey,
-          receiver: toPubkey,
-          groupId: '',
-          kind: event.kind,
-          tags: jsonEncode(event.tags),
-          content: event.content,
-          createTime: event.createdAt,
-          decryptContent: content,
-          type: MessageDB.messageTypeToString(type),
-          status: 0);
-      Messages.saveMessagesToDB([messageDB]);
+    SecretSessionDB? sessionDB = secretSessionMap[sessionId];
+    if (sessionDB != null) {
+      UserDB? toUserDB = allContacts[toPubkey];
+      if (toUserDB != null) {
+        event ??= await Nip44.encode(toUserDB.pubKey!,
+            MessageDB.encodeContent(type, content), replayId, privkey);
 
-      Event encodeEvent = await Nip24.encode(event, privkey);
-      Connect.sharedInstance.sendEvent(encodeEvent,
-          sendCallBack: (ok, relay, unRelays) async {
-        messageDB.status = ok.status ? 1 : 2;
-        Messages.saveMessagesToDB([messageDB],
-            conflictAlgorithm: ConflictAlgorithm.replace);
-        if (!completer.isCompleted) completer.complete(ok);
-      });
-      return completer.future;
+        MessageDB messageDB = MessageDB(
+            messageId: event.id,
+            sender: pubkey,
+            receiver: toPubkey,
+            groupId: '',
+            kind: event.kind,
+            tags: jsonEncode(event.tags),
+            content: event.content,
+            createTime: event.createdAt,
+            decryptContent: content,
+            type: MessageDB.messageTypeToString(type),
+            status: 0);
+        Messages.saveMessagesToDB([messageDB]);
+
+        Event encodeEvent = await Nip24.encode(event, sessionDB.sharePubkey!,
+            privkey: sessionDB.shareSecretKey);
+        Connect.sharedInstance.sendEvent(encodeEvent,
+            sendCallBack: (ok, relay, unRelays) async {
+          messageDB.status = ok.status ? 1 : 2;
+          Messages.saveMessagesToDB([messageDB],
+              conflictAlgorithm: ConflictAlgorithm.replace);
+          if (!completer.isCompleted) completer.complete(ok);
+        });
+        return completer.future;
+      }
+    } else {
+      if (!completer.isCompleted)
+        completer.complete(OKEvent(sessionId, false, 'unknown session'));
     }
     return completer.future;
   }
@@ -342,6 +366,15 @@ extension SecretChat on Contacts {
     }
   }
 
+  SecretSessionDB? _getSessionFromPubkey(String pubkey) {
+    for (var value in secretSessionMap.values) {
+      if (value.sharePubkey == pubkey) {
+        return value;
+      }
+    }
+    return null;
+  }
+
   Future<void> _subscriptSecretChat() async {
     if (secretSessionSubscription.isNotEmpty) {
       await Connect.sharedInstance.closeRequests(secretSessionSubscription);
@@ -352,17 +385,20 @@ extension SecretChat on Contacts {
       if (value.status == 2 || value.status == 4)
         pubkeys.add(value.sharePubkey!);
     });
-    Filter f = Filter(kinds: [1059], p: pubkeys);
+    Filter f = Filter(kinds: [1059], authors: pubkeys);
     secretSessionSubscription = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      event = await Nip24.decode(event, privkey);
-      switch (event.kind) {
-        case 44:
-          _handleSecretMessage(event);
-          break;
-        default:
-          print('unhandled message $event');
-          break;
+      SecretSessionDB? session = _getSessionFromPubkey(event.pubkey);
+      if (session != null) {
+        event = await Nip24.decode(event, session.shareSecretKey!);
+        switch (event.kind) {
+          case 44:
+            _handleSecretMessage(event);
+            break;
+          default:
+            print('unhandled message $event');
+            break;
+        }
       }
     });
   }
