@@ -79,8 +79,8 @@ Future<void> testFriends() async {
   //         'https://c-ssl.dtstatic.com/uploads/blog/202106/22/20210622154903_3c36a.thumb.1000_0.jpeg',
   //     about: 'my name is baby');
 
-  Contacts.sharedInstance.initWithPrikey(user2.private);
-  Contacts.sharedInstance.friendMessageCallBack = (MessageDB message) {
+  Contacts.sharedInstance.initContacts((){});
+  Contacts.sharedInstance.secretChatMessageCallBack = (MessageDB message) {
     print(
         'friend message type: ${message.type}, content: ${message.decryptContent}');
   };

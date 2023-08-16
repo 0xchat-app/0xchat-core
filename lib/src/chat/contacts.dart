@@ -10,7 +10,7 @@ typedef SecretChatAcceptCallBack = void Function(SecretSessionDB);
 typedef SecretChatRejectCallBack = void Function(SecretSessionDB);
 typedef SecretChatUpdateCallBack = void Function(SecretSessionDB);
 typedef SecretChatCloseCallBack = void Function(SecretSessionDB);
-typedef SecretChatMessageCallBack = void Function(MessageDB);
+typedef ChatMessageCallBack = void Function(MessageDB);
 typedef ContactUpdatedCallBack = void Function();
 
 class Contacts {
@@ -38,7 +38,8 @@ class Contacts {
   SecretChatRejectCallBack? secretChatRejectCallBack;
   SecretChatUpdateCallBack? secretChatUpdateCallBack;
   SecretChatCloseCallBack? secretChatCloseCallBack;
-  SecretChatMessageCallBack? secretChatMessageCallBack;
+  ChatMessageCallBack? secretChatMessageCallBack;
+  ChatMessageCallBack? privateChatMessageCallBack;
   ContactUpdatedCallBack? contactUpdatedCallBack;
 
   void Function(String friend, SignalingState state, String data)?
@@ -345,7 +346,7 @@ class Contacts {
 
   Future<void> _handlePrivateMessage(Event event, String relay) async {
     MessageDB? messageDB = await MessageDB.fromPrivateMessage(event, privkey);
-    if (messageDB != null) secretChatMessageCallBack?.call(messageDB);
+    if (messageDB != null) privateChatMessageCallBack?.call(messageDB);
   }
 
   Future<OKEvent> sendPrivateMessage(

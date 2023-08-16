@@ -382,8 +382,9 @@ extension SecretChat on Contacts {
 
     List<String> pubkeys = [pubkey];
     secretSessionMap.forEach((key, value) {
-      if (value.status == 2 || value.status == 4)
+      if (value.status == 2 || value.status == 4) {
         pubkeys.add(value.sharePubkey!);
+      }
     });
     Filter f = Filter(kinds: [1059], authors: pubkeys);
     secretSessionSubscription = Connect.sharedInstance.addSubscription([f],
