@@ -246,13 +246,10 @@ class Contacts {
         await Future.forEach(friendsList, (p) async {
           UserDB? friend = await Account.getUserFromDB(pubkey: p.pubkey);
           if (friend != null) {
-            if (friend.toAliasPrivkey == null ||
-                friend.toAliasPrivkey!.isEmpty) {
-              friend.toAliasPrivkey =
-                  bytesToHex(Nip44.shareSecret(privkey, friend.pubKey!));
-              friend.toAliasPubkey =
-                  Keychain.getPublicKey(friend.toAliasPrivkey!);
-            }
+            friend.toAliasPrivkey =
+                bytesToHex(Nip44.shareSecret(privkey, friend.pubKey!));
+            friend.toAliasPubkey =
+                Keychain.getPublicKey(friend.toAliasPrivkey!);
             allContacts[p.pubkey] = friend;
           }
         });
@@ -301,19 +298,19 @@ class Contacts {
 
       /// contacts messages
       Filter f1 = Filter(
-          kinds: [1059, 4, 44],
+          kinds: [1059, 4],
           authors: pubkeys,
           since: (friendMessageUntil + 1));
 
       /// unknown contacts messages
       Filter f2 =
-          Filter(kinds: [4, 44], p: [pubkey], since: (friendMessageUntil + 1));
+          Filter(kinds: [4], p: [pubkey], since: (friendMessageUntil + 1));
       subscriptions[relayURL] = [f1, f2];
     }
     friendMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       _updateFriendMessageTime(event.createdAt, relay);
-      if (event.kind == 4 || event.kind == 44) {
+      if (event.kind == 4) {
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       } else if (event.kind == 1059) {
         event = await Nip24.decode(event, privkey);
@@ -355,7 +352,7 @@ class Contacts {
     Completer<OKEvent> completer = Completer<OKEvent>();
     UserDB? toUserDB = allContacts[toPubkey];
     if (toUserDB != null) {
-      event ??= await Nip44.encode(toUserDB.pubKey!,
+      event ??= Nip4.encode(toUserDB.pubKey!,
           MessageDB.encodeContent(type, content), replayId, privkey);
 
       MessageDB messageDB = MessageDB(
