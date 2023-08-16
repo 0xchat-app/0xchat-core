@@ -337,7 +337,6 @@ extension SecretChat on Contacts {
             type: MessageDB.messageTypeToString(type),
             status: 0);
         Messages.saveMessagesToDB([messageDB]);
-
         Event encodeEvent = await Nip24.encode(event, sessionDB.sharePubkey!,
             privkey: sessionDB.shareSecretKey);
         Connect.sharedInstance.sendEvent(encodeEvent,
@@ -350,8 +349,9 @@ extension SecretChat on Contacts {
         return completer.future;
       }
     } else {
-      if (!completer.isCompleted)
+      if (!completer.isCompleted) {
         completer.complete(OKEvent(sessionId, false, 'unknown session'));
+      }
     }
     return completer.future;
   }
