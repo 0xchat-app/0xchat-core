@@ -3,21 +3,34 @@ import 'dart:async';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
-extension Calling on Contacts{
+extension Calling on Contacts {
   Future<OKEvent> sendDisconnect(String friendPubkey, String content) async {
+    isCalling = false;
+    callingPubkey = '';
+    return await _sendSignaling(
+        friendPubkey, SignalingState.disconnect, content);
+  }
+
+  Future<OKEvent> sendReject(String friendPubkey, String content) async {
     return await _sendSignaling(
         friendPubkey, SignalingState.disconnect, content);
   }
 
   Future<OKEvent> sendOffer(String friendPubkey, String content) async {
+    isCalling = true;
+    callingPubkey = friendPubkey;
     return await _sendSignaling(friendPubkey, SignalingState.offer, content);
   }
 
   Future<OKEvent> sendAnswer(String friendPubkey, String content) async {
+    isCalling = true;
+    callingPubkey = friendPubkey;
     return await _sendSignaling(friendPubkey, SignalingState.answer, content);
   }
 
   Future<OKEvent> sendCandidate(String friendPubkey, String content) async {
+    isCalling = true;
+    callingPubkey = friendPubkey;
     return await _sendSignaling(
         friendPubkey, SignalingState.candidate, content);
   }
@@ -70,7 +83,17 @@ extension Calling on Contacts{
   Future<void> handleCallEvent(Event event, String relay) async {
     UserDB? friend = _getFriendFromEvent(event);
     if (friend == null) return;
-    Signaling signaling = Nip100.decode(event, friend.toAliasPrivkey!);
-    onCallStateChange?.call(friend.pubKey!, signaling.state, signaling.content);
+    if (isCalling && friend.pubKey != callingPubkey) {
+      /// on calling, reject the request
+      sendReject(friend.pubKey!, 'on calling');
+    } else {
+      Signaling signaling = Nip100.decode(event, friend.toAliasPrivkey!);
+      onCallStateChange?.call(
+          friend.pubKey!, signaling.state, signaling.content);
+      if(signaling.state == SignalingState.disconnect){
+        isCalling = false;
+        callingPubkey = '';
+      }
+    }
   }
 }

@@ -31,6 +31,9 @@ class Contacts {
   String friendMessageSubscription = '';
   int lastFriendListUpdateTime = 0;
   List<String>? blockList;
+  /// calling
+  bool isCalling = false;
+  String callingPubkey = '';
 
   /// callbacks
   SecretChatRequestCallBack? secretChatRequestCallBack;
