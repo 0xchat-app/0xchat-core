@@ -306,7 +306,7 @@ extension SecretChat on Contacts {
   }
 
   Future<void> _handleSecretMessage(Event event) async {
-    MessageDB? messageDB = await MessageDB.fromPrivateMessage(event, privkey);
+    MessageDB? messageDB = await MessageDB.fromPrivateMessage(event, pubkey, privkey);
     if (messageDB != null) {
       await Messages.saveMessagesToDB([messageDB]);
       secretChatMessageCallBack?.call(messageDB);

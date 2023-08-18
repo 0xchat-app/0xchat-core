@@ -324,10 +324,7 @@ class Contacts {
         Event innerEvent = await Nip24.decode(event, privkey);
         if (!inBlockList(innerEvent.pubkey)) {
           switch (innerEvent.kind) {
-            case 4:
-              _handlePrivateMessage(innerEvent, relay);
-              break;
-            case 44:
+            case 14:
               _handlePrivateMessage(innerEvent, relay);
               break;
             case 10100:
@@ -358,7 +355,7 @@ class Contacts {
   }
 
   Future<void> _handlePrivateMessage(Event event, String relay) async {
-    MessageDB? messageDB = await MessageDB.fromPrivateMessage(event, privkey);
+    MessageDB? messageDB = await MessageDB.fromPrivateMessage(event, pubkey, privkey);
     if (messageDB != null) privateChatMessageCallBack?.call(messageDB);
   }
 
