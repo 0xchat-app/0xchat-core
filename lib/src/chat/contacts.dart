@@ -381,8 +381,9 @@ class Contacts {
           type: MessageDB.messageTypeToString(type),
           status: 0);
       await Messages.saveMessagesToDB([messageDB]);
-
-      Connect.sharedInstance.sendEvent(event,
+      /// use SealedGossip as the default DM
+      Event encodeEvent = await Nip24.encode(event, toPubkey);
+      Connect.sharedInstance.sendEvent(encodeEvent,
           sendCallBack: (ok, relay, unRelays) async {
         messageDB.status = ok.status ? 1 : 2;
         await Messages.saveMessagesToDB([messageDB],
