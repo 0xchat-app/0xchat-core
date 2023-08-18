@@ -1,0 +1,7 @@
+
+*.sh
+*.xcconfig
+test/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+test/android/local.properties
+test/ios/Runner/GeneratedPluginRegistrant.h
+test/ios/Runner/GeneratedPluginRegistrant.m
