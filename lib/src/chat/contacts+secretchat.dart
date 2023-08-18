@@ -242,7 +242,7 @@ extension SecretChat on Contacts {
 
       /// add to secretSessionMap
       secretSessionMap[secretSessionDB.sessionId!] = secretSessionDB;
-      _subscriptSecretChat();
+      subscriptSecretChat();
 
       /// callback
       secretChatAcceptCallBack?.call(secretSessionDB);
@@ -298,7 +298,7 @@ extension SecretChat on Contacts {
     if (secretSessionDB != null) {
       /// remove from secretSessionMap
       secretSessionMap.remove(secretSessionDB.sessionId!);
-      _subscriptSecretChat();
+      subscriptSecretChat();
 
       /// callback
       secretChatCloseCallBack?.call(secretSessionDB);
@@ -357,7 +357,7 @@ extension SecretChat on Contacts {
     return completer.future;
   }
 
-  Future<void> _syncSecretSessionFromDB() async {
+  Future<void> syncSecretSessionFromDB() async {
     List<SecretSessionDB> secretSessions =
         await DB.sharedInstance.objects<SecretSessionDB>();
     if (secretSessions.isNotEmpty) {
@@ -376,7 +376,7 @@ extension SecretChat on Contacts {
     return null;
   }
 
-  Future<void> _subscriptSecretChat() async {
+  Future<void> subscriptSecretChat() async {
     if (secretSessionSubscription.isNotEmpty) {
       await Connect.sharedInstance.closeRequests(secretSessionSubscription);
     }

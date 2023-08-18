@@ -9,7 +9,7 @@ extension BlockList on Contacts {
   }
 
   /// sync
-  Future<void> _syncBlockListFromDB() async {
+  Future<void> syncBlockListFromDB() async {
     blockList = Account.sharedInstance.me?.blockedList;
   }
 
@@ -18,7 +18,7 @@ extension BlockList on Contacts {
     await Account.sharedInstance.syncMe();
   }
 
-  Future<void> _syncBlockListFromRelay() async {
+  Future<void> syncBlockListFromRelay() async {
     Completer<void> completer = Completer<void>();
     Filter f = Filter(
         kinds: [30000],
