@@ -36,61 +36,43 @@ extension Calling on Contacts {
   }
 
   Future<OKEvent> _sendSignaling(
-      String friendPubkey, SignalingState state, String content) async {
+      String toPubkey, SignalingState state, String content) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    UserDB? friend = _getFriendFromPubkey(friendPubkey);
-    if (friend != null) {
-      Event? event;
-      switch (state) {
-        case SignalingState.disconnect:
-          event = Nip100.close(
-              friend.aliasPubkey!, content, friend.toAliasPrivkey!);
-          break;
-        case SignalingState.offer:
-          event = Nip100.offer(
-              friend.aliasPubkey!, content, friend.toAliasPrivkey!);
-          break;
-        case SignalingState.answer:
-          event = Nip100.answer(
-              friend.aliasPubkey!, content, friend.toAliasPrivkey!);
-          break;
-        case SignalingState.candidate:
-          event = Nip100.candidate(
-              friend.aliasPubkey!, content, friend.toAliasPrivkey!);
-          break;
-        default:
-          throw Exception('error state');
-      }
-      Connect.sharedInstance.sendEvent(event,
-          sendCallBack: (ok, relay, unRelays) async {
-        if (!completer.isCompleted) completer.complete(ok);
-      });
-    } else {
-      OKEvent ok = OKEvent(friendPubkey, false, 'no friend');
-      if (!completer.isCompleted) completer.complete(ok);
+    Event? event;
+    switch (state) {
+      case SignalingState.disconnect:
+        event = Nip100.close(toPubkey, content, privkey);
+        break;
+      case SignalingState.offer:
+        event = Nip100.offer(toPubkey, content, privkey);
+        break;
+      case SignalingState.answer:
+        event = Nip100.answer(toPubkey, content, privkey);
+        break;
+      case SignalingState.candidate:
+        event = Nip100.candidate(toPubkey, content, privkey);
+        break;
+      default:
+        throw Exception('error state');
     }
+    /// 60s timeout for calling event
+    Event encodeEvent = await Nip24.encode(event, toPubkey,
+        expiration: currentUnixTimestampSeconds() + 60);
+    Connect.sharedInstance.sendEvent(encodeEvent,
+        sendCallBack: (ok, relay, unRelays) async {
+      if (!completer.isCompleted) completer.complete(ok);
+    });
     return completer.future;
   }
 
-  UserDB? _getFriendFromEvent(Event event) {
-    return allContacts[event.pubkey];
-  }
-
-  UserDB? _getFriendFromPubkey(String pubkey) {
-    return allContacts[pubkey];
-  }
-
   Future<void> handleCallEvent(Event event, String relay) async {
-    UserDB? friend = _getFriendFromEvent(event);
-    if (friend == null) return;
-    if (isCalling && friend.pubKey != callingPubkey) {
+    if (isCalling && event.pubkey != callingPubkey) {
       /// on calling, reject the request
-      sendReject(friend.pubKey!, 'on calling');
+      sendReject(event.pubkey, 'on calling');
     } else {
-      Signaling signaling = Nip100.decode(event, friend.toAliasPrivkey!);
-      onCallStateChange?.call(
-          friend.pubKey!, signaling.state, signaling.content);
-      if(signaling.state == SignalingState.disconnect){
+      Signaling signaling = Nip100.decode(event, privkey);
+      onCallStateChange?.call(event.pubkey, signaling.state, signaling.content);
+      if (signaling.state == SignalingState.disconnect) {
         isCalling = false;
         callingPubkey = '';
       }
