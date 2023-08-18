@@ -5,7 +5,7 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension SecretChat on Contacts {
-  Future<OKEvent> request(String friendPubkey) async {
+  Future<OKEvent> request(String friendPubkey, String chatRelay) async {
     Keychain randomKey = Keychain.generate();
     OKEvent okEvent = await _sendRequestEvent(friendPubkey, randomKey.public);
     if (okEvent.status) {
@@ -16,7 +16,8 @@ extension SecretChat on Contacts {
           fromAliasPrivkey: randomKey.private,
           toPubkey: friendPubkey,
           lastUpdateTime: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-          status: 1);
+          status: 1,
+          chatRelay: chatRelay);
       await DB.sharedInstance.insert<SecretSessionDB>(secretSessionDB);
     }
     return okEvent;

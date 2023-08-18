@@ -31,6 +31,7 @@ class Contacts {
   String friendMessageSubscription = '';
   int lastFriendListUpdateTime = 0;
   List<String>? blockList;
+
   /// calling
   bool isCalling = false;
   String callingPubkey = '';
@@ -147,16 +148,18 @@ class Contacts {
     }
   }
 
-  Future<void> addToContact(String friendPubkey, OKCallBack okCallBack) async {
-    UserDB? friend = await Account.getUserFromDB(pubkey: friendPubkey);
-    friend ??= UserDB(pubKey: friendPubkey);
-    if (friend.toAliasPubkey == null || friend.toAliasPubkey!.isEmpty) {
-      friend.toAliasPrivkey =
-          bytesToHex(Nip44.shareSecret(privkey, friend.pubKey!));
-      friend.toAliasPubkey = Keychain.getPublicKey(friend.toAliasPrivkey!);
+  Future<void> addToContact(List<String> pubkeys, OKCallBack okCallBack) async {
+    for(var friendPubkey in pubkeys){
+      UserDB? friend = await Account.getUserFromDB(pubkey: friendPubkey);
+      friend ??= UserDB(pubKey: friendPubkey);
+      if (friend.toAliasPubkey == null || friend.toAliasPubkey!.isEmpty) {
+        friend.toAliasPrivkey =
+            bytesToHex(Nip44.shareSecret(privkey, friend.pubKey!));
+        friend.toAliasPubkey = Keychain.getPublicKey(friend.toAliasPrivkey!);
+        await DB.sharedInstance.update<UserDB>(friend);
+      }
+      allContacts[friendPubkey] = friend;
     }
-    allContacts[friendPubkey] = friend;
-    await DB.sharedInstance.insert<UserDB>(friend);
     _syncContactsToRelay(okCallBack: okCallBack);
     _subscriptMessages();
   }
@@ -290,55 +293,53 @@ class Contacts {
     }
 
     Map<String, List<Filter>> subscriptions = {};
-    List<String> pubkeys = [pubkey];
-    allContacts.forEach((key, value) {
-      pubkeys.add(key);
-      pubkeys.add(value.toAliasPubkey!);
-    });
+
     for (String relayURL in Connect.sharedInstance.relays()) {
       int friendMessageUntil =
           Relays.sharedInstance.getFriendMessageUntil(relayURL);
 
-      /// contacts messages
-      Filter f1 = Filter(
-          kinds: [1059, 4],
-          authors: pubkeys,
-          since: (friendMessageUntil + 1));
-
-      /// unknown contacts messages
-      Filter f2 =
-          Filter(kinds: [4], p: [pubkey], since: (friendMessageUntil + 1));
-      subscriptions[relayURL] = [f1, f2];
+      /// all messages, contacts & unknown contacts
+      Filter f = Filter(
+          kinds: [4, 44, 1059], p: [pubkey], since: (friendMessageUntil + 1));
+      subscriptions[relayURL] = [f];
     }
     friendMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       _updateFriendMessageTime(event.createdAt, relay);
-      if (event.kind == 4) {
+      if (event.kind == 4 || event.kind == 44) {
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       } else if (event.kind == 1059) {
-        event = await Nip24.decode(event, privkey);
-        switch (event.kind) {
-          case 10100:
-            handleRequest(event, relay);
-            break;
-          case 10101:
-            handleAccept(event, relay);
-            break;
-          case 10102:
-            handleReject(event, relay);
-            break;
-          case 10103:
-            handleUpdate(event, relay);
-            break;
-          case 10104:
-            handleClose(event, relay);
-            break;
-          case 25050:
-            handleCallEvent(event, relay);
-            break;
-          default:
-            print('unhandled message $event');
-            break;
+        Event innerEvent = await Nip24.decode(event, privkey);
+        if (!inBlockList(innerEvent.pubkey)) {
+          switch (innerEvent.kind) {
+            case 4:
+              _handlePrivateMessage(innerEvent, relay);
+              break;
+            case 44:
+              _handlePrivateMessage(innerEvent, relay);
+              break;
+            case 10100:
+              handleRequest(innerEvent, relay);
+              break;
+            case 10101:
+              handleAccept(innerEvent, relay);
+              break;
+            case 10102:
+              handleReject(innerEvent, relay);
+              break;
+            case 10103:
+              handleUpdate(innerEvent, relay);
+              break;
+            case 10104:
+              handleClose(innerEvent, relay);
+              break;
+            case 25050:
+              handleCallEvent(innerEvent, relay);
+              break;
+            default:
+              print('unhandled message $innerEvent');
+              break;
+          }
         }
       }
     });
@@ -355,7 +356,7 @@ class Contacts {
     Completer<OKEvent> completer = Completer<OKEvent>();
     UserDB? toUserDB = allContacts[toPubkey];
     if (toUserDB != null) {
-      event ??= Nip4.encode(toUserDB.pubKey!,
+      event ??= await Nip44.encode(toUserDB.pubKey!,
           MessageDB.encodeContent(type, content), replayId, privkey);
 
       MessageDB messageDB = MessageDB(
