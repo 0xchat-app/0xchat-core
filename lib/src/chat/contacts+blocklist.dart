@@ -65,29 +65,43 @@ extension BlockList on Contacts {
     }
   }
 
-  Future<void> addToBlockList(String blockPubkey, OKCallBack okCallBack) async {
+  Future<OKEvent> addToBlockList(String blockPubkey) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+
     blockList ??= [];
     if (!blockList!.contains(blockPubkey)) {
       blockList!.add(blockPubkey);
-      _syncBlockListToRelay(okCallBack: okCallBack);
+      _syncBlockListToRelay(okCallBack:
+          (OKEvent ok, String relay, List<String> unCompletedRelays) {
+        if (!completer.isCompleted) completer.complete(ok);
+      });
       _syncBlockListToDB();
     } else {
-      okCallBack.call(
-          OKEvent(blockPubkey, false, 'blockPubkey already exit'), '', []);
+      if (!completer.isCompleted) {
+        completer
+            .complete(OKEvent(blockPubkey, false, 'blockPubkey already exit'));
+      }
     }
+
+    return completer.future;
   }
 
-  Future<void> removeBlockList(
-      String blockPubkey, OKCallBack okCallBack) async {
+  Future<OKEvent> removeBlockList(String blockPubkey) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
     if (blockList != null && blockList!.isNotEmpty) {
       bool remove = blockList!.remove(blockPubkey);
       if (remove) {
-        _syncBlockListToRelay(okCallBack: okCallBack);
+        _syncBlockListToRelay(okCallBack:
+            (OKEvent ok, String relay, List<String> unCompletedRelays) {
+          if (!completer.isCompleted) completer.complete(ok);
+        });
         _syncBlockListToDB();
       }
     } else {
-      okCallBack
-          .call(OKEvent(blockPubkey, false, 'blockPubkey not exit'), '', []);
+      if (!completer.isCompleted) {
+        completer.complete(OKEvent(blockPubkey, false, 'blockPubkey not exit'));
+      }
     }
+    return completer.future;
   }
 }

@@ -148,8 +148,10 @@ class Contacts {
     }
   }
 
-  Future<void> addToContact(List<String> pubkeys, OKCallBack okCallBack) async {
-    for(var friendPubkey in pubkeys){
+  Future<OKEvent> addToContact(List<String> pubkeys) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+
+    await Future.forEach(pubkeys, (friendPubkey) async {
       UserDB? friend = await Account.getUserFromDB(pubkey: friendPubkey);
       friend ??= UserDB(pubKey: friendPubkey);
       if (friend.toAliasPubkey == null || friend.toAliasPubkey!.isEmpty) {
@@ -159,17 +161,27 @@ class Contacts {
         await DB.sharedInstance.update<UserDB>(friend);
       }
       allContacts[friendPubkey] = friend;
-    }
-    _syncContactsToRelay(okCallBack: okCallBack);
+    });
+    _syncContactsToRelay(
+        okCallBack: (OKEvent ok, String relay, List<String> unCompletedRelays) {
+      if (!completer.isCompleted) completer.complete(ok);
+    });
     _subscriptMessages();
+    return completer.future;
   }
 
-  Future<void> removeContact(String friendPubkey, OKCallBack okCallBack) async {
+  Future<OKEvent> removeContact(String friendPubkey) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+
     UserDB? friend = allContacts.remove(friendPubkey);
     if (friend != null) {
-      _syncContactsToRelay(okCallBack: okCallBack);
+      _syncContactsToRelay(okCallBack:
+          (OKEvent ok, String relay, List<String> unCompletedRelays) {
+        if (!completer.isCompleted) completer.complete(ok);
+      });
       _subscriptMessages();
     }
+    return completer.future;
   }
 
   Future<OKEvent> updateContactNickName(
