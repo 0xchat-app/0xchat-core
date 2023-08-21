@@ -10,6 +10,10 @@ extension SecretChat on Contacts {
     Keychain randomKey = Keychain.generate();
     OKEvent okEvent = await _sendRequestEvent(toPubkey, randomKey.public);
     if (okEvent.status) {
+      // connect the chat relay
+      if (chatRelay.isNotEmpty) {
+        Connect.sharedInstance.connect(chatRelay);
+      }
       SecretSessionDB secretSessionDB = SecretSessionDB(
           sessionId: okEvent.eventId,
           myPubkey: pubkey,
@@ -58,6 +62,10 @@ extension SecretChat on Contacts {
   Future<OKEvent> accept(String sessionId) async {
     SecretSessionDB? db = await _getSecretSessionFromDB(sessionId);
     if (db != null) {
+      // connect the chat relay
+      if (db.relay != null && db.relay!.isNotEmpty) {
+        Connect.sharedInstance.connect(db.relay!);
+      }
       Keychain randomKey = Keychain.generate();
       OKEvent okEvent =
           await _sendAcceptEvent(randomKey.public, db.toPubkey!, sessionId);
@@ -336,7 +344,7 @@ extension SecretChat on Contacts {
         Messages.saveMessagesToDB([messageDB]);
         Event encodeEvent = await Nip24.encode(event, sessionDB.sharePubkey!,
             privkey: sessionDB.shareSecretKey);
-        Connect.sharedInstance.sendEvent(encodeEvent,
+        Connect.sharedInstance.sendEvent(encodeEvent, relay: sessionDB.relay,
             sendCallBack: (ok, relay, unRelays) async {
           messageDB.status = ok.status ? 1 : 2;
           Messages.saveMessagesToDB([messageDB],

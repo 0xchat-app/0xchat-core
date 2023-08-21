@@ -56,6 +56,12 @@ class NotificationHelper {
     Connect.sharedInstance.sendEvent(event);
   }
 
+  void offline(String serverPubkey, String privkey) {
+    Map map = {'online': 0};
+    Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
+    Connect.sharedInstance.sendEvent(event);
+  }
+
   // call setNotification when online or updating notification
   Future<OKEvent> setNotification(
       String deviceId, List<int> kinds, List<String> relays) async {

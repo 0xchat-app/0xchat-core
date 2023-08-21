@@ -249,7 +249,7 @@ class Connect {
     print(event.serialize());
     Sends sends = Sends(
         generate64RandomHexChars(),
-        relay == null ? relays() : [relay],
+        (relay == null || relay.isEmpty) ? relays() : [relay],
         DateTime.now().millisecondsSinceEpoch,
         event.id,
         sendCallBack);
