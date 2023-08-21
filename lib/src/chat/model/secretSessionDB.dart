@@ -2,32 +2,46 @@ import 'package:chatcore/chat-core.dart';
 
 @reflector
 class SecretSessionDB extends DBObject {
+  /// primary key
   String? sessionId;
-  String? fromPubkey;
+
+  /// my keys
+  String? myPubkey;
+  String? myAliasPubkey;
+  String? myAliasPrivkey;
+
+  /// counterparty keys
   String? toPubkey;
-  String? fromAliasPubkey;
-  String? fromAliasPrivkey;
   String? toAliasPubkey;
-  String? toAliasPrivkey;
+
+  /// shared keys
   String? shareSecretKey;
   String? sharePubkey;
 
+  /// additional info
+  int? interval;
+  int? expiration;
+  String? relay;
+  String? otherFields;
+
+  /// status
   int? lastUpdateTime;
-  int? expirationTime;
-  String? chatRelay;
   int? status; // 0: init 1: request 2: accept 3: reject 4: update 5: close
 
   SecretSessionDB(
       {this.sessionId = '',
-      this.fromPubkey = '',
+      this.myPubkey = '',
+      this.myAliasPubkey = '',
+      this.myAliasPrivkey = '',
       this.toPubkey = '',
-      this.fromAliasPubkey = '',
-      this.fromAliasPrivkey = '',
       this.toAliasPubkey = '',
-      this.toAliasPrivkey = '',
       this.shareSecretKey = '',
+      this.sharePubkey = '',
+      this.interval = 0,
+      this.expiration = 0,
+      this.relay = '',
+      this.otherFields = '',
       this.lastUpdateTime = 0,
-      this.chatRelay = '',
       this.status = 0});
 
   @override
@@ -52,30 +66,36 @@ class SecretSessionDB extends DBObject {
 Map<String, dynamic> _secretSessionInfoToMap(SecretSessionDB instance) =>
     <String, dynamic>{
       'sessionId': instance.sessionId,
-      'fromPubkey': instance.fromPubkey,
+      'myPubkey': instance.myPubkey,
+      'myAliasPubkey': instance.myAliasPubkey,
+      'myAliasPrivkey': instance.myAliasPrivkey,
       'toPubkey': instance.toPubkey,
-      'fromAliasPubkey': instance.fromAliasPubkey,
-      'fromAliasPrivkey': instance.fromAliasPrivkey,
       'toAliasPubkey': instance.toAliasPubkey,
-      'toAliasPrivkey': instance.toAliasPrivkey,
       'shareSecretKey': instance.shareSecretKey,
+      'sharePubkey': instance.sharePubkey,
+      'interval': instance.interval,
+      'expiration': instance.expiration,
+      'relay': instance.relay,
+      'otherFields': instance.otherFields,
       'lastUpdateTime': instance.lastUpdateTime,
-      'chatRelay': instance.chatRelay,
       'status': instance.status
     };
 
 SecretSessionDB _secretSessionInfoFromMap(Map<String, dynamic> map) {
   return SecretSessionDB(
     sessionId: map['sessionId'].toString(),
-    fromPubkey: map['fromPubkey'].toString(),
+    myPubkey: map['myPubkey'].toString(),
+    myAliasPubkey: map['myAliasPubkey'].toString(),
+    myAliasPrivkey: map['myAliasPrivkey'].toString(),
     toPubkey: map['toPubkey'].toString(),
-    fromAliasPubkey: map['fromAliasPubkey'].toString(),
-    fromAliasPrivkey: map['fromAliasPrivkey'].toString(),
     toAliasPubkey: map['toAliasPubkey'].toString(),
-    toAliasPrivkey: map['toAliasPrivkey'].toString(),
     shareSecretKey: map['shareSecretKey'].toString(),
+    sharePubkey: map['sharePubkey'].toString(),
+    interval: map['interval'],
+    expiration: map['expiration'],
+    relay: map['relay'].toString(),
+    otherFields: map['otherFields'].toString(),
     lastUpdateTime: map['lastUpdateTime'],
-    chatRelay: map['chatRelay'].toString(),
     status: map['status'],
   );
 }
