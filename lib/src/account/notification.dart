@@ -45,8 +45,8 @@ class NotificationHelper {
       String receiver, String content, String replyId, String privkey) {
     String enContent = Nip4.encryptContent(content, privkey, receiver);
     List<List<String>> tags = Nip4.toTags(receiver, replyId);
-    Event event =
-    Event.from(kind: 22456, tags: tags, content: enContent, privkey: privkey);
+    Event event = Event.from(
+        kind: 22456, tags: tags, content: enContent, privkey: privkey);
     return event;
   }
 
@@ -77,11 +77,8 @@ class NotificationHelper {
       '#p': pubkey
     };
     Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
-      if (unRelays.isEmpty) {
-        if (!completer.isCompleted) completer.complete(ok);
-      }
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+      if (!completer.isCompleted) completer.complete(ok);
     }, relay: 'wss://relay.0xchat.com');
     return completer.future;
   }

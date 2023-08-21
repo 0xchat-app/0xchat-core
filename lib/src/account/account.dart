@@ -57,7 +57,7 @@ class Account {
         Uint8List privkey =
             decryptPrivateKey(hexToBytes(encryptedPrivKey), password);
         db.privkey = bytesToHex(privkey);
-        if (Keychain.getPublicKey(bytesToHex(privkey)) == pubkey){
+        if (Keychain.getPublicKey(bytesToHex(privkey)) == pubkey) {
           Account.sharedInstance.me = db;
           Account.sharedInstance.privkey = db.privkey!;
           Account.sharedInstance.pubkey = db.pubKey!;
@@ -302,7 +302,6 @@ class Account {
         if (relayList.isEmpty) {
           relayList = await syncRelaysMetadataFromKind3(pubkey);
         }
-
         if (!completer.isCompleted) completer.complete(relayList);
       }
     });
@@ -336,10 +335,11 @@ class Account {
     Map additionMap = jsonDecode(db.otherField ?? '{}');
     map.addAll(additionMap);
     Event event = Nip1.setMetadata(jsonEncode(map), privkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
-      if (unRelays.isEmpty) {
-        if (!completer.isCompleted) completer.complete(db);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+      if (ok.status) {
+        completer.complete(db);
+      } else {
+        completer.complete(null);
       }
     });
     return completer.future;
@@ -353,11 +353,8 @@ class Account {
       list.add(Relay(relay, null));
     }
     Event event = Nip65.encode(list, privkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
-      if (unRelays.isEmpty) {
-        if (!completer.isCompleted) completer.complete(ok);
-      }
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+      if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
   }

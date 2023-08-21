@@ -55,9 +55,9 @@ extension BlockList on Contacts {
       Event event = Nip51.createCategorizedPeople(
           Contacts.blockListidentifier, [], list, privkey, pubkey);
       if (event.content.isNotEmpty) {
-        Connect.sharedInstance.sendEvent(event, sendCallBack:
-            (OKEvent ok, String relay, List<String> unCompletedRelays) {
-          okCallBack?.call(ok, relay, unCompletedRelays);
+        Connect.sharedInstance.sendEvent(event,
+            sendCallBack: (OKEvent ok, String relay) {
+          okCallBack?.call(ok, relay);
         });
       } else {
         throw Exception('_syncBlockListToRelay error!, $blockList');
@@ -71,8 +71,7 @@ extension BlockList on Contacts {
     blockList ??= [];
     if (!blockList!.contains(blockPubkey)) {
       blockList!.add(blockPubkey);
-      _syncBlockListToRelay(okCallBack:
-          (OKEvent ok, String relay, List<String> unCompletedRelays) {
+      _syncBlockListToRelay(okCallBack: (OKEvent ok, String relay) {
         if (!completer.isCompleted) completer.complete(ok);
       });
       _syncBlockListToDB();
@@ -91,8 +90,7 @@ extension BlockList on Contacts {
     if (blockList != null && blockList!.isNotEmpty) {
       bool remove = blockList!.remove(blockPubkey);
       if (remove) {
-        _syncBlockListToRelay(okCallBack:
-            (OKEvent ok, String relay, List<String> unCompletedRelays) {
+        _syncBlockListToRelay(okCallBack: (OKEvent ok, String relay) {
           if (!completer.isCompleted) completer.complete(ok);
         });
         _syncBlockListToDB();

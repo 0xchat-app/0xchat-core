@@ -9,7 +9,7 @@ typedef NoticeCallBack = void Function(String notice, String relay);
 
 /// send event callback
 typedef OKCallBack = void Function(
-    OKEvent ok, String relay, List<String> unCompletedRelays);
+    OKEvent ok, String relay);
 
 /// request callback
 typedef EventCallBack = void Function(Event event, String relay);
@@ -97,7 +97,7 @@ class Connect {
         OKEvent ok = OKEvent(eventId, false, 'Time Out');
         if (sendsMap[eventId]!.okCallBack != null) {
           for (var relay in sendsMap[eventId]!.relays) {
-            sendsMap[eventId]!.okCallBack!(ok, relay, []);
+            sendsMap[eventId]!.okCallBack!(ok, relay);
           }
           sendsMap.remove(eventId);
         }
@@ -339,8 +339,10 @@ class Connect {
       if (sendsMap[ok.eventId]!.okCallBack != null) {
         var relays = sendsMap[ok.eventId]!.relays;
         relays.remove(relay);
-        sendsMap[ok.eventId]!.okCallBack!(ok, relay, relays);
-        if (relays.isEmpty) sendsMap.remove(ok.eventId);
+        if (ok.status || relays.isEmpty) {
+          sendsMap[ok.eventId]!.okCallBack!(ok, relay);
+          sendsMap.remove(ok.eventId);
+        }
       }
     }
   }

@@ -93,12 +93,12 @@ class Contacts {
     Event event = Nip51.createCategorizedPeople(
         identifier, [], friendList, privkey, pubkey);
     if (event.content.isNotEmpty) {
-      Connect.sharedInstance.sendEvent(event, sendCallBack:
-          (OKEvent ok, String relay, List<String> unCompletedRelays) {
-        if (unCompletedRelays.isEmpty && ok.status) {
+      Connect.sharedInstance.sendEvent(event,
+          sendCallBack: (OKEvent ok, String relay) {
+        if (ok.status) {
           _syncContactsToDB(event.content);
         }
-        okCallBack?.call(ok, relay, unCompletedRelays);
+        okCallBack?.call(ok, relay);
       });
     } else {
       throw Exception('_syncFriendsToRelay error content!, $friendList');
@@ -163,8 +163,7 @@ class Contacts {
       }
       allContacts[friendPubkey] = friend;
     });
-    _syncContactsToRelay(
-        okCallBack: (OKEvent ok, String relay, List<String> unCompletedRelays) {
+    _syncContactsToRelay(okCallBack: (OKEvent ok, String relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
     _subscriptMessages();
@@ -176,8 +175,7 @@ class Contacts {
 
     UserDB? friend = allContacts.remove(friendPubkey);
     if (friend != null) {
-      _syncContactsToRelay(okCallBack:
-          (OKEvent ok, String relay, List<String> unCompletedRelays) {
+      _syncContactsToRelay(okCallBack: (OKEvent ok, String relay) {
         if (!completer.isCompleted) completer.complete(ok);
       });
       _subscriptMessages();
@@ -193,7 +191,7 @@ class Contacts {
     if (friend != null && friend.aliasPubkey!.isNotEmpty) {
       friend.nickName = nickName;
       await DB.sharedInstance.update<UserDB>(friend);
-      _syncContactsToRelay(okCallBack: (ok, relay, unRelays) {
+      _syncContactsToRelay(okCallBack: (ok, relay) {
         if (!completer.isCompleted) completer.complete(ok);
       });
     }
@@ -356,7 +354,8 @@ class Contacts {
   }
 
   Future<void> _handlePrivateMessage(Event event, String relay) async {
-    MessageDB? messageDB = await MessageDB.fromPrivateMessage(event, pubkey, privkey);
+    MessageDB? messageDB =
+        await MessageDB.fromPrivateMessage(event, pubkey, privkey);
     if (messageDB != null) privateChatMessageCallBack?.call(messageDB);
   }
 
@@ -382,10 +381,10 @@ class Contacts {
           type: MessageDB.messageTypeToString(type),
           status: 0);
       await Messages.saveMessagesToDB([messageDB]);
+
       /// use SealedGossip as the default DM
       // Event encodeEvent = await Nip24.encode(event, toPubkey);
-      Connect.sharedInstance.sendEvent(event,
-          sendCallBack: (ok, relay, unRelays) async {
+      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
         await Messages.saveMessagesToDB([messageDB],
             conflictAlgorithm: ConflictAlgorithm.replace);

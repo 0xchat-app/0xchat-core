@@ -55,11 +55,12 @@ extension Calling on Contacts {
       default:
         throw Exception('error state');
     }
+
     /// 60s timeout for calling event
     Event encodeEvent = await Nip24.encode(event, toPubkey,
         expiration: currentUnixTimestampSeconds() + 60);
     Connect.sharedInstance.sendEvent(encodeEvent,
-        sendCallBack: (ok, relay, unRelays) async {
+        sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;

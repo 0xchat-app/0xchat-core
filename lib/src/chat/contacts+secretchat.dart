@@ -38,8 +38,7 @@ extension SecretChat on Contacts {
     /// expired 24 hours later
     Event sealedEvent = await Nip24.encode(event, friendPubkey,
         expiration: currentUnixTimestampSeconds() + 24 * 60 * 60);
-    Connect.sharedInstance.sendEvent(sealedEvent,
-        sendCallBack: (ok, relay, unRelays) {
+    Connect.sharedInstance.sendEvent(sealedEvent, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
@@ -90,7 +89,7 @@ extension SecretChat on Contacts {
     Event event = Nip101.accept(myAliasPubkey, toPubkey, sessionId, privkey);
     Event sealedEvent = await Nip24.encode(event, toPubkey);
     Connect.sharedInstance.sendEvent(sealedEvent,
-        sendCallBack: (ok, relay, unRelays) async {
+        sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
@@ -115,7 +114,7 @@ extension SecretChat on Contacts {
     Event event = Nip101.reject(toPubkey, sessionId, privkey);
     Event sealedEvent = await Nip24.encode(event, toPubkey);
     Connect.sharedInstance.sendEvent(sealedEvent,
-        sendCallBack: (ok, relay, unRelays) async {
+        sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
@@ -148,7 +147,7 @@ extension SecretChat on Contacts {
     Event event = Nip101.update(myAliasPubkey, toPubkey, sessionId, privkey);
     Event sealedEvent = await Nip24.encode(event, toPubkey);
     Connect.sharedInstance.sendEvent(sealedEvent,
-        sendCallBack: (ok, relay, unRelays) async {
+        sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
@@ -174,7 +173,7 @@ extension SecretChat on Contacts {
     Event event = Nip101.close(toPubkey, sessionId, privkey);
     Event sealedEvent = await Nip24.encode(event, toPubkey);
     Connect.sharedInstance.sendEvent(sealedEvent,
-        sendCallBack: (ok, relay, unRelays) async {
+        sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
@@ -345,7 +344,7 @@ extension SecretChat on Contacts {
         Event encodeEvent = await Nip24.encode(event, sessionDB.sharePubkey!,
             privkey: sessionDB.shareSecretKey);
         Connect.sharedInstance.sendEvent(encodeEvent, relay: sessionDB.relay,
-            sendCallBack: (ok, relay, unRelays) async {
+            sendCallBack: (ok, relay) async {
           messageDB.status = ok.status ? 1 : 2;
           Messages.saveMessagesToDB([messageDB],
               conflictAlgorithm: ConflictAlgorithm.replace);

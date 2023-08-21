@@ -287,8 +287,7 @@ class Channels {
     Map<String, String> additional = {'badges': jsonEncode(badges)};
     Event event =
         Nip28.createChannel(name, about, picture, additional, privkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) async {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (ok.status == true) {
         // update channel
         ChannelDB channelDB = ChannelDB(
@@ -350,11 +349,12 @@ class Channels {
         channelDB.channelId!,
         channelDB.relayURL!,
         privkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) async {
-      channels[channelDB.channelId!] = channelDB;
-      myChannels[channelDB.channelId!] = channelDB;
-      await _syncChannelToDB(channelDB);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
+      if (ok.status) {
+        channels[channelDB.channelId!] = channelDB;
+        myChannels[channelDB.channelId!] = channelDB;
+        await _syncChannelToDB(channelDB);
+      }
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
@@ -405,8 +405,7 @@ class Channels {
         createTime: event.createdAt,
         status: 0);
     Messages.saveMessagesToDB([messageDB]);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       messageDB.status = ok.status ? 1 : 2;
       Messages.saveMessagesToDB([messageDB],
           conflictAlgorithm: ConflictAlgorithm.replace);
@@ -420,8 +419,7 @@ class Channels {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Messages.deleteMessagesFromDB([messageId]);
     Event event = Nip28.hideChannelMessage(messageId, reason, privkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
@@ -430,8 +428,7 @@ class Channels {
   Future<OKEvent> muteUser(String userPubkey, String reason) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = Nip28.muteUser(userPubkey, reason, privkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
@@ -446,7 +443,7 @@ class Channels {
         _loadChannelPreMessages(
             channelId, DateTime.now().millisecondsSinceEpoch ~/ 1000, 100);
         _updateSubscription();
-        _syncMyChannelListToRelay(callBack: (ok, relay, unRelays) {
+        _syncMyChannelListToRelay(callBack: (ok, relay) {
           if (!completer.isCompleted) completer.complete(ok);
         });
       } else {
@@ -461,7 +458,7 @@ class Channels {
     Completer<OKEvent> completer = Completer<OKEvent>();
     myChannels.remove(channelId);
     _updateSubscription();
-    _syncMyChannelListToRelay(callBack: (ok, relay, unRelays) {
+    _syncMyChannelListToRelay(callBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
