@@ -10,7 +10,8 @@ typedef SecretChatAcceptCallBack = void Function(SecretSessionDB);
 typedef SecretChatRejectCallBack = void Function(SecretSessionDB);
 typedef SecretChatUpdateCallBack = void Function(SecretSessionDB);
 typedef SecretChatCloseCallBack = void Function(SecretSessionDB);
-typedef ChatMessageCallBack = void Function(MessageDB);
+typedef PrivateChatMessageCallBack = void Function(MessageDB);
+typedef SecretChatMessageCallBack = void Function(String, MessageDB);
 typedef ContactUpdatedCallBack = void Function();
 
 class Contacts {
@@ -42,8 +43,8 @@ class Contacts {
   SecretChatRejectCallBack? secretChatRejectCallBack;
   SecretChatUpdateCallBack? secretChatUpdateCallBack;
   SecretChatCloseCallBack? secretChatCloseCallBack;
-  ChatMessageCallBack? secretChatMessageCallBack;
-  ChatMessageCallBack? privateChatMessageCallBack;
+  SecretChatMessageCallBack? secretChatMessageCallBack;
+  PrivateChatMessageCallBack? privateChatMessageCallBack;
   ContactUpdatedCallBack? contactUpdatedCallBack;
 
   void Function(String friend, SignalingState state, String data)?

@@ -180,7 +180,7 @@ extension SecretChat on Contacts {
     return completer.future;
   }
 
-  SecretSessionDB _aliasToSessionDB(Alias alias) {
+  SecretSessionDB _aliasToSessionDB(KeyExchangeSession alias) {
     int status = 0;
     switch (alias.kind) {
       case 10100:
@@ -212,7 +212,7 @@ extension SecretChat on Contacts {
   Future<void> handleRequest(Event event, String relay) async {
     /// get alias
     Event decodeEvent = await Nip24.decode(event, privkey);
-    Alias alias = Nip101.getRequest(decodeEvent);
+    KeyExchangeSession alias = Nip101.getRequest(decodeEvent);
     SecretSessionDB secretSessionDB = _aliasToSessionDB(alias);
     await DB.sharedInstance.insert<SecretSessionDB>(secretSessionDB);
 
@@ -226,7 +226,7 @@ extension SecretChat on Contacts {
   Future<void> handleAccept(Event event, String relay) async {
     /// get alias
     Event decodeEvent = await Nip24.decode(event, privkey);
-    Alias alias = Nip101.getAccept(decodeEvent);
+    KeyExchangeSession alias = Nip101.getAccept(decodeEvent);
     SecretSessionDB? secretSessionDB =
         await _getSecretSessionFromDB(alias.sessionId);
     if (secretSessionDB != null) {
@@ -249,7 +249,7 @@ extension SecretChat on Contacts {
   Future<void> handleReject(Event event, String relay) async {
     /// get alias
     Event decodeEvent = await Nip24.decode(event, privkey);
-    Alias alias = Nip101.getReject(decodeEvent);
+    KeyExchangeSession alias = Nip101.getReject(decodeEvent);
     SecretSessionDB? secretSessionDB =
         await _getSecretSessionFromDB(alias.sessionId);
     if (secretSessionDB != null) {
@@ -271,7 +271,7 @@ extension SecretChat on Contacts {
     SecretSessionDB? secretSessionDB = await _getSecretSessionFromDB(sessionId);
 
     if (secretSessionDB != null) {
-      Alias alias = Nip101.getUpdate(decodeEvent, secretSessionDB.fromPubkey!);
+      KeyExchangeSession alias = Nip101.getUpdate(decodeEvent, secretSessionDB.fromPubkey!);
       secretSessionDB.toAliasPubkey = alias.toAliasPubkey;
       secretSessionDB.shareSecretKey = bytesToHex(Nip44.shareSecret(
           secretSessionDB.fromAliasPrivkey!, secretSessionDB.toAliasPubkey!));
@@ -302,12 +302,12 @@ extension SecretChat on Contacts {
     }
   }
 
-  Future<void> _handleSecretMessage(Event event) async {
+  Future<void> _handleSecretMessage(String sessionId, Event event) async {
     MessageDB? messageDB =
         await MessageDB.fromPrivateMessage(event, pubkey, privkey);
     if (messageDB != null) {
       await Messages.saveMessagesToDB([messageDB]);
-      secretChatMessageCallBack?.call(messageDB);
+      secretChatMessageCallBack?.call(sessionId, messageDB);
     }
   }
 
@@ -393,7 +393,7 @@ extension SecretChat on Contacts {
         event = await Nip24.decode(event, session.shareSecretKey!);
         switch (event.kind) {
           case 44:
-            _handleSecretMessage(event);
+            _handleSecretMessage(session.sessionId!, event);
             break;
           default:
             print('unhandled message $event');
