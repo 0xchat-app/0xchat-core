@@ -3,7 +3,7 @@ import 'package:chatcore/chat-core.dart';
 @reflector
 class SecretSessionDB extends DBObject {
   /// primary key
-  String? sessionId;
+  String sessionId;
 
   /// my keys
   String? myPubkey;
@@ -26,7 +26,7 @@ class SecretSessionDB extends DBObject {
 
   /// status
   int? lastUpdateTime;
-  int? status; // 0: init 1: request 2: accept 3: reject 4: update 5: close
+  int? status; // 0: init 1: request 2: accept 3: reject 4: close 5: update
 
   SecretSessionDB(
       {this.sessionId = '',

@@ -69,10 +69,11 @@ extension SecretChat on Contacts {
       OKEvent okEvent =
           await _sendAcceptEvent(randomKey.public, db.toPubkey!, sessionId);
       if (okEvent.status) {
-        db.myAliasPubkey = randomKey.public;
-        db.myAliasPrivkey = randomKey.private;
+        db.myAliasPubkey = '';
+        db.myAliasPrivkey = '';
         db.shareSecretKey =
             bytesToHex(Nip44.shareSecret(randomKey.private, db.toAliasPubkey!));
+        db.sharePubkey = Keychain.getPublicKey(db.shareSecretKey!);
         db.status = 2;
         db.lastUpdateTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await DB.sharedInstance.update<SecretSessionDB>(db);
@@ -122,22 +123,27 @@ extension SecretChat on Contacts {
 
   Future<OKEvent> update(String sessionId) async {
     SecretSessionDB? db = await _getSecretSessionFromDB(sessionId);
-    if (db != null) {
+    if (db != null && db.status != 5) {
       Keychain randomKey = Keychain.generate();
       OKEvent okEvent =
           await _sendUpdateEvent(randomKey.public, db.toPubkey!, sessionId);
       if (okEvent.status) {
-        db.myAliasPubkey = randomKey.public;
-        db.myAliasPrivkey = randomKey.private;
-        db.shareSecretKey =
-            bytesToHex(Nip44.shareSecret(randomKey.private, db.toAliasPubkey!));
-        db.status = 2;
+        db.myAliasPubkey = '';
+        db.myAliasPrivkey = '';
+        db.status = 5;
+        if (db.toAliasPubkey != null && db.toAliasPubkey!.isNotEmpty) {
+          db.shareSecretKey = bytesToHex(
+              Nip44.shareSecret(randomKey.private, db.toAliasPubkey!));
+          db.sharePubkey = Keychain.getPublicKey(db.shareSecretKey!);
+          db.toAliasPubkey = '';
+          db.status = 2;
+        }
         db.lastUpdateTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await DB.sharedInstance.update<SecretSessionDB>(db);
       }
       return okEvent;
     }
-    return OKEvent(sessionId, false, 'sessionId not found');
+    return OKEvent(sessionId, false, 'sessionId not found or in update status');
   }
 
   Future<OKEvent> _sendUpdateEvent(
@@ -221,7 +227,7 @@ extension SecretChat on Contacts {
     await DB.sharedInstance.insert<SecretSessionDB>(secretSessionDB);
 
     /// add to secretSessionMap
-    secretSessionMap[secretSessionDB.sessionId!] = secretSessionDB;
+    secretSessionMap[secretSessionDB.sessionId] = secretSessionDB;
 
     /// callback
     secretChatRequestCallBack?.call(secretSessionDB);
@@ -242,7 +248,7 @@ extension SecretChat on Contacts {
       await DB.sharedInstance.insert<SecretSessionDB>(secretSessionDB);
 
       /// add to secretSessionMap
-      secretSessionMap[secretSessionDB.sessionId!] = secretSessionDB;
+      secretSessionMap[secretSessionDB.sessionId] = secretSessionDB;
       subscriptSecretChat();
 
       /// callback
@@ -261,7 +267,7 @@ extension SecretChat on Contacts {
           where: 'sessionId = ?', whereArgs: [alias.sessionId]);
 
       /// remove from secretSessionMap
-      secretSessionMap.remove(secretSessionDB.sessionId!);
+      secretSessionMap.remove(secretSessionDB.sessionId);
 
       /// callback
       secretChatRejectCallBack?.call(secretSessionDB);
@@ -277,14 +283,25 @@ extension SecretChat on Contacts {
 
     if (secretSessionDB != null) {
       secretSessionDB.toAliasPubkey = session.fromAliasPubkey;
-      secretSessionDB.shareSecretKey = bytesToHex(Nip44.shareSecret(
-          secretSessionDB.myAliasPrivkey!, secretSessionDB.toAliasPubkey!));
-      secretSessionDB.status = 4;
+      if (secretSessionDB.myAliasPrivkey != null &&
+          secretSessionDB.myAliasPrivkey!.isNotEmpty) {
+        secretSessionDB.shareSecretKey = bytesToHex(Nip44.shareSecret(
+            secretSessionDB.myAliasPrivkey!, secretSessionDB.toAliasPubkey!));
+        secretSessionDB.sharePubkey =
+            Keychain.getPublicKey(secretSessionDB.shareSecretKey!);
+        secretSessionDB.myAliasPrivkey = '';
+        secretSessionDB.myAliasPubkey = '';
+        secretSessionDB.toAliasPubkey = '';
+      } else {
+        await DB.sharedInstance.update<SecretSessionDB>(secretSessionDB);
+        await update(secretSessionDB.sessionId);
+      }
+      secretSessionDB.status = 2;
       secretSessionDB.lastUpdateTime = session.createTime;
       await DB.sharedInstance.update<SecretSessionDB>(secretSessionDB);
 
       /// update secretSessionMap
-      secretSessionMap[secretSessionDB.sessionId!] = secretSessionDB;
+      secretSessionMap[secretSessionDB.sessionId] = secretSessionDB;
 
       /// callback
       secretChatUpdateCallBack?.call(secretSessionDB);
@@ -299,7 +316,7 @@ extension SecretChat on Contacts {
         await _getSecretSessionFromDB(session.sessionId);
     if (secretSessionDB != null) {
       /// remove from secretSessionMap
-      secretSessionMap.remove(secretSessionDB.sessionId!);
+      secretSessionMap.remove(secretSessionDB.sessionId);
       subscriptSecretChat();
 
       /// callback
@@ -349,6 +366,15 @@ extension SecretChat on Contacts {
           Messages.saveMessagesToDB([messageDB],
               conflictAlgorithm: ConflictAlgorithm.replace);
           if (!completer.isCompleted) completer.complete(ok);
+
+          /// rotate shared key
+          if (ok.status &&
+              sessionDB.interval != null &&
+              sessionDB.interval! > 0 &&
+              messageDB.createTime! >
+                  (sessionDB.interval! + sessionDB.lastUpdateTime!)) {
+            await update(sessionDB.sessionId);
+          }
         });
         return completer.future;
       }
@@ -365,7 +391,7 @@ extension SecretChat on Contacts {
         await DB.sharedInstance.objects<SecretSessionDB>();
     if (secretSessions.isNotEmpty) {
       secretSessionMap = {
-        for (SecretSessionDB item in secretSessions) item.sessionId!: item
+        for (SecretSessionDB item in secretSessions) item.sessionId: item
       };
     }
   }
@@ -398,7 +424,7 @@ extension SecretChat on Contacts {
         event = await Nip24.decode(event, session.shareSecretKey!);
         switch (event.kind) {
           case 44:
-            _handleSecretMessage(session.sessionId!, event);
+            _handleSecretMessage(session.sessionId, event);
             break;
           default:
             print('unhandled message $event');
