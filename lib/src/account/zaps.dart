@@ -71,7 +71,7 @@ class Zaps {
   }
 
   static Future<ZapReceipt?> getZapReceipt(String zapper,
-      {String? recipient, String? eventId}) async {
+      {String? recipient, String? eventId, String? invoice}) async {
     Completer<ZapReceipt?> completer = Completer<ZapReceipt?>();
     Filter f = Filter(kinds: [9735], authors: [zapper]);
     if (recipient != null) {
@@ -79,6 +79,9 @@ class Zaps {
     }
     if (eventId != null) {
       f = Filter(kinds: [9735], authors: [zapper], e: [eventId]);
+    }
+    if (invoice != null) {
+      f = Filter(kinds: [9735], authors: [zapper], bolt11: [invoice]);
     }
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
