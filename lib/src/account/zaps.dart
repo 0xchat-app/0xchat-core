@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
+import 'package:bolt11_decoder/bolt11_decoder.dart';
 
 class Zaps {
   static Future<String> getLnurlFromLnaddr(String lnaddr) async {
@@ -81,6 +82,10 @@ class Zaps {
       if (!completer.isCompleted) completer.complete(null);
     }
     return completer.future;
+  }
+
+  static Bolt11PaymentRequest getPaymentRequestInfo(String invoice) {
+    return Bolt11PaymentRequest(invoice);
   }
 
   static Future<ZapReceipt?> getZapReceipt(String zapper,
