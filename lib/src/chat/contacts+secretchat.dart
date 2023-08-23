@@ -220,8 +220,7 @@ extension SecretChat on Contacts {
 
   Future<void> handleRequest(Event event, String relay) async {
     /// get keyExchangeSession
-    Event decodeEvent = await Nip24.decode(event, privkey);
-    KeyExchangeSession keyExchangeSession = Nip101.getRequest(decodeEvent);
+    KeyExchangeSession keyExchangeSession = Nip101.getRequest(event);
     SecretSessionDB secretSessionDB =
         _exchangeSessionToSessionDB(keyExchangeSession);
 
@@ -240,8 +239,7 @@ extension SecretChat on Contacts {
 
   Future<void> handleAccept(Event event, String relay) async {
     /// get alias
-    Event decodeEvent = await Nip24.decode(event, privkey);
-    KeyExchangeSession session = Nip101.getAccept(decodeEvent);
+    KeyExchangeSession session = Nip101.getAccept(event);
     SecretSessionDB? secretSessionDB =
         await _getSecretSessionFromDB(session.sessionId);
     if (secretSessionDB != null) {
@@ -263,8 +261,7 @@ extension SecretChat on Contacts {
 
   Future<void> handleReject(Event event, String relay) async {
     /// get alias
-    Event decodeEvent = await Nip24.decode(event, privkey);
-    KeyExchangeSession alias = Nip101.getReject(decodeEvent);
+    KeyExchangeSession alias = Nip101.getReject(event);
     SecretSessionDB? secretSessionDB =
         await _getSecretSessionFromDB(alias.sessionId);
     if (secretSessionDB != null) {
@@ -281,8 +278,7 @@ extension SecretChat on Contacts {
 
   Future<void> handleUpdate(Event event, String relay) async {
     /// get alias
-    Event decodeEvent = await Nip24.decode(event, privkey);
-    KeyExchangeSession session = Nip101.getUpdate(decodeEvent);
+    KeyExchangeSession session = Nip101.getUpdate(event);
     SecretSessionDB? secretSessionDB =
         await _getSecretSessionFromDB(session.sessionId);
 
@@ -315,8 +311,7 @@ extension SecretChat on Contacts {
 
   Future<void> handleClose(Event event, String relay) async {
     /// get alias
-    Event decodeEvent = await Nip24.decode(event, privkey);
-    KeyExchangeSession session = Nip101.getClose(decodeEvent);
+    KeyExchangeSession session = Nip101.getClose(event);
     SecretSessionDB? secretSessionDB =
         await _getSecretSessionFromDB(session.sessionId);
     if (secretSessionDB != null) {
