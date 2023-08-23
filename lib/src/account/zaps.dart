@@ -23,14 +23,27 @@ class Zaps {
     }
   }
 
+  static Future<ZapsDB?> getZapsInfoFromDB(String lnurl) async {
+    List<ZapsDB?> maps = await DB.sharedInstance
+        .objects<ZapsDB>(where: 'lnURL = ?', whereArgs: [lnurl]);
+    if (maps.isNotEmpty) {
+      return maps.first;
+    } else {
+      return null;
+    }
+  }
+
   static Future<ZapsDB?> getZapsInfoFromLnurl(String lnurl) async {
+    ZapsDB? zapsDB = await getZapsInfoFromDB(lnurl);
+    if (zapsDB != null) return zapsDB;
     Map map = bech32Decode(lnurl, maxLength: lnurl.length);
     if (map['prefix'] == 'lnurl') {
       String hexURL = map['data'];
       String url = utf8.decode(hexToBytes(hexURL));
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
-        ZapsDB zapsDB = ZapsDB.fromMap(jsonDecode(response.body));
+        zapsDB = ZapsDB.fromMap(jsonDecode(response.body));
+        zapsDB.lnURL = lnurl;
         // cache to DB
         await DB.sharedInstance.insert<ZapsDB>(zapsDB);
         return zapsDB;
