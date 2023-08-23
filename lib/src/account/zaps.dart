@@ -65,6 +65,10 @@ class Zaps {
       String url =
           '${zapsDB.callback}?amount=${sats * 1000}&lnurl=${zapsDB.lnURL}';
       if (zapsDB.allowsNostr == true) {
+        if (content != null) {
+          content = await Nip44.encrypt(
+              Account.sharedInstance.privkey, recipient, content);
+        }
         Event event = Nip57.zapRequest(
             relays, (sats * 1000).toString(), lnurl, recipient, privkey,
             eventId: eventId, coordinate: coordinate, content: content);
@@ -104,6 +108,13 @@ class Zaps {
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       ZapReceipt zapReceipt = Nip57.getZapReceipt(event);
+      if (zapReceipt.content != null &&
+          zapReceipt.content!.isNotEmpty &&
+          zapReceipt.sender != null &&
+          zapReceipt.sender!.isNotEmpty) {
+        zapReceipt.content = await Nip44.decryptContent(zapReceipt.content!,
+            Account.sharedInstance.privkey, zapReceipt.sender!);
+      }
 
       /// check invoiceAmount, lnurl?
       if (!completer.isCompleted) completer.complete(zapReceipt);
