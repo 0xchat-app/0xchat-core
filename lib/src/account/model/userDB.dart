@@ -96,7 +96,7 @@ class UserDB extends DBObject {
 
   //'ALTER TABLE Company ADD description TEXT'
   static Map<String, String?> updateTable() {
-    return {"2": '''alter table userDB add otherField TEXT;'''};
+    return {"1": '''alter table userDB add otherField TEXT;'''};
   }
 
   static String? decodePubkey(String pubkey) {

@@ -36,7 +36,7 @@ class ZapsDB extends DBObject {
 
   //'ALTER TABLE Company ADD description TEXT'
   static Map<String, String?> updateTable() {
-    return {"3": '''alter table ZapsDB add nostrPubkey TEXT;'''};
+    return {"2": '''alter table ZapsDB add nostrPubkey TEXT;'''};
   }
 }
 
