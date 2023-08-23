@@ -26,6 +26,7 @@ extension SecretChat on Contacts {
           interval: interval,
           expiration: expiration);
       await DB.sharedInstance.insert<SecretSessionDB>(secretSessionDB);
+      secretSessionMap[secretSessionDB.sessionId] = secretSessionDB;
     }
     return okEvent;
   }
@@ -77,6 +78,7 @@ extension SecretChat on Contacts {
         db.status = 2;
         db.lastUpdateTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await DB.sharedInstance.update<SecretSessionDB>(db);
+        secretSessionMap[db.sessionId] = db;
       }
       return okEvent;
     }
@@ -103,6 +105,7 @@ extension SecretChat on Contacts {
       if (okEvent.status) {
         await DB.sharedInstance.delete<SecretSessionDB>(
             where: 'sessionId = ?', whereArgs: [sessionId]);
+        secretSessionMap.remove(sessionId);
       }
       return okEvent;
     }
@@ -140,6 +143,7 @@ extension SecretChat on Contacts {
         }
         db.lastUpdateTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await DB.sharedInstance.update<SecretSessionDB>(db);
+        secretSessionMap[db.sessionId] = db;
       }
       return okEvent;
     }
@@ -167,6 +171,7 @@ extension SecretChat on Contacts {
         db.status = 4;
         db.lastUpdateTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await DB.sharedInstance.update<SecretSessionDB>(db);
+        secretSessionMap[db.sessionId] = db;
       }
       return okEvent;
     }
