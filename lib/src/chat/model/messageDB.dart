@@ -12,7 +12,8 @@ enum MessageType {
   encryptedImage,
   encryptedVideo,
   encryptedAudio,
-  encryptedFile
+  encryptedFile,
+  system
 }
 
 @reflector
@@ -89,6 +90,8 @@ class MessageDB extends DBObject {
         return 'encryptedAudio';
       case MessageType.encryptedFile:
         return 'encryptedFile';
+      case MessageType.system:
+        return 'system';
       default:
         return 'text';
     }
@@ -116,6 +119,8 @@ class MessageDB extends DBObject {
         return MessageType.encryptedAudio;
       case 'encryptedFile':
         return MessageType.encryptedFile;
+      case 'system':
+        return MessageType.system;
       default:
         return MessageType.text;
     }
@@ -188,7 +193,8 @@ class MessageDB extends DBObject {
             type == 'encryptedImage' ||
             type == 'encryptedVideo' ||
             type == 'encryptedAudio' ||
-            type == 'encryptedFile') return map;
+            type == 'encryptedFile' ||
+            type == 'system') return map;
       }
       return {'contentType': 'text', 'content': content};
     } catch (e) {
@@ -211,6 +217,7 @@ class MessageDB extends DBObject {
       case MessageType.encryptedVideo:
       case MessageType.encryptedAudio:
       case MessageType.encryptedFile:
+      case MessageType.system:
         return jsonEncode(
             {'contentType': messageTypeToString(type), 'content': content});
       default:
@@ -225,11 +232,9 @@ class MessageDB extends DBObject {
       message = Nip4.decode(event, receiver, privkey);
     } else if (event.kind == 44) {
       message = await Nip44.decode(event, receiver, privkey);
-    }
-    else if (event.kind == 14) {
+    } else if (event.kind == 14) {
       message = await Nip24.decodeSealedGossipDM(event, receiver, privkey);
-    }
-    else{
+    } else {
       return null;
     }
     MessageDB messageDB = MessageDB(
