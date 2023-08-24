@@ -405,7 +405,7 @@ extension SecretChat on Contacts {
     return null;
   }
 
-  Future<void> subscriptSecretChat() async {
+  Future<void> subscriptSecretChat({String? relay}) async {
     if (secretSessionSubscription.isNotEmpty) {
       await Connect.sharedInstance.closeRequests(secretSessionSubscription);
     }
@@ -417,8 +417,18 @@ extension SecretChat on Contacts {
       }
     });
     Filter f = Filter(kinds: [1059], authors: pubkeys);
-    secretSessionSubscription = Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event, relay) async {
+
+    Map<String, List<Filter>> subscriptions = {};
+    if (relay == null) {
+      for (var r in Connect.sharedInstance.relays()) {
+        subscriptions[r] = [f];
+      }
+    } else {
+      subscriptions[relay] = [f];
+    }
+
+    secretSessionSubscription = Connect.sharedInstance
+        .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       SecretSessionDB? session = _getSessionFromPubkey(event.pubkey);
       if (session != null) {
         event = await Nip24.decode(event, session.shareSecretKey!);

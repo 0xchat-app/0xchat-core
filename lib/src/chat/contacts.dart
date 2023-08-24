@@ -65,16 +65,16 @@ class Contacts {
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1) {
-        _updateSubscriptions();
+        _updateSubscriptions(relay: relay);
       }
     });
   }
 
-  Future<void> _updateSubscriptions() async {
-    await _syncContactsFromRelay();
-    await syncBlockListFromRelay();
-    await _subscriptMessages();
-    await subscriptSecretChat();
+  Future<void> _updateSubscriptions({String? relay}) async {
+    await _syncContactsFromRelay(relay: relay);
+    await syncBlockListFromRelay(relay: relay);
+    await _subscriptMessages(relay: relay);
+    await subscriptSecretChat(relay: relay);
   }
 
   /// contact list
@@ -274,12 +274,21 @@ class Contacts {
     }
   }
 
-  Future<void> _syncContactsFromRelay() async {
+  Future<void> _syncContactsFromRelay({String? relay}) async {
     Completer<void> completer = Completer<void>();
     Filter f =
         Filter(kinds: [30000], d: [identifier], authors: [pubkey], limit: 1);
+    Map<String, List<Filter>> subscriptions = {};
+    if (relay == null) {
+      for (var r in Connect.sharedInstance.relays()) {
+        subscriptions[r] = [f];
+      }
+    } else {
+      subscriptions[relay] = [f];
+    }
     Lists? result;
-    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
+    Connect.sharedInstance.addSubscriptions(subscriptions,
+        eventCallBack: (event, relay) {
       if (event.content.isNotEmpty &&
           (result == null || result!.createTime < event.createdAt)) {
         result = Nip51.getLists(event, privkey);
@@ -298,21 +307,31 @@ class Contacts {
     return completer.future;
   }
 
-  Future<void> _subscriptMessages() async {
+  Future<void> _subscriptMessages({String? relay}) async {
     if (friendMessageSubscription.isNotEmpty) {
       await Connect.sharedInstance.closeRequests(friendMessageSubscription);
     }
 
     Map<String, List<Filter>> subscriptions = {};
 
-    for (String relayURL in Connect.sharedInstance.relays()) {
+    if (relay == null) {
+      for (String relayURL in Connect.sharedInstance.relays()) {
+        int friendMessageUntil =
+            Relays.sharedInstance.getFriendMessageUntil(relayURL);
+
+        /// all messages, contacts & unknown contacts
+        Filter f = Filter(
+            kinds: [4, 44, 1059], p: [pubkey], since: (friendMessageUntil + 1));
+        subscriptions[relayURL] = [f];
+      }
+    } else {
       int friendMessageUntil =
-          Relays.sharedInstance.getFriendMessageUntil(relayURL);
+          Relays.sharedInstance.getFriendMessageUntil(relay);
 
       /// all messages, contacts & unknown contacts
       Filter f = Filter(
           kinds: [4, 44, 1059], p: [pubkey], since: (friendMessageUntil + 1));
-      subscriptions[relayURL] = [f];
+      subscriptions[relay] = [f];
     }
     friendMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {

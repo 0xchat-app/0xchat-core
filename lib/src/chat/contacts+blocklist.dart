@@ -18,15 +18,26 @@ extension BlockList on Contacts {
     await Account.sharedInstance.syncMe();
   }
 
-  Future<void> syncBlockListFromRelay() async {
+  Future<void> syncBlockListFromRelay({String? relay}) async {
     Completer<void> completer = Completer<void>();
     Filter f = Filter(
         kinds: [30000],
         d: [Contacts.blockListidentifier],
         authors: [pubkey],
         limit: 1);
+
+    Map<String, List<Filter>> subscriptions = {};
+    if (relay == null) {
+      for (var r in Connect.sharedInstance.relays()) {
+        subscriptions[r] = [f];
+      }
+    } else {
+      subscriptions[relay] = [f];
+    }
+
     Lists? result;
-    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
+    Connect.sharedInstance.addSubscriptions(subscriptions,
+        eventCallBack: (event, relay) {
       if (event.content.isNotEmpty &&
           (result == null || result!.createTime < event.createdAt)) {
         result = Nip51.getLists(event, privkey);
