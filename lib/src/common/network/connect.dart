@@ -350,13 +350,15 @@ class Connect {
   void _listenEvent(WebSocket socket, String relay) {
     socket.listen((message) {
       _handleMessage(message, relay);
-    }, onDone: () {
+    }, onDone: () async {
       print("connect aborted");
       _setConnectStatus(relay, 3); // closed
+      await Future.delayed(Duration(milliseconds: 3000));
       connect(relay);
-    }, onError: (e) {
+    }, onError: (e) async {
       print('Server error: $e');
       _setConnectStatus(relay, 3); // closed
+      await Future.delayed(Duration(milliseconds: 3000));
       connect(relay);
     });
   }
