@@ -58,19 +58,18 @@ class Zaps {
 
   static Future<String?> getInvoice(List<String> relays, int sats, String lnurl,
       String recipient, String privkey,
-      {String? eventId, String? coordinate, String? content}) async {
+      {String? eventId,
+      String? coordinate,
+      String? content,
+      bool? privateZap}) async {
     Completer<String?> completer = Completer<String?>();
     ZapsDB? zapsDB = await getZapsInfoFromLnurl(lnurl);
     if (zapsDB != null) {
       String url =
           '${zapsDB.callback}?amount=${sats * 1000}&lnurl=${zapsDB.lnURL}';
       if (zapsDB.allowsNostr == true) {
-        if (content != null) {
-          content = await Nip44.encrypt(
-              Account.sharedInstance.privkey, recipient, content);
-        }
-        Event event = Nip57.zapRequest(
-            relays, (sats * 1000).toString(), lnurl, recipient, privkey,
+        Event event = await Nip57.zapRequest(relays, (sats * 1000).toString(),
+            lnurl, recipient, privkey, privateZap ?? false,
             eventId: eventId, coordinate: coordinate, content: content);
         String encodedUri = Uri.encodeFull(jsonEncode(event));
         url = '$url&nostr=$encodedUri';
@@ -92,7 +91,7 @@ class Zaps {
     return Bolt11PaymentRequest(invoice);
   }
 
-  static Future<ZapReceipt?> getZapReceipt(String zapper,
+  static Future<ZapReceipt?> getZapReceipt(String zapper, String privkey,
       {String? recipient, String? eventId, String? invoice}) async {
     Completer<ZapReceipt?> completer = Completer<ZapReceipt?>();
     Filter f = Filter(kinds: [9735], authors: [zapper]);
@@ -107,14 +106,7 @@ class Zaps {
     }
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      ZapReceipt zapReceipt = Nip57.getZapReceipt(event);
-      if (zapReceipt.content != null &&
-          zapReceipt.content!.isNotEmpty &&
-          zapReceipt.sender != null &&
-          zapReceipt.sender!.isNotEmpty) {
-        zapReceipt.content = await Nip44.decryptContent(zapReceipt.content!,
-            Account.sharedInstance.privkey, zapReceipt.sender!);
-      }
+      ZapReceipt zapReceipt = await Nip57.getZapReceipt(event, privkey);
 
       /// check invoiceAmount, lnurl?
       if (!completer.isCompleted) completer.complete(zapReceipt);
