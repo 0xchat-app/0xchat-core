@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
+import 'package:bolt11_decoder/bolt11_decoder.dart';
 
 class Zaps {
   static Future<String> getLnurlFromLnaddr(String lnaddr) async {
@@ -23,14 +24,27 @@ class Zaps {
     }
   }
 
+  static Future<ZapsDB?> getZapsInfoFromDB(String lnurl) async {
+    List<ZapsDB?> maps = await DB.sharedInstance
+        .objects<ZapsDB>(where: 'lnURL = ?', whereArgs: [lnurl]);
+    if (maps.isNotEmpty) {
+      return maps.first;
+    } else {
+      return null;
+    }
+  }
+
   static Future<ZapsDB?> getZapsInfoFromLnurl(String lnurl) async {
+    ZapsDB? zapsDB = await getZapsInfoFromDB(lnurl);
+    if (zapsDB != null) return zapsDB;
     Map map = bech32Decode(lnurl, maxLength: lnurl.length);
     if (map['prefix'] == 'lnurl') {
       String hexURL = map['data'];
       String url = utf8.decode(hexToBytes(hexURL));
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
-        ZapsDB zapsDB = ZapsDB.fromMap(jsonDecode(response.body));
+        zapsDB = ZapsDB.fromMap(jsonDecode(response.body));
+        zapsDB.lnURL = lnurl;
         // cache to DB
         await DB.sharedInstance.insert<ZapsDB>(zapsDB);
         return zapsDB;
@@ -44,15 +58,18 @@ class Zaps {
 
   static Future<String?> getInvoice(List<String> relays, int sats, String lnurl,
       String recipient, String privkey,
-      {String? eventId, String? coordinate, String? content}) async {
+      {String? eventId,
+      String? coordinate,
+      String? content,
+      bool? privateZap}) async {
     Completer<String?> completer = Completer<String?>();
     ZapsDB? zapsDB = await getZapsInfoFromLnurl(lnurl);
     if (zapsDB != null) {
       String url =
           '${zapsDB.callback}?amount=${sats * 1000}&lnurl=${zapsDB.lnURL}';
       if (zapsDB.allowsNostr == true) {
-        Event event = Nip57.zapRequest(
-            relays, (sats * 1000).toString(), lnurl, recipient, privkey,
+        Event event = await Nip57.zapRequest(relays, (sats * 1000).toString(),
+            lnurl, recipient, privkey, privateZap ?? false,
             eventId: eventId, coordinate: coordinate, content: content);
         String encodedUri = Uri.encodeFull(jsonEncode(event));
         url = '$url&nostr=$encodedUri';
@@ -70,8 +87,12 @@ class Zaps {
     return completer.future;
   }
 
-  static Future<ZapReceipt?> getZapReceipt(String zapper,
-      {String? recipient, String? eventId}) async {
+  static Bolt11PaymentRequest getPaymentRequestInfo(String invoice) {
+    return Bolt11PaymentRequest(invoice);
+  }
+
+  static Future<ZapReceipt?> getZapReceipt(String zapper, String privkey,
+      {String? recipient, String? eventId, String? invoice}) async {
     Completer<ZapReceipt?> completer = Completer<ZapReceipt?>();
     Filter f = Filter(kinds: [9735], authors: [zapper]);
     if (recipient != null) {
@@ -80,9 +101,12 @@ class Zaps {
     if (eventId != null) {
       f = Filter(kinds: [9735], authors: [zapper], e: [eventId]);
     }
+    if (invoice != null) {
+      f = Filter(kinds: [9735], authors: [zapper], bolt11: [invoice]);
+    }
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      ZapReceipt zapReceipt = Nip57.getZapReceipt(event);
+      ZapReceipt zapReceipt = await Nip57.getZapReceipt(event, privkey);
 
       /// check invoiceAmount, lnurl?
       if (!completer.isCompleted) completer.complete(zapReceipt);

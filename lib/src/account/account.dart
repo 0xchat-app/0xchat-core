@@ -6,6 +6,19 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class Account {
+  /// singleton
+  Account._internal();
+  factory Account() => sharedInstance;
+  static final Account sharedInstance = Account._internal();
+
+  UserDB? me;
+  String pubkey = '';
+  String privkey = '';
+
+  Future<void> syncMe() async {
+    await DB.sharedInstance.update<UserDB>(me!);
+  }
+
   static Future<UserDB?> getUserFromDB(
       {String pubkey = '', String privkey = ''}) async {
     if (privkey.isNotEmpty) {
@@ -44,7 +57,12 @@ class Account {
         Uint8List privkey =
             decryptPrivateKey(hexToBytes(encryptedPrivKey), password);
         db.privkey = bytesToHex(privkey);
-        if (Keychain.getPublicKey(bytesToHex(privkey)) == pubkey) return db;
+        if (Keychain.getPublicKey(bytesToHex(privkey)) == pubkey) {
+          Account.sharedInstance.me = db;
+          Account.sharedInstance.privkey = db.privkey!;
+          Account.sharedInstance.pubkey = db.pubKey!;
+          return db;
+        }
       }
     }
     return null;
@@ -70,6 +88,9 @@ class Account {
       db.privkey = privkey;
       await DB.sharedInstance.insert<UserDB>(db);
     }
+    Account.sharedInstance.me = db;
+    Account.sharedInstance.privkey = db!.privkey!;
+    Account.sharedInstance.pubkey = db.pubKey!;
     return db;
   }
 
@@ -95,9 +116,9 @@ class Account {
     }
   }
 
-  static String signData(List data, String privateKey) {
-    return Nip101.getSig(data, privateKey);
-  }
+  // static String signData(List data, String privateKey) {
+  //   return Nip101.getSig(data, privateKey);
+  // }
 
   static Uint8List encryptPrivateKeyWithMap(Map map) {
     return encryptPrivateKey(hexToBytes(map['privkey']), map['password']);
@@ -214,7 +235,7 @@ class Account {
     return completer.future;
   }
 
-  static Future<List<UserDB>> syncContactListFromRelay(String pubkey) async {
+  static Future<List<UserDB>> syncFollowListFromRelay(String pubkey) async {
     Completer<List<UserDB>> completer = Completer<List<UserDB>>();
     Filter f = Filter(kinds: [3], authors: [pubkey], limit: 1);
     List<Profile> profiles = [];
@@ -281,7 +302,6 @@ class Account {
         if (relayList.isEmpty) {
           relayList = await syncRelaysMetadataFromKind3(pubkey);
         }
-
         if (!completer.isCompleted) completer.complete(relayList);
       }
     });
@@ -315,10 +335,11 @@ class Account {
     Map additionMap = jsonDecode(db.otherField ?? '{}');
     map.addAll(additionMap);
     Event event = Nip1.setMetadata(jsonEncode(map), privkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
-      if (unRelays.isEmpty) {
-        if (!completer.isCompleted) completer.complete(db);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+      if (ok.status) {
+        completer.complete(db);
+      } else {
+        completer.complete(null);
       }
     });
     return completer.future;
@@ -332,11 +353,8 @@ class Account {
       list.add(Relay(relay, null));
     }
     Event event = Nip65.encode(list, privkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
-      if (unRelays.isEmpty) {
-        if (!completer.isCompleted) completer.complete(ok);
-      }
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+      if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
   }
@@ -355,7 +373,7 @@ class Account {
   }
 
   static Future<int> logout(String privkey) async {
-    Friends.sharedInstance.allFriends = {};
+    Contacts.sharedInstance.allContacts = {};
     Channels.sharedInstance.channels = {};
     Channels.sharedInstance.myChannels = {};
     return await delete(privkey);

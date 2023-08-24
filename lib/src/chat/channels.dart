@@ -35,23 +35,36 @@ class Channels {
     myChannels = _myChannels();
   }
 
-  void _updateSubscription() {
+  void _updateChannelSubscription({String? relay}) {
     if (myChannels.isEmpty) return;
     if (channelMessageSubscription.isNotEmpty) {
       Connect.sharedInstance.closeRequests(channelMessageSubscription);
     }
 
     Map<String, List<Filter>> subscriptions = {};
-    for (String relayURL in Connect.sharedInstance.relays()) {
+
+    if (relay == null) {
+      for (String relayURL in Connect.sharedInstance.relays()) {
+        int channelMessageUntil =
+            Relays.sharedInstance.getChannelMessageUntil(relayURL);
+        Filter f = Filter(
+            e: myChannels.keys.toList(),
+            kinds: [42],
+            limit: 1000,
+            since: (channelMessageUntil + 1));
+        subscriptions[relayURL] = [f];
+      }
+    } else {
       int channelMessageUntil =
-          Relays.sharedInstance.getChannelMessageUntil(relayURL);
+          Relays.sharedInstance.getChannelMessageUntil(relay);
       Filter f = Filter(
           e: myChannels.keys.toList(),
           kinds: [42],
           limit: 1000,
           since: (channelMessageUntil + 1));
-      subscriptions[relayURL] = [f];
+      subscriptions[relay] = [f];
     }
+
     channelMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       switch (event.kind) {
@@ -119,7 +132,7 @@ class Channels {
     Relays.sharedInstance.syncRelaysToDB();
   }
 
-  Future<void> _loadMyChannelsFromRelay() async {
+  Future<void> _loadMyChannelsFromRelay({String? relay}) async {
     Completer<void> completer = Completer<void>();
     Filter f = Filter(
       kinds: [30001],
@@ -127,8 +140,19 @@ class Channels {
       authors: [pubkey],
       limit: 1,
     );
+
+    Map<String, List<Filter>> subscriptions = {};
+    if (relay == null) {
+      for (var r in Connect.sharedInstance.relays()) {
+        subscriptions[r] = [f];
+      }
+    } else {
+      subscriptions[relay] = [f];
+    }
+
     Lists? result;
-    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
+    Connect.sharedInstance.addSubscriptions(subscriptions,
+        eventCallBack: (event, relay) {
       if (result == null || result!.createTime < event.createdAt) {
         result = Nip51.getLists(event, privkey);
       }
@@ -141,10 +165,10 @@ class Channels {
           DB.sharedInstance.insert<UserDB>(me!);
           await syncChannelsFromRelay(result!.owner, result!.bookmarks);
           myChannels = _myChannels();
-          _updateSubscription();
+          _updateChannelSubscription();
         } else {
           myChannels = _myChannels();
-          _updateSubscription();
+          _updateChannelSubscription();
         }
         if (!completer.isCompleted) completer.complete();
         myChannelsUpdatedCallBack?.call();
@@ -270,14 +294,14 @@ class Channels {
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1) {
-        _updateSubscriptions();
+        _updateSubscriptions(relay: relay);
       }
     });
   }
 
-  Future<void> _updateSubscriptions() async {
-    await _loadMyChannelsFromRelay();
-    _updateSubscription();
+  Future<void> _updateSubscriptions({String? relay}) async {
+    await _loadMyChannelsFromRelay(relay: relay);
+    _updateChannelSubscription(relay: relay);
   }
 
   Future<ChannelDB?> createChannel(String name, String about, String picture,
@@ -287,8 +311,7 @@ class Channels {
     Map<String, String> additional = {'badges': jsonEncode(badges)};
     Event event =
         Nip28.createChannel(name, about, picture, additional, privkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) async {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (ok.status == true) {
         // update channel
         ChannelDB channelDB = ChannelDB(
@@ -306,7 +329,7 @@ class Channels {
         channelDB.createTime = event.createdAt;
         channels[channelDB.channelId!] = channelDB;
         myChannels[channelDB.channelId!] = channelDB;
-        _updateSubscription();
+        _updateChannelSubscription();
         await _syncChannelToDB(channelDB);
         // update my channel list
         await _syncMyChannelListToRelay();
@@ -350,11 +373,12 @@ class Channels {
         channelDB.channelId!,
         channelDB.relayURL!,
         privkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) async {
-      channels[channelDB.channelId!] = channelDB;
-      myChannels[channelDB.channelId!] = channelDB;
-      await _syncChannelToDB(channelDB);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
+      if (ok.status) {
+        channels[channelDB.channelId!] = channelDB;
+        myChannels[channelDB.channelId!] = channelDB;
+        await _syncChannelToDB(channelDB);
+      }
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
@@ -405,8 +429,7 @@ class Channels {
         createTime: event.createdAt,
         status: 0);
     Messages.saveMessagesToDB([messageDB]);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       messageDB.status = ok.status ? 1 : 2;
       Messages.saveMessagesToDB([messageDB],
           conflictAlgorithm: ConflictAlgorithm.replace);
@@ -420,8 +443,7 @@ class Channels {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Messages.deleteMessagesFromDB([messageId]);
     Event event = Nip28.hideChannelMessage(messageId, reason, privkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
@@ -430,8 +452,7 @@ class Channels {
   Future<OKEvent> muteUser(String userPubkey, String reason) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = Nip28.muteUser(userPubkey, reason, privkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
@@ -445,8 +466,8 @@ class Channels {
         myChannels[channelId] = channels[channelId]!;
         _loadChannelPreMessages(
             channelId, DateTime.now().millisecondsSinceEpoch ~/ 1000, 100);
-        _updateSubscription();
-        _syncMyChannelListToRelay(callBack: (ok, relay, unRelays) {
+        _updateChannelSubscription();
+        _syncMyChannelListToRelay(callBack: (ok, relay) {
           if (!completer.isCompleted) completer.complete(ok);
         });
       } else {
@@ -460,8 +481,8 @@ class Channels {
   Future<OKEvent> leaveChannel(String channelId) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     myChannels.remove(channelId);
-    _updateSubscription();
-    _syncMyChannelListToRelay(callBack: (ok, relay, unRelays) {
+    _updateChannelSubscription();
+    _syncMyChannelListToRelay(callBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;

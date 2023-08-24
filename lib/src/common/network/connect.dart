@@ -9,7 +9,7 @@ typedef NoticeCallBack = void Function(String notice, String relay);
 
 /// send event callback
 typedef OKCallBack = void Function(
-    OKEvent ok, String relay, List<String> unCompletedRelays);
+    OKEvent ok, String relay);
 
 /// request callback
 typedef EventCallBack = void Function(Event event, String relay);
@@ -97,7 +97,7 @@ class Connect {
         OKEvent ok = OKEvent(eventId, false, 'Time Out');
         if (sendsMap[eventId]!.okCallBack != null) {
           for (var relay in sendsMap[eventId]!.relays) {
-            sendsMap[eventId]!.okCallBack!(ok, relay, []);
+            sendsMap[eventId]!.okCallBack!(ok, relay);
           }
           sendsMap.remove(eventId);
         }
@@ -249,7 +249,7 @@ class Connect {
     print(event.serialize());
     Sends sends = Sends(
         generate64RandomHexChars(),
-        relay == null ? relays() : [relay],
+        (relay == null || relay.isEmpty) ? relays() : [relay],
         DateTime.now().millisecondsSinceEpoch,
         event.id,
         sendCallBack);
@@ -297,6 +297,10 @@ class Connect {
 
   void _handleEvent(Event event, String relay) {
     print('Received event: ${event.serialize()}, $relay');
+
+    /// ignore the expired event
+    if (Nip40.expired(event)) return;
+
     String? subscriptionId = event.subscriptionId;
     if (subscriptionId != null) {
       String requestsMapKey = subscriptionId + relay;
@@ -335,8 +339,10 @@ class Connect {
       if (sendsMap[ok.eventId]!.okCallBack != null) {
         var relays = sendsMap[ok.eventId]!.relays;
         relays.remove(relay);
-        sendsMap[ok.eventId]!.okCallBack!(ok, relay, relays);
-        if (relays.isEmpty) sendsMap.remove(ok.eventId);
+        if (ok.status || relays.isEmpty) {
+          sendsMap[ok.eventId]!.okCallBack!(ok, relay);
+          sendsMap.remove(ok.eventId);
+        }
       }
     }
   }
@@ -344,13 +350,15 @@ class Connect {
   void _listenEvent(WebSocket socket, String relay) {
     socket.listen((message) {
       _handleMessage(message, relay);
-    }, onDone: () {
+    }, onDone: () async {
       print("connect aborted");
       _setConnectStatus(relay, 3); // closed
+      await Future.delayed(Duration(milliseconds: 3000));
       connect(relay);
-    }, onError: (e) {
+    }, onError: (e) async {
       print('Server error: $e');
       _setConnectStatus(relay, 3); // closed
+      await Future.delayed(Duration(milliseconds: 3000));
       connect(relay);
     });
   }

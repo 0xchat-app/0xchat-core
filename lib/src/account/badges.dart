@@ -90,7 +90,7 @@ class BadgesHelper {
     for (var badgeId in badgeIds) {
       List<BadgeDB?> maps = await DB.sharedInstance
           .objects<BadgeDB>(where: 'id = ?', whereArgs: [badgeId]);
-      if(maps.isNotEmpty) result.add(maps.first);
+      if (maps.isNotEmpty) result.add(maps.first);
     }
     return result;
   }
@@ -248,14 +248,13 @@ class BadgesHelper {
     }
     if (badgeAwards.isNotEmpty) {
       Event event = Nip58.setProfileBadges(badgeAwards, privkey);
-      Connect.sharedInstance.sendEvent(event,
-          sendCallBack: (ok, relay, unRelays) async {
-        if (unRelays.isEmpty) {
+      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
+        if (ok.status) {
           UserDB? userDB = await Account.getUserFromDB(privkey: privkey);
           userDB!.badges = jsonEncode(badgeIds);
           await DB.sharedInstance.insert<UserDB>(userDB);
-          if (!completer.isCompleted) completer.complete(ok);
         }
+        if (!completer.isCompleted) completer.complete(ok);
       });
 
       /// SYNC TO DB

@@ -8,15 +8,16 @@ class ZapsDB extends DBObject {
   String? callback;
   int? minSendable;
   int? maxSendable;
+  String? nostrPubkey;
 
-  ZapsDB({
-    this.lnAddr = '',
-    this.lnURL = '',
-    this.allowsNostr = false,
-    this.callback = '',
-    this.minSendable = 0,
-    this.maxSendable = 0,
-  });
+  ZapsDB(
+      {this.lnAddr = '',
+      this.lnURL = '',
+      this.allowsNostr = false,
+      this.callback = '',
+      this.minSendable = 0,
+      this.maxSendable = 0,
+      this.nostrPubkey = ''});
 
   @override
   //Map
@@ -32,6 +33,11 @@ class ZapsDB extends DBObject {
   static List<String?> primaryKey() {
     return ['lnAddr', 'lnURL'];
   }
+
+  //'ALTER TABLE Company ADD description TEXT'
+  static Map<String, String?> updateTable() {
+    return {"2": '''alter table ZapsDB add nostrPubkey TEXT;'''};
+  }
 }
 
 ZapsDB _zapsDBInfoFromMap(Map<String, dynamic> map) {
@@ -42,6 +48,7 @@ ZapsDB _zapsDBInfoFromMap(Map<String, dynamic> map) {
     callback: map['callback'].toString(),
     minSendable: map['minSendable'],
     maxSendable: map['maxSendable'],
+    nostrPubkey: map['nostrPubkey'].toString(),
   );
 }
 
@@ -52,4 +59,5 @@ Map<String, dynamic> _zapsDBInfoToMap(ZapsDB instance) => <String, dynamic>{
       'callback': instance.callback,
       'minSendable': instance.minSendable,
       'maxSendable': instance.maxSendable,
+      'nostrPubkey': instance.nostrPubkey,
     };

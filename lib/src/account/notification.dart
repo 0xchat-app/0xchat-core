@@ -45,8 +45,8 @@ class NotificationHelper {
       String receiver, String content, String replyId, String privkey) {
     String enContent = Nip4.encryptContent(content, privkey, receiver);
     List<List<String>> tags = Nip4.toTags(receiver, replyId);
-    Event event =
-    Event.from(kind: 22456, tags: tags, content: enContent, privkey: privkey);
+    Event event = Event.from(
+        kind: 22456, tags: tags, content: enContent, privkey: privkey);
     return event;
   }
 
@@ -56,12 +56,16 @@ class NotificationHelper {
     Connect.sharedInstance.sendEvent(event);
   }
 
+  void offline(String serverPubkey, String privkey) {
+    Map map = {'online': 0};
+    Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
+    Connect.sharedInstance.sendEvent(event);
+  }
+
   // call setNotification when online or updating notification
   Future<OKEvent> setNotification(
       String deviceId, List<int> kinds, List<String> relays) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    List<String> toAliasPubkeys =
-        Friends.sharedInstance.getAllUnMuteFriendsToAliasPubkey();
     List<String> channels = Channels.sharedInstance.getAllUnMuteChannels();
 
     Map map = {
@@ -70,14 +74,11 @@ class NotificationHelper {
       'deviceId': deviceId,
       'relays': relays,
       '#e': channels,
-      '#p': toAliasPubkeys
+      '#p': pubkey
     };
     Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
-      if (unRelays.isEmpty) {
-        if (!completer.isCompleted) completer.complete(ok);
-      }
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+      if (!completer.isCompleted) completer.complete(ok);
     }, relay: 'wss://relay.0xchat.com');
     return completer.future;
   }

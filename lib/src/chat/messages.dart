@@ -21,6 +21,8 @@ class Messages {
     privkey = key;
     pubkey = Keychain.getPublicKey(privkey);
 
+    return;
+
     // delete event
     List<DeleteEvent> deleteEvents = await _loadDeleteMessagesFromDB();
     for (DeleteEvent deleteEvent in deleteEvents) {
@@ -213,7 +215,8 @@ class Messages {
     return {'theLastTime': theLastTime, 'messages': messages};
   }
 
-  static Future<void> updateMessagesReadStatus(String where, List<Object?> whereArgs, bool read) async {
+  static Future<void> updateMessagesReadStatus(
+      String where, List<Object?> whereArgs, bool read) async {
     await DB.sharedInstance
         .rawUpdate('UPDATE MessageDB SET read = $read WHERE $where', whereArgs);
   }
@@ -240,8 +243,7 @@ class Messages {
 
     /// send delete event to relay
     Event event = Nip9.encode(messageIds, reason, privkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (ok, relay, unRelays) {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
