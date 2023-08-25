@@ -242,7 +242,7 @@ extension SecretChat on Contacts {
     KeyExchangeSession session = Nip101.getAccept(event);
     SecretSessionDB? secretSessionDB =
         await _getSecretSessionFromDB(session.sessionId);
-    if (secretSessionDB != null) {
+    if (secretSessionDB != null && session.fromPubkey == secretSessionDB.toPubkey) {
       secretSessionDB.toAliasPubkey = session.fromAliasPubkey;
       secretSessionDB.shareSecretKey = bytesToHex(Nip44.shareSecret(
           secretSessionDB.myAliasPrivkey!, secretSessionDB.toAliasPubkey!));
@@ -261,12 +261,12 @@ extension SecretChat on Contacts {
 
   Future<void> handleReject(Event event, String relay) async {
     /// get alias
-    KeyExchangeSession alias = Nip101.getReject(event);
+    KeyExchangeSession session = Nip101.getReject(event);
     SecretSessionDB? secretSessionDB =
-        await _getSecretSessionFromDB(alias.sessionId);
-    if (secretSessionDB != null) {
+        await _getSecretSessionFromDB(session.sessionId);
+    if (secretSessionDB != null && session.fromPubkey == secretSessionDB.toPubkey) {
       await DB.sharedInstance.delete<SecretSessionDB>(
-          where: 'sessionId = ?', whereArgs: [alias.sessionId]);
+          where: 'sessionId = ?', whereArgs: [session.sessionId]);
 
       /// remove from secretSessionMap
       secretSessionMap.remove(secretSessionDB.sessionId);
@@ -282,7 +282,7 @@ extension SecretChat on Contacts {
     SecretSessionDB? secretSessionDB =
         await _getSecretSessionFromDB(session.sessionId);
 
-    if (secretSessionDB != null) {
+    if (secretSessionDB != null && session.fromPubkey == secretSessionDB.toPubkey) {
       secretSessionDB.toAliasPubkey = session.fromAliasPubkey;
       if (secretSessionDB.myAliasPrivkey != null &&
           secretSessionDB.myAliasPrivkey!.isNotEmpty) {
@@ -314,7 +314,7 @@ extension SecretChat on Contacts {
     KeyExchangeSession session = Nip101.getClose(event);
     SecretSessionDB? secretSessionDB =
         await _getSecretSessionFromDB(session.sessionId);
-    if (secretSessionDB != null) {
+    if (secretSessionDB != null && session.fromPubkey == secretSessionDB.toPubkey) {
       /// remove from secretSessionMap
       secretSessionMap.remove(secretSessionDB.sessionId);
       subscriptSecretChat();
