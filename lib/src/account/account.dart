@@ -202,10 +202,18 @@ class Account {
         db.lnurl ??= map['lud16'];
         db.lastUpdatedTime = event.createdAt;
         if (db.name == null || db.name!.isEmpty) {
+          db.name = map['display_name'];
+        }
+        if (db.name == null || db.name!.isEmpty) {
+          db.name = map['username'];
+        }
+        if (db.name == null || db.name!.isEmpty) {
           db.name = db.shortEncodedPubkey;
         }
         var keysToRemove = {
           'name',
+          'display_name',
+          'username',
           'gender',
           'area',
           'about',
