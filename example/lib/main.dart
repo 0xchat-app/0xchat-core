@@ -80,10 +80,10 @@ Future<void> testFriends() async {
   //     about: 'my name is baby');
 
   Contacts.sharedInstance.initContacts((){});
-  Contacts.sharedInstance.secretChatMessageCallBack = (MessageDB message) {
-    print(
-        'friend message type: ${message.type}, content: ${message.decryptContent}');
-  };
+  // Contacts.sharedInstance.secretChatMessageCallBack = (MessageDB message) {
+  //   print(
+  //       'friend message type: ${message.type}, content: ${message.decryptContent}');
+  // };
 
   // await Future.delayed(const Duration(seconds: 3));
   // Map m = {'contentType': 'image', 'content':'https://www.baidu.com'};

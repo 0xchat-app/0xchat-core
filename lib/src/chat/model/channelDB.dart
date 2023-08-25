@@ -2,7 +2,7 @@ import 'package:chatcore/chat-core.dart';
 
 @reflector
 class ChannelDB extends DBObject {
-  String? channelId; //event id
+  String channelId; //event id
   int? createTime;
   String? creator; // pubkey
   String? name;

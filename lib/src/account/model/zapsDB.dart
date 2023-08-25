@@ -2,13 +2,13 @@ import 'package:chatcore/chat-core.dart';
 
 @reflector
 class ZapsDB extends DBObject {
-  String? lnAddr;
-  String? lnURL;
-  bool? allowsNostr;
-  String? callback;
-  int? minSendable;
-  int? maxSendable;
-  String? nostrPubkey;
+  String lnAddr;
+  String lnURL;
+  bool allowsNostr;
+  String callback;
+  int minSendable;
+  int maxSendable;
+  String nostrPubkey;
 
   ZapsDB(
       {this.lnAddr = '',

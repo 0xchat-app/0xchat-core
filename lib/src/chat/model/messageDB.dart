@@ -18,7 +18,7 @@ enum MessageType {
 
 @reflector
 class MessageDB extends DBObject {
-  String? messageId; //event id
+  String messageId; //event id
   String? sender; // pubkey
   String? receiver; // friend pubkey
   String? groupId; // channel or group id

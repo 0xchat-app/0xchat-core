@@ -3,7 +3,7 @@ import 'package:chatcore/chat-core.dart';
 @reflector
 class BadgeDB extends DBObject {
 
-  String? id;
+  String id;
   String? d;
   String? name;
   String? description;

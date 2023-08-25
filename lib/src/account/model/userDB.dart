@@ -5,7 +5,7 @@ import 'package:chatcore/chat-core.dart';
 
 @reflector
 class UserDB extends DBObject {
-  String? pubKey;
+  String pubKey;
   String? encryptedPrivKey;
   String? privkey;
   String? defaultPassword;

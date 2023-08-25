@@ -2,7 +2,7 @@ import 'package:chatcore/chat-core.dart';
 
 @reflector
 class BadgeAwardDB extends DBObject {
-  String? awardId; // event id
+  String awardId; // event id
   int? awardTime;
   String? identifies;
   String? creator;
