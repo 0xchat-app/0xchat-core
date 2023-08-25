@@ -56,13 +56,14 @@ class Zaps {
     }
   }
 
-  static Future<String?> getInvoice(List<String> relays, int sats, String lnurl,
-      String recipient, String privkey,
+  static Future<Map<String, dynamic>> getInvoice(List<String> relays, int sats,
+      String lnurl, String recipient, String privkey,
       {String? eventId,
       String? coordinate,
       String? content,
       bool? privateZap}) async {
-    Completer<String?> completer = Completer<String?>();
+    Completer<Map<String, dynamic>> completer =
+        Completer<Map<String, dynamic>>();
     ZapsDB? zapsDB = await getZapsInfoFromLnurl(lnurl);
     if (zapsDB != null) {
       String url =
@@ -77,12 +78,18 @@ class Zaps {
       final result = await http.get(Uri.parse(url));
       if (result.statusCode == 200) {
         String pr = jsonDecode(result.body)['pr'];
-        if (!completer.isCompleted) completer.complete(pr);
+        if (!completer.isCompleted) {
+          completer.complete({"invoice": pr, "zapsDB": zapsDB});
+        }
       } else {
-        if (!completer.isCompleted) completer.complete(null);
+        if (!completer.isCompleted) {
+          completer.complete({"invoice": '', "zapsDB": zapsDB});
+        }
       }
     } else {
-      if (!completer.isCompleted) completer.complete(null);
+      if (!completer.isCompleted) {
+        completer.complete({"invoice": '', "zapsDB": zapsDB});
+      }
     }
     return completer.future;
   }
