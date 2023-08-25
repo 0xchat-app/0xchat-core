@@ -250,10 +250,23 @@ class Account {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         List<UserDB> result = [];
+        List<String> nonProfiles = [];
+
         for (var p in profiles) {
           UserDB? userDB = await getUserFromDB(pubkey: p.key);
-          if (userDB != null) result.add(userDB);
+          if (userDB != null) {
+            if (userDB.lastUpdatedTime == 0) {
+              nonProfiles.add(userDB.pubKey);
+            } else {
+              result.add(userDB);
+            }
+          }
         }
+        if (nonProfiles.isNotEmpty) {
+          Map<String, UserDB> users = await syncProfilesFromRelay(nonProfiles);
+          result.addAll(users.values);
+        }
+
         if (!completer.isCompleted) completer.complete(result);
       }
     });

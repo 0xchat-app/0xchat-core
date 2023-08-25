@@ -30,7 +30,7 @@ class Channels {
   Future<void> _loadAllChannelsFromDB() async {
     List<Object?> maps = await DB.sharedInstance.objects<ChannelDB>();
     channels = {
-      for (var channelDB in maps) (channelDB as ChannelDB).channelId!: channelDB
+      for (var channelDB in maps) (channelDB as ChannelDB).channelId: channelDB
     };
     myChannels = _myChannels();
   }
@@ -226,9 +226,9 @@ class Channels {
       // check the owner for kind 41
       if (event.kind == 40 ||
           (event.kind == 41 &&
-              channels.containsKey(channelDB.channelId!) &&
-              channels[channelDB.channelId!]!.creator == channelDB.creator)) {
-        channels[channelDB.channelId!] = channelDB;
+              channels.containsKey(channelDB.channelId) &&
+              channels[channelDB.channelId]!.creator == channelDB.creator)) {
+        channels[channelDB.channelId] = channelDB;
         _syncChannelToDB(channelDB);
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
@@ -327,8 +327,8 @@ class Channels {
         channelDB.channelId = event.id;
         channelDB.creator = pubkey;
         channelDB.createTime = event.createdAt;
-        channels[channelDB.channelId!] = channelDB;
-        myChannels[channelDB.channelId!] = channelDB;
+        channels[channelDB.channelId] = channelDB;
+        myChannels[channelDB.channelId] = channelDB;
         _updateChannelSubscription();
         await _syncChannelToDB(channelDB);
         // update my channel list
@@ -370,13 +370,13 @@ class Channels {
         channelDB.about!,
         channelDB.picture!,
         channelDB.badges!.isNotEmpty ? {'badges': channelDB.badges!} : null,
-        channelDB.channelId!,
+        channelDB.channelId,
         channelDB.relayURL!,
         privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (ok.status) {
-        channels[channelDB.channelId!] = channelDB;
-        myChannels[channelDB.channelId!] = channelDB;
+        channels[channelDB.channelId] = channelDB;
+        myChannels[channelDB.channelId] = channelDB;
         await _syncChannelToDB(channelDB);
       }
       if (!completer.isCompleted) completer.complete(ok);
@@ -531,8 +531,8 @@ class Channels {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         await Future.forEach(result, (channel) async {
-          await syncChannelsFromRelay(channel.creator!, [channel.channelId!]);
-          channel = channels[channel.channelId!]!;
+          await syncChannelsFromRelay(channel.creator!, [channel.channelId]);
+          channel = channels[channel.channelId]!;
         });
         completer.complete(result);
       }
