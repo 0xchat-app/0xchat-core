@@ -35,6 +35,8 @@ class MessageDB extends DBObject {
 
   List<String>? reportList; // hide message ids list, not save to DB
 
+  String? plaintEvent;
+
   MessageDB(
       {this.messageId = '',
       this.sender = '',
@@ -48,11 +50,23 @@ class MessageDB extends DBObject {
       this.replyId = '',
       this.decryptContent = '',
       this.type = 'text',
-      this.status = 1});
+      this.status = 1,
+      this.plaintEvent = ''});
 
   @override
   Map<String, Object?> toMap() {
     return _messageInfoToMap(this);
+  }
+
+  Event? get originEvent {
+    if (plaintEvent != null) {
+      try {
+        return Event.fromJson(jsonDecode(plaintEvent!));
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
   }
 
   static MessageDB fromMap(Map<String, Object?> map) {
@@ -66,6 +80,11 @@ class MessageDB extends DBObject {
   //primaryKey
   static List<String?> primaryKey() {
     return ['messageId'];
+  }
+
+  //'ALTER TABLE Company ADD description TEXT'
+  static Map<String, String?> updateTable() {
+    return {"2": '''alter table MessageDB add plaintEvent TEXT;'''};
   }
 
   static String messageTypeToString(MessageType type) {
@@ -246,7 +265,8 @@ class MessageDB extends DBObject {
         tags: event.tags.toString(),
         content: event.content,
         createTime: event.createdAt,
-        replyId: message.replyId);
+        replyId: message.replyId,
+        plaintEvent: jsonEncode(event));
     messageDB.decryptContent = decodeContent(message.content)['content'];
     messageDB.type = decodeContent(message.content)['contentType'];
     return messageDB;
@@ -267,6 +287,7 @@ Map<String, dynamic> _messageInfoToMap(MessageDB instance) => <String, dynamic>{
       'decryptContent': instance.decryptContent,
       'type': instance.type,
       'status': instance.status,
+      'plaintEvent': instance.plaintEvent,
     };
 
 MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
@@ -284,5 +305,6 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     decryptContent: map['decryptContent'].toString(),
     type: map['type'],
     status: map['status'],
+    plaintEvent: map['plaintEvent'].toString(),
   );
 }

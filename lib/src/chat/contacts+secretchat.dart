@@ -342,7 +342,7 @@ extension SecretChat on Contacts {
     if (sessionDB != null) {
       UserDB? toUserDB = allContacts[toPubkey];
       if (toUserDB != null) {
-        event ??= await Nip44.encode(toUserDB.pubKey!,
+        event ??= await Nip44.encode(toUserDB.pubKey,
             MessageDB.encodeContent(type, content), replayId, privkey);
 
         MessageDB messageDB = MessageDB(
@@ -356,7 +356,8 @@ extension SecretChat on Contacts {
             createTime: event.createdAt,
             decryptContent: content,
             type: MessageDB.messageTypeToString(type),
-            status: 0);
+            status: 0,
+            plaintEvent: jsonEncode(event));
         Messages.saveMessagesToDB([messageDB]);
         Event encodeEvent = await Nip24.encode(event, sessionDB.sharePubkey!,
             privkey: sessionDB.shareSecretKey);

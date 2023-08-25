@@ -87,7 +87,7 @@ class Contacts {
     List<People> friendList = [];
     for (UserDB user in allContacts.values) {
       People p =
-          People(user.pubKey!, user.mainRelay, user.nickName, user.aliasPubkey);
+          People(user.pubKey, user.mainRelay, user.nickName, user.aliasPubkey);
       friendList.add(p);
     }
     Event event = Nip51.createCategorizedPeople(
@@ -110,7 +110,7 @@ class Contacts {
     List<UserDB> unknowProfiles = allContacts.values
         .where((userDB) => userDB.lastUpdatedTime == 0)
         .toList();
-    List<String> pubkeys = unknowProfiles.map((e) => e.pubKey!).toList();
+    List<String> pubkeys = unknowProfiles.map((e) => e.pubKey).toList();
     _syncContactsProfilesFromRelay(pubkeys);
   }
 
@@ -121,11 +121,11 @@ class Contacts {
       if (user != null) {
         if (user.toAliasPrivkey == null || user.toAliasPrivkey!.isEmpty) {
           user.toAliasPrivkey =
-              bytesToHex(Nip44.shareSecret(privkey, user.pubKey!));
+              bytesToHex(Nip44.shareSecret(privkey, user.pubKey));
           user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
         }
         user.nickName = p.petName;
-        allContacts[user.pubKey!] = user;
+        allContacts[user.pubKey] = user;
       }
     });
   }
@@ -138,12 +138,12 @@ class Contacts {
         if (user != null) {
           if (user.toAliasPrivkey == null || user.toAliasPrivkey!.isEmpty) {
             user.toAliasPrivkey =
-                bytesToHex(Nip44.shareSecret(privkey, user.pubKey!));
+                bytesToHex(Nip44.shareSecret(privkey, user.pubKey));
             user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
           }
           // sync to db
           await DB.sharedInstance.insert<UserDB>(user);
-          allContacts[user.pubKey!] = user;
+          allContacts[user.pubKey] = user;
         }
       });
     }
@@ -157,7 +157,7 @@ class Contacts {
       friend ??= UserDB(pubKey: friendPubkey);
       if (friend.toAliasPubkey == null || friend.toAliasPubkey!.isEmpty) {
         friend.toAliasPrivkey =
-            bytesToHex(Nip44.shareSecret(privkey, friend.pubKey!));
+            bytesToHex(Nip44.shareSecret(privkey, friend.pubKey));
         friend.toAliasPubkey = Keychain.getPublicKey(friend.toAliasPrivkey!);
         await DB.sharedInstance.update<UserDB>(friend);
       }
@@ -216,7 +216,7 @@ class Contacts {
       MessageType type, String content) async {
     UserDB? friend = allContacts[friendPubkey];
     if (friend != null) {
-      Event event = await Nip44.encode(friend.pubKey!,
+      Event event = await Nip44.encode(friend.pubKey,
           MessageDB.encodeContent(type, content), replayId, privkey);
       return event;
     }
@@ -234,7 +234,7 @@ class Contacts {
   List<String> getAllUnMuteContacts() {
     return allContacts.entries
         .where((e) => e.value.mute == false)
-        .map((e) => e.value.pubKey!)
+        .map((e) => e.value.pubKey)
         .toList();
   }
 
@@ -264,7 +264,7 @@ class Contacts {
           UserDB? friend = await Account.getUserFromDB(pubkey: p.pubkey);
           if (friend != null) {
             friend.toAliasPrivkey =
-                bytesToHex(Nip44.shareSecret(privkey, friend.pubKey!));
+                bytesToHex(Nip44.shareSecret(privkey, friend.pubKey));
             friend.toAliasPubkey =
                 Keychain.getPublicKey(friend.toAliasPrivkey!);
             allContacts[p.pubkey] = friend;
@@ -384,7 +384,7 @@ class Contacts {
     Completer<OKEvent> completer = Completer<OKEvent>();
     UserDB? toUserDB = allContacts[toPubkey];
     if (toUserDB != null) {
-      event ??= await Nip44.encode(toUserDB.pubKey!,
+      event ??= await Nip44.encode(toUserDB.pubKey,
           MessageDB.encodeContent(type, content), replayId, privkey);
 
       MessageDB messageDB = MessageDB(
@@ -398,7 +398,8 @@ class Contacts {
           createTime: event.createdAt,
           decryptContent: content,
           type: MessageDB.messageTypeToString(type),
-          status: 0);
+          status: 0,
+          plaintEvent: jsonEncode(event));
       await Messages.saveMessagesToDB([messageDB]);
 
       /// use SealedGossip as the default DM

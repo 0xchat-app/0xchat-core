@@ -98,15 +98,15 @@ class Channels {
     ChannelMessage channelMessage = Nip28.getChannelMessage(event);
     if (await _checkBlockedList(channelMessage.sender)) return;
     MessageDB messageDB = MessageDB(
-      messageId: event.id,
-      sender: channelMessage.sender,
-      receiver: '',
-      groupId: channelMessage.channelId,
-      kind: event.kind,
-      tags: jsonEncode(event.tags),
-      content: event.content,
-      createTime: event.createdAt,
-    );
+        messageId: event.id,
+        sender: channelMessage.sender,
+        receiver: '',
+        groupId: channelMessage.channelId,
+        kind: event.kind,
+        tags: jsonEncode(event.tags),
+        content: event.content,
+        createTime: event.createdAt,
+        plaintEvent: jsonEncode(event));
     messageDB.decryptContent =
         MessageDB.decodeContent(messageDB.content!)['content'];
     messageDB.type = MessageDB.decodeContent(messageDB.content!)['contentType'];
@@ -427,7 +427,8 @@ class Channels {
         tags: jsonEncode(event.tags),
         content: event.content,
         createTime: event.createdAt,
-        status: 0);
+        status: 0,
+        plaintEvent: jsonEncode(event));
     Messages.saveMessagesToDB([messageDB]);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       messageDB.status = ok.status ? 1 : 2;
