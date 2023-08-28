@@ -11,7 +11,8 @@ extension SecretChat on Contacts {
     OKEvent okEvent = await _sendRequestEvent(toPubkey, randomKey.public);
     if (okEvent.status) {
       // connect the chat relay
-      if (chatRelay.isNotEmpty) {
+      if (chatRelay.isNotEmpty &&
+          !Connect.sharedInstance.relays().contains(chatRelay)) {
         Connect.sharedInstance.connect(chatRelay);
       }
       SecretSessionDB secretSessionDB = SecretSessionDB(
