@@ -77,9 +77,14 @@ class Zaps {
       }
       final result = await http.get(Uri.parse(url));
       if (result.statusCode == 200) {
-        String pr = jsonDecode(result.body)['pr'];
-        if (!completer.isCompleted) {
-          completer.complete({"invoice": pr, "zapsDB": zapsDB});
+        String status = jsonDecode(result.body)['status'];
+        if (status == 'OK') {
+          String pr = jsonDecode(result.body)['pr'];
+          if (!completer.isCompleted) {
+            completer.complete({"invoice": pr, "zapsDB": zapsDB});
+          }
+        } else {
+          completer.complete({"invoice": '', "zapsDB": zapsDB});
         }
       } else {
         if (!completer.isCompleted) {
