@@ -320,18 +320,22 @@ class Contacts {
             Relays.sharedInstance.getFriendMessageUntil(relayURL);
 
         /// all messages, contacts & unknown contacts
-        Filter f = Filter(
+        Filter f1 = Filter(
             kinds: [4, 44, 1059], p: [pubkey], since: (friendMessageUntil + 1));
-        subscriptions[relayURL] = [f];
+        Filter f2 = Filter(
+            kinds: [4, 44, 1059], authors: [pubkey], since: (friendMessageUntil + 1));
+        subscriptions[relayURL] = [f1, f2];
       }
     } else {
       int friendMessageUntil =
           Relays.sharedInstance.getFriendMessageUntil(relay);
 
       /// all messages, contacts & unknown contacts
-      Filter f = Filter(
+      Filter f1 = Filter(
           kinds: [4, 44, 1059], p: [pubkey], since: (friendMessageUntil + 1));
-      subscriptions[relay] = [f];
+      Filter f2 = Filter(
+          kinds: [4, 44, 1059], authors: [pubkey], since: (friendMessageUntil + 1));
+      subscriptions[relay] = [f1, f2];
     }
     friendMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
