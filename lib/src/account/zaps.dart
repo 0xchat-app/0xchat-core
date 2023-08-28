@@ -98,9 +98,9 @@ class Zaps {
     return Bolt11PaymentRequest(invoice);
   }
 
-  static Future<ZapReceipt?> getZapReceipt(String zapper, String privkey,
+  static Future<List<ZapReceipt>> getZapReceipt(String zapper, String privkey,
       {String? recipient, String? eventId, String? invoice}) async {
-    Completer<ZapReceipt?> completer = Completer<ZapReceipt?>();
+    Completer<List<ZapReceipt>> completer = Completer<List<ZapReceipt>>();
     Filter f = Filter(kinds: [9735], authors: [zapper]);
     if (recipient != null) {
       f = Filter(kinds: [9735], authors: [zapper], p: [recipient]);
@@ -111,16 +111,19 @@ class Zaps {
     if (invoice != null) {
       f = Filter(kinds: [9735], authors: [zapper], bolt11: [invoice]);
     }
+    List<Event> zapReceiptList = [];
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      ZapReceipt zapReceipt = await Nip57.getZapReceipt(event, privkey);
-
-      /// check invoiceAmount, lnurl?
-      if (!completer.isCompleted) completer.complete(zapReceipt);
-    }, eoseCallBack: (requestId, status, relay, unRelays) {
+      zapReceiptList.add(event);
+    }, eoseCallBack: (requestId, status, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        if (!completer.isCompleted) completer.complete(null);
+        List<ZapReceipt> result = [];
+        for (var event in zapReceiptList) {
+          ZapReceipt zapReceipt = await Nip57.getZapReceipt(event, privkey);
+          result.add(zapReceipt);
+        }
+        if (!completer.isCompleted) completer.complete(result);
       }
     });
     return completer.future;
