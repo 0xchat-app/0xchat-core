@@ -140,8 +140,7 @@ extension SecretChat on Contacts {
           db.status = 2;
           secretSessionMap[db.sessionId] = db;
           await subscriptSecretChat();
-        }
-        else{
+        } else {
           db.status = 5;
         }
         db.lastUpdateTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
@@ -245,7 +244,8 @@ extension SecretChat on Contacts {
     KeyExchangeSession session = Nip101.getAccept(event);
     SecretSessionDB? secretSessionDB =
         await _getSecretSessionFromDB(session.sessionId);
-    if (secretSessionDB != null && session.fromPubkey == secretSessionDB.toPubkey) {
+    if (secretSessionDB != null &&
+        session.fromPubkey == secretSessionDB.toPubkey) {
       secretSessionDB.toAliasPubkey = session.fromAliasPubkey;
       secretSessionDB.shareSecretKey = bytesToHex(Nip44.shareSecret(
           secretSessionDB.myAliasPrivkey!, secretSessionDB.toAliasPubkey!));
@@ -267,7 +267,8 @@ extension SecretChat on Contacts {
     KeyExchangeSession session = Nip101.getReject(event);
     SecretSessionDB? secretSessionDB =
         await _getSecretSessionFromDB(session.sessionId);
-    if (secretSessionDB != null && session.fromPubkey == secretSessionDB.toPubkey) {
+    if (secretSessionDB != null &&
+        session.fromPubkey == secretSessionDB.toPubkey) {
       await DB.sharedInstance.delete<SecretSessionDB>(
           where: 'sessionId = ?', whereArgs: [session.sessionId]);
 
@@ -285,7 +286,8 @@ extension SecretChat on Contacts {
     SecretSessionDB? secretSessionDB =
         await _getSecretSessionFromDB(session.sessionId);
 
-    if (secretSessionDB != null && session.fromPubkey == secretSessionDB.toPubkey) {
+    if (secretSessionDB != null &&
+        session.fromPubkey == secretSessionDB.toPubkey) {
       secretSessionDB.toAliasPubkey = session.fromAliasPubkey;
       if (secretSessionDB.myAliasPrivkey != null &&
           secretSessionDB.myAliasPrivkey!.isNotEmpty) {
@@ -316,7 +318,8 @@ extension SecretChat on Contacts {
     KeyExchangeSession session = Nip101.getClose(event);
     SecretSessionDB? secretSessionDB =
         await _getSecretSessionFromDB(session.sessionId);
-    if (secretSessionDB != null && session.fromPubkey == secretSessionDB.toPubkey) {
+    if (secretSessionDB != null &&
+        session.fromPubkey == secretSessionDB.toPubkey) {
       /// remove from secretSessionMap
       secretSessionMap.remove(secretSessionDB.sessionId);
       subscriptSecretChat();
@@ -376,7 +379,8 @@ extension SecretChat on Contacts {
               sessionDB.interval != null &&
               sessionDB.interval! > 0 &&
               messageDB.createTime! >
-                  (sessionDB.interval! + sessionDB.lastUpdateTime!)) {
+                  (sessionDB.interval! + sessionDB.lastUpdateTime!) &&
+              sessionDB.status != 5) {
             await update(sessionDB.sessionId);
           }
         });

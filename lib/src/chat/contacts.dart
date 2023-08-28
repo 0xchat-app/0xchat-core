@@ -355,10 +355,10 @@ class Contacts {
               handleReject(innerEvent, relay);
               break;
             case 10103:
-              handleUpdate(innerEvent, relay);
+              handleClose(innerEvent, relay);
               break;
             case 10104:
-              handleClose(innerEvent, relay);
+              handleUpdate(innerEvent, relay);
               break;
             case 25050:
               handleCallEvent(innerEvent, relay);
