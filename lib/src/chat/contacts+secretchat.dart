@@ -131,15 +131,18 @@ extension SecretChat on Contacts {
       OKEvent okEvent =
           await _sendUpdateEvent(randomKey.public, db.toPubkey!, sessionId);
       if (okEvent.status) {
-        db.myAliasPubkey = '';
-        db.myAliasPrivkey = '';
-        db.status = 5;
+        db.myAliasPubkey = randomKey.public;
+        db.myAliasPrivkey = randomKey.private;
         if (db.toAliasPubkey != null && db.toAliasPubkey!.isNotEmpty) {
           db.shareSecretKey = bytesToHex(
               Nip44.shareSecret(randomKey.private, db.toAliasPubkey!));
           db.sharePubkey = Keychain.getPublicKey(db.shareSecretKey!);
-          db.toAliasPubkey = '';
           db.status = 2;
+          secretSessionMap[db.sessionId] = db;
+          await subscriptSecretChat();
+        }
+        else{
+          db.status = 5;
         }
         db.lastUpdateTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await DB.sharedInstance.update<SecretSessionDB>(db);
@@ -290,14 +293,13 @@ extension SecretChat on Contacts {
             secretSessionDB.myAliasPrivkey!, secretSessionDB.toAliasPubkey!));
         secretSessionDB.sharePubkey =
             Keychain.getPublicKey(secretSessionDB.shareSecretKey!);
-        secretSessionDB.myAliasPrivkey = '';
-        secretSessionDB.myAliasPubkey = '';
-        secretSessionDB.toAliasPubkey = '';
+        secretSessionDB.status = 2;
+        secretSessionMap[secretSessionDB.sessionId] = secretSessionDB;
+        await subscriptSecretChat();
       } else {
         await DB.sharedInstance.update<SecretSessionDB>(secretSessionDB);
         await update(secretSessionDB.sessionId);
       }
-      secretSessionDB.status = 2;
       secretSessionDB.lastUpdateTime = session.createTime;
       await DB.sharedInstance.update<SecretSessionDB>(secretSessionDB);
 
@@ -358,9 +360,10 @@ extension SecretChat on Contacts {
             type: MessageDB.messageTypeToString(type),
             status: 0,
             plaintEvent: jsonEncode(event));
-        Messages.saveMessagesToDB([messageDB]);
         Event encodeEvent = await Nip24.encode(event, sessionDB.sharePubkey!,
             privkey: sessionDB.shareSecretKey);
+        messageDB.plaintEvent = jsonEncode(encodeEvent);
+        Messages.saveMessagesToDB([messageDB]);
         Connect.sharedInstance.sendEvent(encodeEvent, relay: sessionDB.relay,
             sendCallBack: (ok, relay) async {
           messageDB.status = ok.status ? 1 : 2;
