@@ -41,7 +41,7 @@ extension SecretChat on Contacts {
     Event sealedEvent = await Nip24.encode(event, friendPubkey,
         expiration: currentUnixTimestampSeconds() + 24 * 60 * 60);
     Connect.sharedInstance.sendEvent(sealedEvent, sendCallBack: (ok, relay) {
-      if (!completer.isCompleted){
+      if (!completer.isCompleted) {
         completer.complete(OKEvent(event.id, ok.status, ok.message));
       }
     });
@@ -330,6 +330,7 @@ extension SecretChat on Contacts {
           where: 'sessionId = ?', whereArgs: [secretSessionDB.sessionId]);
       secretSessionMap.remove(secretSessionDB.sessionId);
       subscriptSecretChat();
+
       /// callback
       secretChatCloseCallBack?.call(secretSessionDB);
     }
@@ -430,7 +431,7 @@ extension SecretChat on Contacts {
     List<String> pubkeys = [pubkey];
     secretSessionMap.forEach((key, value) {
       if (value.status == 2 || value.status == 4) {
-        pubkeys.add(value.sharePubkey!);
+        if (value.sharePubkey!.isNotEmpty) pubkeys.add(value.sharePubkey!);
       }
     });
     Filter f = Filter(kinds: [1059], authors: pubkeys);
