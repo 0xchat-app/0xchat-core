@@ -26,7 +26,8 @@ class SecretSessionDB extends DBObject {
 
   /// status
   int? lastUpdateTime;
-  int? status; // 0: init 1: request 2: accept 3: reject 4: close 5: update
+  /// 0: send request, waiting for accept 1: receive request 2: accept 3: reject 4: close 5: update
+  int? status;
 
   SecretSessionDB(
       {this.sessionId = '',

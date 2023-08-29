@@ -22,7 +22,7 @@ extension SecretChat on Contacts {
           myAliasPrivkey: randomKey.private,
           toPubkey: toPubkey,
           lastUpdateTime: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-          status: 1,
+          status: 0,
           relay: chatRelay,
           interval: interval,
           expiration: expiration);
