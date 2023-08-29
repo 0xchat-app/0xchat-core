@@ -170,12 +170,9 @@ extension SecretChat on Contacts {
     SecretSessionDB? db = await _getSecretSessionFromDB(sessionId);
     if (db != null) {
       OKEvent okEvent = await _sendCloseEvent(db.toPubkey!, sessionId);
-      if (okEvent.status) {
-        db.status = 4;
-        db.lastUpdateTime = currentUnixTimestampSeconds();
-        await DB.sharedInstance.update<SecretSessionDB>(db);
-        secretSessionMap[db.sessionId] = db;
-      }
+      await DB.sharedInstance.delete<SecretSessionDB>(
+          where: 'sessionId = ?', whereArgs: [sessionId]);
+      secretSessionMap.remove(sessionId);
       return okEvent;
     }
     return OKEvent(sessionId, false, 'sessionId not found');
@@ -328,10 +325,11 @@ extension SecretChat on Contacts {
     if (secretSessionDB != null &&
         session.fromPubkey == secretSessionDB.toPubkey &&
         event.createdAt > secretSessionDB.lastUpdateTime!) {
-      /// remove from secretSessionMap
+      secretSessionDB.status = 4;
+      await DB.sharedInstance.delete<SecretSessionDB>(
+          where: 'sessionId = ?', whereArgs: [secretSessionDB.sessionId]);
       secretSessionMap.remove(secretSessionDB.sessionId);
       subscriptSecretChat();
-
       /// callback
       secretChatCloseCallBack?.call(secretSessionDB);
     }
