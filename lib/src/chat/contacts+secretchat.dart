@@ -41,7 +41,9 @@ extension SecretChat on Contacts {
     Event sealedEvent = await Nip24.encode(event, friendPubkey,
         expiration: currentUnixTimestampSeconds() + 24 * 60 * 60);
     Connect.sharedInstance.sendEvent(sealedEvent, sendCallBack: (ok, relay) {
-      if (!completer.isCompleted) completer.complete(ok);
+      if (!completer.isCompleted){
+        completer.complete(OKEvent(event.id, ok.status, ok.message));
+      }
     });
     return completer.future;
   }
@@ -423,7 +425,8 @@ extension SecretChat on Contacts {
 
   Future<void> subscriptSecretChat({String? relay}) async {
     if (secretSessionSubscription.isNotEmpty) {
-      await Connect.sharedInstance.closeRequests(secretSessionSubscription);
+      await Connect.sharedInstance
+          .closeRequests(secretSessionSubscription, relay: relay);
     }
 
     List<String> pubkeys = [pubkey];

@@ -309,7 +309,7 @@ class Contacts {
 
   Future<void> _subscriptMessages({String? relay}) async {
     if (friendMessageSubscription.isNotEmpty) {
-      await Connect.sharedInstance.closeRequests(friendMessageSubscription);
+      await Connect.sharedInstance.closeRequests(friendMessageSubscription, relay: relay);
     }
 
     Map<String, List<Filter>> subscriptions = {};

@@ -8,8 +8,7 @@ import 'package:nostr_core_dart/nostr.dart';
 typedef NoticeCallBack = void Function(String notice, String relay);
 
 /// send event callback
-typedef OKCallBack = void Function(
-    OKEvent ok, String relay);
+typedef OKCallBack = void Function(OKEvent ok, String relay);
 
 /// request callback
 typedef EventCallBack = void Function(Event event, String relay);
@@ -213,6 +212,8 @@ class Connect {
 
       /// Send a request message to the WebSocket server
       _send(subscriptionString, relay: relay);
+
+      print('$subscriptionString, $relay');
     }
     return requestsId;
   }
@@ -229,14 +230,20 @@ class Connect {
     }
   }
 
-  Future closeRequests(String requestId) async {
+  Future closeRequests(String requestId, {String? relay}) async {
     Iterable<String> requestsMapKeys = List<String>.from(requestsMap.keys);
     for (var key in requestsMapKeys) {
       var requests = requestsMap[key];
       if (requests!.requestId == requestId) {
-        for (var relay in relays()) {
+        if (relay != null) {
           if (requests.subscriptions[relay] != null) {
             await closeSubscription(requests.subscriptions[relay]!, relay);
+          }
+        } else {
+          for (var relay in relays()) {
+            if (requests.subscriptions[relay] != null) {
+              await closeSubscription(requests.subscriptions[relay]!, relay);
+            }
           }
         }
         return;
