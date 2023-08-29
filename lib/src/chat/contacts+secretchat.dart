@@ -230,7 +230,7 @@ extension SecretChat on Contacts {
     secretSessionDB.myPubkey = pubkey;
     secretSessionDB.toPubkey = keyExchangeSession.fromPubkey;
     secretSessionDB.toAliasPubkey = keyExchangeSession.fromAliasPubkey;
-
+    secretSessionDB.status = 1;
     await DB.sharedInstance.insert<SecretSessionDB>(secretSessionDB);
 
     /// add to secretSessionMap
