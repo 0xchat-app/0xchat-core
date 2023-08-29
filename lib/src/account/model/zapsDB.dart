@@ -44,7 +44,8 @@ ZapsDB _zapsDBInfoFromMap(Map<String, dynamic> map) {
   return ZapsDB(
     lnAddr: map['lnAddr'].toString(),
     lnURL: map['lnURL'].toString(),
-    allowsNostr: map['allowsNostr'] > 0 ? true : false,
+    allowsNostr:
+        (map['allowsNostr'] == true || map['allowsNostr'] == 1) ? true : false,
     callback: map['callback'].toString(),
     minSendable: map['minSendable'],
     maxSendable: map['maxSendable'],
