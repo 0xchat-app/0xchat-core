@@ -22,6 +22,7 @@ class MessageDB extends DBObject {
   String? sender; // pubkey
   String? receiver; // friend pubkey
   String? groupId; // channel or group id
+  String? sessionId; // secret chat id
   int? kind;
   String? tags;
   String? content; // content
@@ -42,6 +43,7 @@ class MessageDB extends DBObject {
       this.sender = '',
       this.receiver = '',
       this.groupId = '',
+      this.sessionId = '',
       this.kind = 0,
       this.tags = '',
       this.content = '',
@@ -84,7 +86,10 @@ class MessageDB extends DBObject {
 
   //'ALTER TABLE Company ADD description TEXT'
   static Map<String, String?> updateTable() {
-    return {"2": '''alter table MessageDB add plaintEvent TEXT;'''};
+    return {
+      "2":
+          '''alter table MessageDB add plaintEvent TEXT; alter table MessageDB add sessionId TEXT;'''
+    };
   }
 
   static String messageTypeToString(MessageType type) {
@@ -278,6 +283,7 @@ Map<String, dynamic> _messageInfoToMap(MessageDB instance) => <String, dynamic>{
       'sender': instance.sender,
       'receiver': instance.receiver,
       'groupId': instance.groupId,
+      'sessionId': instance.sessionId,
       'kind': instance.kind,
       'tags': instance.tags,
       'content': instance.content,
@@ -296,6 +302,7 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     sender: map['sender'].toString(),
     receiver: map['receiver'].toString(),
     groupId: map['groupId'].toString(),
+    sessionId: map['sessionId'].toString(),
     kind: map['kind'],
     tags: map['tags'].toString(),
     content: map['content'].toString(),

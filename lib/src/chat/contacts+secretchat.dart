@@ -334,6 +334,7 @@ extension SecretChat on Contacts {
     MessageDB? messageDB =
         await MessageDB.fromPrivateMessage(event, pubkey, privkey);
     if (messageDB != null) {
+      messageDB.sessionId = sessionId;
       await Messages.saveMessagesToDB([messageDB]);
       secretChatMessageCallBack?.call(sessionId, messageDB);
     }
@@ -356,6 +357,7 @@ extension SecretChat on Contacts {
             sender: pubkey,
             receiver: toPubkey,
             groupId: '',
+            sessionId: sessionId,
             kind: event.kind,
             tags: jsonEncode(event.tags),
             content: event.content,
