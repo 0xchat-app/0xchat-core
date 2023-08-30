@@ -74,6 +74,9 @@ extension BlockList on Contacts {
         throw Exception('_syncBlockListToRelay error!, $blockList');
       }
     }
+    else{
+      okCallBack?.call(OKEvent('', false, 'blockList is empty'), '');
+    }
   }
 
   Future<OKEvent> addToBlockList(String blockPubkey) async {
