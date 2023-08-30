@@ -254,6 +254,8 @@ extension SecretChat on Contacts {
       secretSessionDB.toAliasPubkey = session.fromAliasPubkey;
       secretSessionDB.shareSecretKey = bytesToHex(Nip44.shareSecret(
           secretSessionDB.myAliasPrivkey!, secretSessionDB.toAliasPubkey!));
+      secretSessionDB.sharePubkey =
+          Keychain.getPublicKey(secretSessionDB.shareSecretKey!);
       secretSessionDB.status = 2;
       secretSessionDB.lastUpdateTime = session.createTime;
       await DB.sharedInstance.insert<SecretSessionDB>(secretSessionDB);
@@ -353,7 +355,9 @@ extension SecretChat on Contacts {
   Future<Event?> getSendSecretMessageEvent(String sessionId, String toPubkey,
       String replayId, MessageType type, String content) async {
     SecretSessionDB? sessionDB = secretSessionMap[sessionId];
-    if (sessionDB != null) {
+    if (sessionDB != null &&
+        sessionDB.shareSecretKey != null &&
+        sessionDB.shareSecretKey!.isNotEmpty) {
       return await Nip24.encodeSealedGossipDM(
           toPubkey, MessageDB.encodeContent(type, content), replayId, privkey,
           sealedPrivkey: sessionDB.shareSecretKey!,
