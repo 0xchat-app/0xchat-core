@@ -8,7 +8,8 @@ extension SecretChat on Contacts {
   Future<OKEvent> request(String toPubkey, String chatRelay,
       {int? interval, int? expiration}) async {
     Keychain randomKey = Keychain.generate();
-    OKEvent okEvent = await _sendRequestEvent(toPubkey, randomKey.public);
+    OKEvent okEvent = await _sendRequestEvent(toPubkey, randomKey.public,
+        expiration: expiration, interval: interval, relay: chatRelay);
     if (okEvent.status) {
       // connect the chat relay
       if (chatRelay.isNotEmpty &&
@@ -32,10 +33,11 @@ extension SecretChat on Contacts {
     return okEvent;
   }
 
-  Future<OKEvent> _sendRequestEvent(
-      String friendPubkey, String aliasPubkey) async {
+  Future<OKEvent> _sendRequestEvent(String friendPubkey, String aliasPubkey,
+      {int? expiration, int? interval, String? relay}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    Event event = Nip101.request(aliasPubkey, friendPubkey, privkey);
+    Event event = Nip101.request(aliasPubkey, friendPubkey, privkey,
+        expiration: expiration, interval: interval, relay: relay);
 
     /// expired 24 hours later
     Event sealedEvent = await Nip24.encode(event, friendPubkey, privkey,
@@ -220,6 +222,7 @@ extension SecretChat on Contacts {
 
   Future<void> handleRequest(Event event, String relay) async {
     /// get keyExchangeSession
+    print('handleRequest: ${event.serialize()}');
     KeyExchangeSession keyExchangeSession = Nip101.getRequest(event);
     SecretSessionDB secretSessionDB =
         _exchangeSessionToSessionDB(keyExchangeSession);
