@@ -354,8 +354,8 @@ class Contacts {
       if (event.kind == 4 || event.kind == 44) {
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       } else if (event.kind == 1059) {
-        Event innerEvent = await Nip24.decode(event, privkey);
-        if (!inBlockList(innerEvent.pubkey)) {
+        Event? innerEvent = await Nip24.decode(event, privkey);
+        if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
           switch (innerEvent.kind) {
             case 14:
               _handlePrivateMessage(innerEvent, relay);
