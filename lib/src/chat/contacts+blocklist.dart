@@ -96,19 +96,19 @@ extension BlockList on Contacts {
     return completer.future;
   }
 
-  Future<OKEvent> removeBlockList(String blockPubkey) async {
+  Future<OKEvent> removeBlockList(List<String> blockPubkeys) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (blockList != null && blockList!.isNotEmpty) {
-      bool remove = blockList!.remove(blockPubkey);
-      if (remove) {
-        _syncBlockListToRelay(okCallBack: (OKEvent ok, String relay) {
-          if (!completer.isCompleted) completer.complete(ok);
-        });
-        _syncBlockListToDB();
+      for (var p in blockPubkeys) {
+        blockList!.remove(p);
       }
+      _syncBlockListToRelay(okCallBack: (OKEvent ok, String relay) {
+        if (!completer.isCompleted) completer.complete(ok);
+      });
+      _syncBlockListToDB();
     } else {
       if (!completer.isCompleted) {
-        completer.complete(OKEvent(blockPubkey, false, 'blockPubkey not exit'));
+        completer.complete(OKEvent('', false, 'blockList empty'));
       }
     }
     return completer.future;
