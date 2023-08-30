@@ -351,7 +351,7 @@ extension SecretChat on Contacts {
   }
 
   Future<OKEvent> sendSecretMessage(String sessionId, String toPubkey,
-      String replayId, MessageType type, String content, int expiration,
+      String replayId, MessageType type, String content,
       {Event? event}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
@@ -359,8 +359,10 @@ extension SecretChat on Contacts {
     if (sessionDB != null) {
       UserDB? toUserDB = allContacts[toPubkey];
       if (toUserDB != null) {
-        event ??= await Nip44.encode(toUserDB.pubKey,
-            MessageDB.encodeContent(type, content), replayId, privkey);
+        event ??= await Nip24.encodeSealedGossipDM(toUserDB.pubKey,
+            MessageDB.encodeContent(type, content), replayId, privkey,
+            sealedPrivkey: sessionDB.shareSecretKey!,
+            sealedReceiver: sessionDB.sharePubkey!);
 
         MessageDB messageDB = MessageDB(
             messageId: event.id,
@@ -376,11 +378,9 @@ extension SecretChat on Contacts {
             type: MessageDB.messageTypeToString(type),
             status: 0,
             plaintEvent: jsonEncode(event));
-        Event encodeEvent = await Nip24.encode(
-            event, sessionDB.sharePubkey!, sessionDB.shareSecretKey!);
-        messageDB.plaintEvent = jsonEncode(encodeEvent);
+
         Messages.saveMessagesToDB([messageDB]);
-        Connect.sharedInstance.sendEvent(encodeEvent, relay: sessionDB.relay,
+        Connect.sharedInstance.sendEvent(event, relay: sessionDB.relay,
             sendCallBack: (ok, relay) async {
           messageDB.status = ok.status ? 1 : 2;
           Messages.saveMessagesToDB([messageDB],
@@ -455,7 +455,7 @@ extension SecretChat on Contacts {
       if (session != null) {
         event = await Nip24.decode(event, session.shareSecretKey!);
         switch (event.kind) {
-          case 44:
+          case 14:
             _handleSecretMessage(session.sessionId, event);
             break;
           default:

@@ -214,13 +214,9 @@ class Contacts {
 
   Future<Event?> getSendMessageEvent(String friendPubkey, String replayId,
       MessageType type, String content) async {
-    UserDB? friend = allContacts[friendPubkey];
-    if (friend != null) {
-      Event event = await Nip44.encode(friend.pubKey,
-          MessageDB.encodeContent(type, content), replayId, privkey);
-      return event;
-    }
-    return null;
+    Event event = await Nip44.encode(friendPubkey,
+        MessageDB.encodeContent(type, content), replayId, privkey);
+    return event;
   }
 
   Future<void> muteFriend(String friendPubkey) async {
