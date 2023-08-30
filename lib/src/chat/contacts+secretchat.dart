@@ -466,7 +466,9 @@ extension SecretChat on Contacts {
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       SecretSessionDB? session = _getSessionFromPubkey(event.pubkey);
       if (session != null) {
-        event = await Nip24.decode(event, session.shareSecretKey!) ?? event;
+        event = await Nip24.decode(event, privkey,
+                sealedPrivkey: session.shareSecretKey!) ??
+            event;
         switch (event.kind) {
           case 14:
             _handleSecretMessage(session.sessionId, event);
