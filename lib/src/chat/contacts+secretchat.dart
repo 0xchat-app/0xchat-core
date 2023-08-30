@@ -82,6 +82,7 @@ extension SecretChat on Contacts {
         db.lastUpdateTime = currentUnixTimestampSeconds();
         await DB.sharedInstance.update<SecretSessionDB>(db);
         secretSessionMap[db.sessionId] = db;
+        subscriptSecretChat();
       }
       return okEvent;
     }
