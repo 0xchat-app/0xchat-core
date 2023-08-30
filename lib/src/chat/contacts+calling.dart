@@ -57,7 +57,7 @@ extension Calling on Contacts {
     }
 
     /// 60s timeout for calling event
-    Event encodeEvent = await Nip24.encode(event, toPubkey,
+    Event encodeEvent = await Nip24.encode(event, toPubkey, privkey,
         expiration: currentUnixTimestampSeconds() + 60);
     Connect.sharedInstance.sendEvent(encodeEvent,
         sendCallBack: (ok, relay) async {
