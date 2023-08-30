@@ -350,6 +350,18 @@ extension SecretChat on Contacts {
     }
   }
 
+  Future<Event?> getSendSecretMessageEvent(String sessionId, String toPubkey,
+      String replayId, MessageType type, String content) async {
+    SecretSessionDB? sessionDB = secretSessionMap[sessionId];
+    if (sessionDB != null) {
+      return await Nip24.encodeSealedGossipDM(
+          toPubkey, MessageDB.encodeContent(type, content), replayId, privkey,
+          sealedPrivkey: sessionDB.shareSecretKey!,
+          sealedReceiver: sessionDB.sharePubkey!);
+    }
+    return null;
+  }
+
   Future<OKEvent> sendSecretMessage(String sessionId, String toPubkey,
       String replayId, MessageType type, String content,
       {Event? event}) async {
@@ -357,48 +369,45 @@ extension SecretChat on Contacts {
 
     SecretSessionDB? sessionDB = secretSessionMap[sessionId];
     if (sessionDB != null) {
-      UserDB? toUserDB = allContacts[toPubkey];
-      if (toUserDB != null) {
-        event ??= await Nip24.encodeSealedGossipDM(toUserDB.pubKey,
-            MessageDB.encodeContent(type, content), replayId, privkey,
-            sealedPrivkey: sessionDB.shareSecretKey!,
-            sealedReceiver: sessionDB.sharePubkey!);
+      event ??= await Nip24.encodeSealedGossipDM(
+          toPubkey, MessageDB.encodeContent(type, content), replayId, privkey,
+          sealedPrivkey: sessionDB.shareSecretKey!,
+          sealedReceiver: sessionDB.sharePubkey!);
 
-        MessageDB messageDB = MessageDB(
-            messageId: event.id,
-            sender: pubkey,
-            receiver: toPubkey,
-            groupId: '',
-            sessionId: sessionId,
-            kind: event.kind,
-            tags: jsonEncode(event.tags),
-            content: event.content,
-            createTime: event.createdAt,
-            decryptContent: content,
-            type: MessageDB.messageTypeToString(type),
-            status: 0,
-            plaintEvent: jsonEncode(event));
+      MessageDB messageDB = MessageDB(
+          messageId: event.id,
+          sender: pubkey,
+          receiver: toPubkey,
+          groupId: '',
+          sessionId: sessionId,
+          kind: event.kind,
+          tags: jsonEncode(event.tags),
+          content: event.content,
+          createTime: event.createdAt,
+          decryptContent: content,
+          type: MessageDB.messageTypeToString(type),
+          status: 0,
+          plaintEvent: jsonEncode(event));
 
-        Messages.saveMessagesToDB([messageDB]);
-        Connect.sharedInstance.sendEvent(event, relay: sessionDB.relay,
-            sendCallBack: (ok, relay) async {
-          messageDB.status = ok.status ? 1 : 2;
-          Messages.saveMessagesToDB([messageDB],
-              conflictAlgorithm: ConflictAlgorithm.replace);
-          if (!completer.isCompleted) completer.complete(ok);
+      Messages.saveMessagesToDB([messageDB]);
+      Connect.sharedInstance.sendEvent(event, relay: sessionDB.relay,
+          sendCallBack: (ok, relay) async {
+        messageDB.status = ok.status ? 1 : 2;
+        Messages.saveMessagesToDB([messageDB],
+            conflictAlgorithm: ConflictAlgorithm.replace);
+        if (!completer.isCompleted) completer.complete(ok);
 
-          /// rotate shared key
-          if (ok.status &&
-              sessionDB.interval != null &&
-              sessionDB.interval! > 0 &&
-              messageDB.createTime! >
-                  (sessionDB.interval! + sessionDB.lastUpdateTime!) &&
-              sessionDB.status != 5) {
-            await update(sessionDB.sessionId);
-          }
-        });
-        return completer.future;
-      }
+        /// rotate shared key
+        if (ok.status &&
+            sessionDB.interval != null &&
+            sessionDB.interval! > 0 &&
+            messageDB.createTime! >
+                (sessionDB.interval! + sessionDB.lastUpdateTime!) &&
+            sessionDB.status != 5) {
+          await update(sessionDB.sessionId);
+        }
+      });
+      return completer.future;
     } else {
       if (!completer.isCompleted) {
         completer.complete(OKEvent(sessionId, false, 'unknown session'));

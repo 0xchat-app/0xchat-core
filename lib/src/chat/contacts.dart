@@ -212,10 +212,20 @@ class Contacts {
     return null;
   }
 
-  Future<Event?> getSendMessageEvent(String friendPubkey, String replayId,
-      MessageType type, String content) async {
-    Event event = await Nip44.encode(friendPubkey,
-        MessageDB.encodeContent(type, content), replayId, privkey);
+  Future<Event?> getSendMessageEvent(
+      String friendPubkey, String replayId, MessageType type, String content,
+      {int kind = 1059}) async {
+    Event? event;
+    if (kind == 4) {
+      event ??= Nip4.encode(friendPubkey,
+          MessageDB.encodeContent(type, content), replayId, privkey);
+    } else if (kind == 44) {
+      event ??= await Nip44.encode(friendPubkey,
+          MessageDB.encodeContent(type, content), replayId, privkey);
+    } else if (kind == 1059) {
+      event ??= await Nip24.encodeSealedGossipDM(friendPubkey,
+          MessageDB.encodeContent(type, content), replayId, privkey);
+    }
     return event;
   }
 
