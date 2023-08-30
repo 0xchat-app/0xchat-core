@@ -272,11 +272,12 @@ extension SecretChat on Contacts {
     if (secretSessionDB != null &&
         session.fromPubkey == secretSessionDB.toPubkey &&
         event.createdAt > secretSessionDB.lastUpdateTime!) {
-      await DB.sharedInstance.delete<SecretSessionDB>(
-          where: 'sessionId = ?', whereArgs: [session.sessionId]);
+      secretSessionDB.status = 3;
+      secretSessionDB.lastUpdateTime = session.createTime;
+      await DB.sharedInstance.update<SecretSessionDB>(secretSessionDB);
 
-      /// remove from secretSessionMap
-      secretSessionMap.remove(secretSessionDB.sessionId);
+      /// update secretSessionMap
+      secretSessionMap[secretSessionDB.sessionId] = secretSessionDB;
 
       /// callback
       secretChatRejectCallBack?.call(secretSessionDB);
