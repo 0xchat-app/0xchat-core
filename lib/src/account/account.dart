@@ -15,8 +15,26 @@ class Account {
   String pubkey = '';
   String privkey = '';
 
+  Map<String, UserDB> userCache = {};
+
   Future<void> syncMe() async {
     await DB.sharedInstance.update<UserDB>(me!);
+  }
+
+  static Future<UserDB?> getUser(String pubkey) async {
+    if (Account.sharedInstance.userCache.containsKey(pubkey)) {
+      return Account.sharedInstance.userCache[pubkey];
+    } else {
+      UserDB? user = await getUserFromDB(pubkey: pubkey);
+      if (user != null) {
+        if (user.lastUpdatedTime == 0) {
+          syncProfilesFromRelay([pubkey]);
+        }
+        Account.sharedInstance.userCache[pubkey] = user;
+        return user;
+      }
+    }
+    return null;
   }
 
   static Future<UserDB?> getUserFromDB(
