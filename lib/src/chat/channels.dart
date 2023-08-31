@@ -99,7 +99,9 @@ class Channels {
     ChannelMessage channelMessage = Nip28.getChannelMessage(event);
     if (await _checkBlockedList(channelMessage.sender)) return;
     ChannelDB? channel = channels[channelMessage.channelId];
-    if (channel != null && channel.badges != null) {
+    if (channel != null &&
+        channel.badges != null &&
+        channel.badges!.length > 10) {
       /// check badge request
       String badgeId =
           List<String>.from(jsonDecode(channel.badges ?? '')).first;
