@@ -11,7 +11,7 @@ typedef SecretChatRejectCallBack = void Function(SecretSessionDB);
 typedef SecretChatUpdateCallBack = void Function(SecretSessionDB);
 typedef SecretChatCloseCallBack = void Function(SecretSessionDB);
 typedef PrivateChatMessageCallBack = void Function(MessageDB);
-typedef SecretChatMessageCallBack = void Function(String, MessageDB);
+typedef SecretChatMessageCallBack = void Function(MessageDB);
 typedef ContactUpdatedCallBack = void Function();
 
 class Contacts {

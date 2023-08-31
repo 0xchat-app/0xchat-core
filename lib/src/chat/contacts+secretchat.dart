@@ -349,7 +349,7 @@ extension SecretChat on Contacts {
     if (messageDB != null) {
       messageDB.sessionId = sessionId;
       await Messages.saveMessagesToDB([messageDB]);
-      secretChatMessageCallBack?.call(sessionId, messageDB);
+      secretChatMessageCallBack?.call(messageDB);
     }
   }
 
