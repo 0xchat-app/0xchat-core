@@ -74,7 +74,7 @@ class NotificationHelper {
       'deviceId': deviceId,
       'relays': relays,
       '#e': channels,
-      '#p': pubkey
+      '#p': [pubkey]
     };
     Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
