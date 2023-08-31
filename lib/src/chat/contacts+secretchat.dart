@@ -375,6 +375,12 @@ extension SecretChat on Contacts {
 
     SecretSessionDB? sessionDB = secretSessionMap[sessionId];
     if (sessionDB != null) {
+      /// check chat relay
+      if (sessionDB.relay!.isNotEmpty &&
+          !Connect.sharedInstance.relays().contains(sessionDB.relay!)) {
+        Connect.sharedInstance.connect(sessionDB.relay!);
+      }
+
       event ??= await Nip24.encodeSealedGossipDM(
           toPubkey, MessageDB.encodeContent(type, content), replayId, privkey,
           sealedPrivkey: sessionDB.shareSecretKey!,
