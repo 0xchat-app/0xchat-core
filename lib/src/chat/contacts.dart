@@ -390,7 +390,10 @@ class Contacts {
   Future<void> _handlePrivateMessage(Event event, String relay) async {
     MessageDB? messageDB =
         await MessageDB.fromPrivateMessage(event, pubkey, privkey);
-    if (messageDB != null) privateChatMessageCallBack?.call(messageDB);
+    if (messageDB != null){
+      await Messages.saveMessagesToDB([messageDB]);
+      privateChatMessageCallBack?.call(messageDB);
+    }
   }
 
   Future<OKEvent> sendPrivateMessage(
