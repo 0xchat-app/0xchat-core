@@ -355,7 +355,6 @@ extension SecretChat on Contacts {
   Future<Event?> getSendSecretMessageEvent(String sessionId, String toPubkey,
       String replayId, MessageType type, String content) async {
     SecretSessionDB? sessionDB = secretSessionMap[sessionId];
-    print('getSendSecretMessageEvent: $sessionId, $sessionDB, ${secretSessionMap.keys.toList().toString()}');
     if (sessionDB != null &&
         sessionDB.shareSecretKey != null &&
         sessionDB.shareSecretKey!.isNotEmpty) {
@@ -452,14 +451,20 @@ extension SecretChat on Contacts {
         if (value.sharePubkey!.isNotEmpty) pubkeys.add(value.sharePubkey!);
       }
     });
-    Filter f = Filter(kinds: [1059], authors: pubkeys);
 
     Map<String, List<Filter>> subscriptions = {};
     if (relay == null) {
       for (var r in Connect.sharedInstance.relays()) {
+        int friendMessageUntil = Relays.sharedInstance.getFriendMessageUntil(r);
+        Filter f = Filter(
+            kinds: [1059], authors: pubkeys, since: friendMessageUntil + 1);
         subscriptions[r] = [f];
       }
     } else {
+      int friendMessageUntil =
+          Relays.sharedInstance.getFriendMessageUntil(relay);
+      Filter f = Filter(
+          kinds: [1059], authors: pubkeys, since: friendMessageUntil + 1);
       subscriptions[relay] = [f];
     }
 
