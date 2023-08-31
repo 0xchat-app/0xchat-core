@@ -1,4 +1,5 @@
 import 'package:chatcore/chat-core.dart';
+import 'package:nostr_core_dart/nostr.dart';
 
 @reflector
 class SecretSessionDB extends DBObject {
@@ -26,7 +27,8 @@ class SecretSessionDB extends DBObject {
 
   /// status
   int? lastUpdateTime;
-  /// 0: send request, waiting for accept 1: receive request 2: accept 3: reject 4: close 5: update
+
+  /// 0: send request, waiting for accept 1: receive request 2: accept 3: reject 4: close 5: update 6: expired
   int? status;
 
   SecretSessionDB(
@@ -56,6 +58,14 @@ class SecretSessionDB extends DBObject {
 
   static String? tableName() {
     return "SecretSessionDB";
+  }
+
+  int get currentStatus {
+    if ((status == 0 || status == 1) &&
+        expiration != null &&
+        expiration! > 0 &&
+        (currentUnixTimestampSeconds() > expiration!)) return 6;
+    return status ?? 0;
   }
 
   //primaryKey

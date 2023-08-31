@@ -8,6 +8,8 @@ extension SecretChat on Contacts {
   Future<OKEvent> request(String toPubkey, String chatRelay,
       {int? interval, int? expiration}) async {
     Keychain randomKey = Keychain.generate();
+    /// default 24 hours
+    expiration ??= currentUnixTimestampSeconds() + 24 * 60 * 60;
     OKEvent okEvent = await _sendRequestEvent(toPubkey, randomKey.public,
         expiration: expiration, interval: interval, relay: chatRelay);
     if (okEvent.status) {
@@ -41,7 +43,7 @@ extension SecretChat on Contacts {
 
     /// expired 24 hours later
     Event sealedEvent = await Nip24.encode(event, friendPubkey, privkey,
-        expiration: currentUnixTimestampSeconds() + 24 * 60 * 60);
+        expiration: expiration);
     Connect.sharedInstance.sendEvent(sealedEvent, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
         completer.complete(OKEvent(event.id, ok.status, ok.message));
