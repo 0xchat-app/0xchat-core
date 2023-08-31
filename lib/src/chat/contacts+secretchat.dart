@@ -223,7 +223,6 @@ extension SecretChat on Contacts {
 
   Future<void> handleRequest(Event event, String relay) async {
     /// get keyExchangeSession
-    print('handleRequest: ${event.serialize()}');
     KeyExchangeSession keyExchangeSession = Nip101.getRequest(event);
     SecretSessionDB secretSessionDB =
         _exchangeSessionToSessionDB(keyExchangeSession);
@@ -356,6 +355,7 @@ extension SecretChat on Contacts {
   Future<Event?> getSendSecretMessageEvent(String sessionId, String toPubkey,
       String replayId, MessageType type, String content) async {
     SecretSessionDB? sessionDB = secretSessionMap[sessionId];
+    print('getSendSecretMessageEvent: $sessionId, $sessionDB, ${secretSessionMap.keys.toList().toString()}');
     if (sessionDB != null &&
         sessionDB.shareSecretKey != null &&
         sessionDB.shareSecretKey!.isNotEmpty) {

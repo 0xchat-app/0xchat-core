@@ -57,7 +57,7 @@ extension BlockList on Contacts {
   }
 
   void _syncBlockListToRelay({OKCallBack? okCallBack}) {
-    if (blockList != null && blockList!.isNotEmpty) {
+    if (blockList != null) {
       List<People> list = [];
       for (String pubkey in blockList!) {
         People p = People(pubkey, '', '', '');
