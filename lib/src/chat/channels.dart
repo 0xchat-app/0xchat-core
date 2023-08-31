@@ -38,7 +38,8 @@ class Channels {
   void _updateChannelSubscription({String? relay}) {
     if (myChannels.isEmpty) return;
     if (channelMessageSubscription.isNotEmpty) {
-      Connect.sharedInstance.closeRequests(channelMessageSubscription, relay: relay);
+      Connect.sharedInstance
+          .closeRequests(channelMessageSubscription, relay: relay);
     }
 
     Map<String, List<Filter>> subscriptions = {};
@@ -97,6 +98,21 @@ class Channels {
   Future<void> _receiveChannelMessages(Event event, String relay) async {
     ChannelMessage channelMessage = Nip28.getChannelMessage(event);
     if (await _checkBlockedList(channelMessage.sender)) return;
+    ChannelDB? channel = channels[channelMessage.channelId];
+    if (channel != null && channel.badges != null) {
+      /// check badge request
+      String badgeId =
+          List<String>.from(jsonDecode(channel.badges ?? '')).first;
+      UserDB? sender =
+          await Account.getUserFromDB(pubkey: channelMessage.sender);
+      if (sender != null &&
+          sender.badgesList != null &&
+          sender.badgesList!.contains(badgeId)) {
+        /// meet the request
+      } else {
+        return;
+      }
+    }
     MessageDB messageDB = MessageDB(
         messageId: event.id,
         sender: channelMessage.sender,
