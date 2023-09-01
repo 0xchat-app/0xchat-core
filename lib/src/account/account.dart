@@ -184,7 +184,7 @@ class Account {
   static Future<Map<String, UserDB>> syncProfilesFromRelay(
       List<String> pubkeys) async {
     Completer<Map<String, UserDB>> completer = Completer<Map<String, UserDB>>();
-
+    if (pubkeys.isEmpty) return {};
     Filter f = Filter(
       kinds: [0],
       authors: pubkeys,
