@@ -214,7 +214,7 @@ class Contacts {
 
   Future<Event?> getSendMessageEvent(
       String friendPubkey, String replayId, MessageType type, String content,
-      {int kind = 1059}) async {
+      {int kind = 4}) async {
     Event? event;
     if (kind == 4) {
       event ??= Nip4.encode(friendPubkey,
@@ -222,7 +222,7 @@ class Contacts {
     } else if (kind == 44) {
       event ??= await Nip44.encode(friendPubkey,
           MessageDB.encodeContent(type, content), replayId, privkey);
-    } else if (kind == 1059) {
+    } else if (kind == 1059 || kind == 14) {
       event ??= await Nip24.encodeSealedGossipDM(friendPubkey,
           MessageDB.encodeContent(type, content), replayId, privkey);
     }
