@@ -351,6 +351,7 @@ class Channels {
         await _syncChannelToDB(channelDB);
         // update my channel list
         await _syncMyChannelListToRelay();
+        myChannelsUpdatedCallBack?.call();
         if (!completer.isCompleted) completer.complete(channelDB);
       } else {
         if (!completer.isCompleted) completer.complete(null);
@@ -550,7 +551,9 @@ class Channels {
       if (unRelays.isEmpty) {
         await Future.forEach(result, (channel) async {
           await syncChannelsFromRelay(channel.creator!, [channel.channelId]);
-          channel = channels[channel.channelId]!;
+          if(channels.containsKey(channel.channelId)) {
+            channel = channels[channel.channelId]!;
+          }
         });
         completer.complete(result);
       }
