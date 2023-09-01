@@ -2,7 +2,7 @@
 
 #### **1. End-to-End Encryption**
  
-Utilizes the [NIP-44](https://github.com/staab/nips/blob/NIP-44/44.md) encryption protocol which is currently recognized as superior to the NIP-4.
+Utilizes the [NIP-44](https://github.com/staab/nips/blob/NIP-44/44.md) encryption protocol to replace [NIP-4](https://github.com/nostr-protocol/nips/blob/master/04.md).
    
 #### **2. Metadata Leak Prevention**
 
