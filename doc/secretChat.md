@@ -1,4 +1,4 @@
-## **Secure Chat - Beta Version**
+## **Secret Chat - Beta Version**
 
 #### **1. End-to-End Encryption**
  
