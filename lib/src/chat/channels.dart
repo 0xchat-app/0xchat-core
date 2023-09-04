@@ -18,7 +18,6 @@ class Channels {
   String channelMessageSubscription = '';
 
   // memory storage
-  UserDB? me;
   String pubkey = '';
   String privkey = '';
   Map<String, ChannelDB> channels = {};
@@ -80,19 +79,19 @@ class Channels {
   }
 
   Future<bool> _checkBlockedList(String user) async {
-    me = await Account.getUserFromDB(privkey: privkey);
-    if (me!.blockedList != null && me!.blockedList!.isNotEmpty) {
-      return me!.blockedList!.contains(user);
+    UserDB? me = Account.sharedInstance.me;
+    if (me!.blockedList != null && me.blockedList!.isNotEmpty) {
+      return me.blockedList!.contains(user);
     }
     return false;
   }
 
   Future<void> handleMuteUser(String user) async {
-    me = await Account.getUserFromDB(privkey: privkey);
-    if (me!.blockedList != null && me!.blockedList!.contains(user) == false) {
-      me!.blockedList!.add(user);
+    UserDB? me = Account.sharedInstance.me;
+    if (me!.blockedList != null && me.blockedList!.contains(user) == false) {
+      me.blockedList!.add(user);
     }
-    await DB.sharedInstance.insert<UserDB>(me!);
+    await DB.sharedInstance.insert<UserDB>(me);
   }
 
   Future<void> _receiveChannelMessages(Event event, String relay) async {
@@ -106,7 +105,7 @@ class Channels {
       String badgeId =
           List<String>.from(jsonDecode(channel.badges ?? '')).first;
       UserDB? sender =
-          await Account.getUserFromDB(pubkey: channelMessage.sender);
+          await Account.sharedInstance.getUserInfo(channelMessage.sender);
       if (sender != null &&
           sender.badgesList != null &&
           sender.badgesList!.contains(badgeId)) {
@@ -178,9 +177,9 @@ class Channels {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty) {
         if (result != null) {
-          me = await Account.getUserFromDB(privkey: privkey);
+          UserDB? me = Account.sharedInstance.me;
           me!.channelsList = result!.bookmarks;
-          DB.sharedInstance.insert<UserDB>(me!);
+          DB.sharedInstance.insert<UserDB>(me);
           await syncChannelsFromRelay(result!.owner, result!.bookmarks);
           myChannels = _myChannels();
           _updateChannelSubscription();
@@ -197,10 +196,11 @@ class Channels {
 
   Map<String, ChannelDB> _myChannels() {
     Map<String, ChannelDB> result = {};
+    UserDB? me = Account.sharedInstance.me;
     if (me != null &&
-        me!.channelsList != null &&
-        me!.channelsList!.isNotEmpty) {
-      List<String> channelList = me!.channelsList!;
+        me.channelsList != null &&
+        me.channelsList!.isNotEmpty) {
+      List<String> channelList = me.channelsList!;
       for (String channelId in channelList) {
         if (channels.containsKey(channelId)) {
           result[channelId] = channels[channelId]!;
@@ -261,9 +261,9 @@ class Channels {
 
   Future<void> _syncMyChannelListToDB() async {
     List<String> list = myChannels.keys.toList();
-    me = await Account.getUserFromDB(privkey: privkey);
+    UserDB? me = Account.sharedInstance.me;
     me!.channelsList = list;
-    await DB.sharedInstance.insert<UserDB>(me!);
+    await DB.sharedInstance.insert<UserDB>(me);
   }
 
   Future<void> _syncMyChannelListToRelay({OKCallBack? callBack}) async {
@@ -295,16 +295,13 @@ class Channels {
     });
   }
 
-  Future<void> initWithPrivkey(String key,
-      {ChannelsUpdatedCallBack? callBack}) async {
+  Future<void> init({ChannelsUpdatedCallBack? callBack}) async {
     if (channelMessageSubscription.isNotEmpty) {
       Connect.sharedInstance.closeRequests(channelMessageSubscription);
     }
 
-    privkey = key;
-    pubkey = Keychain.getPublicKey(privkey);
-    me = await Account.getUserFromDB(privkey: key);
-    me ??= UserDB(pubKey: pubkey, privkey: privkey);
+    privkey = Account.sharedInstance.privkey;
+    pubkey = Account.sharedInstance.pubkey;
     myChannelsUpdatedCallBack = callBack;
 
     await _loadAllChannelsFromDB();
@@ -551,7 +548,7 @@ class Channels {
       if (unRelays.isEmpty) {
         await Future.forEach(result, (channel) async {
           await syncChannelsFromRelay(channel.creator!, [channel.channelId]);
-          if(channels.containsKey(channel.channelId)) {
+          if (channels.containsKey(channel.channelId)) {
             channel = channels[channel.channelId]!;
           }
         });

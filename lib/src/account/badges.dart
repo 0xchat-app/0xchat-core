@@ -171,7 +171,7 @@ class BadgesHelper {
 
   // return badge id list
   static Future<List<String>?> getProfileBadgesFromDB(String userPubkey) async {
-    UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
+    UserDB? userDB = await Account.sharedInstance.getUserInfo(userPubkey);
     if (userDB != null && userDB.badges != null && userDB.badges!.isNotEmpty) {
       return jsonDecode(userDB.badges!);
     }
@@ -180,10 +180,10 @@ class BadgesHelper {
 
   static Future<void> syncProfileBadgesToDB(
       String userPubkey, List<String> profileBadges) async {
-    UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
+    UserDB? userDB = await Account.sharedInstance.getUserInfo(userPubkey);
     if (userDB != null && profileBadges.isNotEmpty) {
       userDB.badges = jsonEncode(profileBadges);
-      await DB.sharedInstance.insert<UserDB>(userDB);
+      await DB.sharedInstance.update<UserDB>(userDB);
     }
   }
 
@@ -192,7 +192,7 @@ class BadgesHelper {
     Completer<List<BadgeAwardDB?>?> completer =
         Completer<List<BadgeAwardDB?>?>();
 
-    UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
+    UserDB? userDB = await Account.sharedInstance.getUserInfo(userPubkey);
     if (userDB != null &&
         userDB.badgesList != null &&
         userDB.badgesList!.isNotEmpty) {
@@ -217,7 +217,7 @@ class BadgesHelper {
 
   static Future<void> syncUserBadgesToDB(
       String userPubkey, List<String> badges) async {
-    UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
+    UserDB? userDB = await Account.sharedInstance.getUserInfo(userPubkey);
     if (userDB != null && badges.isNotEmpty) {
       userDB.badgesList = badges;
       await DB.sharedInstance.insert<UserDB>(userDB);
@@ -237,7 +237,7 @@ class BadgesHelper {
         if (map.isNotEmpty && map[0] != null) {
           BadgeAwardDB? db = map[0];
           BadgeAward badgeAward = BadgeAward(
-              db!.awardId!,
+              db!.awardId,
               db.awardTime,
               db.identifies,
               db.creator,
@@ -250,7 +250,7 @@ class BadgesHelper {
       Event event = Nip58.setProfileBadges(badgeAwards, privkey);
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         if (ok.status) {
-          UserDB? userDB = await Account.getUserFromDB(privkey: privkey);
+          UserDB? userDB = Account.sharedInstance.me;
           userDB!.badges = jsonEncode(badgeIds);
           await DB.sharedInstance.insert<UserDB>(userDB);
         }
@@ -287,7 +287,7 @@ class BadgesHelper {
           result.add(badgeDB);
         }
         if (profileBadges.last == badgeAward) {
-          UserDB? userDB = await Account.getUserFromDB(pubkey: userPubkey);
+          UserDB? userDB = await Account.sharedInstance.getUserInfo(userPubkey);
           if (userDB != null) {
             userDB.badges = jsonEncode(result.map((e) => e?.id).toList());
             await DB.sharedInstance.insert<UserDB>(userDB);
@@ -321,8 +321,8 @@ class BadgesHelper {
         }
         if (badges.isNotEmpty) {
           for (var p in badgeAward.users!) {
-            UserDB? userDB = await Account.getUserFromDB(pubkey: p.pubkey);
-            String badgeId = badges[0].id!;
+            UserDB? userDB = await Account.sharedInstance.getUserInfo(p.pubkey);
+            String badgeId = badges[0].id;
             if (userDB != null && !userDB.badgesList!.contains(badgeId)) {
               userDB.badgesList!.add(badgeId);
               await DB.sharedInstance.insert<UserDB>(userDB);

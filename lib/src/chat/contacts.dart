@@ -107,17 +107,12 @@ class Contacts {
 
   Future<void> _syncContactsProfiles(List<People> peoples) async {
     await _syncContactsProfilesFromDB(peoples);
-    List<UserDB> unknowProfiles = allContacts.values
-        .where((userDB) => userDB.lastUpdatedTime == 0)
-        .toList();
-    List<String> pubkeys = unknowProfiles.map((e) => e.pubKey).toList();
-    _syncContactsProfilesFromRelay(pubkeys);
   }
 
   Future<void> _syncContactsProfilesFromDB(List<People> peoples) async {
     allContacts.clear();
     await Future.forEach(peoples, (p) async {
-      UserDB? user = await Account.getUserFromDB(pubkey: p.pubkey);
+      UserDB? user = await Account.sharedInstance.getUserInfo(p.pubkey);
       if (user != null) {
         if (user.toAliasPrivkey == null || user.toAliasPrivkey!.isEmpty) {
           user.toAliasPrivkey =
@@ -130,30 +125,30 @@ class Contacts {
     });
   }
 
-  Future<void> _syncContactsProfilesFromRelay(List<String> pubkeys) async {
-    if (pubkeys.isNotEmpty) {
-      var usersMap = await Account.syncProfilesFromRelay(pubkeys);
-      await Future.forEach(pubkeys, (p) async {
-        UserDB? user = usersMap[p];
-        if (user != null) {
-          if (user.toAliasPrivkey == null || user.toAliasPrivkey!.isEmpty) {
-            user.toAliasPrivkey =
-                bytesToHex(Nip44.shareSecret(privkey, user.pubKey));
-            user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
-          }
-          // sync to db
-          await DB.sharedInstance.insert<UserDB>(user);
-          allContacts[user.pubKey] = user;
-        }
-      });
-    }
-  }
+  // Future<void> _syncContactsProfilesFromRelay(List<String> pubkeys) async {
+  //   if (pubkeys.isNotEmpty) {
+  //     var usersMap = await Account.sharedInstance.syncProfilesFromRelay(pubkeys);
+  //     await Future.forEach(pubkeys, (p) async {
+  //       UserDB? user = usersMap[p];
+  //       if (user != null) {
+  //         if (user.toAliasPrivkey == null || user.toAliasPrivkey!.isEmpty) {
+  //           user.toAliasPrivkey =
+  //               bytesToHex(Nip44.shareSecret(privkey, user.pubKey));
+  //           user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
+  //         }
+  //         // sync to db
+  //         await DB.sharedInstance.insert<UserDB>(user);
+  //         allContacts[user.pubKey] = user;
+  //       }
+  //     });
+  //   }
+  // }
 
   Future<OKEvent> addToContact(List<String> pubkeys) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     await Future.forEach(pubkeys, (friendPubkey) async {
-      UserDB? friend = await Account.getUserFromDB(pubkey: friendPubkey);
+      UserDB? friend = await Account.sharedInstance.getUserInfo(friendPubkey);
       friend ??= UserDB(pubKey: friendPubkey);
       if (friend.toAliasPubkey == null || friend.toAliasPubkey!.isEmpty) {
         friend.toAliasPrivkey =
@@ -216,14 +211,14 @@ class Contacts {
       String friendPubkey, String replayId, MessageType type, String content,
       {int kind = 4}) async {
     Event? event;
-    if (kind == 4) {
-      event ??= Nip4.encode(friendPubkey,
-          MessageDB.encodeContent(type, content), replayId, privkey);
-    } else if (kind == 44) {
+    if (kind == 44) {
       event ??= await Nip44.encode(friendPubkey,
           MessageDB.encodeContent(type, content), replayId, privkey);
     } else if (kind == 1059 || kind == 14) {
       event ??= await Nip24.encodeSealedGossipDM(friendPubkey,
+          MessageDB.encodeContent(type, content), replayId, privkey);
+    } else {
+      event ??= Nip4.encode(friendPubkey,
           MessageDB.encodeContent(type, content), replayId, privkey);
     }
     return event;
@@ -267,7 +262,7 @@ class Contacts {
       if (map != null) {
         List<People> friendsList = map['people'];
         await Future.forEach(friendsList, (p) async {
-          UserDB? friend = await Account.getUserFromDB(pubkey: p.pubkey);
+          UserDB? friend = await Account.sharedInstance.getUserInfo(p.pubkey);
           if (friend != null) {
             friend.toAliasPrivkey =
                 bytesToHex(Nip44.shareSecret(privkey, friend.pubKey));
@@ -390,7 +385,7 @@ class Contacts {
   Future<void> _handlePrivateMessage(Event event, String relay) async {
     MessageDB? messageDB =
         await MessageDB.fromPrivateMessage(event, pubkey, privkey);
-    if (messageDB != null){
+    if (messageDB != null) {
       await Messages.saveMessagesToDB([messageDB]);
       privateChatMessageCallBack?.call(messageDB);
     }
@@ -436,6 +431,7 @@ class Contacts {
         messageDB.status = ok.status ? 1 : 2;
         await Messages.saveMessagesToDB([messageDB],
             conflictAlgorithm: ConflictAlgorithm.replace);
+        privateChatMessageCallBack?.call(messageDB);
         if (!completer.isCompleted) completer.complete(ok);
       });
       return completer.future;

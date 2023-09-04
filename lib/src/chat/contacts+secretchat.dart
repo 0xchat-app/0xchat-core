@@ -407,6 +407,7 @@ extension SecretChat on Contacts {
         messageDB.status = ok.status ? 1 : 2;
         Messages.saveMessagesToDB([messageDB],
             conflictAlgorithm: ConflictAlgorithm.replace);
+        secretChatMessageCallBack?.call(messageDB);
         if (!completer.isCompleted) completer.complete(ok);
 
         /// rotate shared key
@@ -419,7 +420,6 @@ extension SecretChat on Contacts {
           await update(sessionDB.sessionId);
         }
       });
-      return completer.future;
     } else {
       if (!completer.isCompleted) {
         completer.complete(OKEvent(sessionId, false, 'unknown session'));
