@@ -107,6 +107,19 @@ class Contacts {
 
   Future<void> _syncContactsProfiles(List<People> peoples) async {
     await _syncContactsProfilesFromDB(peoples);
+    List<People> friendList = [];
+    for (UserDB user in allContacts.values) {
+      People p =
+      People(user.pubKey, user.mainRelay, user.nickName, user.aliasPubkey);
+      friendList.add(p);
+    }
+    Event event = Nip51.createCategorizedPeople(
+        identifier, [], friendList, privkey, pubkey);
+    if (event.content.isNotEmpty) {
+      _syncContactsToDB(event.content);
+    } else {
+      throw Exception('_syncFriendsToRelay error content!, $friendList');
+    }
   }
 
   Future<void> _syncContactsProfilesFromDB(List<People> peoples) async {
@@ -262,15 +275,18 @@ class Contacts {
       if (map != null) {
         List<People> friendsList = map['people'];
         await Future.forEach(friendsList, (p) async {
-          UserDB? friend = await Account.sharedInstance.getUserInfo(p.pubkey);
-          if (friend != null) {
-            friend.toAliasPrivkey =
-                bytesToHex(Nip44.shareSecret(privkey, friend.pubKey));
-            friend.toAliasPubkey =
-                Keychain.getPublicKey(friend.toAliasPrivkey!);
-            allContacts[p.pubkey] = friend;
+          UserDB? user = await Account.sharedInstance.getUserInfo(p.pubkey);
+          if (user != null) {
+            if (user.toAliasPrivkey == null || user.toAliasPrivkey!.isEmpty) {
+              user.toAliasPrivkey =
+                  bytesToHex(Nip44.shareSecret(privkey, user.pubKey));
+              user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
+            }
+            user.nickName = p.petName;
+            allContacts[user.pubKey] = user;
           }
         });
+        contactUpdatedCallBack?.call();
       }
     }
   }
