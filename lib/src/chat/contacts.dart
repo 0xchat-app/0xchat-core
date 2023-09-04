@@ -403,7 +403,7 @@ class Contacts {
       } else if (kind == 44) {
         event ??= await Nip44.encode(toUserDB.pubKey,
             MessageDB.encodeContent(type, content), replayId, privkey);
-      } else if (kind == 1059) {
+      } else if (kind == 1059 || kind == 14) {
         event ??= await Nip24.encodeSealedGossipDM(toUserDB.pubKey,
             MessageDB.encodeContent(type, content), replayId, privkey);
       } else {
