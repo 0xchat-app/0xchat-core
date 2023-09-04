@@ -393,7 +393,7 @@ class Contacts {
 
   Future<OKEvent> sendPrivateMessage(
       String toPubkey, String replayId, MessageType type, String content,
-      {Event? event, int kind = 1059}) async {
+      {Event? event, int kind = 4}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     UserDB? toUserDB = allContacts[toPubkey];
     if (toUserDB != null) {
