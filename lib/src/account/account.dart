@@ -90,6 +90,70 @@ class Account {
     return null;
   }
 
+  Future<UserDB> reloadProfileFromRelay(String pubkey) async {
+    Completer<UserDB> completer = Completer<UserDB>();
+    Filter f = Filter(
+      kinds: [0],
+      authors: [pubkey],
+    );
+
+    Connect.sharedInstance.addSubscription([f],
+        eventCallBack: (event, relay) async {
+      Map map = jsonDecode(event.content);
+      UserDB? db = await getUserInfo(pubkey);
+      if (db != null && db.lastUpdatedTime < event.createdAt) {
+        db.name = map['name'];
+        db.gender = map['gender'];
+        db.area = map['area'];
+        db.about = map['about'];
+        db.picture = map['picture'];
+        db.dns = map['nip05'];
+        db.lnurl = map['lnurl'];
+        if (db.lnurl == null || db.lnurl == 'null' || db.lnurl!.isEmpty) {
+          db.lnurl = null;
+        }
+        db.lnurl ??= map['lud06'];
+        db.lnurl ??= map['lud16'];
+        db.lastUpdatedTime = event.createdAt;
+        if (db.name == null || db.name!.isEmpty) {
+          db.name = map['display_name'];
+        }
+        if (db.name == null || db.name!.isEmpty) {
+          db.name = map['username'];
+        }
+        if (db.name == null || db.name!.isEmpty) {
+          db.name = db.shortEncodedPubkey;
+        }
+        var keysToRemove = {
+          'name',
+          'display_name',
+          'username',
+          'gender',
+          'area',
+          'about',
+          'picture',
+          'nip05',
+          'lnurl',
+          'lud16',
+          'lud06'
+        };
+        Map filteredMap = Map.from(map)
+          ..removeWhere((key, value) => keysToRemove.contains(key));
+        db.otherField = jsonEncode(filteredMap);
+      } else {
+        if (db?.lnurl == null || db?.lnurl == 'null' || db!.lnurl!.isEmpty) db?.lnurl = null;
+        db?.lnurl ??= map['lud16'];
+        db?.lnurl ??= map['lud06'];
+        print('db?.lnurl: ${db?.lnurl}');
+      }
+      await DB.sharedInstance.update<UserDB>(db!);
+      if (!completer.isCompleted) completer.complete(db);
+    }, eoseCallBack: (requestId, ok, relay, unRelays) async {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+    });
+    return completer.future;
+  }
+
   /// sync profile from relays
   Future<void> _syncProfilesFromRelay() async {
     if (pQueue.isEmpty) return;
@@ -125,7 +189,9 @@ class Account {
         db.picture = map['picture'];
         db.dns = map['nip05'];
         db.lnurl = map['lnurl'];
-        if (db.lnurl == null || db.lnurl == 'null') db.lnurl = null;
+        if (db.lnurl == null || db.lnurl == 'null' || db.lnurl!.isEmpty) {
+          db.lnurl = null;
+        }
         db.lnurl ??= map['lud06'];
         db.lnurl ??= map['lud16'];
         db.lastUpdatedTime = event.createdAt;
