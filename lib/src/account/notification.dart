@@ -67,18 +67,18 @@ class NotificationHelper {
       String deviceId, List<int> kinds, List<String> relays) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<String> channels = Channels.sharedInstance.getAllUnMuteChannels();
-    List<SecretSessionDB> secretSessions =
-        Contacts.sharedInstance.secretSessionMap.values.toList();
     var pubKeys = [pubkey];
-    for (var session in secretSessions) {
-      if (Contacts.sharedInstance.allContacts.containsKey(session.toPubkey)) {
-        /// in contacts list
-        var sharePubkey = session.sharePubkey;
-        if (sharePubkey != null && sharePubkey.isNotEmpty) {
-          pubKeys.add(sharePubkey);
-        }
-      }
-    }
+    // List<SecretSessionDB> secretSessions =
+    // Contacts.sharedInstance.secretSessionMap.values.toList();
+    // for (var session in secretSessions) {
+    //   if (Contacts.sharedInstance.allContacts.containsKey(session.toPubkey)) {
+    //     /// in contacts list
+    //     var sharePubkey = session.sharePubkey;
+    //     if (sharePubkey != null && sharePubkey.isNotEmpty) {
+    //       pubKeys.add(sharePubkey);
+    //     }
+    //   }
+    // }
     Map map = {
       'online': 1,
       'kinds': kinds,
