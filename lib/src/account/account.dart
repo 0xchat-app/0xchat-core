@@ -9,6 +9,7 @@ class Account {
   /// singleton
   Account._internal() {
     _startHeartBeat();
+    _loadAllUsers();
   }
   factory Account() => sharedInstance;
   static final Account sharedInstance = Account._internal();
@@ -29,25 +30,33 @@ class Account {
     }
   }
 
+  Future<void> _loadAllUsers() async {
+    List<UserDB?> maps = await DB.sharedInstance.objects<UserDB>();
+    for (UserDB? user in maps) {
+      if (user != null) {
+        userCache[user.pubKey] = user;
+      }
+    }
+  }
+
   Future<void> syncMe() async {
     await DB.sharedInstance.update<UserDB>(me!);
   }
 
   Future<UserDB?> getUserInfo(String pubkey) async {
-    if (Account.sharedInstance.userCache.containsKey(pubkey)) {
-      return Account.sharedInstance.userCache[pubkey];
+    UserDB? user;
+    if (userCache.containsKey(pubkey)) {
+      user = userCache[pubkey];
     } else {
-      UserDB? user = await _getUserFromDB(pubkey: pubkey);
+      user = await _getUserFromDB(pubkey: pubkey);
       if (user != null) {
-        Account.sharedInstance.userCache[pubkey] = user;
-        if (user.lastUpdatedTime == 0) {
-          _addToSyncProfiles(pubkey);
-          Account.sharedInstance.userCache[pubkey] = user;
-        }
-        return user;
+        userCache[pubkey] = user;
       }
     }
-    return null;
+    if (user != null && user.lastUpdatedTime == 0) {
+      _addToSyncProfiles(pubkey);
+    }
+    return user;
   }
 
   Future<Map<String, UserDB>> getUserInfos(List<String> pubkeys) async {
@@ -60,7 +69,7 @@ class Account {
   }
 
   void _addToSyncProfiles(String user) {
-    if (!pQueue.contains(user)) {
+    if (user.isNotEmpty && !pQueue.contains(user)) {
       pQueue.add(user);
     }
   }
@@ -141,7 +150,9 @@ class Account {
           ..removeWhere((key, value) => keysToRemove.contains(key));
         db.otherField = jsonEncode(filteredMap);
       } else {
-        if (db?.lnurl == null || db?.lnurl == 'null' || db!.lnurl!.isEmpty) db?.lnurl = null;
+        if (db?.lnurl == null || db?.lnurl == 'null' || db!.lnurl!.isEmpty) {
+          db?.lnurl = null;
+        }
         db?.lnurl ??= map['lud16'];
         db?.lnurl ??= map['lud06'];
         print('db?.lnurl: ${db?.lnurl}');
