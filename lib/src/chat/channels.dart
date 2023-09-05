@@ -450,6 +450,7 @@ class Channels {
       messageDB.status = ok.status ? 1 : 2;
       Messages.saveMessagesToDB([messageDB],
           conflictAlgorithm: ConflictAlgorithm.replace);
+      channelMessageCallBack?.call(messageDB);
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
