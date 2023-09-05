@@ -110,7 +110,7 @@ class Contacts {
     List<People> friendList = [];
     for (UserDB user in allContacts.values) {
       People p =
-      People(user.pubKey, user.mainRelay, user.nickName, user.aliasPubkey);
+          People(user.pubKey, user.mainRelay, user.nickName, user.aliasPubkey);
       friendList.add(p);
     }
     Event event = Nip51.createCategorizedPeople(
@@ -174,6 +174,7 @@ class Contacts {
     _syncContactsToRelay(okCallBack: (OKEvent ok, String relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
+    _preloadKind4Messages(pubkeys, currentUnixTimestampSeconds());
     _subscriptMessages();
     return completer.future;
   }
@@ -324,6 +325,23 @@ class Contacts {
     return completer.future;
   }
 
+  Future<void> _preloadKind4Messages(List<String> pubkeys, int until) async {
+    Filter f1 =
+        Filter(kinds: [4, 44], authors: [pubkey], p: pubkeys, until: until, limit: pubkeys.length * 100);
+    Filter f2 =
+        Filter(kinds: [4, 44], authors: pubkeys, p: [pubkey], until: until, limit: pubkeys.length * 100);
+    Connect.sharedInstance.addSubscription([f1, f2],
+        eventCallBack: (event, relay) async {
+      _updateFriendMessageTime(event.createdAt, relay);
+      if (event.kind == 4 || event.kind == 44) {
+        if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
+      }
+    }, eoseCallBack: (String requestId, OKEvent ok, String relay,
+            List<String> unCompletedRelays) {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+    });
+  }
+
   Future<void> _subscriptMessages({String? relay}) async {
     if (friendMessageSubscription.isNotEmpty) {
       await Connect.sharedInstance
@@ -411,47 +429,43 @@ class Contacts {
       String toPubkey, String replayId, MessageType type, String content,
       {Event? event, int kind = 4}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    UserDB? toUserDB = allContacts[toPubkey];
-    if (toUserDB != null) {
-      if (kind == 4) {
-        event ??= Nip4.encode(toUserDB.pubKey,
-            MessageDB.encodeContent(type, content), replayId, privkey);
-      } else if (kind == 44) {
-        event ??= await Nip44.encode(toUserDB.pubKey,
-            MessageDB.encodeContent(type, content), replayId, privkey);
-      } else if (kind == 1059 || kind == 14) {
-        event ??= await Nip24.encodeSealedGossipDM(toUserDB.pubKey,
-            MessageDB.encodeContent(type, content), replayId, privkey);
-      } else {
-        if (!completer.isCompleted) {
-          completer.complete(OKEvent(kind.toString(), false, 'unknown kind'));
-        }
+    if (kind == 4) {
+      event ??= Nip4.encode(
+          toPubkey, MessageDB.encodeContent(type, content), replayId, privkey);
+    } else if (kind == 44) {
+      event ??= await Nip44.encode(
+          toPubkey, MessageDB.encodeContent(type, content), replayId, privkey);
+    } else if (kind == 1059 || kind == 14) {
+      event ??= await Nip24.encodeSealedGossipDM(
+          toPubkey, MessageDB.encodeContent(type, content), replayId, privkey);
+    } else {
+      if (!completer.isCompleted) {
+        completer.complete(OKEvent(kind.toString(), false, 'unknown kind'));
       }
-
-      MessageDB messageDB = MessageDB(
-          messageId: event!.id,
-          sender: pubkey,
-          receiver: toPubkey,
-          groupId: '',
-          kind: event.kind,
-          tags: jsonEncode(event.tags),
-          content: event.content,
-          createTime: event.createdAt,
-          decryptContent: content,
-          type: MessageDB.messageTypeToString(type),
-          status: 0,
-          plaintEvent: jsonEncode(event));
-      await Messages.saveMessagesToDB([messageDB]);
-
-      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
-        messageDB.status = ok.status ? 1 : 2;
-        await Messages.saveMessagesToDB([messageDB],
-            conflictAlgorithm: ConflictAlgorithm.replace);
-        privateChatMessageCallBack?.call(messageDB);
-        if (!completer.isCompleted) completer.complete(ok);
-      });
-      return completer.future;
     }
+
+    MessageDB messageDB = MessageDB(
+        messageId: event!.id,
+        sender: pubkey,
+        receiver: toPubkey,
+        groupId: '',
+        kind: event.kind,
+        tags: jsonEncode(event.tags),
+        content: event.content,
+        createTime: event.createdAt,
+        decryptContent: content,
+        type: MessageDB.messageTypeToString(type),
+        status: 0,
+        plaintEvent: jsonEncode(event));
+    await Messages.saveMessagesToDB([messageDB]);
+
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
+      messageDB.status = ok.status ? 1 : 2;
+      await Messages.saveMessagesToDB([messageDB],
+          conflictAlgorithm: ConflictAlgorithm.replace);
+      privateChatMessageCallBack?.call(messageDB);
+      if (!completer.isCompleted) completer.complete(ok);
+    });
     return completer.future;
   }
 
