@@ -6,6 +6,13 @@ import 'package:chatcore/chat-core.dart';
 typedef BadgeAwardsCallBack = void Function(List<BadgeAward?>?);
 
 class BadgesHelper {
+  /// singleton
+  BadgesHelper._internal();
+  factory BadgesHelper() => sharedInstance;
+  static final BadgesHelper sharedInstance = BadgesHelper._internal();
+
+  Map<String, BadgeDB> badgeInfos = {};
+
   static BadgeDB _badgeToBadgeDB(Badge badge) {
     return BadgeDB(
         id: badge.badgeId,
@@ -82,15 +89,24 @@ class BadgesHelper {
 
   static Future<void> syncBadgeInfoToDB(BadgeDB badgeDB) async {
     await DB.sharedInstance.insert<BadgeDB>(badgeDB);
+    BadgesHelper.sharedInstance.badgeInfos[badgeDB.id] = badgeDB;
   }
 
   static Future<List<BadgeDB?>> getBadgeInfosFromDB(
       List<String> badgeIds) async {
     List<BadgeDB?> result = [];
     for (var badgeId in badgeIds) {
-      List<BadgeDB?> maps = await DB.sharedInstance
-          .objects<BadgeDB>(where: 'id = ?', whereArgs: [badgeId]);
-      if (maps.isNotEmpty) result.add(maps.first);
+      if (BadgesHelper.sharedInstance.badgeInfos.containsKey(badgeId)) {
+        result.add(BadgesHelper.sharedInstance.badgeInfos[badgeId]);
+      } else {
+        List<BadgeDB?> maps = await DB.sharedInstance
+            .objects<BadgeDB>(where: 'id = ?', whereArgs: [badgeId]);
+        if (maps.isNotEmpty) {
+          BadgeDB badgeDB = maps.first!;
+          BadgesHelper.sharedInstance.badgeInfos[badgeId] = badgeDB;
+          result.add(badgeDB);
+        }
+      }
     }
     return result;
   }
@@ -266,11 +282,10 @@ class BadgesHelper {
   static Future<List<BadgeDB?>?> getProfileBadgesFromRelay(
       String userPubkey) async {
     Completer<List<BadgeDB?>?> completer = Completer<List<BadgeDB?>?>();
-    String subscriptionId = '';
     List<BadgeDB?> result = [];
     Filter f =
         Filter(kinds: [30008], d: ['profile_badges'], authors: [userPubkey]);
-    subscriptionId = Connect.sharedInstance.addSubscription([f],
+    Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       List<BadgeAward> profileBadges = Nip58.getProfileBadges(event);
       for (BadgeAward badgeAward in profileBadges) {
