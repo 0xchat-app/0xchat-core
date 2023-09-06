@@ -131,8 +131,10 @@ class Channels {
     _updateChannelMessageTime(event.createdAt, relay);
 
     await Relays.sharedInstance.syncRelaysToDB();
-    await Messages.saveMessageToDB(messageDB);
-    channelMessageCallBack?.call(messageDB);
+    int status = await Messages.saveMessageToDB(messageDB);
+    if(status != 0) {
+      channelMessageCallBack?.call(messageDB);
+    }
   }
 
   void _updateChannelMessageTime(int eventTime, String relay) {
