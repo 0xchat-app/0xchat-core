@@ -37,10 +37,10 @@ extension BlockList on Contacts {
 
     Lists? result;
     Connect.sharedInstance.addSubscriptions(subscriptions,
-        eventCallBack: (event, relay) {
+        eventCallBack: (event, relay) async {
       if (event.content.isNotEmpty &&
           (result == null || result!.createTime < event.createdAt)) {
-        result = Nip51.getLists(event, privkey);
+        result = await Nip51.getLists(event, privkey);
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
@@ -56,14 +56,14 @@ extension BlockList on Contacts {
     return completer.future;
   }
 
-  void _syncBlockListToRelay({OKCallBack? okCallBack}) {
+  Future<void> _syncBlockListToRelay({OKCallBack? okCallBack}) async {
     if (blockList != null) {
       List<People> list = [];
       for (String pubkey in blockList!) {
         People p = People(pubkey, '', '', '');
         list.add(p);
       }
-      Event event = Nip51.createCategorizedPeople(
+      Event event = await Nip51.createCategorizedPeople(
           Contacts.blockListidentifier, [], list, privkey, pubkey);
       if (event.content.isNotEmpty) {
         Connect.sharedInstance.sendEvent(event,

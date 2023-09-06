@@ -83,14 +83,14 @@ class Contacts {
     await Account.sharedInstance.syncMe();
   }
 
-  void _syncContactsToRelay({OKCallBack? okCallBack}) {
+  Future<void> _syncContactsToRelay({OKCallBack? okCallBack}) async {
     List<People> friendList = [];
     for (UserDB user in allContacts.values) {
       People p =
           People(user.pubKey, user.mainRelay, user.nickName, user.aliasPubkey);
       friendList.add(p);
     }
-    Event event = Nip51.createCategorizedPeople(
+    Event event = await Nip51.createCategorizedPeople(
         identifier, [], friendList, privkey, pubkey);
     if (event.content.isNotEmpty) {
       Connect.sharedInstance.sendEvent(event,
@@ -113,7 +113,7 @@ class Contacts {
           People(user.pubKey, user.mainRelay, user.nickName, user.aliasPubkey);
       friendList.add(p);
     }
-    Event event = Nip51.createCategorizedPeople(
+    Event event = await Nip51.createCategorizedPeople(
         identifier, [], friendList, privkey, pubkey);
     if (event.content.isNotEmpty) {
       _syncContactsToDB(event.content);
@@ -272,7 +272,7 @@ class Contacts {
   Future<void> _syncContactsFromDB() async {
     String? list = Account.sharedInstance.me?.friendsList;
     if (list != null && list.isNotEmpty) {
-      Map? map = Nip51.fromContent(list, privkey, pubkey);
+      Map? map = await Nip51.fromContent(list, privkey, pubkey);
       if (map != null) {
         List<People> friendsList = map['people'];
         await Future.forEach(friendsList, (p) async {
@@ -306,10 +306,10 @@ class Contacts {
     }
     Lists? result;
     Connect.sharedInstance.addSubscriptions(subscriptions,
-        eventCallBack: (event, relay) {
+        eventCallBack: (event, relay) async {
       if (event.content.isNotEmpty &&
           (result == null || result!.createTime < event.createdAt)) {
-        result = Nip51.getLists(event, privkey);
+        result = await Nip51.getLists(event, privkey);
         lastFriendListUpdateTime = event.createdAt;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
@@ -326,10 +326,18 @@ class Contacts {
   }
 
   Future<void> _preloadKind4Messages(List<String> pubkeys, int until) async {
-    Filter f1 =
-        Filter(kinds: [4, 44], authors: [pubkey], p: pubkeys, until: until, limit: pubkeys.length * 100);
-    Filter f2 =
-        Filter(kinds: [4, 44], authors: pubkeys, p: [pubkey], until: until, limit: pubkeys.length * 100);
+    Filter f1 = Filter(
+        kinds: [4, 44],
+        authors: [pubkey],
+        p: pubkeys,
+        until: until,
+        limit: pubkeys.length * 100);
+    Filter f2 = Filter(
+        kinds: [4, 44],
+        authors: pubkeys,
+        p: [pubkey],
+        until: until,
+        limit: pubkeys.length * 100);
     Connect.sharedInstance.addSubscription([f1, f2],
         eventCallBack: (event, relay) async {
       if (event.kind == 4 || event.kind == 44) {
@@ -420,7 +428,7 @@ class Contacts {
         await MessageDB.fromPrivateMessage(event, pubkey, privkey);
     if (messageDB != null) {
       int status = await Messages.saveMessageToDB(messageDB);
-      if(status != 0) {
+      if (status != 0) {
         privateChatMessageCallBack?.call(messageDB);
       }
     }
@@ -430,23 +438,20 @@ class Contacts {
       String toPubkey, String replayId, MessageType type, String content,
       {Event? event, int kind = 4}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    if (kind == 4) {
-      event ??= Nip4.encode(
-          toPubkey, MessageDB.encodeContent(type, content), replayId, privkey);
-    } else if (kind == 44) {
-      event ??= await Nip44.encode(
-          toPubkey, MessageDB.encodeContent(type, content), replayId, privkey);
-    } else if (kind == 1059 || kind == 14) {
-      event ??= await Nip24.encodeSealedGossipDM(
-          toPubkey, MessageDB.encodeContent(type, content), replayId, privkey);
-    } else {
-      if (!completer.isCompleted) {
-        completer.complete(OKEvent(kind.toString(), false, 'unknown kind'));
+    if (event == null) {
+      if (kind == 44) {
+        event = await Nip44.encode(toPubkey,
+            MessageDB.encodeContent(type, content), replayId, privkey);
+      } else if (kind == 1059 || kind == 14) {
+        event = await Nip24.encodeSealedGossipDM(toPubkey,
+            MessageDB.encodeContent(type, content), replayId, privkey);
+      } else {
+        event = Nip4.encode(toPubkey, MessageDB.encodeContent(type, content),
+            replayId, privkey);
       }
     }
-
     MessageDB messageDB = MessageDB(
-        messageId: event!.id,
+        messageId: event.id,
         sender: pubkey,
         receiver: toPubkey,
         groupId: '',

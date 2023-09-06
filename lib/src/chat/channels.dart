@@ -171,9 +171,9 @@ class Channels {
 
     Lists? result;
     Connect.sharedInstance.addSubscriptions(subscriptions,
-        eventCallBack: (event, relay) {
+        eventCallBack: (event, relay) async {
       if (result == null || result!.createTime < event.createdAt) {
-        result = Nip51.getLists(event, privkey);
+        result = await Nip51.getLists(event, privkey);
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
@@ -269,7 +269,7 @@ class Channels {
   Future<void> _syncMyChannelListToRelay({OKCallBack? callBack}) async {
     List<String> list = myChannels.keys.toList();
     Event event =
-        Nip51.createCategorizedBookmarks(identifier, list, [], privkey, pubkey);
+        await Nip51.createCategorizedBookmarks(identifier, list, [], privkey, pubkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
     _syncMyChannelListToDB();
   }
