@@ -8,6 +8,7 @@ extension SecretChat on Contacts {
   Future<OKEvent> request(String toPubkey, String chatRelay,
       {int? interval, int? expiration}) async {
     Keychain randomKey = Keychain.generate();
+
     /// default 24 hours
     expiration ??= currentUnixTimestampSeconds() + 24 * 60 * 60;
     OKEvent okEvent = await _sendRequestEvent(toPubkey, randomKey.public,
@@ -349,7 +350,7 @@ extension SecretChat on Contacts {
         await MessageDB.fromPrivateMessage(event, pubkey, privkey);
     if (messageDB != null) {
       messageDB.sessionId = sessionId;
-      await Messages.saveMessagesToDB([messageDB]);
+      await Messages.saveMessageToDB(messageDB);
       secretChatMessageCallBack?.call(messageDB);
     }
   }
@@ -401,11 +402,11 @@ extension SecretChat on Contacts {
           status: 0,
           plaintEvent: jsonEncode(event));
 
-      Messages.saveMessagesToDB([messageDB]);
+      await Messages.saveMessageToDB(messageDB);
       Connect.sharedInstance.sendEvent(event, relay: sessionDB.relay,
           sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
-        Messages.saveMessagesToDB([messageDB],
+        await Messages.saveMessageToDB(messageDB,
             conflictAlgorithm: ConflictAlgorithm.replace);
         secretChatMessageCallBack?.call(messageDB);
         if (!completer.isCompleted) completer.complete(ok);
@@ -478,6 +479,7 @@ extension SecretChat on Contacts {
 
     secretSessionSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
+      updateFriendMessageTime(event.createdAt, relay);
       SecretSessionDB? session = _getSessionFromPubkey(event.pubkey);
       if (session != null) {
         Event? innerEvent = await Nip24.decode(event, privkey,

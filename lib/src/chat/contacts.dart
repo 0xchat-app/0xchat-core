@@ -332,7 +332,6 @@ class Contacts {
         Filter(kinds: [4, 44], authors: pubkeys, p: [pubkey], until: until, limit: pubkeys.length * 100);
     Connect.sharedInstance.addSubscription([f1, f2],
         eventCallBack: (event, relay) async {
-      _updateFriendMessageTime(event.createdAt, relay);
       if (event.kind == 4 || event.kind == 44) {
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       }
@@ -379,7 +378,7 @@ class Contacts {
     }
     friendMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
-      _updateFriendMessageTime(event.createdAt, relay);
+      updateFriendMessageTime(event.createdAt, relay);
       if (event.kind == 4 || event.kind == 44) {
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       } else if (event.kind == 1059) {
@@ -420,7 +419,7 @@ class Contacts {
     MessageDB? messageDB =
         await MessageDB.fromPrivateMessage(event, pubkey, privkey);
     if (messageDB != null) {
-      await Messages.saveMessagesToDB([messageDB]);
+      await Messages.saveMessageToDB(messageDB);
       privateChatMessageCallBack?.call(messageDB);
     }
   }
@@ -457,11 +456,11 @@ class Contacts {
         type: MessageDB.messageTypeToString(type),
         status: 0,
         plaintEvent: jsonEncode(event));
-    await Messages.saveMessagesToDB([messageDB]);
+    await Messages.saveMessageToDB(messageDB);
 
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       messageDB.status = ok.status ? 1 : 2;
-      await Messages.saveMessagesToDB([messageDB],
+      await Messages.saveMessageToDB(messageDB,
           conflictAlgorithm: ConflictAlgorithm.replace);
       privateChatMessageCallBack?.call(messageDB);
       if (!completer.isCompleted) completer.complete(ok);
@@ -469,7 +468,7 @@ class Contacts {
     return completer.future;
   }
 
-  void _updateFriendMessageTime(int eventTime, String relay) {
+  void updateFriendMessageTime(int eventTime, String relay) {
     /// set friendMessageUntil friendMessageSince
     if (Relays.sharedInstance.relays.containsKey(relay)) {
       Relays.sharedInstance.setFriendMessageUntil(eventTime, relay);

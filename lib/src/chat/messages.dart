@@ -92,7 +92,7 @@ class Messages {
           tags: jsonEncode(event.tags),
           content: event.content,
           createTime: event.createdAt);
-      await saveMessagesToDB([messageDB]);
+      await saveMessageToDB(messageDB);
       await _handleDeleteMessages(deleteEvent.deleteEvents, deleteEvent.pubkey);
     }
   }
@@ -105,7 +105,7 @@ class Messages {
     for (MessageDB message in messages) {
       // only message's owner can delete
       if (message.sender == pubkey) {
-        await deleteMessagesFromDB([message.messageId!]);
+        await deleteMessagesFromDB([message.messageId]);
       }
     }
   }
@@ -139,7 +139,7 @@ class Messages {
         tags: jsonEncode(event.tags),
         content: event.content,
         createTime: event.createdAt);
-    await saveMessagesToDB([messageDB]);
+    await saveMessageToDB(messageDB);
     await _handleHideMessage(messageHidden.messageId, messageHidden.operator);
   }
 
@@ -193,7 +193,7 @@ class Messages {
           tags: jsonEncode(event.tags),
           content: event.content,
           createTime: event.createdAt);
-      await saveMessagesToDB([messageDB]);
+      await saveMessageToDB(messageDB);
       await Channels.sharedInstance.handleMuteUser(userMuted.userPubkey);
     }
   }
@@ -221,12 +221,10 @@ class Messages {
         .rawUpdate('UPDATE MessageDB SET read = $read WHERE $where', whereArgs);
   }
 
-  static Future<void> saveMessagesToDB(List<MessageDB> messages,
+  static Future<int> saveMessageToDB(MessageDB message,
       {ConflictAlgorithm? conflictAlgorithm}) async {
-    for (var message in messages) {
-      await DB.sharedInstance.insert<MessageDB>(message,
-          conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.ignore);
-    }
+    return await DB.sharedInstance.insert<MessageDB>(message,
+        conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.ignore);
   }
 
   static deleteMessagesFromDB(List<String> messageIds) async {

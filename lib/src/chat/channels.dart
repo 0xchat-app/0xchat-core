@@ -131,7 +131,7 @@ class Channels {
     _updateChannelMessageTime(event.createdAt, relay);
 
     await Relays.sharedInstance.syncRelaysToDB();
-    await Messages.saveMessagesToDB([messageDB]);
+    await Messages.saveMessageToDB(messageDB);
     channelMessageCallBack?.call(messageDB);
   }
 
@@ -197,9 +197,7 @@ class Channels {
   Map<String, ChannelDB> _myChannels() {
     Map<String, ChannelDB> result = {};
     UserDB? me = Account.sharedInstance.me;
-    if (me != null &&
-        me.channelsList != null &&
-        me.channelsList!.isNotEmpty) {
+    if (me != null && me.channelsList != null && me.channelsList!.isNotEmpty) {
       List<String> channelList = me.channelsList!;
       for (String channelId in channelList) {
         if (channels.containsKey(channelId)) {
@@ -445,10 +443,10 @@ class Channels {
         createTime: event.createdAt,
         status: 0,
         plaintEvent: jsonEncode(event));
-    Messages.saveMessagesToDB([messageDB]);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+    await Messages.saveMessageToDB(messageDB);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       messageDB.status = ok.status ? 1 : 2;
-      Messages.saveMessagesToDB([messageDB],
+      await Messages.saveMessageToDB(messageDB,
           conflictAlgorithm: ConflictAlgorithm.replace);
       channelMessageCallBack?.call(messageDB);
       if (!completer.isCompleted) completer.complete(ok);
