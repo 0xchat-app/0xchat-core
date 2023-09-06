@@ -122,7 +122,7 @@ class Zaps {
       zapReceiptList.add(event);
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unRelays.isEmpty) {
+      if (zapReceiptList.isNotEmpty) {
         List<ZapReceipt> result = [];
         for (var event in zapReceiptList) {
           ZapReceipt zapReceipt = await Nip57.getZapReceipt(event, privkey);
@@ -130,6 +130,7 @@ class Zaps {
         }
         if (!completer.isCompleted) completer.complete(result);
       }
+      if (unRelays.isEmpty && !completer.isCompleted) completer.complete([]);
     });
     return completer.future;
   }
