@@ -419,8 +419,10 @@ class Contacts {
     MessageDB? messageDB =
         await MessageDB.fromPrivateMessage(event, pubkey, privkey);
     if (messageDB != null) {
-      await Messages.saveMessageToDB(messageDB);
-      privateChatMessageCallBack?.call(messageDB);
+      int status = await Messages.saveMessageToDB(messageDB);
+      if(status != 0) {
+        privateChatMessageCallBack?.call(messageDB);
+      }
     }
   }
 

@@ -350,8 +350,10 @@ extension SecretChat on Contacts {
         await MessageDB.fromPrivateMessage(event, pubkey, privkey);
     if (messageDB != null) {
       messageDB.sessionId = sessionId;
-      await Messages.saveMessageToDB(messageDB);
-      secretChatMessageCallBack?.call(messageDB);
+      int status = await Messages.saveMessageToDB(messageDB);
+      if(status != 0) {
+        secretChatMessageCallBack?.call(messageDB);
+      }
     }
   }
 
