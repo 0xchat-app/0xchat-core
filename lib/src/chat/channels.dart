@@ -442,6 +442,8 @@ class Channels {
         kind: event.kind,
         tags: jsonEncode(event.tags),
         content: event.content,
+        decryptContent: content,
+        type: MessageDB.messageTypeToString(type),
         createTime: event.createdAt,
         status: 0,
         plaintEvent: jsonEncode(event));
