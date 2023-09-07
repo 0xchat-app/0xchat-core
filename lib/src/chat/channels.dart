@@ -132,7 +132,7 @@ class Channels {
 
     await Relays.sharedInstance.syncRelaysToDB();
     int status = await Messages.saveMessageToDB(messageDB);
-    if(status != 0) {
+    if (status != 0) {
       channelMessageCallBack?.call(messageDB);
     }
   }
@@ -169,20 +169,24 @@ class Channels {
       subscriptions[relay] = [f];
     }
 
-    Lists? result;
+    Event? lastEvent;
+    int lastEventTime = 0;
     Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
-      if (result == null || result!.createTime < event.createdAt) {
-        result = await Nip51.getLists(event, privkey);
+      if (event.content.isNotEmpty && lastEventTime < event.createdAt) {
+        lastEventTime = event.createdAt;
+        lastEvent = event;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty) {
-        if (result != null) {
+        if (lastEvent != null) {
+          Lists result = await Nip51.getLists(lastEvent!, privkey);
+
           UserDB? me = Account.sharedInstance.me;
-          me!.channelsList = result!.bookmarks;
+          me!.channelsList = result.bookmarks;
           DB.sharedInstance.insert<UserDB>(me);
-          await syncChannelsFromRelay(result!.owner, result!.bookmarks);
+          await syncChannelsFromRelay(result.owner, result.bookmarks);
           myChannels = _myChannels();
           _updateChannelSubscription();
         } else {
@@ -268,8 +272,8 @@ class Channels {
 
   Future<void> _syncMyChannelListToRelay({OKCallBack? callBack}) async {
     List<String> list = myChannels.keys.toList();
-    Event event =
-        await Nip51.createCategorizedBookmarks(identifier, list, [], privkey, pubkey);
+    Event event = await Nip51.createCategorizedBookmarks(
+        identifier, list, [], privkey, pubkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
     _syncMyChannelListToDB();
   }

@@ -35,18 +35,20 @@ extension BlockList on Contacts {
       subscriptions[relay] = [f];
     }
 
-    Lists? result;
+    Event? lastEvent;
+    int lastEventTime = 0;
     Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
-      if (event.content.isNotEmpty &&
-          (result == null || result!.createTime < event.createdAt)) {
-        result = await Nip51.getLists(event, privkey);
+      if (event.content.isNotEmpty && lastEventTime < event.createdAt) {
+        lastEventTime = event.createdAt;
+        lastEvent = event;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty) {
-        if (result != null) {
-          blockList = result!.people.map((p) => p.pubkey).toList();
+        if (lastEvent != null) {
+          Lists result = await Nip51.getLists(lastEvent!, privkey);
+          blockList = result.people.map((p) => p.pubkey).toList();
           await _syncBlockListToDB();
         }
         contactUpdatedCallBack?.call();
@@ -73,8 +75,7 @@ extension BlockList on Contacts {
       } else {
         throw Exception('_syncBlockListToRelay error!, $blockList');
       }
-    }
-    else{
+    } else {
       okCallBack?.call(OKEvent('', false, 'blockList is empty'), '');
     }
   }
