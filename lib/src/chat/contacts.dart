@@ -304,19 +304,20 @@ class Contacts {
     } else {
       subscriptions[relay] = [f];
     }
-    Lists? result;
+    Event? lastEvent;
+    int lastEventTime = 0;
     Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
-      if (event.content.isNotEmpty &&
-          (result == null || result!.createTime < event.createdAt)) {
-        result = await Nip51.getLists(event, privkey);
-        lastFriendListUpdateTime = event.createdAt;
+      if (event.content.isNotEmpty && lastEventTime < event.createdAt) {
+        lastEventTime = event.createdAt;
+        lastEvent = event;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty) {
-        if (result != null) {
-          await _syncContactsProfiles(result!.people);
+        if (lastEvent != null) {
+          Lists result = await Nip51.getLists(lastEvent!, privkey);
+          await _syncContactsProfiles(result.people);
         }
         contactUpdatedCallBack?.call();
         if (!completer.isCompleted) completer.complete();
