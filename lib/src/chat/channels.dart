@@ -489,7 +489,7 @@ class Channels {
       if (channels.containsKey(channelId)) {
         myChannels[channelId] = channels[channelId]!;
         _loadChannelPreMessages(
-            channelId, DateTime.now().millisecondsSinceEpoch ~/ 1000, 100);
+            channelId, currentUnixTimestampSeconds(), 100);
         _updateChannelSubscription();
         _syncMyChannelListToRelay(callBack: (ok, relay) {
           if (!completer.isCompleted) completer.complete(ok);
