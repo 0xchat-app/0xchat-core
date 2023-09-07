@@ -405,14 +405,13 @@ extension SecretChat on Contacts {
           type: MessageDB.messageTypeToString(type),
           status: 0,
           plaintEvent: jsonEncode(event));
-
+      secretChatMessageCallBack?.call(messageDB);
       await Messages.saveMessageToDB(messageDB);
       Connect.sharedInstance.sendEvent(event, relay: sessionDB.relay,
           sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
         await Messages.saveMessageToDB(messageDB,
             conflictAlgorithm: ConflictAlgorithm.replace);
-        secretChatMessageCallBack?.call(messageDB);
         if (!completer.isCompleted) completer.complete(ok);
 
         /// rotate shared key

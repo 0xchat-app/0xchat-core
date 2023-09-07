@@ -448,12 +448,12 @@ class Channels {
         createTime: event.createdAt,
         status: 0,
         plaintEvent: jsonEncode(event));
+    channelMessageCallBack?.call(messageDB);
     await Messages.saveMessageToDB(messageDB);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       messageDB.status = ok.status ? 1 : 2;
       await Messages.saveMessageToDB(messageDB,
           conflictAlgorithm: ConflictAlgorithm.replace);
-      channelMessageCallBack?.call(messageDB);
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
