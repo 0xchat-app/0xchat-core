@@ -94,9 +94,9 @@ class Contacts {
         identifier, [], friendList, privkey, pubkey);
     if (event.content.isNotEmpty) {
       Connect.sharedInstance.sendEvent(event,
-          sendCallBack: (OKEvent ok, String relay) {
+          sendCallBack: (OKEvent ok, String relay) async {
         if (ok.status) {
-          _syncContactsToDB(event.content);
+          await _syncContactsToDB(event.content);
         }
         okCallBack?.call(ok, relay);
       });
@@ -116,7 +116,7 @@ class Contacts {
     Event event = await Nip51.createCategorizedPeople(
         identifier, [], friendList, privkey, pubkey);
     if (event.content.isNotEmpty) {
-      _syncContactsToDB(event.content);
+      await _syncContactsToDB(event.content);
     } else {
       throw Exception('_syncFriendsToRelay error content!, $friendList');
     }

@@ -152,7 +152,7 @@ class Connect {
   Future connect(String relay) async {
     // connecting or open
     if (connectStatus[relay] == 0 || connectStatus[relay] == 1) return;
-    WebSocket socket;
+    WebSocket? socket;
     if (webSockets.containsKey(relay) && webSockets[relay] != null) {
       socket = webSockets[relay]!;
       // _setConnectStatus(relay, socket.readyState);
@@ -165,11 +165,13 @@ class Connect {
     print("connecting...");
     webSockets[relay] = null;
     socket = await _connectWs(relay);
-    socket.done.then((dynamic _) => _onDisconnected(relay));
-    _listenEvent(socket, relay);
-    webSockets[relay] = socket;
-    print("socket connection initialized");
-    _setConnectStatus(relay, 1);
+    if(socket != null){
+      socket.done.then((dynamic _) => _onDisconnected(relay));
+      _listenEvent(socket, relay);
+      webSockets[relay] = socket;
+      print("socket connection initialized");
+      _setConnectStatus(relay, 1);
+    }
   }
 
   Future connectRelays(List<String> relays) async {

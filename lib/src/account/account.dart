@@ -9,7 +9,7 @@ class Account {
   /// singleton
   Account._internal() {
     _startHeartBeat();
-    _loadAllUsers();
+    // _loadAllUsers();
   }
   factory Account() => sharedInstance;
   static final Account sharedInstance = Account._internal();
@@ -428,9 +428,13 @@ class Account {
 
     Filter f = Filter(kinds: [10002], authors: [pubkey], limit: 1);
     List<Relay> result = [];
+    int lastEventTime = 0;
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      result = Nip65.decode(event);
+      if(lastEventTime < event.createdAt) {
+        result = Nip65.decode(event);
+        lastEventTime = event.createdAt;
+      }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
