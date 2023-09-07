@@ -524,6 +524,18 @@ class Channels {
     return null;
   }
 
+  static String decodeNote(String data) {
+    try{
+      return Nip19.decodeNote(data);
+    }catch(_){
+      return '';
+    }
+  }
+
+  static encodeNote(String noteid) {
+    return Nip19.encodeNote(noteid);
+  }
+
   // get 20 latest channels
   Future<List<ChannelDB>> getChannelsFromRelay(
       {List<String>? channelIds}) async {
