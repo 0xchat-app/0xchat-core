@@ -17,6 +17,8 @@ class Messages {
   String privkey = '';
   String messageRequestsId = '';
 
+  List<String> messagesLoaded = [];
+
   Future<void> initWithPrivkey(String key) async {
     privkey = key;
     pubkey = Keychain.getPublicKey(privkey);
@@ -198,6 +200,14 @@ class Messages {
     }
   }
 
+  static bool addToLoaded(String messageId) {
+    if (!Messages.sharedInstance.messagesLoaded.contains(messageId)) {
+      Messages.sharedInstance.messagesLoaded.add(messageId);
+      return true;
+    }
+    return false;
+  }
+
   static Future<Map> loadMessagesFromDB(
       {String? where, List<Object?>? whereArgs, String? orderBy}) async {
     int theLastTime = 0;
@@ -207,10 +217,11 @@ class Messages {
       theLastTime =
           message.createTime! > theLastTime ? message.createTime! : theLastTime;
       if (message.decryptContent == null || message.decryptContent!.isEmpty) {
-        message.decryptContent =
-            MessageDB.decodeContent(message.content!)['content'];
-        message.type = MessageDB.decodeContent(message.content!)['contentType'];
+        var map = MessageDB.decodeContent(message.content!);
+        message.decryptContent = map['content'];
+        message.type = map['contentType'];
       }
+      Messages.addToLoaded(message.messageId);
     }
     return {'theLastTime': theLastTime, 'messages': messages};
   }

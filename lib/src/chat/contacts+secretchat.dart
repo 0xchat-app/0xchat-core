@@ -346,13 +346,15 @@ extension SecretChat on Contacts {
   }
 
   Future<void> _handleSecretMessage(String sessionId, Event event) async {
-    MessageDB? messageDB =
-        await MessageDB.fromPrivateMessage(event, pubkey, privkey);
-    if (messageDB != null) {
-      messageDB.sessionId = sessionId;
-      int status = await Messages.saveMessageToDB(messageDB);
-      if(status != 0) {
-        secretChatMessageCallBack?.call(messageDB);
+    if (Messages.addToLoaded(event.id)) {
+      MessageDB? messageDB =
+          await MessageDB.fromPrivateMessage(event, pubkey, privkey);
+      if (messageDB != null) {
+        messageDB.sessionId = sessionId;
+        int status = await Messages.saveMessageToDB(messageDB);
+        if (status != 0) {
+          secretChatMessageCallBack?.call(messageDB);
+        }
       }
     }
   }

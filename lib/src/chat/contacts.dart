@@ -425,12 +425,14 @@ class Contacts {
   }
 
   Future<void> _handlePrivateMessage(Event event, String relay) async {
-    MessageDB? messageDB =
-        await MessageDB.fromPrivateMessage(event, pubkey, privkey);
-    if (messageDB != null) {
-      int status = await Messages.saveMessageToDB(messageDB);
-      if (status != 0) {
-        privateChatMessageCallBack?.call(messageDB);
+    if (Messages.addToLoaded(event.id)) {
+      MessageDB? messageDB =
+          await MessageDB.fromPrivateMessage(event, pubkey, privkey);
+      if (messageDB != null) {
+        int status = await Messages.saveMessageToDB(messageDB);
+        if (status != 0) {
+          privateChatMessageCallBack?.call(messageDB);
+        }
       }
     }
   }

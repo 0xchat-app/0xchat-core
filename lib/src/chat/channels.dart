@@ -79,11 +79,7 @@ class Channels {
   }
 
   Future<bool> _checkBlockedList(String user) async {
-    UserDB? me = Account.sharedInstance.me;
-    if (me!.blockedList != null && me.blockedList!.isNotEmpty) {
-      return me.blockedList!.contains(user);
-    }
-    return false;
+    return Contacts.sharedInstance.inBlockList(user);
   }
 
   Future<void> handleMuteUser(String user) async {
@@ -95,6 +91,7 @@ class Channels {
   }
 
   Future<void> _receiveChannelMessages(Event event, String relay) async {
+    if (!Messages.addToLoaded(event.id)) return;
     ChannelMessage channelMessage = Nip28.getChannelMessage(event);
     if (await _checkBlockedList(channelMessage.sender)) return;
     ChannelDB? channel = channels[channelMessage.channelId];
@@ -124,9 +121,9 @@ class Channels {
         content: event.content,
         createTime: event.createdAt,
         plaintEvent: jsonEncode(event));
-    messageDB.decryptContent =
-        MessageDB.decodeContent(messageDB.content!)['content'];
-    messageDB.type = MessageDB.decodeContent(messageDB.content!)['contentType'];
+    var map = MessageDB.decodeContent(messageDB.content!);
+    messageDB.decryptContent = map['content'];
+    messageDB.type = map['contentType'];
 
     _updateChannelMessageTime(event.createdAt, relay);
 
@@ -488,8 +485,7 @@ class Channels {
         (requestId, ok, relay, unRelays) {
       if (channels.containsKey(channelId)) {
         myChannels[channelId] = channels[channelId]!;
-        _loadChannelPreMessages(
-            channelId, currentUnixTimestampSeconds(), 100);
+        _loadChannelPreMessages(channelId, currentUnixTimestampSeconds(), 100);
         _updateChannelSubscription();
         _syncMyChannelListToRelay(callBack: (ok, relay) {
           if (!completer.isCompleted) completer.complete(ok);
@@ -525,9 +521,9 @@ class Channels {
   }
 
   static String decodeNote(String data) {
-    try{
+    try {
       return Nip19.decodeNote(data);
-    }catch(_){
+    } catch (_) {
       return '';
     }
   }

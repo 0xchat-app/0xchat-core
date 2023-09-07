@@ -272,8 +272,9 @@ class MessageDB extends DBObject {
         createTime: event.createdAt,
         replyId: message.replyId,
         plaintEvent: jsonEncode(event));
-    messageDB.decryptContent = decodeContent(message.content)['content'];
-    messageDB.type = decodeContent(message.content)['contentType'];
+    var map = decodeContent(message.content);
+    messageDB.decryptContent = map['content'];
+    messageDB.type = map['contentType'];
     return messageDB;
   }
 }
