@@ -365,25 +365,37 @@ class Contacts {
 
         /// all messages, contacts & unknown contacts
         Filter f1 = Filter(
-            kinds: [4, 44, 1059], p: [pubkey], since: (friendMessageUntil + 1));
+            kinds: [4, 44], p: [pubkey], since: (friendMessageUntil + 1));
         Filter f2 = Filter(
-            kinds: [4, 44, 1059],
+            kinds: [4, 44], authors: [pubkey], since: (friendMessageUntil + 1));
+        Filter f3 = Filter(
+            kinds: [1059],
+            p: [pubkey],
+            since: (friendMessageUntil - 24 * 60 * 60 * 7 + 1));
+        Filter f4 = Filter(
+            kinds: [1059],
             authors: [pubkey],
-            since: (friendMessageUntil + 1));
-        subscriptions[relayURL] = [f1, f2];
+            since: (friendMessageUntil - 24 * 60 * 60 * 7 + 1));
+        subscriptions[relayURL] = [f1, f2, f3, f4];
       }
     } else {
       int friendMessageUntil =
           Relays.sharedInstance.getFriendMessageUntil(relay);
 
       /// all messages, contacts & unknown contacts
-      Filter f1 = Filter(
-          kinds: [4, 44, 1059], p: [pubkey], since: (friendMessageUntil + 1));
+      Filter f1 =
+          Filter(kinds: [4, 44], p: [pubkey], since: (friendMessageUntil + 1));
       Filter f2 = Filter(
-          kinds: [4, 44, 1059],
+          kinds: [4, 44], authors: [pubkey], since: (friendMessageUntil + 1));
+      Filter f3 = Filter(
+          kinds: [1059],
+          p: [pubkey],
+          since: (friendMessageUntil - 24 * 60 * 60 * 7 + 1));
+      Filter f4 = Filter(
+          kinds: [1059],
           authors: [pubkey],
-          since: (friendMessageUntil + 1));
-      subscriptions[relay] = [f1, f2];
+          since: (friendMessageUntil - 24 * 60 * 60 * 7 + 1));
+      subscriptions[relay] = [f1, f2, f3, f4];
     }
     friendMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
@@ -461,7 +473,7 @@ class Contacts {
         kind: event.kind,
         tags: jsonEncode(event.tags),
         content: event.content,
-        createTime: event.createdAt,
+        createTime: currentUnixTimestampSeconds(),
         decryptContent: content,
         type: MessageDB.messageTypeToString(type),
         status: 0,

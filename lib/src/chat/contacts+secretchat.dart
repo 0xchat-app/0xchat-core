@@ -400,7 +400,7 @@ extension SecretChat on Contacts {
           kind: event.kind,
           tags: jsonEncode(event.tags),
           content: event.content,
-          createTime: event.createdAt,
+          createTime: currentUnixTimestampSeconds(),
           decryptContent: content,
           type: MessageDB.messageTypeToString(type),
           status: 0,
