@@ -488,6 +488,7 @@ extension SecretChat on Contacts {
         Event? innerEvent = await Nip24.decode(event, privkey,
             sealedPrivkey: session.shareSecretKey!);
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
+          updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
             case 14:
               _handleSecretMessage(session.sessionId, innerEvent, event.id);

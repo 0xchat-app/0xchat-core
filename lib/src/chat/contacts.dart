@@ -405,6 +405,7 @@ class Contacts {
       } else if (event.kind == 1059 && Messages.addToLoaded(event.id)) {
         Event? innerEvent = await Nip24.decode(event, privkey);
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
+          updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
             case 14:
               _handlePrivateMessage(innerEvent, relay, giftWrapEventId: event.id);
