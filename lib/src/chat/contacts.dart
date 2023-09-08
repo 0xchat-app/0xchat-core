@@ -361,7 +361,7 @@ class Contacts {
     }
 
     Map<String, List<Filter>> subscriptions = {};
-
+    int timeOffset = 24 * 60 * 60 * 7; // 7 days
     if (relay == null) {
       for (String relayURL in Connect.sharedInstance.relays()) {
         int friendMessageUntil =
@@ -375,11 +375,11 @@ class Contacts {
         Filter f3 = Filter(
             kinds: [1059],
             p: [pubkey],
-            since: (friendMessageUntil - 24 * 60 * 60 * 7 + 1));
+            since: (friendMessageUntil - timeOffset + 1));
         Filter f4 = Filter(
             kinds: [1059],
             authors: [pubkey],
-            since: (friendMessageUntil - 24 * 60 * 60 * 7 + 1));
+            since: (friendMessageUntil - timeOffset + 1));
         subscriptions[relayURL] = [f1, f2, f3, f4];
       }
     } else {
@@ -394,11 +394,11 @@ class Contacts {
       Filter f3 = Filter(
           kinds: [1059],
           p: [pubkey],
-          since: (friendMessageUntil - 24 * 60 * 60 * 7 + 1));
+          since: (friendMessageUntil - timeOffset + 1));
       Filter f4 = Filter(
           kinds: [1059],
           authors: [pubkey],
-          since: (friendMessageUntil - 24 * 60 * 60 * 7 + 1));
+          since: (friendMessageUntil - timeOffset + 1));
       subscriptions[relay] = [f1, f2, f3, f4];
     }
     friendMessageSubscription = Connect.sharedInstance
