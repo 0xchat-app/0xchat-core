@@ -399,15 +399,15 @@ class Contacts {
     }
     friendMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
-      updateFriendMessageTime(event.createdAt, relay);
       if (event.kind == 4 || event.kind == 44) {
+        updateFriendMessageTime(event.createdAt, relay);
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
-      } else if (event.kind == 1059) {
+      } else if (event.kind == 1059 && Messages.addToLoaded(event.id)) {
         Event? innerEvent = await Nip24.decode(event, privkey);
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
           switch (innerEvent.kind) {
             case 14:
-              _handlePrivateMessage(innerEvent, relay);
+              _handlePrivateMessage(innerEvent, relay, giftWrapEventId: event.id);
               break;
             case 10100:
               handleRequest(innerEvent, relay);
@@ -436,11 +436,12 @@ class Contacts {
     });
   }
 
-  Future<void> _handlePrivateMessage(Event event, String relay) async {
+  Future<void> _handlePrivateMessage(Event event, String relay, {String? giftWrapEventId}) async {
     if (Messages.addToLoaded(event.id)) {
       MessageDB? messageDB =
           await MessageDB.fromPrivateMessage(event, pubkey, privkey);
       if (messageDB != null) {
+        if(giftWrapEventId != null) messageDB.messageId = giftWrapEventId;
         int status = await Messages.saveMessageToDB(messageDB);
         if (status != 0) {
           privateChatMessageCallBack?.call(messageDB);

@@ -345,12 +345,13 @@ extension SecretChat on Contacts {
     }
   }
 
-  Future<void> _handleSecretMessage(String sessionId, Event event) async {
+  Future<void> _handleSecretMessage(String sessionId, Event event, String giftWrapEventId) async {
     if (Messages.addToLoaded(event.id)) {
       MessageDB? messageDB =
           await MessageDB.fromPrivateMessage(event, pubkey, privkey);
       if (messageDB != null) {
         messageDB.sessionId = sessionId;
+        messageDB.messageId = giftWrapEventId;
         int status = await Messages.saveMessageToDB(messageDB);
         if (status != 0) {
           secretChatMessageCallBack?.call(messageDB);
@@ -482,15 +483,14 @@ extension SecretChat on Contacts {
 
     secretSessionSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
-      updateFriendMessageTime(event.createdAt, relay);
       SecretSessionDB? session = _getSessionFromPubkey(event.pubkey);
-      if (session != null) {
+      if (session != null && Messages.addToLoaded(event.id)) {
         Event? innerEvent = await Nip24.decode(event, privkey,
             sealedPrivkey: session.shareSecretKey!);
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
           switch (innerEvent.kind) {
             case 14:
-              _handleSecretMessage(session.sessionId, innerEvent);
+              _handleSecretMessage(session.sessionId, innerEvent, event.id);
               break;
             default:
               print('unhandled message $innerEvent');
