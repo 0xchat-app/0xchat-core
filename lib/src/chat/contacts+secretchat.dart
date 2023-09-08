@@ -470,14 +470,14 @@ extension SecretChat on Contacts {
       for (var r in Connect.sharedInstance.relays()) {
         int friendMessageUntil = Relays.sharedInstance.getFriendMessageUntil(r);
         Filter f = Filter(
-            kinds: [1059], authors: pubkeys, since: friendMessageUntil - 24 * 60 * 60 * 7 + 1);
+            kinds: [1059], authors: pubkeys, since: friendMessageUntil + 1);
         subscriptions[r] = [f];
       }
     } else {
       int friendMessageUntil =
           Relays.sharedInstance.getFriendMessageUntil(relay);
       Filter f = Filter(
-          kinds: [1059], authors: pubkeys, since: friendMessageUntil - 24 * 60 * 60 * 7 + 1);
+          kinds: [1059], authors: pubkeys, since: friendMessageUntil + 1);
       subscriptions[relay] = [f];
     }
 
