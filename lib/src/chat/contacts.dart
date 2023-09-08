@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
@@ -229,8 +230,11 @@ class Contacts {
       event ??= await Nip44.encode(friendPubkey,
           MessageDB.encodeContent(type, content), replayId, privkey);
     } else if (kind == 1059 || kind == 14) {
+      var intValue = Random().nextInt(24 * 60 * 60 * 7);
+      int createAt = currentUnixTimestampSeconds() - intValue;
       event ??= await Nip24.encodeSealedGossipDM(friendPubkey,
-          MessageDB.encodeContent(type, content), replayId, privkey);
+          MessageDB.encodeContent(type, content), replayId, privkey,
+          createAt: createAt);
     } else {
       event ??= Nip4.encode(friendPubkey,
           MessageDB.encodeContent(type, content), replayId, privkey);
@@ -408,7 +412,8 @@ class Contacts {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
             case 14:
-              _handlePrivateMessage(innerEvent, relay, giftWrapEventId: event.id);
+              _handlePrivateMessage(innerEvent, relay,
+                  giftWrapEventId: event.id);
               break;
             case 10100:
               handleRequest(innerEvent, relay);
@@ -437,12 +442,13 @@ class Contacts {
     });
   }
 
-  Future<void> _handlePrivateMessage(Event event, String relay, {String? giftWrapEventId}) async {
+  Future<void> _handlePrivateMessage(Event event, String relay,
+      {String? giftWrapEventId}) async {
     if (Messages.addToLoaded(event.id)) {
       MessageDB? messageDB =
           await MessageDB.fromPrivateMessage(event, pubkey, privkey);
       if (messageDB != null) {
-        if(giftWrapEventId != null) messageDB.messageId = giftWrapEventId;
+        if (giftWrapEventId != null) messageDB.messageId = giftWrapEventId;
         int status = await Messages.saveMessageToDB(messageDB);
         if (status != 0) {
           privateChatMessageCallBack?.call(messageDB);
