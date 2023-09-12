@@ -247,6 +247,9 @@ class Channels {
           (event.kind == 41 &&
               channels.containsKey(channelDB.channelId) &&
               channels[channelDB.channelId]!.creator == channelDB.creator)) {
+        ChannelDB? storedChannel = channels[channelDB.channelId];
+        // restore mute
+        channelDB.mute = storedChannel?.mute;
         channels[channelDB.channelId] = channelDB;
         _syncChannelToDB(channelDB);
       }
