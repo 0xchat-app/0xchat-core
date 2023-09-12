@@ -15,8 +15,8 @@ class Account {
   static final Account sharedInstance = Account._internal();
 
   UserDB? me;
-  String pubkey = '';
-  String privkey = '';
+  String currentPubkey = '';
+  String currentPrivkey = '';
   Timer? timer;
 
   Map<String, UserDB> userCache = {};
@@ -86,7 +86,6 @@ class Account {
       if (maps.isNotEmpty) {
         db = maps.first as UserDB?;
         if (db != null) {
-          db.privkey = privkey;
           return db;
         }
       } else {
@@ -262,11 +261,10 @@ class Account {
         String encryptedPrivKey = db.encryptedPrivKey!;
         Uint8List privkey =
             decryptPrivateKey(hexToBytes(encryptedPrivKey), password);
-        db.privkey = bytesToHex(privkey);
         if (Keychain.getPublicKey(bytesToHex(privkey)) == pubkey) {
-          Account.sharedInstance.me = db;
-          Account.sharedInstance.privkey = db.privkey!;
-          Account.sharedInstance.pubkey = db.pubKey;
+          me = db;
+          currentPrivkey = bytesToHex(privkey);
+          currentPubkey = db.pubKey;
           return db;
         }
       }
@@ -281,7 +279,6 @@ class Account {
     UserDB? db;
     if (maps.isNotEmpty) {
       db = maps.first as UserDB?;
-      db?.privkey = privkey;
     } else {
       /// insert a new account
       db = UserDB();
@@ -291,12 +288,11 @@ class Account {
           encryptPrivateKey(hexToBytes(privkey), defaultPassword);
       db.encryptedPrivKey = bytesToHex(enPrivkey);
       db.defaultPassword = defaultPassword;
-      db.privkey = privkey;
       await DB.sharedInstance.insert<UserDB>(db);
     }
-    Account.sharedInstance.me = db;
-    Account.sharedInstance.privkey = db!.privkey!;
-    Account.sharedInstance.pubkey = db.pubKey;
+    me = db!;
+    currentPrivkey = privkey;
+    currentPubkey = db.pubKey;
     return db;
   }
 
@@ -347,7 +343,6 @@ class Account {
     db.pubKey = user.public;
     db.encryptedPrivKey = bytesToHex(enPrivkey);
     db.defaultPassword = defaultPassword;
-    db.privkey = user.private;
     await DB.sharedInstance.insert<UserDB>(db);
     return db;
   }
@@ -363,7 +358,6 @@ class Account {
     UserDB db = UserDB();
     db.pubKey = user.public;
     db.encryptedPrivKey = bytesToHex(enPrivkey);
-    db.privkey = user.private;
     await DB.sharedInstance.insert<UserDB>(db);
     return db;
   }
@@ -448,10 +442,10 @@ class Account {
     return completer.future;
   }
 
-  Future<UserDB?> updateProfile(String privkey, UserDB updateDB) async {
+  Future<UserDB?> updateProfile(UserDB updateDB) async {
     Completer<UserDB?> completer = Completer<UserDB?>();
 
-    UserDB db = await _getUserFromDB(privkey: privkey) ?? UserDB();
+    UserDB db = await _getUserFromDB(pubkey: currentPubkey) ?? UserDB();
     db.name = updateDB.name;
     db.gender = updateDB.gender;
     db.area = updateDB.area;
@@ -459,7 +453,6 @@ class Account {
     db.picture = updateDB.picture;
     db.dns = updateDB.dns;
     db.lnurl = updateDB.lnurl;
-    db.privkey = privkey;
     await DB.sharedInstance.update<UserDB>(db);
 
     /// send metadata event
@@ -474,7 +467,7 @@ class Account {
     };
     Map additionMap = jsonDecode(db.otherField ?? '{}');
     map.addAll(additionMap);
-    Event event = Nip1.setMetadata(jsonEncode(map), privkey);
+    Event event = Nip1.setMetadata(jsonEncode(map), currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (ok.status) {
         completer.complete(db);
@@ -486,47 +479,46 @@ class Account {
   }
 
   Future<OKEvent> updateRelaysMetadata(
-      List<String> relays, String privkey) async {
+      List<String> relays) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<Relay> list = [];
     for (var relay in relays) {
       list.add(Relay(relay, null));
     }
-    Event event = Nip65.encode(list, privkey);
+    Event event = Nip65.encode(list, currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
   }
 
-  Future<UserDB?> updatePassword(String privkey, String password) async {
-    UserDB? db = await _getUserFromDB(privkey: privkey);
+  Future<UserDB?> updatePassword(String password) async {
+    UserDB? db = await _getUserFromDB(privkey: currentPrivkey);
     if (db != null) {
-      Uint8List enPrivkey = encryptPrivateKey(hexToBytes(privkey), password);
+      Uint8List enPrivkey = encryptPrivateKey(hexToBytes(currentPrivkey), password);
       db.encryptedPrivKey = bytesToHex(enPrivkey);
-      db.defaultPassword = "";
-      db.privkey = privkey;
+      db.defaultPassword = password;
       await DB.sharedInstance.update<UserDB>(db);
       return db;
     }
     return null;
   }
 
-  Future<int> logout(String privkey) async {
+  Future<int> logout() async {
     Contacts.sharedInstance.allContacts = {};
     Channels.sharedInstance.channels = {};
     Channels.sharedInstance.myChannels = {};
-    return await delete(privkey);
+    return await _delete();
   }
 
-  Future<int> delete(String privkey) async {
-    String pubkey = Keychain.getPublicKey(privkey);
+  Future<int> _delete() async {
     return await DB.sharedInstance
-        .delete<UserDB>(where: 'pubKey = ?', whereArgs: [pubkey]);
+        .delete<UserDB>(where: 'pubKey = ?', whereArgs: [currentPubkey]);
   }
 
   static String encodeProfile(String pubkey, List<String> relays) {
-    String profile = Nip19.encodeShareableEntity('nprofile', pubkey, relays, null, null);
+    String profile =
+        Nip19.encodeShareableEntity('nprofile', pubkey, relays, null, null);
     return Nip21.encode(profile);
   }
 

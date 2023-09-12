@@ -56,8 +56,8 @@ class Zaps {
     }
   }
 
-  static Future<Map<String, dynamic>> getInvoice(List<String> relays, int sats,
-      String lnurl, String recipient, String privkey,
+  static Future<Map<String, dynamic>> getInvoice(
+      List<String> relays, int sats, String lnurl, String recipient,
       {String? eventId,
       String? coordinate,
       String? content,
@@ -69,9 +69,16 @@ class Zaps {
       String url =
           '${zapsDB.callback}?amount=${sats * 1000}&lnurl=${zapsDB.lnURL}';
       if (zapsDB.allowsNostr == true) {
-        Event event = await Nip57.zapRequest(relays, (sats * 1000).toString(),
-            lnurl, recipient, privkey, privateZap ?? false,
-            eventId: eventId, coordinate: coordinate, content: content);
+        Event event = await Nip57.zapRequest(
+            relays,
+            (sats * 1000).toString(),
+            lnurl,
+            recipient,
+            Account.sharedInstance.currentPrivkey,
+            privateZap ?? false,
+            eventId: eventId,
+            coordinate: coordinate,
+            content: content);
         String encodedUri = Uri.encodeFull(jsonEncode(event));
         url = '$url&nostr=$encodedUri';
       }
@@ -103,7 +110,7 @@ class Zaps {
     return Bolt11PaymentRequest(invoice);
   }
 
-  static Future<List<ZapReceipt>> getZapReceipt(String zapper, String privkey,
+  static Future<List<ZapReceipt>> getZapReceipt(String zapper,
       {String? recipient, String? eventId, String? invoice}) async {
     Completer<List<ZapReceipt>> completer = Completer<List<ZapReceipt>>();
     Filter f = Filter(kinds: [9735], authors: [zapper]);
@@ -125,7 +132,8 @@ class Zaps {
       if (zapReceiptList.isNotEmpty) {
         List<ZapReceipt> result = [];
         for (var event in zapReceiptList) {
-          ZapReceipt zapReceipt = await Nip57.getZapReceipt(event, privkey);
+          ZapReceipt zapReceipt = await Nip57.getZapReceipt(
+              event, Account.sharedInstance.currentPrivkey);
           result.add(zapReceipt);
         }
         if (!completer.isCompleted) completer.complete(result);

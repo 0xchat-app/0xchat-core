@@ -52,8 +52,8 @@ class Contacts {
       onCallStateChange;
 
   Future<void> initContacts(ContactUpdatedCallBack? callBack) async {
-    privkey = Account.sharedInstance.privkey;
-    pubkey = Account.sharedInstance.pubkey;
+    privkey = Account.sharedInstance.currentPrivkey;
+    pubkey = Account.sharedInstance.currentPubkey;
     contactUpdatedCallBack = callBack;
 
     // sync friend list from DB & relays

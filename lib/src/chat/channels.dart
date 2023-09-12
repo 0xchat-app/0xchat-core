@@ -301,8 +301,8 @@ class Channels {
       Connect.sharedInstance.closeRequests(channelMessageSubscription);
     }
 
-    privkey = Account.sharedInstance.privkey;
-    pubkey = Account.sharedInstance.pubkey;
+    privkey = Account.sharedInstance.currentPrivkey;
+    pubkey = Account.sharedInstance.currentPubkey;
     myChannelsUpdatedCallBack = callBack;
 
     await _loadAllChannelsFromDB();

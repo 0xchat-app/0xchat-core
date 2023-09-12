@@ -241,7 +241,7 @@ class BadgesHelper {
   }
 
   static Future<OKEvent> setProfileBadges(
-      List<String> badgeIds, String pubkey, String privkey) async {
+      List<String> badgeIds) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     List<BadgeDB?> badges = await getBadgeInfosFromDB(badgeIds);
@@ -249,7 +249,7 @@ class BadgesHelper {
     for (BadgeDB? badgeDB in badges) {
       if (badgeDB != null) {
         List<BadgeAwardDB?> map =
-            await getBadgeAwardFromDB(badgeDB.d!, badgeDB.creator!, pubkey);
+            await getBadgeAwardFromDB(badgeDB.d!, badgeDB.creator!, Account.sharedInstance.currentPubkey);
         if (map.isNotEmpty && map[0] != null) {
           BadgeAwardDB? db = map[0];
           BadgeAward badgeAward = BadgeAward(
@@ -263,7 +263,7 @@ class BadgesHelper {
       }
     }
     if (badgeAwards.isNotEmpty) {
-      Event event = Nip58.setProfileBadges(badgeAwards, privkey);
+      Event event = Nip58.setProfileBadges(badgeAwards, Account.sharedInstance.currentPrivkey);
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         if (ok.status) {
           UserDB? userDB = Account.sharedInstance.me;
@@ -274,7 +274,7 @@ class BadgesHelper {
       });
 
       /// SYNC TO DB
-      syncProfileBadgesToDB(pubkey, badgeIds);
+      syncProfileBadgesToDB(Account.sharedInstance.currentPubkey, badgeIds);
     }
     return completer.future;
   }

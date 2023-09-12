@@ -117,14 +117,17 @@ class UserDB extends DBObject {
 
   /// nip19 encode
   String get encodedPubkey {
-    return Nip19.encodePubkey(pubKey!);
+    return Nip19.encodePubkey(pubKey);
   }
 
   String get encodedPrivkey {
-    return Nip19.encodePrivkey(privkey!);
+    if (pubKey == Account.sharedInstance.currentPubkey) {
+      return Nip19.encodePrivkey(Account.sharedInstance.currentPrivkey);
+    }
+    return '';
   }
 
-  String get shortEncodedPubkey{
+  String get shortEncodedPubkey {
     String k = encodedPubkey;
     final String start = k.substring(0, 6);
     final String end = k.substring(k.length - 6);

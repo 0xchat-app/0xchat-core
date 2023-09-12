@@ -19,9 +19,9 @@ class Messages {
 
   List<String> messagesLoaded = [];
 
-  Future<void> initWithPrivkey(String key) async {
-    privkey = key;
-    pubkey = Keychain.getPublicKey(privkey);
+  Future<void> init() async {
+    privkey = Account.sharedInstance.currentPrivkey;
+    pubkey = Account.sharedInstance.currentPubkey;
 
     return;
 
@@ -244,14 +244,14 @@ class Messages {
   }
 
   static Future<OKEvent> deleteMessageFromRelay(
-      List<String> messageIds, String reason, String privkey) async {
+      List<String> messageIds, String reason) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     /// delete frome DB
     deleteMessagesFromDB(messageIds);
 
     /// send delete event to relay
-    Event event = Nip9.encode(messageIds, reason, privkey);
+    Event event = Nip9.encode(messageIds, reason, Account.sharedInstance.currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });

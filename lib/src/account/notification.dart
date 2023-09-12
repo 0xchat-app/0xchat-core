@@ -19,9 +19,9 @@ class NotificationHelper {
 
   // key: private key
   // serverkey: server pubkey
-  Future<void> init(String key, String serverKey) async {
-    privkey = key;
-    pubkey = Keychain.getPublicKey(privkey);
+  Future<void> init(String serverKey) async {
+    privkey = Account.sharedInstance.currentPrivkey;
+    pubkey = Account.sharedInstance.currentPubkey;
     serverPubkey = serverKey;
 
     startHeartBeat();
