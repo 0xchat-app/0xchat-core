@@ -526,7 +526,8 @@ class Account {
   }
 
   static String encodeProfile(String pubkey, List<String> relays) {
-    return Nip19.encodeShareableEntity('nprofile', pubkey, relays, null, null);
+    String profile = Nip19.encodeShareableEntity('nprofile', pubkey, relays, null, null);
+    return Nip21.encode(profile);
   }
 
   static Map<String, dynamic>? decodeProfile(String profile) {
