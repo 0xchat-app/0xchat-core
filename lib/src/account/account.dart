@@ -453,6 +453,7 @@ class Account {
     db.picture = updateDB.picture;
     db.dns = updateDB.dns;
     db.lnurl = updateDB.lnurl;
+    db.mute = updateDB.mute;
     await DB.sharedInstance.update<UserDB>(db);
 
     /// send metadata event
