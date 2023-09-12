@@ -520,18 +520,6 @@ class Channels {
     return null;
   }
 
-  static String decodeNote(String data) {
-    try {
-      return Nip19.decodeNote(data);
-    } catch (_) {
-      return '';
-    }
-  }
-
-  static encodeNote(String noteid) {
-    return Nip19.encodeNote(noteid);
-  }
-
   // get 20 latest channels
   Future<List<ChannelDB>> getChannelsFromRelay(
       {List<String>? channelIds}) async {
@@ -598,16 +586,29 @@ class Channels {
 
   static String encodeChannel(
       String channelId, List<String>? relays, String? author) {
-    return Nip19.encodeShareableEntity('nevent', channelId, relays, author);
+    String nevent =
+        Nip19.encodeShareableEntity('nevent', channelId, relays, author, null);
+    return Nip21.encode(nevent);
   }
 
   static Map<String, dynamic>? decodeChannel(String encodedChannel) {
-    Map result = Nip19.decodeShareableEntity(encodedChannel);
-    if (result['prefix'] == 'nevent') {
+    if (encodedChannel.startsWith('nostr:')) {
+      encodedChannel = Nip21.decode(encodedChannel)!;
+    }
+    if (encodedChannel.startsWith('nevent')) {
+      Map result = Nip19.decodeShareableEntity(encodedChannel);
+      if (result['prefix'] == 'nevent') {
+        return {
+          'channelId': result['special'],
+          'relays': result['relays'],
+          'author': result['author']
+        };
+      }
+    } else if (encodedChannel.startsWith('note')) {
       return {
-        'channelId': result['special'],
-        'relays': result['relays'],
-        'author': result['author']
+        'channelId': Nip19.decodeNote(encodedChannel),
+        'relays': [],
+        'author': null
       };
     }
     return null;

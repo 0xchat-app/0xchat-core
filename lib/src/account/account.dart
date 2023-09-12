@@ -431,7 +431,7 @@ class Account {
     int lastEventTime = 0;
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      if(lastEventTime < event.createdAt) {
+      if (lastEventTime < event.createdAt) {
         result = Nip65.decode(event);
         lastEventTime = event.createdAt;
       }
@@ -526,13 +526,20 @@ class Account {
   }
 
   static String encodeProfile(String pubkey, List<String> relays) {
-    return Nip19.encodeShareableEntity('nprofile', pubkey, relays, null);
+    return Nip19.encodeShareableEntity('nprofile', pubkey, relays, null, null);
   }
 
   static Map<String, dynamic>? decodeProfile(String profile) {
-    Map result = Nip19.decodeShareableEntity(profile);
-    if (result['prefix'] == 'nprofile') {
-      return {'pubkey': result['special'], 'relays': result['relays']};
+    if (profile.startsWith('nostr:')) {
+      profile = Nip21.decode(profile)!;
+    }
+    if (profile.startsWith('npub')) {
+      return {'pubkey': Nip19.decodePubkey(profile), 'relays': []};
+    } else if (profile.startsWith('nprofile')) {
+      Map result = Nip19.decodeShareableEntity(profile);
+      if (result['prefix'] == 'nprofile') {
+        return {'pubkey': result['special'], 'relays': result['relays']};
+      }
     }
     return null;
   }
