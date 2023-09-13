@@ -62,6 +62,7 @@ class Zaps {
       String? coordinate,
       String? content,
       bool? privateZap}) async {
+    relays = ['ws://8.210.109.173:6969'];
     Completer<Map<String, dynamic>> completer =
         Completer<Map<String, dynamic>>();
     ZapsDB? zapsDB = await getZapsInfoFromLnurl(lnurl);
