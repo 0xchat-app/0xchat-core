@@ -65,6 +65,6 @@ ChannelDB _channelInfoFromMap(Map<String, dynamic> map) {
     picture: map['picture'].toString(),
     badges: map['badges'].toString(),
     relayURL: map['relayURL'].toString(),
-    mute: map['mute'] > 0 ? true : false,
+    mute: (map['mute'] ?? 0) > 0 ? true : false,
   );
 }

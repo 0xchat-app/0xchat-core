@@ -552,13 +552,11 @@ class Channels {
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        await Future.forEach(result, (channel) async {
-          await syncChannelsFromRelay(channel.creator!, [channel.channelId]);
-          if (channels.containsKey(channel.channelId)) {
-            channel = channels[channel.channelId]!;
-          }
-        });
         completer.complete(result);
+        await Future.forEach(result, (channel) async {
+          _syncChannelsInfos(channel.creator!, [channel.channelId], true,
+              (requestId, status, relay, unRelays) {});
+        });
       }
     });
     return completer.future;
