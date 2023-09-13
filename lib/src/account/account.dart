@@ -156,7 +156,8 @@ class Account {
         db?.lnurl ??= map['lud06'];
         print('db?.lnurl: ${db?.lnurl}');
       }
-      await DB.sharedInstance.update<UserDB>(db!);
+      userCache[pubkey] = db!;
+      await DB.sharedInstance.update<UserDB>(db);
       if (!completer.isCompleted) completer.complete(db);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
