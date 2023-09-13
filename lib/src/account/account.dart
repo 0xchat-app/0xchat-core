@@ -515,6 +515,7 @@ class Account {
   }
 
   Future<int> _delete() async {
+    userCache.remove(currentPubkey);
     return await DB.sharedInstance
         .delete<UserDB>(where: 'pubKey = ?', whereArgs: [currentPubkey]);
   }
