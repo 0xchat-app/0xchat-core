@@ -62,7 +62,6 @@ class Zaps {
       String? coordinate,
       String? content,
       bool? privateZap}) async {
-    relays = ['ws://8.210.109.173:6969'];
     Completer<Map<String, dynamic>> completer =
         Completer<Map<String, dynamic>>();
     ZapsDB? zapsDB = await getZapsInfoFromLnurl(lnurl);
@@ -85,14 +84,17 @@ class Zaps {
       }
       final result = await http.get(Uri.parse(url));
       if (result.statusCode == 200) {
-        String status = jsonDecode(result.body)['status'];
-        if (status == 'OK') {
+        print(result.body);
+        try{
           String pr = jsonDecode(result.body)['pr'];
           if (!completer.isCompleted) {
             completer.complete({"invoice": pr, "zapsDB": zapsDB});
           }
-        } else {
-          completer.complete({"invoice": '', "zapsDB": zapsDB});
+        }
+        catch(_){
+          if (!completer.isCompleted) {
+            completer.complete({"invoice": '', "zapsDB": zapsDB});
+          }
         }
       } else {
         if (!completer.isCompleted) {
