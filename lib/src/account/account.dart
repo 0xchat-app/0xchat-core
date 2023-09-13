@@ -104,11 +104,10 @@ class Account {
       kinds: [0],
       authors: [pubkey],
     );
-
+    UserDB? db = await getUserInfo(pubkey);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       Map map = jsonDecode(event.content);
-      UserDB? db = await getUserInfo(pubkey);
       if (db != null && db.lastUpdatedTime < event.createdAt) {
         db.name = map['name'];
         db.gender = map['gender'];
@@ -157,7 +156,7 @@ class Account {
         print('db?.lnurl: ${db?.lnurl}');
       }
       userCache[pubkey] = db!;
-      await DB.sharedInstance.update<UserDB>(db);
+      DB.sharedInstance.update<UserDB>(db);
       if (!completer.isCompleted) completer.complete(db);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
@@ -258,7 +257,9 @@ class Account {
     print(maps);
     if (maps.isNotEmpty) {
       db = maps.first as UserDB?;
-      if (db != null && db.encryptedPrivKey != null) {
+      if (db != null &&
+          db.encryptedPrivKey != null &&
+          db.encryptedPrivKey!.isNotEmpty) {
         String encryptedPrivKey = db.encryptedPrivKey!;
         Uint8List privkey =
             decryptPrivateKey(hexToBytes(encryptedPrivKey), password);
@@ -480,8 +481,7 @@ class Account {
     return completer.future;
   }
 
-  Future<OKEvent> updateRelaysMetadata(
-      List<String> relays) async {
+  Future<OKEvent> updateRelaysMetadata(List<String> relays) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<Relay> list = [];
     for (var relay in relays) {
@@ -497,7 +497,8 @@ class Account {
   Future<UserDB?> updatePassword(String password) async {
     UserDB? db = await _getUserFromDB(privkey: currentPrivkey);
     if (db != null) {
-      Uint8List enPrivkey = encryptPrivateKey(hexToBytes(currentPrivkey), password);
+      Uint8List enPrivkey =
+          encryptPrivateKey(hexToBytes(currentPrivkey), password);
       db.encryptedPrivKey = bytesToHex(enPrivkey);
       db.defaultPassword = password;
       await DB.sharedInstance.update<UserDB>(db);
