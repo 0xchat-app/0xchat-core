@@ -508,9 +508,12 @@ class Account {
   }
 
   Future<int> logout() async {
-    Contacts.sharedInstance.allContacts = {};
-    Channels.sharedInstance.channels = {};
-    Channels.sharedInstance.myChannels = {};
+    Contacts.sharedInstance.allContacts.clear();
+    Contacts.sharedInstance.secretSessionMap.clear();
+    Channels.sharedInstance.channels.clear();
+    Channels.sharedInstance.myChannels.clear();
+    Relays.sharedInstance.relays.clear();
+    Messages.sharedInstance.messagesLoaded.clear();
     return await _delete();
   }
 
