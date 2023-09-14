@@ -462,19 +462,19 @@ class Contacts {
   }
 
   Future<OKEvent> sendPrivateMessage(
-      String toPubkey, String replayId, MessageType type, String content,
+      String toPubkey, String replyId, MessageType type, String content,
       {Event? event, int kind = 4}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (event == null) {
       if (kind == 44) {
         event = await Nip44.encode(toPubkey,
-            MessageDB.encodeContent(type, content), replayId, privkey);
+            MessageDB.encodeContent(type, content), replyId, privkey);
       } else if (kind == 1059 || kind == 14) {
         event = await Nip24.encodeSealedGossipDM(toPubkey,
-            MessageDB.encodeContent(type, content), replayId, privkey);
+            MessageDB.encodeContent(type, content), replyId, privkey);
       } else {
         event = Nip4.encode(toPubkey, MessageDB.encodeContent(type, content),
-            replayId, privkey);
+            replyId, privkey);
       }
     }
     MessageDB messageDB = MessageDB(
@@ -485,6 +485,7 @@ class Contacts {
         kind: event.kind,
         tags: jsonEncode(event.tags),
         content: event.content,
+        replyId: replyId,
         createTime: currentUnixTimestampSeconds(),
         decryptContent: content,
         type: MessageDB.messageTypeToString(type),

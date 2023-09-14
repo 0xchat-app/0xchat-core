@@ -119,6 +119,7 @@ class Channels {
         kind: event.kind,
         tags: jsonEncode(event.tags),
         content: event.content,
+        replyId: channelMessage.thread.reply?.eventId ?? '',
         createTime: event.createdAt,
         plaintEvent: jsonEncode(event));
     var map = MessageDB.decodeContent(messageDB.content!);
@@ -445,6 +446,7 @@ class Channels {
         groupId: channelId,
         kind: event.kind,
         tags: jsonEncode(event.tags),
+        replyId: replyMessage ?? '',
         content: event.content,
         decryptContent: content,
         type: MessageDB.messageTypeToString(type),
