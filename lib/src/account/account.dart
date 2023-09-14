@@ -156,6 +156,7 @@ class Account {
         print('db?.lnurl: ${db?.lnurl}');
       }
       userCache[pubkey] = db!;
+      if(pubkey == currentPubkey) me = db;
       DB.sharedInstance.update<UserDB>(db);
       if (!completer.isCompleted) completer.complete(db);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
@@ -507,7 +508,7 @@ class Account {
     return null;
   }
 
-  Future<int> logout() async {
+  void logout() {
     Contacts.sharedInstance.allContacts.clear();
     Contacts.sharedInstance.secretSessionMap.clear();
     Channels.sharedInstance.channels.clear();
@@ -517,11 +518,10 @@ class Account {
     me = null;
     currentPubkey = '';
     currentPrivkey = '';
-    return await _delete();
+    userCache.remove(currentPubkey);
   }
 
   Future<int> _delete() async {
-    userCache.remove(currentPubkey);
     return await DB.sharedInstance
         .delete<UserDB>(where: 'pubKey = ?', whereArgs: [currentPubkey]);
   }
