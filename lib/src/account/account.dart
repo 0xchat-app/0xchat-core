@@ -514,6 +514,9 @@ class Account {
     Channels.sharedInstance.myChannels.clear();
     Relays.sharedInstance.relays.clear();
     Messages.sharedInstance.messagesLoaded.clear();
+    me = null;
+    currentPubkey = '';
+    currentPrivkey = '';
     return await _delete();
   }
 
