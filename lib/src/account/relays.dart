@@ -1,5 +1,6 @@
 import 'package:chatcore/chat-core.dart';
 import 'package:http/http.dart' as http;
+import 'package:nostr_core_dart/nostr.dart';
 
 class Relays {
   /// singleton
@@ -34,7 +35,7 @@ class Relays {
   int getFriendMessageUntil(String relayURL) {
     return relays.containsKey(relayURL)
         ? relays[relayURL]!.getFriendMessageUntil(relayURL)
-        : 0;
+        : currentUnixTimestampSeconds();
   }
 
   int getFriendMessageSince(String relayURL) {
@@ -52,7 +53,7 @@ class Relays {
   int getChannelMessageUntil(String relayURL) {
     return relays.containsKey(relayURL)
         ? relays[relayURL]!.getChannelMessageUntil(relayURL)
-        : 0;
+        : currentUnixTimestampSeconds();
   }
 
   int getGroupMessageSince(String relayURL) {
@@ -64,7 +65,7 @@ class Relays {
   int getGroupMessageUntil(String relayURL) {
     return relays.containsKey(relayURL)
         ? relays[relayURL]!.getGroupMessageUntil(relayURL)
-        : 0;
+        : currentUnixTimestampSeconds();
   }
 
   int getCommonMessageUntil(String relayURL) {
