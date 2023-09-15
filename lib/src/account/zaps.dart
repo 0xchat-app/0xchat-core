@@ -123,12 +123,25 @@ class Zaps {
 
   static Future<List<ZapRecordsDB>> getZapReceipt(String zapper,
       {String? recipient, String? eventId, String? invoice}) async {
-    if (invoice != null &&
-        Zaps.sharedInstance.zapRecords.containsKey(invoice)) {
-      var db = Zaps.sharedInstance.zapRecords[invoice];
-      return [db!];
+    if (invoice != null) {
+      // load from cache
+      if (Zaps.sharedInstance.zapRecords.containsKey(invoice)) {
+        var db = Zaps.sharedInstance.zapRecords[invoice];
+        return [db!];
+      } else {
+        // load from db
+        List<ZapRecordsDB?> maps = await Zaps.loadZapRecordsFromDB(
+            where: 'bolt11 = ?', whereArgs: [invoice]);
+        if (maps.isNotEmpty) {
+          var db = maps.first;
+          if (db != null) {
+            Zaps.sharedInstance.zapRecords[db.bolt11] = db;
+            return [db];
+          }
+        }
+      }
     }
-
+    // load from relay
     Completer<List<ZapRecordsDB>> completer = Completer<List<ZapRecordsDB>>();
     Filter f = Filter(kinds: [9735], authors: [zapper]);
     if (recipient != null) {
