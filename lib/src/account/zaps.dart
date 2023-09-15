@@ -1,12 +1,21 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:chatcore/src/account/model/zapRecordsDB.dart';
 import 'package:http/http.dart' as http;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:bolt11_decoder/bolt11_decoder.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 class Zaps {
+  /// singleton
+  Zaps._internal();
+  factory Zaps() => sharedInstance;
+  static final Zaps sharedInstance = Zaps._internal();
+
+  Map<String, ZapRecordsDB> zapRecords = {};
+
   static Future<String> getLnurlFromLnaddr(String lnaddr) async {
     try {
       List<dynamic> parts = lnaddr.split('@');
@@ -85,13 +94,12 @@ class Zaps {
       final result = await http.get(Uri.parse(url));
       if (result.statusCode == 200) {
         print(result.body);
-        try{
+        try {
           String pr = jsonDecode(result.body)['pr'];
           if (!completer.isCompleted) {
             completer.complete({"invoice": pr, "zapsDB": zapsDB});
           }
-        }
-        catch(_){
+        } catch (_) {
           if (!completer.isCompleted) {
             completer.complete({"invoice": '', "zapsDB": zapsDB});
           }
@@ -113,9 +121,15 @@ class Zaps {
     return Bolt11PaymentRequest(invoice);
   }
 
-  static Future<List<ZapReceipt>> getZapReceipt(String zapper,
+  static Future<List<ZapRecordsDB>> getZapReceipt(String zapper,
       {String? recipient, String? eventId, String? invoice}) async {
-    Completer<List<ZapReceipt>> completer = Completer<List<ZapReceipt>>();
+    if (invoice != null &&
+        Zaps.sharedInstance.zapRecords.containsKey(invoice)) {
+      var db = Zaps.sharedInstance.zapRecords[invoice];
+      return [db!];
+    }
+
+    Completer<List<ZapRecordsDB>> completer = Completer<List<ZapRecordsDB>>();
     Filter f = Filter(kinds: [9735], authors: [zapper]);
     if (recipient != null) {
       f = Filter(kinds: [9735], authors: [zapper], p: [recipient]);
@@ -133,11 +147,10 @@ class Zaps {
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (zapReceiptList.isNotEmpty) {
-        List<ZapReceipt> result = [];
+        List<ZapRecordsDB> result = [];
         for (var event in zapReceiptList) {
-          ZapReceipt zapReceipt = await Nip57.getZapReceipt(
-              event, Account.sharedInstance.currentPrivkey);
-          result.add(zapReceipt);
+          ZapRecordsDB zapRecordsDB = await handleZapRecordEvent(event);
+          result.add(zapRecordsDB);
         }
         if (!completer.isCompleted) completer.complete(result);
       }
@@ -146,6 +159,26 @@ class Zaps {
     return completer.future;
   }
 
-  static Future<void> loadZapRecordsFromRelay() async {}
-  static Future<void> loadZapRecordsFromDB() async {}
+  static Future<List<ZapRecordsDB?>> loadZapRecordsFromDB(
+      {String? where, List<Object?>? whereArgs, String? orderBy}) async {
+    List<ZapRecordsDB?> maps = await DB.sharedInstance.objects<ZapRecordsDB>(
+        where: where, whereArgs: whereArgs, orderBy: orderBy);
+    for (ZapRecordsDB? records in maps) {
+      if (records != null) {
+        Zaps.sharedInstance.zapRecords[records.bolt11] = records;
+      }
+    }
+    return maps;
+  }
+
+  static Future<ZapRecordsDB> handleZapRecordEvent(Event event) async {
+    ZapReceipt zapReceipt =
+        await Nip57.getZapReceipt(event, Account.sharedInstance.currentPrivkey);
+    ZapRecordsDB zapRecordsDB =
+        ZapRecordsDB.zapReceiptToZapRecordsDB(zapReceipt);
+    await DB.sharedInstance.insert<ZapRecordsDB>(zapRecordsDB,
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    Zaps.sharedInstance.zapRecords[zapRecordsDB.bolt11] = zapRecordsDB;
+    return zapRecordsDB;
+  }
 }

@@ -381,7 +381,9 @@ class Contacts {
             kinds: [1059],
             authors: [pubkey],
             since: (friendMessageUntil - timeOffset + 1));
-        subscriptions[relayURL] = [f1, f2, f3, f4];
+        Filter f5 = Filter(
+            kinds: [9735], p: [pubkey], since: (friendMessageUntil + 1));
+        subscriptions[relayURL] = [f1, f2, f3, f4, f5];
       }
     } else {
       int friendMessageUntil =
@@ -400,14 +402,20 @@ class Contacts {
           kinds: [1059],
           authors: [pubkey],
           since: (friendMessageUntil - timeOffset + 1));
-      subscriptions[relay] = [f1, f2, f3, f4];
+      Filter f5 = Filter(
+          kinds: [9735], p: [pubkey], since: (friendMessageUntil + 1));
+      subscriptions[relay] = [f1, f2, f3, f4, f5];
     }
     friendMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       if (event.kind == 4 || event.kind == 44) {
         updateFriendMessageTime(event.createdAt, relay);
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
-      } else if (event.kind == 1059 && Messages.addToLoaded(event.id)) {
+      }else if(event.kind == 9735){
+        updateFriendMessageTime(event.createdAt, relay);
+        Zaps.handleZapRecordEvent(event);
+      }
+      else if (event.kind == 1059 && Messages.addToLoaded(event.id)) {
         Event? innerEvent = await Nip24.decode(event, privkey);
         int friendMessageUntil =
             Relays.sharedInstance.getFriendMessageUntil(relay);
