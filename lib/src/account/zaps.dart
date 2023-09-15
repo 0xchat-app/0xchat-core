@@ -8,6 +8,8 @@ import 'package:chatcore/chat-core.dart';
 import 'package:bolt11_decoder/bolt11_decoder.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
+typedef ZapRecordsCallBack = void Function(ZapRecordsDB);
+
 class Zaps {
   /// singleton
   Zaps._internal();
@@ -15,6 +17,7 @@ class Zaps {
   static final Zaps sharedInstance = Zaps._internal();
 
   Map<String, ZapRecordsDB> zapRecords = {};
+  ZapRecordsCallBack? zapRecordsCallBack;
 
   static Future<String> getLnurlFromLnaddr(String lnaddr) async {
     try {
@@ -192,6 +195,7 @@ class Zaps {
     await DB.sharedInstance.insert<ZapRecordsDB>(zapRecordsDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
     Zaps.sharedInstance.zapRecords[zapRecordsDB.bolt11] = zapRecordsDB;
+    Zaps.sharedInstance.zapRecordsCallBack?.call(zapRecordsDB);
     return zapRecordsDB;
   }
 }
