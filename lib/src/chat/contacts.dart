@@ -226,18 +226,19 @@ class Contacts {
       String friendPubkey, String replayId, MessageType type, String content,
       {int kind = 4}) async {
     Event? event;
+
     if (kind == 44) {
       event ??= await Nip44.encode(friendPubkey,
-          MessageDB.encodeContent(type, content), replayId, privkey);
+          MessageDB.getContent(type, content), replayId, privkey, subContent: MessageDB.getSubContent(type, content));
     } else if (kind == 1059 || kind == 14) {
       var intValue = Random().nextInt(24 * 60 * 60 * 7);
       int createAt = currentUnixTimestampSeconds() - intValue;
       event ??= await Nip24.encodeSealedGossipDM(friendPubkey,
-          MessageDB.encodeContent(type, content), replayId, privkey,
-          createAt: createAt);
+          MessageDB.getContent(type, content), replayId, privkey,
+          createAt: createAt, subContent: MessageDB.getSubContent(type, content));
     } else {
       event ??= Nip4.encode(friendPubkey,
-          MessageDB.encodeContent(type, content), replayId, privkey);
+          MessageDB.getContent(type, content), replayId, privkey, subContent: MessageDB.getSubContent(type, content));
     }
     return event;
   }
@@ -463,18 +464,18 @@ class Contacts {
 
   Future<OKEvent> sendPrivateMessage(
       String toPubkey, String replyId, MessageType type, String content,
-      {Event? event, int kind = 4}) async {
+      {Event? event, int kind = 4, String? subContent}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (event == null) {
       if (kind == 44) {
         event = await Nip44.encode(toPubkey,
-            MessageDB.encodeContent(type, content), replyId, privkey);
+            MessageDB.getContent(type, content), replyId, privkey, subContent: MessageDB.getSubContent(type, content));
       } else if (kind == 1059 || kind == 14) {
         event = await Nip24.encodeSealedGossipDM(toPubkey,
-            MessageDB.encodeContent(type, content), replyId, privkey);
+            MessageDB.getContent(type, content), replyId, privkey, subContent: MessageDB.getSubContent(type, content));
       } else {
-        event = Nip4.encode(toPubkey, MessageDB.encodeContent(type, content),
-            replyId, privkey);
+        event = Nip4.encode(toPubkey, MessageDB.getContent(type, content),
+            replyId, privkey, subContent: MessageDB.getSubContent(type, content));
       }
     }
     MessageDB messageDB = MessageDB(

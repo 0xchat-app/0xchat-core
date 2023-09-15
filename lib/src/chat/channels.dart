@@ -413,12 +413,13 @@ class Channels {
       String? replyUser,
       String? replyUserRelay}) {
     Event event = Nip28.sendChannelMessage(
-        channelId, MessageDB.encodeContent(type, content), privkey,
+        channelId, MessageDB.getContent(type, content), privkey,
         channelRelay: channelRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
-        replyUserRelay: replyUserRelay);
+        replyUserRelay: replyUserRelay,
+        subContent: MessageDB.getSubContent(type, content));
     return event;
   }
 
@@ -432,12 +433,13 @@ class Channels {
       Event? event}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= Nip28.sendChannelMessage(
-        channelId, MessageDB.encodeContent(type, content), privkey,
+        channelId, MessageDB.getContent(type, content), privkey,
         channelRelay: channelRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
-        replyUserRelay: replyUserRelay);
+        replyUserRelay: replyUserRelay,
+        subContent: MessageDB.getSubContent(type, content));
 
     MessageDB messageDB = MessageDB(
         messageId: event.id,

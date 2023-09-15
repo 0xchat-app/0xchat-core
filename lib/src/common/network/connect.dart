@@ -375,9 +375,6 @@ class Connect {
   Future _connectWs(String relay) async {
     try {
       _setConnectStatus(relay, 0); // connecting
-      if (relay == 'wss://relay.0xchat.com') {
-        return await WebSocket.connect('ws://8.210.109.173:6969');
-      }
       return await WebSocket.connect(relay);
     } catch (e) {
       print("Error! can not connect WS connectWs $e");

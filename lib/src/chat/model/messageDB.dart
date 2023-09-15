@@ -228,13 +228,39 @@ class MessageDB extends DBObject {
     }
   }
 
-  static String encodeContent(MessageType type, String content) {
+  static String getContent(MessageType type, String content) {
     switch (type) {
       case MessageType.text:
       case MessageType.image:
       case MessageType.video:
       case MessageType.audio:
         return content;
+      case MessageType.file:
+        return '[You\'ve received a file message via 0xChat! To view and engage with the content seamlessly, open it using the 0xChat app.]';
+      case MessageType.template:
+        return '[You\'ve received a template message via 0xChat! To view and engage with the content seamlessly, open it using the 0xChat app.]';
+      case MessageType.encryptedImage:
+        return '[You\'ve received a p2p encryptedImage message via 0xChat! To view and engage with the content seamlessly, open it using the 0xChat app.]';
+      case MessageType.encryptedVideo:
+        return '[You\'ve received a p2p encryptedVideo message via 0xChat! To view and engage with the content seamlessly, open it using the 0xChat app.]';
+      case MessageType.encryptedAudio:
+        return '[You\'ve received a p2p encryptedAudio message via 0xChat! To view and engage with the content seamlessly, open it using the 0xChat app.]';
+      case MessageType.encryptedFile:
+        return '[You\'ve received a p2p encryptedFile message via 0xChat! To view and engage with the content seamlessly, open it using the 0xChat app.]';
+      case MessageType.system:
+        return '[You\'ve received a system message via 0xChat! To view and engage with the content seamlessly, open it using the 0xChat app.]';
+      default:
+        return content;
+    }
+  }
+
+  static String? getSubContent(MessageType type, String content) {
+    switch (type) {
+      case MessageType.text:
+      case MessageType.image:
+      case MessageType.video:
+      case MessageType.audio:
+        return null;
       case MessageType.file:
       case MessageType.template:
       case MessageType.encryptedImage:
@@ -245,7 +271,7 @@ class MessageDB extends DBObject {
         return jsonEncode(
             {'contentType': messageTypeToString(type), 'content': content});
       default:
-        return content;
+        return null;
     }
   }
 

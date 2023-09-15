@@ -345,7 +345,8 @@ extension SecretChat on Contacts {
     }
   }
 
-  Future<void> _handleSecretMessage(String sessionId, Event event, String giftWrapEventId) async {
+  Future<void> _handleSecretMessage(
+      String sessionId, Event event, String giftWrapEventId) async {
     if (Messages.addToLoaded(event.id)) {
       MessageDB? messageDB =
           await MessageDB.fromPrivateMessage(event, pubkey, privkey);
@@ -367,9 +368,10 @@ extension SecretChat on Contacts {
         sessionDB.shareSecretKey != null &&
         sessionDB.shareSecretKey!.isNotEmpty) {
       return await Nip24.encodeSealedGossipDM(
-          toPubkey, MessageDB.encodeContent(type, content), replayId, privkey,
+          toPubkey, MessageDB.getContent(type, content), replayId, privkey,
           sealedPrivkey: sessionDB.shareSecretKey!,
-          sealedReceiver: sessionDB.sharePubkey!);
+          sealedReceiver: sessionDB.sharePubkey!,
+          subContent: MessageDB.getSubContent(type, content));
     }
     return null;
   }
@@ -388,9 +390,10 @@ extension SecretChat on Contacts {
       }
 
       event ??= await Nip24.encodeSealedGossipDM(
-          toPubkey, MessageDB.encodeContent(type, content), replayId, privkey,
+          toPubkey, MessageDB.getContent(type, content), replayId, privkey,
           sealedPrivkey: sessionDB.shareSecretKey!,
-          sealedReceiver: sessionDB.sharePubkey!);
+          sealedReceiver: sessionDB.sharePubkey!,
+          subContent: MessageDB.getSubContent(type, content));
 
       MessageDB messageDB = MessageDB(
           messageId: event.id,
