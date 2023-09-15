@@ -156,7 +156,7 @@ class Account {
         print('db?.lnurl: ${db?.lnurl}');
       }
       userCache[pubkey] = db!;
-      if(pubkey == currentPubkey) me = db;
+      if (pubkey == currentPubkey) me = db;
       DB.sharedInstance.update<UserDB>(db);
       if (!completer.isCompleted) completer.complete(db);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
@@ -282,7 +282,10 @@ class Account {
     UserDB? db;
     if (maps.isNotEmpty) {
       db = maps.first as UserDB?;
-    } else {
+    }
+    if (db == null ||
+        db.encryptedPrivKey == null ||
+        db.encryptedPrivKey!.isEmpty) {
       /// insert a new account
       db = UserDB();
       db.pubKey = pubkey;
@@ -293,7 +296,7 @@ class Account {
       db.defaultPassword = defaultPassword;
       await DB.sharedInstance.insert<UserDB>(db);
     }
-    me = db!;
+    me = db;
     currentPrivkey = privkey;
     currentPubkey = db.pubKey;
     return db;
