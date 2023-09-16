@@ -228,17 +228,20 @@ class Contacts {
     Event? event;
 
     if (kind == 44) {
-      event ??= await Nip44.encode(friendPubkey,
-          MessageDB.getContent(type, content), replayId, privkey, subContent: MessageDB.getSubContent(type, content));
+      event ??= await Nip44.encode(
+          friendPubkey, MessageDB.getContent(type, content), replayId, privkey,
+          subContent: MessageDB.getSubContent(type, content));
     } else if (kind == 1059 || kind == 14) {
       var intValue = Random().nextInt(24 * 60 * 60 * 7);
       int createAt = currentUnixTimestampSeconds() - intValue;
-      event ??= await Nip24.encodeSealedGossipDM(friendPubkey,
-          MessageDB.getContent(type, content), replayId, privkey,
-          createAt: createAt, subContent: MessageDB.getSubContent(type, content));
+      event ??= await Nip24.encodeSealedGossipDM(
+          friendPubkey, MessageDB.getContent(type, content), replayId, privkey,
+          createAt: createAt,
+          subContent: MessageDB.getSubContent(type, content));
     } else {
-      event ??= Nip4.encode(friendPubkey,
-          MessageDB.getContent(type, content), replayId, privkey, subContent: MessageDB.getSubContent(type, content));
+      event ??= Nip4.encode(
+          friendPubkey, MessageDB.getContent(type, content), replayId, privkey,
+          subContent: MessageDB.getSubContent(type, content));
     }
     return event;
   }
@@ -376,13 +379,17 @@ class Contacts {
         Filter f3 = Filter(
             kinds: [1059],
             p: [pubkey],
-            since: (friendMessageUntil - timeOffset + 1));
+            since: friendMessageUntil > timeOffset
+                ? (friendMessageUntil - timeOffset + 1)
+                : 1);
         Filter f4 = Filter(
             kinds: [1059],
             authors: [pubkey],
-            since: (friendMessageUntil - timeOffset + 1));
-        Filter f5 = Filter(
-            kinds: [9735], p: [pubkey], since: (friendMessageUntil + 1));
+            since: friendMessageUntil > timeOffset
+                ? (friendMessageUntil - timeOffset + 1)
+                : 1);
+        Filter f5 =
+            Filter(kinds: [9735], p: [pubkey], since: (friendMessageUntil + 1));
         subscriptions[relayURL] = [f1, f2, f3, f4, f5];
       }
     } else {
@@ -397,13 +404,17 @@ class Contacts {
       Filter f3 = Filter(
           kinds: [1059],
           p: [pubkey],
-          since: (friendMessageUntil - timeOffset + 1));
+          since: friendMessageUntil > timeOffset
+              ? (friendMessageUntil - timeOffset + 1)
+              : 1);
       Filter f4 = Filter(
           kinds: [1059],
           authors: [pubkey],
-          since: (friendMessageUntil - timeOffset + 1));
-      Filter f5 = Filter(
-          kinds: [9735], p: [pubkey], since: (friendMessageUntil + 1));
+          since: friendMessageUntil > timeOffset
+              ? (friendMessageUntil - timeOffset + 1)
+              : 1);
+      Filter f5 =
+          Filter(kinds: [9735], p: [pubkey], since: (friendMessageUntil + 1));
       subscriptions[relay] = [f1, f2, f3, f4, f5];
     }
     friendMessageSubscription = Connect.sharedInstance
@@ -411,11 +422,10 @@ class Contacts {
       if (event.kind == 4 || event.kind == 44) {
         updateFriendMessageTime(event.createdAt, relay);
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
-      }else if(event.kind == 9735){
+      } else if (event.kind == 9735) {
         updateFriendMessageTime(event.createdAt, relay);
         Zaps.handleZapRecordEvent(event);
-      }
-      else if (event.kind == 1059 && Messages.addToLoaded(event.id)) {
+      } else if (event.kind == 1059 && Messages.addToLoaded(event.id)) {
         Event? innerEvent = await Nip24.decode(event, privkey);
         int friendMessageUntil =
             Relays.sharedInstance.getFriendMessageUntil(relay);
@@ -476,14 +486,17 @@ class Contacts {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (event == null) {
       if (kind == 44) {
-        event = await Nip44.encode(toPubkey,
-            MessageDB.getContent(type, content), replyId, privkey, subContent: MessageDB.getSubContent(type, content));
+        event = await Nip44.encode(
+            toPubkey, MessageDB.getContent(type, content), replyId, privkey,
+            subContent: MessageDB.getSubContent(type, content));
       } else if (kind == 1059 || kind == 14) {
-        event = await Nip24.encodeSealedGossipDM(toPubkey,
-            MessageDB.getContent(type, content), replyId, privkey, subContent: MessageDB.getSubContent(type, content));
+        event = await Nip24.encodeSealedGossipDM(
+            toPubkey, MessageDB.getContent(type, content), replyId, privkey,
+            subContent: MessageDB.getSubContent(type, content));
       } else {
-        event = Nip4.encode(toPubkey, MessageDB.getContent(type, content),
-            replyId, privkey, subContent: MessageDB.getSubContent(type, content));
+        event = Nip4.encode(
+            toPubkey, MessageDB.getContent(type, content), replyId, privkey,
+            subContent: MessageDB.getSubContent(type, content));
       }
     }
     MessageDB messageDB = MessageDB(
