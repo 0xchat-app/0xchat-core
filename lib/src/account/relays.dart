@@ -35,7 +35,7 @@ class Relays {
   int getFriendMessageUntil(String relayURL) {
     return relays.containsKey(relayURL)
         ? relays[relayURL]!.getFriendMessageUntil(relayURL)
-        : currentUnixTimestampSeconds();
+        : 0;
   }
 
   int getFriendMessageSince(String relayURL) {
@@ -53,7 +53,7 @@ class Relays {
   int getChannelMessageUntil(String relayURL) {
     return relays.containsKey(relayURL)
         ? relays[relayURL]!.getChannelMessageUntil(relayURL)
-        : currentUnixTimestampSeconds();
+        : 0;
   }
 
   int getGroupMessageSince(String relayURL) {
@@ -65,7 +65,7 @@ class Relays {
   int getGroupMessageUntil(String relayURL) {
     return relays.containsKey(relayURL)
         ? relays[relayURL]!.getGroupMessageUntil(relayURL)
-        : currentUnixTimestampSeconds();
+        : 0;
   }
 
   int getCommonMessageUntil(String relayURL) {
