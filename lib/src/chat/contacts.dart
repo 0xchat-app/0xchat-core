@@ -427,11 +427,8 @@ class Contacts {
         Zaps.handleZapRecordEvent(event);
       } else if (event.kind == 1059 && Messages.addToLoaded(event.id)) {
         Event? innerEvent = await Nip24.decode(event, privkey);
-        int friendMessageUntil =
-            Relays.sharedInstance.getFriendMessageUntil(relay);
         if (innerEvent != null &&
-            !inBlockList(innerEvent.pubkey) &&
-            innerEvent.createdAt > friendMessageUntil) {
+            !inBlockList(innerEvent.pubkey)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
             case 14:
