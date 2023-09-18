@@ -539,20 +539,26 @@ class Channels {
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       Channel channel = Nip28.getChannelCreation(event);
-      String badges = '';
-      if (channel.additional.containsKey('badges')) {
-        badges = channel.additional['badges']!;
+      if(channels.containsKey(channel.channelId)){
+        result.add(channels[channel.channelId]!);
       }
-      ChannelDB channelDB = ChannelDB(
-        channelId: event.id,
-        createTime: event.createdAt,
-        creator: event.pubkey,
-        name: channel.name,
-        about: channel.about,
-        picture: channel.picture,
-        badges: badges,
-      );
-      result.add(channelDB);
+      else{
+        String badges = '';
+        if (channel.additional.containsKey('badges')) {
+          badges = channel.additional['badges']!;
+        }
+        ChannelDB channelDB = ChannelDB(
+          channelId: event.id,
+          createTime: event.createdAt,
+          creator: event.pubkey,
+          name: channel.name,
+          about: channel.about,
+          picture: channel.picture,
+          badges: badges,
+        );
+        result.add(channelDB);
+        channels[channel.channelId] = channelDB;
+      }
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
