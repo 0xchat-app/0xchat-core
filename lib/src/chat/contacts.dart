@@ -302,8 +302,12 @@ class Contacts {
 
   Future<void> _syncContactsFromRelay({String? relay}) async {
     Completer<void> completer = Completer<void>();
-    Filter f =
-        Filter(kinds: [30000], d: [identifier], authors: [pubkey], limit: 1);
+    Filter f = Filter(
+        kinds: [30000],
+        d: [identifier],
+        authors: [pubkey],
+        limit: 1,
+        since: Account.sharedInstance.me!.lastFriendsListUpdatedTime + 1);
     Map<String, List<Filter>> subscriptions = {};
     if (relay == null) {
       for (var r in Connect.sharedInstance.relays()) {
@@ -324,6 +328,9 @@ class Contacts {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty) {
         if (lastEvent != null) {
+          Account.sharedInstance.me!.lastFriendsListUpdatedTime =
+              lastEvent!.createdAt;
+          await Account.sharedInstance.syncMe();
           Lists result = await Nip51.getLists(lastEvent!, privkey);
           await _syncContactsProfiles(result.people);
         }
@@ -427,8 +434,7 @@ class Contacts {
         Zaps.handleZapRecordEvent(event);
       } else if (event.kind == 1059 && Messages.addToLoaded(event.id)) {
         Event? innerEvent = await Nip24.decode(event, privkey);
-        if (innerEvent != null &&
-            !inBlockList(innerEvent.pubkey)) {
+        if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
             case 14:

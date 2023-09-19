@@ -24,7 +24,8 @@ extension BlockList on Contacts {
         kinds: [30000],
         d: [Contacts.blockListidentifier],
         authors: [pubkey],
-        limit: 1);
+        limit: 1,
+        since: Account.sharedInstance.me!.lastBlockListUpdatedTime + 1);
 
     Map<String, List<Filter>> subscriptions = {};
     if (relay == null) {
@@ -47,6 +48,9 @@ extension BlockList on Contacts {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty) {
         if (lastEvent != null) {
+          Account.sharedInstance.me!.lastBlockListUpdatedTime =
+              lastEvent!.createdAt;
+          await Account.sharedInstance.syncMe();
           Lists result = await Nip51.getLists(lastEvent!, privkey);
           blockList = result.people.map((p) => p.pubkey).toList();
           await _syncBlockListToDB();

@@ -152,11 +152,11 @@ class Channels {
   Future<void> _loadMyChannelsFromRelay({String? relay}) async {
     Completer<void> completer = Completer<void>();
     Filter f = Filter(
-      kinds: [30001],
-      d: [identifier],
-      authors: [pubkey],
-      limit: 1,
-    );
+        kinds: [30001],
+        d: [identifier],
+        authors: [pubkey],
+        limit: 1,
+        since: Account.sharedInstance.me!.lastChannelsListUpdatedTime + 1);
 
     Map<String, List<Filter>> subscriptions = {};
     if (relay == null) {
@@ -180,10 +180,10 @@ class Channels {
       if (unCompletedRelays.isEmpty) {
         if (lastEvent != null) {
           Lists result = await Nip51.getLists(lastEvent!, privkey);
-
           UserDB? me = Account.sharedInstance.me;
-          me!.channelsList = result.bookmarks;
-          DB.sharedInstance.insert<UserDB>(me);
+          me!.lastChannelsListUpdatedTime = lastEvent!.createdAt;
+          me.channelsList = result.bookmarks;
+          await Account.sharedInstance.syncMe();
           await syncChannelsFromRelay(result.owner, result.bookmarks);
           myChannels = _myChannels();
           _updateChannelSubscription();
@@ -539,10 +539,9 @@ class Channels {
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       Channel channel = Nip28.getChannelCreation(event);
-      if(channels.containsKey(channel.channelId)){
+      if (channels.containsKey(channel.channelId)) {
         result.add(channels[channel.channelId]!);
-      }
-      else{
+      } else {
         String badges = '';
         if (channel.additional.containsKey('badges')) {
           badges = channel.additional['badges']!;

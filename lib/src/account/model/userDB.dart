@@ -39,8 +39,15 @@ class UserDB extends DBObject {
   List<String>? channelsList;
   List<String>? groupsList;
   List<String>? badgesList;
-
   List<String>? blockedList; // blocked users list
+
+  /// list updated time
+  int lastFriendsListUpdatedTime;
+  int lastChannelsListUpdatedTime;
+  int lastGroupsListUpdatedTime;
+  int lastBadgesListUpdatedTime;
+  int lastBlockListUpdatedTime;
+
   bool? mute;
 
   int lastUpdatedTime;
@@ -73,6 +80,11 @@ class UserDB extends DBObject {
       this.blockedList,
       this.mute = false,
       this.lastUpdatedTime = 0,
+      this.lastBadgesListUpdatedTime = 0,
+      this.lastBlockListUpdatedTime = 0,
+      this.lastChannelsListUpdatedTime = 0,
+      this.lastFriendsListUpdatedTime = 0,
+      this.lastGroupsListUpdatedTime = 0,
       this.otherField = '{}'});
 
   @override
@@ -96,7 +108,11 @@ class UserDB extends DBObject {
 
   //'ALTER TABLE Company ADD description TEXT'
   static Map<String, String?> updateTable() {
-    return {"1": '''alter table userDB add otherField TEXT;'''};
+    return {
+      "1": '''alter table userDB add otherField TEXT;''',
+      "3":
+          '''alter table userDB add lastBadgesListUpdatedTime INT; alter table userDB add lastBlockListUpdatedTime INT; alter table userDB add lastChannelsListUpdatedTime INT; alter table userDB add lastFriendsListUpdatedTime INT; alter table userDB add lastGroupsListUpdatedTime INT;'''
+    };
   }
 
   static String? decodePubkey(String pubkey) {
@@ -168,6 +184,11 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     aliasPubkey: map['aliasPubkey'],
     mute: map['mute'] > 0 ? true : false,
     lastUpdatedTime: map['lastUpdatedTime'],
+    lastBadgesListUpdatedTime: map['lastBadgesListUpdatedTime'] ?? 0,
+    lastBlockListUpdatedTime: map['lastBlockListUpdatedTime'] ?? 0,
+    lastChannelsListUpdatedTime: map['lastChannelsListUpdatedTime'] ?? 0,
+    lastFriendsListUpdatedTime: map['lastFriendsListUpdatedTime'] ?? 0,
+    lastGroupsListUpdatedTime: map['lastGroupsListUpdatedTime'] ?? 0,
     otherField: map['otherField'].toString(),
   );
 }
@@ -194,5 +215,10 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'aliasPubkey': instance.aliasPubkey,
       'mute': instance.mute,
       'lastUpdatedTime': instance.lastUpdatedTime,
+      'lastBadgesListUpdatedTime': instance.lastBadgesListUpdatedTime,
+      'lastBlockListUpdatedTime': instance.lastBlockListUpdatedTime,
+      'lastChannelsListUpdatedTime': instance.lastChannelsListUpdatedTime,
+      'lastFriendsListUpdatedTime': instance.lastFriendsListUpdatedTime,
+      'lastGroupsListUpdatedTime': instance.lastGroupsListUpdatedTime,
       'otherField': instance.otherField
     };
