@@ -320,8 +320,6 @@ extension SecretChat on Contacts {
         session.fromPubkey == secretSessionDB.toPubkey &&
         event.createdAt > secretSessionDB.lastUpdateTime!) {
       secretSessionDB.status = 4;
-      await DB.sharedInstance.delete<SecretSessionDB>(
-          where: 'sessionId = ?', whereArgs: [secretSessionDB.sessionId]);
       secretSessionMap.remove(secretSessionDB.sessionId);
       subscriptSecretChat();
 
@@ -448,7 +446,7 @@ extension SecretChat on Contacts {
 
     List<String> pubkeys = [pubkey];
     secretSessionMap.forEach((key, value) {
-      if (value.status == 2 || value.status == 4) {
+      if (value.status == 2 || value.status == 5) {
         if (value.sharePubkey!.isNotEmpty) pubkeys.add(value.sharePubkey!);
       }
     });
