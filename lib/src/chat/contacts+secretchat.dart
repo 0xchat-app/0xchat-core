@@ -68,7 +68,7 @@ extension SecretChat on Contacts {
   }
 
   Future<OKEvent> accept(String sessionId) async {
-    SecretSessionDB? db = await _getSecretSessionFromDB(sessionId);
+    SecretSessionDB? db = secretSessionMap[sessionId];
     if (db != null) {
       // connect the chat relay
       if (db.relay != null && db.relay!.isNotEmpty) {
@@ -84,7 +84,6 @@ extension SecretChat on Contacts {
         db.status = 2;
         db.lastUpdateTime = currentUnixTimestampSeconds();
         await DB.sharedInstance.update<SecretSessionDB>(db);
-        secretSessionMap[db.sessionId] = db;
         subscriptSecretChat();
       }
       return okEvent;
@@ -106,7 +105,7 @@ extension SecretChat on Contacts {
   }
 
   Future<OKEvent> reject(String sessionId) async {
-    SecretSessionDB? db = await _getSecretSessionFromDB(sessionId);
+    SecretSessionDB? db = secretSessionMap[sessionId];
     if (db != null) {
       OKEvent okEvent = await _sendRejectEvent(db.toPubkey!, sessionId);
       if (okEvent.status) {
@@ -132,7 +131,7 @@ extension SecretChat on Contacts {
   }
 
   Future<OKEvent> update(String sessionId) async {
-    SecretSessionDB? db = await _getSecretSessionFromDB(sessionId);
+    SecretSessionDB? db = secretSessionMap[sessionId];
     if (db != null && db.status != 5) {
       Keychain randomKey = Keychain.generate();
       OKEvent okEvent =
@@ -145,14 +144,12 @@ extension SecretChat on Contacts {
               Nip44.shareSecret(randomKey.private, db.toAliasPubkey!));
           db.sharePubkey = Keychain.getPublicKey(db.shareSecretKey!);
           db.status = 2;
-          secretSessionMap[db.sessionId] = db;
           await subscriptSecretChat();
         } else {
           db.status = 5;
         }
         db.lastUpdateTime = currentUnixTimestampSeconds();
         await DB.sharedInstance.update<SecretSessionDB>(db);
-        secretSessionMap[db.sessionId] = db;
       }
       return okEvent;
     }
@@ -173,7 +170,7 @@ extension SecretChat on Contacts {
   }
 
   Future<OKEvent> close(String sessionId) async {
-    SecretSessionDB? db = await _getSecretSessionFromDB(sessionId);
+    SecretSessionDB? db = secretSessionMap[sessionId];
     if (db != null) {
       OKEvent okEvent = await _sendCloseEvent(db.toPubkey!, sessionId);
       await DB.sharedInstance.delete<SecretSessionDB>(
@@ -249,8 +246,7 @@ extension SecretChat on Contacts {
   Future<void> handleAccept(Event event, String relay) async {
     /// get alias
     KeyExchangeSession session = Nip101.getAccept(event);
-    SecretSessionDB? secretSessionDB =
-        await _getSecretSessionFromDB(session.sessionId);
+    SecretSessionDB? secretSessionDB = secretSessionMap[session.sessionId];
     if (secretSessionDB != null &&
         session.fromPubkey == secretSessionDB.toPubkey &&
         event.createdAt > secretSessionDB.lastUpdateTime!) {
@@ -263,8 +259,6 @@ extension SecretChat on Contacts {
       secretSessionDB.lastUpdateTime = session.createTime;
       await DB.sharedInstance.insert<SecretSessionDB>(secretSessionDB);
 
-      /// add to secretSessionMap
-      secretSessionMap[secretSessionDB.sessionId] = secretSessionDB;
       subscriptSecretChat();
 
       /// callback
@@ -275,17 +269,13 @@ extension SecretChat on Contacts {
   Future<void> handleReject(Event event, String relay) async {
     /// get alias
     KeyExchangeSession session = Nip101.getReject(event);
-    SecretSessionDB? secretSessionDB =
-        await _getSecretSessionFromDB(session.sessionId);
+    SecretSessionDB? secretSessionDB = secretSessionMap[session.sessionId];
     if (secretSessionDB != null &&
         session.fromPubkey == secretSessionDB.toPubkey &&
         event.createdAt > secretSessionDB.lastUpdateTime!) {
       secretSessionDB.status = 3;
       secretSessionDB.lastUpdateTime = session.createTime;
       await DB.sharedInstance.update<SecretSessionDB>(secretSessionDB);
-
-      /// update secretSessionMap
-      secretSessionMap[secretSessionDB.sessionId] = secretSessionDB;
 
       /// callback
       secretChatRejectCallBack?.call(secretSessionDB);
@@ -295,8 +285,7 @@ extension SecretChat on Contacts {
   Future<void> handleUpdate(Event event, String relay) async {
     /// get alias
     KeyExchangeSession session = Nip101.getUpdate(event);
-    SecretSessionDB? secretSessionDB =
-        await _getSecretSessionFromDB(session.sessionId);
+    SecretSessionDB? secretSessionDB = secretSessionMap[session.sessionId];
 
     if (secretSessionDB != null &&
         session.fromPubkey == secretSessionDB.toPubkey &&
@@ -318,9 +307,6 @@ extension SecretChat on Contacts {
       secretSessionDB.lastUpdateTime = session.createTime;
       await DB.sharedInstance.update<SecretSessionDB>(secretSessionDB);
 
-      /// update secretSessionMap
-      secretSessionMap[secretSessionDB.sessionId] = secretSessionDB;
-
       /// callback
       secretChatUpdateCallBack?.call(secretSessionDB);
     }
@@ -329,8 +315,7 @@ extension SecretChat on Contacts {
   Future<void> handleClose(Event event, String relay) async {
     /// get alias
     KeyExchangeSession session = Nip101.getClose(event);
-    SecretSessionDB? secretSessionDB =
-        await _getSecretSessionFromDB(session.sessionId);
+    SecretSessionDB? secretSessionDB = secretSessionMap[session.sessionId];
     if (secretSessionDB != null &&
         session.fromPubkey == secretSessionDB.toPubkey &&
         event.createdAt > secretSessionDB.lastUpdateTime!) {
