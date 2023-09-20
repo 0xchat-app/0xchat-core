@@ -277,16 +277,15 @@ class MessageDB extends DBObject {
 
   static Future<MessageDB?> fromPrivateMessage(
       Event event, String receiver, String privkey) async {
-    late EDMessage message;
+    EDMessage? message;
     if (event.kind == 4) {
       message = Nip4.decode(event, receiver, privkey);
     } else if (event.kind == 44) {
       message = await Nip44.decode(event, receiver, privkey);
     } else if (event.kind == 14) {
       message = await Nip24.decodeSealedGossipDM(event, receiver, privkey);
-    } else {
-      return null;
     }
+    if(message == null) return null;
     MessageDB messageDB = MessageDB(
         messageId: event.id,
         sender: message.sender,
