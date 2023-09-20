@@ -43,7 +43,7 @@ class Account {
     await DB.sharedInstance.update<UserDB>(me!);
   }
 
-  Future<UserDB?> getUserInfo(String pubkey) async {
+  FutureOr<UserDB?> getUserInfo(String pubkey) async {
     UserDB? user;
     if (userCache.containsKey(pubkey)) {
       user = userCache[pubkey];
