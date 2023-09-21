@@ -107,7 +107,7 @@ class Messages {
     for (MessageDB message in messages) {
       // only message's owner can delete
       if (message.sender == pubkey) {
-        await deleteMessagesFromDB([message.messageId]);
+        await deleteMessagesFromDB(messageIds: [message.messageId]);
       }
     }
   }
@@ -153,13 +153,13 @@ class Messages {
       MessageDB message = messages.first;
       if (operator == pubkey) {
         // hide by me, delete
-        await deleteMessagesFromDB([message.messageId!]);
+        await deleteMessagesFromDB(messageIds: [message.messageId!]);
       } else {
         // hide by others, add to report list
         List<String>? reportList = message.reportList;
         if (reportList != null && reportList.isNotEmpty) {
           if (reportList.length >= maxReportCount) {
-            await deleteMessagesFromDB([messageId]);
+            await deleteMessagesFromDB(messageIds: [messageId]);
           } else {
             reportList.add(messageId);
             message.reportList = reportList;
@@ -238,12 +238,14 @@ class Messages {
         conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.ignore);
   }
 
-  static deleteMessagesFromDB(List<String> messageIds,
-      {String? where, List<Object?>? whereArgs}) async {
+  static deleteMessagesFromDB(
+      {List<String>? messageIds,
+      String? where,
+      List<Object?>? whereArgs}) async {
     if (where != null) {
       await DB.sharedInstance
           .delete<MessageDB>(where: where, whereArgs: whereArgs);
-    } else {
+    } else if (messageIds != null) {
       await DB.sharedInstance
           .delete<MessageDB>(where: 'messageId = ?', whereArgs: messageIds);
     }
@@ -254,7 +256,7 @@ class Messages {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     /// delete frome DB
-    deleteMessagesFromDB(messageIds);
+    deleteMessagesFromDB(messageIds: messageIds);
 
     /// send delete event to relay
     Event event =
