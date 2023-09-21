@@ -236,19 +236,19 @@ class MessageDB extends DBObject {
       case MessageType.audio:
         return content;
       case MessageType.file:
-        return '[You\'ve received a file message via 0xChat! To view and engage with the content seamlessly, open it using the 0xChat app.]';
+        return '[You\'ve received a file message via 0xChat!]';
       case MessageType.template:
-        return '[You\'ve received a template message via 0xChat! To view and engage with the content seamlessly, open it using the 0xChat app.]';
+        return '[You\'ve received a template message via 0xChat!]';
       case MessageType.encryptedImage:
-        return '[You\'ve received a p2p encryptedImage message via 0xChat! To view and engage with the content seamlessly, open it using the 0xChat app.]';
+        return '[You\'ve received a p2p encryptedImage message via 0xChat!]';
       case MessageType.encryptedVideo:
-        return '[You\'ve received a p2p encryptedVideo message via 0xChat! To view and engage with the content seamlessly, open it using the 0xChat app.]';
+        return '[You\'ve received a p2p encryptedVideo message via 0xChat!]';
       case MessageType.encryptedAudio:
-        return '[You\'ve received a p2p encryptedAudio message via 0xChat! To view and engage with the content seamlessly, open it using the 0xChat app.]';
+        return '[You\'ve received a p2p encryptedAudio message via 0xChat!]';
       case MessageType.encryptedFile:
-        return '[You\'ve received a p2p encryptedFile message via 0xChat! To view and engage with the content seamlessly, open it using the 0xChat app.]';
+        return '[You\'ve received a p2p encryptedFile message via 0xChat!]';
       case MessageType.system:
-        return '[You\'ve received a system message via 0xChat! To view and engage with the content seamlessly, open it using the 0xChat app.]';
+        return '[You\'ve received a system message via 0xChat!]';
       default:
         return content;
     }

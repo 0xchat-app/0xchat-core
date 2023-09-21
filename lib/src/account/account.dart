@@ -43,20 +43,22 @@ class Account {
     await DB.sharedInstance.update<UserDB>(me!);
   }
 
-  Future<UserDB?> getUserInfo(String pubkey) async {
-    UserDB? user;
-    if (userCache.containsKey(pubkey)) {
-      user = userCache[pubkey];
-    } else {
-      user = await _getUserFromDB(pubkey: pubkey);
+  FutureOr<UserDB?> getUserInfo(String pubkey) {
+    final user = userCache[pubkey];
+    if (user != null) {
+      _tryAddToSyncProfiles(user);
+      return user;
+    }
+
+    Completer<UserDB?> completer = Completer();
+    _getUserFromDB(pubkey: pubkey).then((user) {
       if (user != null) {
         userCache[pubkey] = user;
+        _tryAddToSyncProfiles(user);
       }
-    }
-    if (user != null && user.lastUpdatedTime == 0) {
-      _addToSyncProfiles(pubkey);
-    }
-    return user;
+      completer.complete(user);
+    });
+    return completer.future;
   }
 
   Future<Map<String, UserDB>> getUserInfos(List<String> pubkeys) async {
@@ -68,9 +70,11 @@ class Account {
     return result;
   }
 
-  void _addToSyncProfiles(String user) {
-    if (user.isNotEmpty && !pQueue.contains(user)) {
-      pQueue.add(user);
+  void _tryAddToSyncProfiles(UserDB user) {
+    if (user.lastUpdatedTime != 0) return ;
+    final pubkey = user.pubKey;
+    if (pubkey.isNotEmpty && !pQueue.contains(pubkey)) {
+      pQueue.add(pubkey);
     }
   }
 
@@ -268,6 +272,7 @@ class Account {
           me = db;
           currentPrivkey = bytesToHex(privkey);
           currentPubkey = db.pubKey;
+          userCache[currentPubkey] = db;
           return db;
         }
       }
@@ -299,6 +304,7 @@ class Account {
     me = db;
     currentPrivkey = privkey;
     currentPubkey = db.pubKey;
+    userCache[currentPubkey] = db;
     return db;
   }
 
