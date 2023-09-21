@@ -153,11 +153,14 @@ class UserDB extends DBObject {
 
   static List<String> decodeStringList(String list) {
     try {
-      List<dynamic> result = jsonDecode(list);
-      return result.map((e) => e.toString()).toList();
+      if(list.isNotEmpty && list != 'null' && list != '[]'){
+        List<dynamic> result = jsonDecode(list);
+        return result.map((e) => e.toString()).toList();
+      }
     } catch (e) {
       return [];
     }
+    return [];
   }
 }
 
