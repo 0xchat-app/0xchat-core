@@ -2,7 +2,10 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension Load on Moment {
-  Future<void> loadNotes() async {}
+  Future<List<NoteDB>?> loadNotes({int pageSize = 50}) async {
+
+    return null;
+  }
   Future<void> loadNewNotes() async {}
   Future<void> loadOldNotes() async {}
 
