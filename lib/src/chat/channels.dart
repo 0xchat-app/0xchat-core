@@ -366,8 +366,12 @@ class Channels {
   Future<void> syncChannelsFromRelay(
       String owner, List<String> channelIds) async {
     Completer<void> completer = Completer<void>();
+
+    List<String> unknownChannels = channelIds
+        .where((item) => !channels.keys.toList().contains(item))
+        .toList();
     // get create infos
-    _syncChannelsInfos(owner, channelIds, false,
+    _syncChannelsInfos(owner, unknownChannels, false,
         (requestId, status, relay, unRelays) {
       if (unRelays.isEmpty) {
         // get update infos
@@ -469,7 +473,7 @@ class Channels {
   Future<OKEvent> hideMessage(String messageId, String reason,
       {OKCallBack? callBack}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    Messages.deleteMessagesFromDB([messageId]);
+    Messages.deleteMessagesFromDB(messageIds: [messageId]);
     Event event = Nip28.hideChannelMessage(messageId, reason, privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
