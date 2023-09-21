@@ -485,7 +485,7 @@ class Contacts {
 
   Future<OKEvent> sendPrivateMessage(
       String toPubkey, String replyId, MessageType type, String content,
-      {Event? event, int kind = 4, String? subContent}) async {
+      {Event? event, int kind = 4, String? subContent, bool local = false}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (event == null) {
       if (kind == 44) {
@@ -519,12 +519,17 @@ class Contacts {
     privateChatMessageCallBack?.call(messageDB);
     await Messages.saveMessageToDB(messageDB);
 
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
-      messageDB.status = ok.status ? 1 : 2;
-      await Messages.saveMessageToDB(messageDB,
-          conflictAlgorithm: ConflictAlgorithm.replace);
-      if (!completer.isCompleted) completer.complete(ok);
-    });
+    if(local){
+      if (!completer.isCompleted) completer.complete(OKEvent(event.id, true, ''));
+    }
+    else{
+      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
+        messageDB.status = ok.status ? 1 : 2;
+        await Messages.saveMessageToDB(messageDB,
+            conflictAlgorithm: ConflictAlgorithm.replace);
+        if (!completer.isCompleted) completer.complete(ok);
+      });
+    }
     return completer.future;
   }
 

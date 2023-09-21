@@ -16,6 +16,7 @@ export 'src/chat/model/messageDB.dart';
 export 'src/chat/model/channelDB.dart';
 export 'src/chat/model/friendRequestDB.dart';
 export 'src/chat/model/secretSessionDB.dart';
+export 'src/account/model/zapRecordsDB.dart';
 export 'src/chat/contacts.dart';
 export 'src/chat/messages.dart';
 export 'src/chat/contacts+calling.dart';

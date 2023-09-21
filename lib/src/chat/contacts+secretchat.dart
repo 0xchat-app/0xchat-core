@@ -361,7 +361,7 @@ extension SecretChat on Contacts {
 
   Future<OKEvent> sendSecretMessage(String sessionId, String toPubkey,
       String replayId, MessageType type, String content,
-      {Event? event}) async {
+      {Event? event, bool local = false}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     SecretSessionDB? sessionDB = secretSessionMap[sessionId];
@@ -394,23 +394,28 @@ extension SecretChat on Contacts {
           plaintEvent: jsonEncode(event));
       secretChatMessageCallBack?.call(messageDB);
       await Messages.saveMessageToDB(messageDB);
-      Connect.sharedInstance.sendEvent(event, relay: sessionDB.relay,
-          sendCallBack: (ok, relay) async {
-        messageDB.status = ok.status ? 1 : 2;
-        await Messages.saveMessageToDB(messageDB,
-            conflictAlgorithm: ConflictAlgorithm.replace);
-        if (!completer.isCompleted) completer.complete(ok);
 
-        /// rotate shared key
-        if (ok.status &&
-            sessionDB.interval != null &&
-            sessionDB.interval! > 0 &&
-            messageDB.createTime! >
-                (sessionDB.interval! + sessionDB.lastUpdateTime!) &&
-            sessionDB.status != 5) {
-          await update(sessionDB.sessionId);
-        }
-      });
+      if (local) {
+        if (!completer.isCompleted) completer.complete(OKEvent(event.id, true, ''));
+      } else {
+        Connect.sharedInstance.sendEvent(event, relay: sessionDB.relay,
+            sendCallBack: (ok, relay) async {
+          messageDB.status = ok.status ? 1 : 2;
+          await Messages.saveMessageToDB(messageDB,
+              conflictAlgorithm: ConflictAlgorithm.replace);
+          if (!completer.isCompleted) completer.complete(ok);
+
+          /// rotate shared key
+          if (ok.status &&
+              sessionDB.interval != null &&
+              sessionDB.interval! > 0 &&
+              messageDB.createTime! >
+                  (sessionDB.interval! + sessionDB.lastUpdateTime!) &&
+              sessionDB.status != 5) {
+            await update(sessionDB.sessionId);
+          }
+        });
+      }
     } else {
       if (!completer.isCompleted) {
         completer.complete(OKEvent(sessionId, false, 'unknown session'));
