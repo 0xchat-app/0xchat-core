@@ -272,6 +272,7 @@ class Account {
           me = db;
           currentPrivkey = bytesToHex(privkey);
           currentPubkey = db.pubKey;
+          userCache[currentPubkey] = db;
           return db;
         }
       }
@@ -303,6 +304,7 @@ class Account {
     me = db;
     currentPrivkey = privkey;
     currentPubkey = db.pubKey;
+    userCache[currentPubkey] = db;
     return db;
   }
 
