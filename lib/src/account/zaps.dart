@@ -176,9 +176,17 @@ class Zaps {
   }
 
   static Future<List<ZapRecordsDB?>> loadZapRecordsFromDB(
-      {String? where, List<Object?>? whereArgs, String? orderBy}) async {
+      {String? where,
+      List<Object?>? whereArgs,
+      String? orderBy,
+      int? limit,
+      int? offset}) async {
     List<ZapRecordsDB?> maps = await DB.sharedInstance.objects<ZapRecordsDB>(
-        where: where, whereArgs: whereArgs, orderBy: orderBy);
+        where: where,
+        whereArgs: whereArgs,
+        orderBy: orderBy,
+        limit: limit,
+        offset: offset);
     for (ZapRecordsDB? records in maps) {
       if (records != null) {
         Zaps.sharedInstance.zapRecords[records.bolt11] = records;
