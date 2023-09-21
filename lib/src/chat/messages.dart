@@ -238,9 +238,15 @@ class Messages {
         conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.ignore);
   }
 
-  static deleteMessagesFromDB(List<String> messageIds) async {
-    await DB.sharedInstance
-        .delete<MessageDB>(where: 'messageId = ?', whereArgs: messageIds);
+  static deleteMessagesFromDB(List<String> messageIds,
+      {String? where, List<Object?>? whereArgs}) async {
+    if (where != null) {
+      await DB.sharedInstance
+          .delete<MessageDB>(where: where, whereArgs: whereArgs);
+    } else {
+      await DB.sharedInstance
+          .delete<MessageDB>(where: 'messageId = ?', whereArgs: messageIds);
+    }
   }
 
   static Future<OKEvent> deleteMessageFromRelay(
@@ -251,7 +257,8 @@ class Messages {
     deleteMessagesFromDB(messageIds);
 
     /// send delete event to relay
-    Event event = Nip9.encode(messageIds, reason, Account.sharedInstance.currentPrivkey);
+    Event event =
+        Nip9.encode(messageIds, reason, Account.sharedInstance.currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
