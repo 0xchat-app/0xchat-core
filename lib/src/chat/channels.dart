@@ -434,7 +434,8 @@ class Channels {
       String? replyMessageRelay,
       String? replyUser,
       String? replyUserRelay,
-      Event? event}) async {
+      Event? event,
+      bool local = false}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= Nip28.sendChannelMessage(
         channelId, MessageDB.getContent(type, content), privkey,
@@ -461,12 +462,18 @@ class Channels {
         plaintEvent: jsonEncode(event));
     channelMessageCallBack?.call(messageDB);
     await Messages.saveMessageToDB(messageDB);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
-      messageDB.status = ok.status ? 1 : 2;
-      await Messages.saveMessageToDB(messageDB,
-          conflictAlgorithm: ConflictAlgorithm.replace);
-      if (!completer.isCompleted) completer.complete(ok);
-    });
+
+    if (local) {
+      if (!completer.isCompleted) completer.complete(OKEvent(event.id, true, ''));
+    } else {
+      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
+        messageDB.status = ok.status ? 1 : 2;
+        await Messages.saveMessageToDB(messageDB,
+            conflictAlgorithm: ConflictAlgorithm.replace);
+        if (!completer.isCompleted) completer.complete(ok);
+      });
+    }
+
     return completer.future;
   }
 
