@@ -9,7 +9,7 @@ class Account {
   /// singleton
   Account._internal() {
     _startHeartBeat();
-    // _loadAllUsers();
+    _loadAllUsers();
   }
   factory Account() => sharedInstance;
   static final Account sharedInstance = Account._internal();
