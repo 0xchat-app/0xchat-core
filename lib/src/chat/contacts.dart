@@ -459,6 +459,9 @@ class Contacts {
             case 25050:
               handleCallEvent(innerEvent, relay);
               break;
+            case 1:
+              Moment.sharedInstance.handleNoteEvent(innerEvent, relay, true);
+              break;
             default:
               print('unhandled message $innerEvent');
               break;

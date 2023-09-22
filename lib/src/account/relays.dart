@@ -68,6 +68,18 @@ class Relays {
         : 0;
   }
 
+  int getContactsNotesSince(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.getContactsNotesSince(relayURL)
+        : 0;
+  }
+
+  int getContactsNotesUntil(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.getContactsNotesUntil(relayURL)
+        : 0;
+  }
+
   int getCommonMessageUntil(String relayURL) {
     return relays.containsKey(relayURL)
         ? relays[relayURL]!.commonMessagesUntil

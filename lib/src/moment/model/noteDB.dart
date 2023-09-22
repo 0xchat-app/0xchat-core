@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
+import 'package:nostr_core_dart/nostr.dart';
 
 @reflector
 class NoteDB extends DBObject {
@@ -13,6 +14,10 @@ class NoteDB extends DBObject {
   String? replyRelay;
   List<String>? mentions;
   List<String>? pTags;
+
+  /// private or public notes
+  bool private;
+  String? warning;
 
   /// actions count
   int replyCount;
@@ -39,6 +44,8 @@ class NoteDB extends DBObject {
     this.replyRelay,
     this.mentions,
     this.pTags,
+    this.private = false,
+    this.warning,
     this.replyCount = 0,
     this.repostCount = 0,
     this.reactionCount = 0,
@@ -66,7 +73,7 @@ class NoteDB extends DBObject {
 
   //primaryKey
   static List<String?> primaryKey() {
-    return ['noteId'];
+    return ['noteId', 'private', 'author'];
   }
 
   static List<String>? decodeStringList(String? list) {
@@ -77,6 +84,27 @@ class NoteDB extends DBObject {
     } catch (e) {
       return null;
     }
+  }
+
+  static NoteDB noteDBFromNote(Note note) {
+    Thread thread = note.thread;
+    String root = thread.root.eventId;
+    String rootRelay = thread.root.relayURL;
+    String? reply = thread.reply?.eventId;
+    String? replyRelay = thread.reply?.relayURL;
+    List<String>? mentions = thread.mentions?.map((e) => e.eventId).toList();
+    List<String>? pTags = thread.ptags?.map((e) => e.pubkey).toList();
+    return NoteDB(
+        noteId: note.id,
+        author: note.pubkey,
+        createAt: note.createAt,
+        content: note.content,
+        root: root,
+        rootRelay: rootRelay,
+        reply: reply,
+        replyRelay: replyRelay,
+        mentions: mentions,
+        pTags: pTags);
   }
 }
 
@@ -91,6 +119,8 @@ Map<String, dynamic> _noteInfoToMap(NoteDB instance) => <String, dynamic>{
       'replyRelay': instance.replyRelay,
       'mentions': jsonEncode(instance.mentions),
       'pTags': jsonEncode(instance.pTags),
+      'private': instance.private,
+      'warning': instance.warning,
       'replyCount': instance.replyCount,
       'repostCount': instance.repostCount,
       'reactionCount': instance.reactionCount,
@@ -115,6 +145,8 @@ NoteDB _noteInfoFromMap(Map<String, dynamic> map) {
     replyRelay: map['replyRelay']?.toString(),
     mentions: NoteDB.decodeStringList(map['mentions']?.toString()),
     pTags: NoteDB.decodeStringList(map['pTags']?.toString()),
+    private: (map['private'] ?? 0) > 0 ? true : false,
+    warning: map['warning']?.toString(),
     replyCount: map['replyCount'],
     repostCount: map['repostCount'],
     reactionCount: map['reactionCount'],
