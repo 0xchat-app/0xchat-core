@@ -62,47 +62,9 @@ extension Load on Moment {
         offset: offset);
   }
 
-  Future<void> subscribeContactsNotesFromRelay({String? relay}) async {
-    List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
-    if (authors.isNotEmpty) {
-      Map<String, List<Filter>> subscriptions = {};
-      if (relay == null) {
-        for (String relayURL in Connect.sharedInstance.relays()) {
-          int contactsNotesUntil =
-              Relays.sharedInstance.getContactsNotesUntil(relayURL);
-          Filter f =
-              Filter(authors: authors, kinds: [1], since: contactsNotesUntil);
-          subscriptions[relayURL] = [f];
-        }
-      } else {
-        int contactsNotesUntil =
-            Relays.sharedInstance.getContactsNotesUntil(relay);
-        Filter f =
-            Filter(authors: authors, kinds: [1], since: contactsNotesUntil);
-        subscriptions[relay] = [f];
-      }
-
-      Connect.sharedInstance.addSubscriptions(subscriptions,
-          eventCallBack: (event, relay) async {
-        switch (event.kind) {
-          case 1:
-            handleNoteEvent(event, relay, false);
-            break;
-          default:
-            print('unhandled message $event');
-            break;
-        }
-      }, eoseCallBack: (String requestId, OKEvent ok, String relay,
-              List<String> unCompletedRelays) {
-        if (unCompletedRelays.isEmpty) {
-          Connect.sharedInstance.closeRequests(requestId);
-        }
-      });
-    }
-  }
-
   Future<void> handleNoteEvent(Event event, String relay, bool private) async {
     if (!notesCache.containsKey(event.id)) {
+      updateContactsNotesTime(event.createdAt, relay);
       Note note = Nip1.decodeNote(event);
       NoteDB noteDB = NoteDB.noteDBFromNote(note);
       await DB.sharedInstance
