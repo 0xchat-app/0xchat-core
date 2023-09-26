@@ -66,7 +66,7 @@ class Contacts {
   PrivateChatMessageCallBack? privateChatMessageCallBack;
   ContactUpdatedCallBack? contactUpdatedCallBack;
 
-  void Function(String friend, SignalingState state, String data)?
+  void Function(String friend, SignalingState state, String data, String? offerId)?
       onCallStateChange;
 
   Future<void> initContacts(ContactUpdatedCallBack? callBack) async {

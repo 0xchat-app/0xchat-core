@@ -81,13 +81,13 @@ extension Calling on Contacts {
     Signaling signaling = Nip100.decode(event, privkey);
     bool result = await handleSignalingEvent(event, signaling);
     if (result) {
-      onCallStateChange?.call(event.pubkey, signaling.state, signaling.content);
+      onCallStateChange?.call(event.pubkey, signaling.state, signaling.content, signaling.offerId);
     }
   }
 
   Future<bool> handleSignalingEvent(Event event, Signaling signaling) async {
     int currentTime = DateTime.now().millisecondsSinceEpoch;
-
+    print('handleSignalingEvent: ${signaling.state.toString()}, ${signaling.offerId}');
     /// receive offer
     if (currentCalling == null && signaling.state == SignalingState.offer) {
       Map map = jsonDecode(signaling.content);
