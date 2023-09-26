@@ -141,7 +141,8 @@ extension Calling on Contacts {
       return true;
     } else if (currentCalling != null &&
         signaling.offerId == currentCalling!.callId &&
-        signaling.state == SignalingState.answer) {
+        (signaling.state == SignalingState.answer ||
+            signaling.state == SignalingState.candidate)) {
       return true;
     }
     return false;
