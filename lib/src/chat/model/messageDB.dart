@@ -13,7 +13,8 @@ enum MessageType {
   encryptedVideo,
   encryptedAudio,
   encryptedFile,
-  system
+  system,
+  call
 }
 
 @reflector
@@ -116,6 +117,8 @@ class MessageDB extends DBObject {
         return 'encryptedFile';
       case MessageType.system:
         return 'system';
+      case MessageType.call:
+        return 'call';
       default:
         return 'text';
     }
@@ -145,6 +148,8 @@ class MessageDB extends DBObject {
         return MessageType.encryptedFile;
       case 'system':
         return MessageType.system;
+      case 'call':
+        return MessageType.call;
       default:
         return MessageType.text;
     }
@@ -218,7 +223,8 @@ class MessageDB extends DBObject {
             type == 'encryptedVideo' ||
             type == 'encryptedAudio' ||
             type == 'encryptedFile' ||
-            type == 'system') return map;
+            type == 'system' ||
+            type == 'call') return map;
       }
       return {'contentType': 'text', 'content': content};
     } catch (e) {
@@ -249,6 +255,8 @@ class MessageDB extends DBObject {
         return '[You\'ve received a p2p encryptedFile message via 0xChat!]';
       case MessageType.system:
         return '[You\'ve received a system message via 0xChat!]';
+      case MessageType.call:
+        return '[You\'ve received a call message via 0xChat!]';
       default:
         return content;
     }
@@ -268,6 +276,7 @@ class MessageDB extends DBObject {
       case MessageType.encryptedAudio:
       case MessageType.encryptedFile:
       case MessageType.system:
+      case MessageType.call:
         return jsonEncode(
             {'contentType': messageTypeToString(type), 'content': content});
       default:
@@ -283,9 +292,9 @@ class MessageDB extends DBObject {
     } else if (event.kind == 44) {
       message = await Nip44.decode(event, receiver, privkey);
     } else if (event.kind == 14) {
-      message = await Nip24.decodeSealedGossipDM(event, receiver, privkey);
+      message = await Nip24.decodeSealedGossipDM(event, receiver);
     }
-    if(message == null) return null;
+    if (message == null) return null;
     MessageDB messageDB = MessageDB(
         messageId: event.id,
         sender: message.sender,

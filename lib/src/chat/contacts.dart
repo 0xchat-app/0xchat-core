@@ -15,6 +15,26 @@ typedef PrivateChatMessageCallBack = void Function(MessageDB);
 typedef SecretChatMessageCallBack = void Function(MessageDB);
 typedef ContactUpdatedCallBack = void Function();
 
+enum CallMessageState {
+  disconnect,
+  offer,
+  answer,
+  reject,
+  timeout,
+  cancel;
+}
+
+class CallMessage {
+  String callId;
+  String sender;
+  String receiver;
+  CallMessageState state;
+  int start;
+  int end;
+
+  CallMessage(this.callId, this.sender, this.receiver, this.state, this.start, this.end);
+}
+
 class Contacts {
   static final String identifier = 'Chat-Friends';
   static final String blockListidentifier = 'Chat-Block';
@@ -33,10 +53,7 @@ class Contacts {
   String friendMessageSubscription = '';
   int lastFriendListUpdateTime = 0;
   List<String>? blockList;
-
-  /// calling
-  bool isCalling = false;
-  String callingPubkey = '';
+  CallMessage? currentCalling;
 
   /// callbacks
   SecretChatRequestCallBack? secretChatRequestCallBack;

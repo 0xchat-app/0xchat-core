@@ -1,13 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension Calling on Contacts {
   Future<OKEvent> sendDisconnect(
       String offerId, String friendPubkey, String content) async {
-    isCalling = false;
-    callingPubkey = '';
     return await _sendSignaling(
         offerId, friendPubkey, SignalingState.disconnect, content);
   }
@@ -19,24 +19,18 @@ extension Calling on Contacts {
   }
 
   Future<OKEvent> sendOffer(String friendPubkey, String content) async {
-    isCalling = true;
-    callingPubkey = friendPubkey;
     return await _sendSignaling(
         '', friendPubkey, SignalingState.offer, content);
   }
 
   Future<OKEvent> sendAnswer(
       String offerId, String friendPubkey, String content) async {
-    isCalling = true;
-    callingPubkey = friendPubkey;
     return await _sendSignaling(
         offerId, friendPubkey, SignalingState.answer, content);
   }
 
   Future<OKEvent> sendCandidate(
       String offerId, String friendPubkey, String content) async {
-    isCalling = true;
-    callingPubkey = friendPubkey;
     return await _sendSignaling(
         offerId, friendPubkey, SignalingState.candidate, content);
   }
@@ -53,6 +47,7 @@ extension Calling on Contacts {
       case SignalingState.offer:
         kind = 25050;
         event = Nip100.offer(toPubkey, content, privkey);
+        offerId = event.id;
         break;
       case SignalingState.answer:
         event = Nip100.answer(toPubkey, content, offerId, privkey);
@@ -63,6 +58,9 @@ extension Calling on Contacts {
       default:
         throw Exception('error state');
     }
+    Signaling signaling = Signaling(
+        event.pubkey, toPubkey, content, SignalingState.candidate, offerId);
+    await handleSignalingEvent(event, signaling);
 
     /// 60s timeout for calling event
     Event encodeEvent = await Nip24.encode(event, toPubkey, privkey,
@@ -77,16 +75,75 @@ extension Calling on Contacts {
   }
 
   Future<void> handleCallEvent(Event event, String relay) async {
-    if (isCalling && event.pubkey != callingPubkey) {
-      /// on calling, reject the request
-      sendReject(event.pubkey, 'on calling', event.id);
-    } else {
-      Signaling signaling = Nip100.decode(event, privkey);
+    Signaling signaling = Nip100.decode(event, privkey);
+    bool result = await handleSignalingEvent(event, signaling);
+    if (result) {
       onCallStateChange?.call(event.pubkey, signaling.state, signaling.content);
-      if (signaling.state == SignalingState.disconnect) {
-        isCalling = false;
-        callingPubkey = '';
-      }
     }
+  }
+
+  Future<bool> handleSignalingEvent(Event event, Signaling signaling) async {
+    int currentTime = DateTime.now().millisecondsSinceEpoch;
+
+    /// receive offer
+    if (currentCalling == null && signaling.state == SignalingState.offer) {
+      currentCalling = CallMessage(event.id, signaling.sender,
+          signaling.receiver, CallMessageState.offer, currentTime, currentTime);
+      return true;
+    }
+
+    /// receive timeout
+    else if (currentCalling == null &&
+        signaling.state == SignalingState.disconnect) {
+      CallMessage callMessage = CallMessage(
+          event.id,
+          signaling.sender,
+          signaling.receiver,
+          CallMessageState.timeout,
+          currentTime,
+          currentTime);
+      MessageDB callMessageDB = callMessageToDB(callMessage);
+      await Messages.saveMessageToDB(callMessageDB,
+          conflictAlgorithm: ConflictAlgorithm.replace);
+      privateChatMessageCallBack?.call(callMessageDB);
+      return true;
+    }
+
+    /// receive reject or disconnect
+    else if (currentCalling != null &&
+        signaling.offerId == currentCalling!.callId &&
+        signaling.state == SignalingState.disconnect) {
+      CallMessage callMessage = CallMessage(
+          event.id,
+          signaling.sender,
+          signaling.receiver,
+          CallMessageState.disconnect,
+          currentCalling!.start,
+          event.createdAt);
+      MessageDB callMessageDB = callMessageToDB(callMessage);
+      await Messages.saveMessageToDB(callMessageDB,
+          conflictAlgorithm: ConflictAlgorithm.replace);
+      privateChatMessageCallBack?.call(callMessageDB);
+      currentCalling = null;
+      return true;
+    }
+    return false;
+  }
+
+  MessageDB callMessageToDB(CallMessage callMessage) {
+    String content = jsonEncode({
+      'contentType': 'call',
+      'content': jsonEncode({
+        'state': callMessage.state.toString(),
+        'duration': (callMessage.end - callMessage.start)
+      })
+    });
+    return MessageDB(
+        messageId: callMessage.callId,
+        sender: callMessage.sender,
+        receiver: callMessage.receiver,
+        content: content,
+        kind: 25050,
+        createTime: currentUnixTimestampSeconds());
   }
 }
