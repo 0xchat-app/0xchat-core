@@ -139,12 +139,17 @@ extension Calling on Contacts {
       privateChatMessageCallBack?.call(callMessageDB);
       currentCalling = null;
       return true;
-    } else if (currentCalling != null &&
+    }
+    /// receive answer
+    else if (currentCalling != null &&
         signaling.offerId == currentCalling!.callId &&
         signaling.state == SignalingState.answer) {
       return true;
     }
-    if (signaling.state == SignalingState.candidate) return true;
+    /// receive candidate
+    else if (signaling.state == SignalingState.candidate) {
+      return true;
+    }
     print('error handleSignalingEvent ${signaling.state.toString()}');
     return false;
   }
