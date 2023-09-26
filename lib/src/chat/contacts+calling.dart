@@ -141,10 +141,11 @@ extension Calling on Contacts {
       return true;
     } else if (currentCalling != null &&
         signaling.offerId == currentCalling!.callId &&
-        (signaling.state == SignalingState.answer ||
-            signaling.state == SignalingState.candidate)) {
+        signaling.state == SignalingState.answer) {
       return true;
     }
+    if (signaling.state == SignalingState.candidate) return true;
+    print('error handleSignalingEvent ${signaling.state.toString()}');
     return false;
   }
 
