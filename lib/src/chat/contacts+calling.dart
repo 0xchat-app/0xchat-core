@@ -62,7 +62,7 @@ extension Calling on Contacts {
         throw Exception('error state');
     }
     Signaling signaling = Signaling(
-        event.pubkey, toPubkey, content, SignalingState.candidate, offerId);
+        event.pubkey, toPubkey, content, state, offerId);
     await handleSignalingEvent(event, signaling);
 
     /// 60s timeout for calling event
