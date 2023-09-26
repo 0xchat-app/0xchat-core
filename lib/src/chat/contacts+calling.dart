@@ -63,7 +63,9 @@ extension Calling on Contacts {
     }
     Signaling signaling =
         Signaling(event.pubkey, toPubkey, content, state, offerId);
-    await handleSignalingEvent(event, signaling);
+    if(state != SignalingState.candidate) {
+      await handleSignalingEvent(event, signaling);
+    }
 
     /// 60s timeout for calling event
     Event encodeEvent = await Nip24.encode(event, toPubkey, privkey,
