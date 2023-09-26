@@ -131,7 +131,7 @@ extension Calling on Contacts {
           signaling.receiver,
           state,
           currentCalling!.start,
-          event.createdAt,
+          currentTime,
           currentCalling!.media);
       MessageDB callMessageDB = callMessageToDB(callMessage);
       await Messages.saveMessageToDB(callMessageDB,
