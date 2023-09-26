@@ -157,6 +157,7 @@ extension Calling on Contacts {
         receiver: callMessage.receiver,
         content: content,
         kind: 25050,
+        type: 'call',
         createTime: currentUnixTimestampSeconds());
   }
 }
