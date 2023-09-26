@@ -158,6 +158,11 @@ extension Calling on Contacts {
         content: content,
         kind: 25050,
         type: 'call',
+        decryptContent: jsonEncode({
+          'state': callMessage.state.toString(),
+          'duration': (callMessage.end - callMessage.start),
+          'media': callMessage.media
+        }),
         createTime: currentUnixTimestampSeconds());
   }
 }
