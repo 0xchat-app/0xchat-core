@@ -61,8 +61,8 @@ extension Calling on Contacts {
       default:
         throw Exception('error state');
     }
-    Signaling signaling = Signaling(
-        event.pubkey, toPubkey, content, state, offerId);
+    Signaling signaling =
+        Signaling(event.pubkey, toPubkey, content, state, offerId);
     await handleSignalingEvent(event, signaling);
 
     /// 60s timeout for calling event
@@ -81,13 +81,14 @@ extension Calling on Contacts {
     Signaling signaling = Nip100.decode(event, privkey);
     bool result = await handleSignalingEvent(event, signaling);
     if (result) {
-      onCallStateChange?.call(event.pubkey, signaling.state, signaling.content, signaling.offerId);
+      onCallStateChange?.call(
+          event.pubkey, signaling.state, signaling.content, signaling.offerId);
     }
   }
 
   Future<bool> handleSignalingEvent(Event event, Signaling signaling) async {
     int currentTime = DateTime.now().millisecondsSinceEpoch;
-    print('handleSignalingEvent: ${signaling.state.toString()}, ${signaling.offerId}');
+
     /// receive offer
     if (currentCalling == null && signaling.state == SignalingState.offer) {
       Map map = jsonDecode(signaling.content);
@@ -137,6 +138,10 @@ extension Calling on Contacts {
           conflictAlgorithm: ConflictAlgorithm.replace);
       privateChatMessageCallBack?.call(callMessageDB);
       currentCalling = null;
+      return true;
+    } else if (currentCalling != null &&
+        signaling.offerId == currentCalling!.callId &&
+        signaling.state == SignalingState.answer) {
       return true;
     }
     return false;
