@@ -15,7 +15,7 @@ extension Calling on Contacts {
   Future<OKEvent> sendReject(
       String offerId, String friendPubkey, String content) async {
     return await _sendSignaling(
-        offerId, friendPubkey, SignalingState.disconnect, content);
+        offerId, friendPubkey, SignalingState.reject, content);
   }
 
   Future<OKEvent> sendOffer(String friendPubkey, String content) async {
@@ -55,6 +55,9 @@ extension Calling on Contacts {
       case SignalingState.candidate:
         event = Nip100.candidate(toPubkey, content, offerId, privkey);
         break;
+      case SignalingState.reject:
+        event = Nip100.reject(toPubkey, content, offerId, privkey);
+        break;
       default:
         throw Exception('error state');
     }
@@ -87,21 +90,24 @@ extension Calling on Contacts {
 
     /// receive offer
     if (currentCalling == null && signaling.state == SignalingState.offer) {
-      currentCalling = CallMessage(event.id, signaling.sender,
-          signaling.receiver, CallMessageState.offer, currentTime, currentTime);
+      Map map = jsonDecode(signaling.content);
+      currentCalling = CallMessage(
+          event.id,
+          signaling.sender,
+          signaling.receiver,
+          CallMessageState.offer,
+          currentTime,
+          currentTime,
+          map['media']);
       return true;
     }
 
     /// receive timeout
     else if (currentCalling == null &&
         signaling.state == SignalingState.disconnect) {
-      CallMessage callMessage = CallMessage(
-          event.id,
-          signaling.sender,
-          signaling.receiver,
-          CallMessageState.timeout,
-          currentTime,
-          currentTime);
+      CallMessageState state = CallMessageState.timeout;
+      CallMessage callMessage = CallMessage(event.id, signaling.sender,
+          signaling.receiver, state, currentTime, currentTime, '');
       MessageDB callMessageDB = callMessageToDB(callMessage);
       await Messages.saveMessageToDB(callMessageDB,
           conflictAlgorithm: ConflictAlgorithm.replace);
@@ -112,14 +118,20 @@ extension Calling on Contacts {
     /// receive reject or disconnect
     else if (currentCalling != null &&
         signaling.offerId == currentCalling!.callId &&
-        signaling.state == SignalingState.disconnect) {
+        (signaling.state == SignalingState.disconnect ||
+            signaling.state == SignalingState.reject)) {
+      CallMessageState state = signaling.state == SignalingState.disconnect
+          ? CallMessageState.disconnect
+          : CallMessageState.reject;
+
       CallMessage callMessage = CallMessage(
           event.id,
           signaling.sender,
           signaling.receiver,
-          CallMessageState.disconnect,
+          state,
           currentCalling!.start,
-          event.createdAt);
+          event.createdAt,
+          currentCalling!.media);
       MessageDB callMessageDB = callMessageToDB(callMessage);
       await Messages.saveMessageToDB(callMessageDB,
           conflictAlgorithm: ConflictAlgorithm.replace);
@@ -135,7 +147,8 @@ extension Calling on Contacts {
       'contentType': 'call',
       'content': jsonEncode({
         'state': callMessage.state.toString(),
-        'duration': (callMessage.end - callMessage.start)
+        'duration': (callMessage.end - callMessage.start),
+        'media': callMessage.media
       })
     });
     return MessageDB(

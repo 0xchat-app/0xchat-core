@@ -31,8 +31,9 @@ class CallMessage {
   CallMessageState state;
   int start;
   int end;
+  String media;
 
-  CallMessage(this.callId, this.sender, this.receiver, this.state, this.start, this.end);
+  CallMessage(this.callId, this.sender, this.receiver, this.state, this.start, this.end, this.media);
 }
 
 class Contacts {
