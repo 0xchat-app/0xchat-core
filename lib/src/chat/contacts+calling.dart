@@ -81,25 +81,38 @@ extension Calling on Contacts {
 
   Future<void> handleCallEvent(Event event, String relay) async {
     Signaling signaling = Nip100.decode(event, privkey);
-    await handleSignalingEvent(event, signaling);
-    onCallStateChange?.call(
-        event.pubkey, signaling.state, signaling.content, signaling.offerId);
+    bool result = await handleSignalingEvent(event, signaling);
+    if(result){
+      onCallStateChange?.call(
+          event.pubkey, signaling.state, signaling.content, signaling.offerId);
+    }
   }
 
-  Future<void> handleSignalingEvent(Event event, Signaling signaling) async {
+  Future<bool> handleSignalingEvent(Event event, Signaling signaling) async {
     /// receive offer
     if (signaling.state == SignalingState.offer) {
       CallMessage? callMessage = callMessages[event.id];
       Map map = jsonDecode(signaling.content);
-      callMessage = CallMessage(
-          event.id,
-          signaling.sender,
-          signaling.receiver,
-          callMessage?.state ?? CallMessageState.offer,
-          event.createdAt * 1000,
-          callMessage?.end ?? event.createdAt * 1000,
-          map['media']);
-      callMessages[event.id] = callMessage;
+      if (callMessage != null) {
+        /// outdated request
+        callMessage.media = map['media'];
+        callMessage.start = event.createdAt * 1000;
+        MessageDB callMessageDB = callMessageToDB(callMessage);
+        await Messages.saveMessageToDB(callMessageDB,
+            conflictAlgorithm: ConflictAlgorithm.replace);
+        privateChatMessageCallBack?.call(callMessageDB);
+        return false;
+      } else {
+        callMessage = CallMessage(
+            event.id,
+            signaling.sender,
+            signaling.receiver,
+            callMessage?.state ?? CallMessageState.offer,
+            event.createdAt * 1000,
+            callMessage?.end ?? event.createdAt * 1000,
+            map['media']);
+        callMessages[event.id] = callMessage;
+      }
     }
 
     /// receive disconnect & reject
@@ -120,6 +133,8 @@ extension Calling on Contacts {
           conflictAlgorithm: ConflictAlgorithm.replace);
       privateChatMessageCallBack?.call(callMessageDB);
     }
+
+    return true;
   }
 
   MessageDB callMessageToDB(CallMessage callMessage) {
