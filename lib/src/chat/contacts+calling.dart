@@ -12,12 +12,6 @@ extension Calling on Contacts {
         offerId, friendPubkey, SignalingState.disconnect, content);
   }
 
-  Future<OKEvent> sendReject(
-      String offerId, String friendPubkey, String content) async {
-    return await _sendSignaling(
-        offerId, friendPubkey, SignalingState.reject, content);
-  }
-
   Future<OKEvent> sendOffer(String friendPubkey, String content) async {
     return await _sendSignaling(
         '', friendPubkey, SignalingState.offer, content);
@@ -39,10 +33,15 @@ extension Calling on Contacts {
       SignalingState state, String content) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event? event;
+    String? reason;
     int kind = 25051;
     switch (state) {
       case SignalingState.disconnect:
         event = Nip100.close(toPubkey, content, offerId, privkey);
+        try {
+          Map map = jsonDecode(content);
+          reason = map['reason'];
+        } catch (_) {}
         break;
       case SignalingState.offer:
         kind = 25050;
@@ -55,16 +54,13 @@ extension Calling on Contacts {
       case SignalingState.candidate:
         event = Nip100.candidate(toPubkey, content, offerId, privkey);
         break;
-      case SignalingState.reject:
-        event = Nip100.reject(toPubkey, content, offerId, privkey);
-        break;
       default:
         throw Exception('error state');
     }
     Signaling signaling =
         Signaling(event.pubkey, toPubkey, content, state, offerId);
     if (state != SignalingState.candidate) {
-      await handleSignalingEvent(event, signaling);
+      await handleSignalingEvent(event, signaling, reason);
     }
 
     /// 60s timeout for calling event
@@ -81,14 +77,22 @@ extension Calling on Contacts {
 
   Future<void> handleCallEvent(Event event, String relay) async {
     Signaling signaling = Nip100.decode(event, privkey);
-    bool result = await handleSignalingEvent(event, signaling);
-    if(result){
+    String? reason;
+    if (signaling.state == SignalingState.disconnect) {
+      try {
+        Map map = jsonDecode(signaling.content);
+        reason = map['reason'];
+      } catch (_) {}
+    }
+    bool result = await handleSignalingEvent(event, signaling, reason);
+    if (result) {
       onCallStateChange?.call(
           event.pubkey, signaling.state, signaling.content, signaling.offerId);
     }
   }
 
-  Future<bool> handleSignalingEvent(Event event, Signaling signaling) async {
+  Future<bool> handleSignalingEvent(
+      Event event, Signaling signaling, String? reason) async {
     /// receive offer
     if (signaling.state == SignalingState.offer) {
       CallMessage? callMessage = callMessages[event.id];
@@ -116,13 +120,20 @@ extension Calling on Contacts {
     }
 
     /// receive disconnect & reject
-    else if (signaling.state == SignalingState.disconnect ||
-        signaling.state == SignalingState.reject) {
+    else if (signaling.state == SignalingState.disconnect) {
       int currentTime = event.createdAt * 1000;
-      CallMessageState state = signaling.state == SignalingState.disconnect
-          ? CallMessageState.disconnect
-          : CallMessageState.reject;
-
+      CallMessageState state = CallMessageState.disconnect;
+      switch (reason) {
+        case 'hangUp':
+          state = CallMessageState.cancel;
+          break;
+        case 'timeout':
+          state = CallMessageState.timeout;
+          break;
+        case 'reject':
+          state = CallMessageState.reject;
+          break;
+      }
       CallMessage? callMessage = callMessages[signaling.offerId];
       callMessage ??= CallMessage(event.id, signaling.sender,
           signaling.receiver, state, currentTime, currentTime, '');
@@ -146,6 +157,7 @@ extension Calling on Contacts {
         'media': callMessage.media
       })
     });
+    print('callMessageToDB: $content');
     return MessageDB(
         messageId: callMessage.callId,
         sender: callMessage.sender,
