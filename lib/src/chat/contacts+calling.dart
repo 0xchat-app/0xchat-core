@@ -63,7 +63,7 @@ extension Calling on Contacts {
     }
     Signaling signaling =
         Signaling(event.pubkey, toPubkey, content, state, offerId);
-    if(state != SignalingState.candidate) {
+    if (state != SignalingState.candidate) {
       await handleSignalingEvent(event, signaling);
     }
 
@@ -81,79 +81,45 @@ extension Calling on Contacts {
 
   Future<void> handleCallEvent(Event event, String relay) async {
     Signaling signaling = Nip100.decode(event, privkey);
-    bool result = await handleSignalingEvent(event, signaling);
-    if (result) {
-      onCallStateChange?.call(
-          event.pubkey, signaling.state, signaling.content, signaling.offerId);
-    }
+    await handleSignalingEvent(event, signaling);
+    onCallStateChange?.call(
+        event.pubkey, signaling.state, signaling.content, signaling.offerId);
   }
 
-  Future<bool> handleSignalingEvent(Event event, Signaling signaling) async {
-    int currentTime = DateTime.now().millisecondsSinceEpoch;
-
+  Future<void> handleSignalingEvent(Event event, Signaling signaling) async {
     /// receive offer
-    if (currentCalling == null && signaling.state == SignalingState.offer) {
+    if (signaling.state == SignalingState.offer) {
+      CallMessage? callMessage = callMessages[event.id];
       Map map = jsonDecode(signaling.content);
-      currentCalling = CallMessage(
+      callMessage = CallMessage(
           event.id,
           signaling.sender,
           signaling.receiver,
-          CallMessageState.offer,
-          currentTime,
-          currentTime,
+          callMessage?.state ?? CallMessageState.offer,
+          event.createdAt * 1000,
+          callMessage?.end ?? event.createdAt * 1000,
           map['media']);
-      return true;
+      callMessages[event.id] = callMessage;
     }
 
-    /// receive timeout
-    else if (currentCalling == null &&
-        signaling.state == SignalingState.disconnect) {
-      CallMessageState state = CallMessageState.timeout;
-      CallMessage callMessage = CallMessage(event.id, signaling.sender,
-          signaling.receiver, state, currentTime, currentTime, '');
-      MessageDB callMessageDB = callMessageToDB(callMessage);
-      await Messages.saveMessageToDB(callMessageDB,
-          conflictAlgorithm: ConflictAlgorithm.replace);
-      privateChatMessageCallBack?.call(callMessageDB);
-      return true;
-    }
-
-    /// receive reject or disconnect
-    else if (currentCalling != null &&
-        signaling.offerId == currentCalling!.callId &&
-        (signaling.state == SignalingState.disconnect ||
-            signaling.state == SignalingState.reject)) {
+    /// receive disconnect & reject
+    else if (signaling.state == SignalingState.disconnect ||
+        signaling.state == SignalingState.reject) {
+      int currentTime = event.createdAt * 1000;
       CallMessageState state = signaling.state == SignalingState.disconnect
           ? CallMessageState.disconnect
           : CallMessageState.reject;
 
-      CallMessage callMessage = CallMessage(
-          event.id,
-          signaling.sender,
-          signaling.receiver,
-          state,
-          currentCalling!.start,
-          currentTime,
-          currentCalling!.media);
+      CallMessage? callMessage = callMessages[signaling.offerId];
+      callMessage ??= CallMessage(event.id, signaling.sender,
+          signaling.receiver, state, currentTime, currentTime, '');
+      callMessage.end = currentTime;
+      callMessage.state = state;
       MessageDB callMessageDB = callMessageToDB(callMessage);
       await Messages.saveMessageToDB(callMessageDB,
           conflictAlgorithm: ConflictAlgorithm.replace);
       privateChatMessageCallBack?.call(callMessageDB);
-      currentCalling = null;
-      return true;
     }
-    /// receive answer
-    else if (currentCalling != null &&
-        signaling.offerId == currentCalling!.callId &&
-        signaling.state == SignalingState.answer) {
-      return true;
-    }
-    /// receive candidate
-    else if (signaling.state == SignalingState.candidate) {
-      return true;
-    }
-    print('error handleSignalingEvent ${signaling.state.toString()}');
-    return false;
   }
 
   MessageDB callMessageToDB(CallMessage callMessage) {

@@ -54,7 +54,7 @@ class Contacts {
   String friendMessageSubscription = '';
   int lastFriendListUpdateTime = 0;
   List<String>? blockList;
-  CallMessage? currentCalling;
+  Map<String, CallMessage> callMessages = {};
 
   /// callbacks
   SecretChatRequestCallBack? secretChatRequestCallBack;
