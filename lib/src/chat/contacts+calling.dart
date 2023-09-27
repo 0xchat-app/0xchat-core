@@ -138,8 +138,14 @@ extension Calling on Contacts {
           break;
       }
       CallMessage? callMessage = callMessages[signaling.offerId];
-      callMessage ??= CallMessage(event.id, signaling.sender,
-          signaling.receiver, state, currentTime, currentTime, '');
+      callMessage ??= CallMessage(
+          signaling.offerId ?? event.id,
+          signaling.sender,
+          signaling.receiver,
+          state,
+          currentTime,
+          currentTime,
+          '');
       callMessage.end = currentTime;
       callMessage.state = state;
       MessageDB callMessageDB = callMessageToDB(callMessage);
@@ -160,7 +166,6 @@ extension Calling on Contacts {
         'media': callMessage.media
       })
     });
-    print('callMessageToDB: $content');
     return MessageDB(
         messageId: callMessage.callId,
         sender: callMessage.sender,
