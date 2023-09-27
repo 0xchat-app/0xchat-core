@@ -133,6 +133,9 @@ extension Calling on Contacts {
         case 'reject':
           state = CallMessageState.reject;
           break;
+        case 'inCalling':
+          state = CallMessageState.inCalling;
+          break;
       }
       CallMessage? callMessage = callMessages[signaling.offerId];
       callMessage ??= CallMessage(event.id, signaling.sender,

@@ -21,7 +21,8 @@ enum CallMessageState {
   answer,
   reject,
   timeout,
-  cancel;
+  cancel,
+  inCalling
 }
 
 class CallMessage {
