@@ -156,6 +156,7 @@ extension Calling on Contacts {
           '');
       callMessage.end = eventTime;
       callMessage.state = state;
+      callMessages[callMessage.callId] = callMessage;
       MessageDB callMessageDB = callMessageToDB(callMessage);
       await Messages.saveMessageToDB(callMessageDB,
           conflictAlgorithm: ConflictAlgorithm.replace);
