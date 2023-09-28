@@ -3,12 +3,12 @@ import 'package:chatcore/chat-core.dart';
 @reflector
 class BadgeAwardDB extends DBObject {
   String awardId; // event id
-  int? awardTime;
-  String? identifies;
-  String? creator;
-  String? relay;
-  String? badgeOwner;
-  String? badgeId;
+  int awardTime;
+  String identifies;
+  String creator;
+  String relay;
+  String badgeOwner;
+  String badgeId;
 
   BadgeAwardDB({
     this.awardId = '',

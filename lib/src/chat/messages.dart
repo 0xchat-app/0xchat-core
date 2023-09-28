@@ -118,13 +118,13 @@ class Messages {
     List<DeleteEvent> deleteEvents = [];
     for (MessageDB message in messages) {
       if (message.kind == 5) {
-        List<dynamic> tags = jsonDecode(message.tags!);
+        List<dynamic> tags = jsonDecode(message.tags);
         List<String> deleteEventIds = Nip9.tagsToList(tags.map((item) {
           return List<String>.from(item.cast<String>());
         }).toList());
         if (deleteEventIds.isNotEmpty) {
-          DeleteEvent deleteEvent = DeleteEvent(message.sender!, deleteEventIds,
-              message.content!, message.createTime!);
+          DeleteEvent deleteEvent = DeleteEvent(message.sender, deleteEventIds,
+              message.content, message.createTime);
           deleteEvents.add(deleteEvent);
         }
       }
@@ -153,7 +153,7 @@ class Messages {
       MessageDB message = messages.first;
       if (operator == pubkey) {
         // hide by me, delete
-        await deleteMessagesFromDB(messageIds: [message.messageId!]);
+        await deleteMessagesFromDB(messageIds: [message.messageId]);
       } else {
         // hide by others, add to report list
         List<String>? reportList = message.reportList;
@@ -174,12 +174,12 @@ class Messages {
     List<MessageDB> messages = result['messages'];
     List<ChannelMessageHidden> hiddenMessages = [];
     for (MessageDB message in messages) {
-      List<dynamic> tags = jsonDecode(message.tags!);
+      List<dynamic> tags = jsonDecode(message.tags);
       String? hiddenMessageId = Nip28.tagsToMessageId(tags.map((item) {
         return List<String>.from(item.cast<String>());
       }).toList());
-      ChannelMessageHidden hidden = ChannelMessageHidden(message.sender!,
-          hiddenMessageId!, message.content!, message.createTime!);
+      ChannelMessageHidden hidden = ChannelMessageHidden(message.sender,
+          hiddenMessageId!, message.content, message.createTime);
       hiddenMessages.add(hidden);
     }
     return hiddenMessages;
@@ -215,9 +215,9 @@ class Messages {
         where: where, whereArgs: whereArgs, orderBy: orderBy);
     for (MessageDB message in messages) {
       theLastTime =
-          message.createTime! > theLastTime ? message.createTime! : theLastTime;
-      if (message.decryptContent == null || message.decryptContent!.isEmpty) {
-        var map = MessageDB.decodeContent(message.content!);
+          message.createTime > theLastTime ? message.createTime : theLastTime;
+      if (message.decryptContent.isEmpty) {
+        var map = MessageDB.decodeContent(message.content);
         message.decryptContent = map['content'];
         message.type = map['contentType'];
       }

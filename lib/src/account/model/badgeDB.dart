@@ -4,13 +4,13 @@ import 'package:chatcore/chat-core.dart';
 class BadgeDB extends DBObject {
 
   String id;
-  String? d;
-  String? name;
-  String? description;
-  String? image;
-  String? thumb;
-  String? creator;
-  int? createTime;
+  String d;
+  String name;
+  String description;
+  String image;
+  String thumb;
+  String creator;
+  int createTime;
 
   BadgeDB({
     this.id = '',

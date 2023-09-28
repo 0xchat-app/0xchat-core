@@ -170,7 +170,7 @@ class BadgesHelper {
         }
         // cache to DB
         await syncUserBadgesToDB(
-            userPubkey, badgeAwardsDB.map((e) => e.badgeId!).toList());
+            userPubkey, badgeAwardsDB.map((e) => e.badgeId).toList());
         if (!completer.isCompleted) completer.complete(badgeAwardsDB);
       }
     });
@@ -224,10 +224,10 @@ class BadgesHelper {
   static BadgeAwardDB badgeAwardToBadgeAwardDB(BadgeAward award) {
     return BadgeAwardDB(
         awardId: award.awardId,
-        awardTime: award.awardTime,
-        identifies: award.identifies,
-        creator: award.creator,
-        relay: award.relay,
+        awardTime: award.awardTime ?? 0,
+        identifies: award.identifies ?? '',
+        creator: award.creator ?? '',
+        relay: award.relay ?? '',
         badgeOwner: award.users != null ? award.users![0].pubkey : '');
   }
 
@@ -249,7 +249,7 @@ class BadgesHelper {
     for (BadgeDB? badgeDB in badges) {
       if (badgeDB != null) {
         List<BadgeAwardDB?> map =
-            await getBadgeAwardFromDB(badgeDB.d!, badgeDB.creator!, Account.sharedInstance.currentPubkey);
+            await getBadgeAwardFromDB(badgeDB.d, badgeDB.creator, Account.sharedInstance.currentPubkey);
         if (map.isNotEmpty && map[0] != null) {
           BadgeAwardDB? db = map[0];
           BadgeAward badgeAward = BadgeAward(
@@ -257,7 +257,7 @@ class BadgesHelper {
               db.awardTime,
               db.identifies,
               db.creator,
-              [People(db.badgeOwner!, null, null, null)]);
+              [People(db.badgeOwner, null, null, null)]);
           badgeAwards.add(badgeAward);
         }
       }

@@ -20,24 +20,24 @@ enum MessageType {
 @reflector
 class MessageDB extends DBObject {
   String messageId; //event id
-  String? sender; // pubkey
-  String? receiver; // friend pubkey
-  String? groupId; // channel or group id
-  String? sessionId; // secret chat id
-  int? kind;
-  String? tags;
-  String? content; // content
-  int? createTime;
-  bool? read;
+  String sender; // pubkey
+  String receiver; // friend pubkey
+  String groupId; // channel or group id
+  String sessionId; // secret chat id
+  int kind;
+  String tags;
+  String content; // content
+  int createTime;
+  bool read;
   String replyId;
   // additional,
-  String? decryptContent;
-  String? type;
+  String decryptContent;
+  String type;
   int? status; // 0 sending, 1 sent, 2 fail 3 recall
 
   List<String>? reportList; // hide message ids list, not save to DB
 
-  String? plaintEvent;
+  String plaintEvent;
 
   MessageDB(
       {this.messageId = '',
@@ -62,12 +62,10 @@ class MessageDB extends DBObject {
   }
 
   Event? get originEvent {
-    if (plaintEvent != null) {
-      try {
-        return Event.fromJson(jsonDecode(plaintEvent!));
-      } catch (_) {
-        return null;
-      }
+    try {
+      return Event.fromJson(jsonDecode(plaintEvent));
+    } catch (_) {
+      return null;
     }
     return null;
   }
