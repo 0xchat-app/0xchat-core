@@ -409,7 +409,7 @@ extension SecretChat on Contacts {
           if (ok.status &&
               sessionDB.interval != null &&
               sessionDB.interval! > 0 &&
-              messageDB.createTime! >
+              messageDB.createTime >
                   (sessionDB.interval! + sessionDB.lastUpdateTime!) &&
               sessionDB.status != 5) {
             await update(sessionDB.sessionId);

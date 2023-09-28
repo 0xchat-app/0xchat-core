@@ -122,7 +122,7 @@ class Channels {
         replyId: channelMessage.thread.reply?.eventId ?? '',
         createTime: event.createdAt,
         plaintEvent: jsonEncode(event));
-    var map = MessageDB.decodeContent(messageDB.content!);
+    var map = MessageDB.decodeContent(messageDB.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
 
@@ -574,7 +574,7 @@ class Channels {
       if (unRelays.isEmpty) {
         completer.complete(result);
         await Future.forEach(result, (channel) async {
-          _syncChannelsInfos(channel.creator!, [channel.channelId], true,
+          _syncChannelsInfos(channel.creator, [channel.channelId], true,
               (requestId, status, relay, unRelays) {});
         });
       }
