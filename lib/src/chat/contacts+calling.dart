@@ -94,13 +94,14 @@ extension Calling on Contacts {
   Future<bool> handleSignalingEvent(
       Event event, Signaling signaling, String? reason) async {
     /// receive offer
+    int eventTime = event.createdAt * 1000;
     if (signaling.state == SignalingState.offer) {
       CallMessage? callMessage = callMessages[event.id];
       Map map = jsonDecode(signaling.content);
       if (callMessage != null) {
         /// outdated request
         callMessage.media = map['media'];
-        callMessage.start = event.createdAt * 1000;
+        callMessage.start = eventTime;
         MessageDB callMessageDB = callMessageToDB(callMessage);
         await Messages.saveMessageToDB(callMessageDB,
             conflictAlgorithm: ConflictAlgorithm.replace);
@@ -112,16 +113,23 @@ extension Calling on Contacts {
             signaling.sender,
             signaling.receiver,
             callMessage?.state ?? CallMessageState.offer,
-            event.createdAt * 1000,
-            callMessage?.end ?? event.createdAt * 1000,
+            eventTime,
+            callMessage?.end ?? eventTime,
             map['media']);
         callMessages[event.id] = callMessage;
       }
     }
 
+    /// receive answer
+    else if (signaling.state == SignalingState.answer) {
+      CallMessage? callMessage = callMessages[event.id];
+      if (callMessage != null) {
+        callMessage.start = eventTime;
+      }
+    }
+
     /// receive disconnect & reject
     else if (signaling.state == SignalingState.disconnect) {
-      int currentTime = event.createdAt * 1000;
       CallMessageState state = CallMessageState.disconnect;
       switch (reason) {
         case 'hangUp':
@@ -143,10 +151,10 @@ extension Calling on Contacts {
           signaling.sender,
           signaling.receiver,
           state,
-          currentTime,
-          currentTime,
+          eventTime,
+          eventTime,
           '');
-      callMessage.end = currentTime;
+      callMessage.end = eventTime;
       callMessage.state = state;
       MessageDB callMessageDB = callMessageToDB(callMessage);
       await Messages.saveMessageToDB(callMessageDB,
