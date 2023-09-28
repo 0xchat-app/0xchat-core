@@ -289,10 +289,7 @@ class Contacts {
   }
 
   Uint8List? getFriendSharedSecret(String friendPubkey) {
-    if (allContacts.containsKey(friendPubkey)) {
-      return Nip44.shareSecret(privkey, friendPubkey);
-    }
-    return null;
+    return Nip44.shareSecret(privkey, friendPubkey);
   }
 
   /// sync contacts
