@@ -249,7 +249,7 @@ extension SecretChat on Contacts {
     SecretSessionDB? secretSessionDB = secretSessionMap[session.sessionId];
     if (secretSessionDB != null &&
         session.fromPubkey == secretSessionDB.toPubkey &&
-        event.createdAt > secretSessionDB.lastUpdateTime!) {
+        event.createdAt > secretSessionDB.lastUpdateTime) {
       secretSessionDB.toAliasPubkey = session.fromAliasPubkey;
       secretSessionDB.shareSecretKey = bytesToHex(Nip44.shareSecret(
           secretSessionDB.myAliasPrivkey!, secretSessionDB.toAliasPubkey!));
@@ -272,7 +272,7 @@ extension SecretChat on Contacts {
     SecretSessionDB? secretSessionDB = secretSessionMap[session.sessionId];
     if (secretSessionDB != null &&
         session.fromPubkey == secretSessionDB.toPubkey &&
-        event.createdAt > secretSessionDB.lastUpdateTime!) {
+        event.createdAt > secretSessionDB.lastUpdateTime) {
       secretSessionDB.status = 3;
       secretSessionDB.lastUpdateTime = session.createTime;
       await DB.sharedInstance.update<SecretSessionDB>(secretSessionDB);
@@ -289,7 +289,7 @@ extension SecretChat on Contacts {
 
     if (secretSessionDB != null &&
         session.fromPubkey == secretSessionDB.toPubkey &&
-        event.createdAt > secretSessionDB.lastUpdateTime!) {
+        event.createdAt > secretSessionDB.lastUpdateTime) {
       secretSessionDB.toAliasPubkey = session.fromAliasPubkey;
       if (secretSessionDB.myAliasPrivkey != null &&
           secretSessionDB.myAliasPrivkey!.isNotEmpty) {
@@ -318,7 +318,7 @@ extension SecretChat on Contacts {
     SecretSessionDB? secretSessionDB = secretSessionMap[session.sessionId];
     if (secretSessionDB != null &&
         session.fromPubkey == secretSessionDB.toPubkey &&
-        event.createdAt > secretSessionDB.lastUpdateTime!) {
+        event.createdAt > secretSessionDB.lastUpdateTime) {
       secretSessionDB.status = 4;
       secretSessionMap.remove(secretSessionDB.sessionId);
       subscriptSecretChat();
@@ -410,7 +410,7 @@ extension SecretChat on Contacts {
               sessionDB.interval != null &&
               sessionDB.interval! > 0 &&
               messageDB.createTime >
-                  (sessionDB.interval! + sessionDB.lastUpdateTime!) &&
+                  (sessionDB.interval! + sessionDB.lastUpdateTime) &&
               sessionDB.status != 5) {
             await update(sessionDB.sessionId);
           }

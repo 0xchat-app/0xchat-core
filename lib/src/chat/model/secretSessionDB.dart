@@ -26,7 +26,7 @@ class SecretSessionDB extends DBObject {
   String? otherFields;
 
   /// status
-  int? lastUpdateTime;
+  int lastUpdateTime;
 
   /// 0: send request, waiting for accept 1: receive request 2: accept 3: reject 4: close 5: update 6: expired
   int? status;
