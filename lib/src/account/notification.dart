@@ -56,7 +56,7 @@ class NotificationHelper {
     Connect.sharedInstance.sendEvent(event);
   }
 
-  void offline(String serverPubkey, String privkey) {
+  void setOffline() {
     Map map = {'online': 0};
     Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
     Connect.sharedInstance.sendEvent(event);
@@ -67,7 +67,8 @@ class NotificationHelper {
       String deviceId, List<int> kinds, List<String> relays) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<String> channels = Channels.sharedInstance.getAllUnMuteChannels();
-    var pubKeys = [pubkey];
+    var authors = Contacts.sharedInstance.allContacts.keys.toList();
+    var ptags = [pubkey];
     // List<SecretSessionDB> secretSessions =
     // Contacts.sharedInstance.secretSessionMap.values.toList();
     // for (var session in secretSessions) {
@@ -81,11 +82,12 @@ class NotificationHelper {
     // }
     Map map = {
       'online': 1,
+      'authors': authors,
       'kinds': kinds,
       'deviceId': deviceId,
       'relays': relays,
       '#e': channels,
-      '#p': pubKeys
+      '#p': ptags
     };
     Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
