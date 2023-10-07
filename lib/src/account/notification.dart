@@ -24,10 +24,10 @@ class NotificationHelper {
     pubkey = Account.sharedInstance.currentPubkey;
     serverPubkey = serverKey;
 
-    startHeartBeat();
+    _startHeartBeat();
   }
 
-  void startHeartBeat() {
+  void _startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
       timer = Timer.periodic(Duration(seconds: 60), (Timer t) {
         _heartBeat(serverPubkey, privkey);
@@ -35,7 +35,7 @@ class NotificationHelper {
     }
   }
 
-  void stopHeartBeat() {
+  void _stopHeartBeat() {
     if (timer != null && timer!.isActive) {
       timer!.cancel();
     }
@@ -60,6 +60,13 @@ class NotificationHelper {
     Map map = {'online': 0};
     Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
     Connect.sharedInstance.sendEvent(event);
+
+    _stopHeartBeat();
+  }
+
+  void setOnline(){
+    _heartBeat(serverPubkey, privkey);
+    _startHeartBeat();
   }
 
   // call setNotification when online or updating notification
