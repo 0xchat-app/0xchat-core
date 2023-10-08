@@ -76,8 +76,8 @@ class Contacts {
     contactUpdatedCallBack = callBack;
 
     // sync friend list from DB & relays
-    await _syncContactsFromDB();
     await syncBlockListFromDB();
+    await _syncContactsFromDB();
     await syncSecretSessionFromDB();
 
     _updateSubscriptions();
@@ -91,8 +91,8 @@ class Contacts {
   }
 
   Future<void> _updateSubscriptions({String? relay}) async {
-    await _syncContactsFromRelay(relay: relay);
     await syncBlockListFromRelay(relay: relay);
+    await _syncContactsFromRelay(relay: relay);
     await _subscriptMessages(relay: relay);
     await subscriptSecretChat(relay: relay);
   }
