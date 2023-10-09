@@ -14,6 +14,7 @@ typedef SecretChatCloseCallBack = void Function(SecretSessionDB);
 typedef PrivateChatMessageCallBack = void Function(MessageDB);
 typedef SecretChatMessageCallBack = void Function(MessageDB);
 typedef ContactUpdatedCallBack = void Function();
+typedef OfflinePrivateMessageFinishCallBack = void Function();
 
 enum CallMessageState {
   disconnect,
@@ -67,6 +68,8 @@ class Contacts {
   SecretChatMessageCallBack? secretChatMessageCallBack;
   PrivateChatMessageCallBack? privateChatMessageCallBack;
   ContactUpdatedCallBack? contactUpdatedCallBack;
+  OfflinePrivateMessageFinishCallBack? offlinePrivateMessageFinishCallBack;
+  OfflinePrivateMessageFinishCallBack? offlineSecretMessageFinishCallBack;
 
   void Function(
           String friend, SignalingState state, String data, String? offerId)?
@@ -448,6 +451,10 @@ class Contacts {
           }
         }
       }
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+      if (unCompletedRelays.isEmpty) {
+        offlinePrivateMessageFinishCallBack?.call();
+      }
     });
   }
 
@@ -506,8 +513,9 @@ class Contacts {
     await Messages.saveMessageToDB(messageDB);
 
     if (local) {
-      if (!completer.isCompleted)
+      if (!completer.isCompleted) {
         completer.complete(OKEvent(event.id, true, ''));
+      }
     } else {
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;

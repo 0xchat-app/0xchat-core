@@ -6,6 +6,7 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 
 typedef ChannelsUpdatedCallBack = void Function();
 typedef ChannelMessageCallBack = void Function(MessageDB);
+typedef OfflineChannelMessageFinishCallBack = void Function();
 
 class Channels {
   /// singleton
@@ -25,6 +26,7 @@ class Channels {
 
   ChannelsUpdatedCallBack? myChannelsUpdatedCallBack;
   ChannelMessageCallBack? channelMessageCallBack;
+  OfflineChannelMessageFinishCallBack? offlineChannelMessageFinishCallBack;
 
   Future<void> _loadAllChannelsFromDB() async {
     List<Object?> maps = await DB.sharedInstance.objects<ChannelDB>();
@@ -74,6 +76,10 @@ class Channels {
         default:
           print('unhandled message $event');
           break;
+      }
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+      if (unCompletedRelays.isEmpty) {
+        offlineChannelMessageFinishCallBack?.call();
       }
     });
   }
@@ -464,7 +470,8 @@ class Channels {
     await Messages.saveMessageToDB(messageDB);
 
     if (local) {
-      if (!completer.isCompleted) completer.complete(OKEvent(event.id, true, ''));
+      if (!completer.isCompleted)
+        completer.complete(OKEvent(event.id, true, ''));
     } else {
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
