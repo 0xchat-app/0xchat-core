@@ -5,9 +5,9 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension SecretChat on Contacts {
-
-  void _connectToRelay(String? relay){
-    if (relay != null && relay.isNotEmpty &&
+  void _connectToRelay(String? relay) {
+    if (relay != null &&
+        relay.isNotEmpty &&
         !Connect.sharedInstance.relays(type: 1).contains(relay)) {
       Connect.sharedInstance.connect(relay, type: 1);
     }
@@ -430,6 +430,7 @@ extension SecretChat on Contacts {
         await DB.sharedInstance.objects<SecretSessionDB>();
     for (var session in secretSessions) {
       secretSessionMap[session.sessionId] = session;
+
       /// connect to session relay
       _connectToRelay(session.relay);
     }
@@ -459,7 +460,9 @@ extension SecretChat on Contacts {
 
     Map<String, List<Filter>> subscriptions = {};
     if (relay == null) {
-      for (var r in Connect.sharedInstance.relays()) {
+      List<String> relays = Connect.sharedInstance.relays(type: 0);
+      relays.addAll(Connect.sharedInstance.relays(type: 1));
+      for (var r in relays) {
         int friendMessageUntil = Relays.sharedInstance.getFriendMessageUntil(r);
         Filter f = Filter(
             kinds: [1059], authors: pubkeys, since: friendMessageUntil + 1);
