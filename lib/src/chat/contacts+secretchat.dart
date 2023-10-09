@@ -459,7 +459,7 @@ extension SecretChat on Contacts {
 
     Map<String, List<Filter>> subscriptions = {};
     if (relay == null) {
-      for (var r in Connect.sharedInstance.relays()) {
+      for (var r in Connect.sharedInstance.relays(type: 1)) {
         int friendMessageUntil = Relays.sharedInstance.getFriendMessageUntil(r);
         Filter f = Filter(
             kinds: [1059], authors: pubkeys, since: friendMessageUntil + 1);
