@@ -51,7 +51,7 @@ class ISocket {
   int connectStatus;
 
   /// 0: normal
-  /// 1: temp
+  /// 1: secret chat
   int type;
 
   ISocket(this.socket, this.connectStatus, this.type);
