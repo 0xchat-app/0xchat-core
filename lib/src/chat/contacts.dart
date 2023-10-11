@@ -70,6 +70,8 @@ class Contacts {
   ContactUpdatedCallBack? contactUpdatedCallBack;
   OfflinePrivateMessageFinishCallBack? offlinePrivateMessageFinishCallBack;
   OfflinePrivateMessageFinishCallBack? offlineSecretMessageFinishCallBack;
+  Map<String, bool> offlinePrivateMessageFinish = {};
+  Map<String, bool> offlineSecretMessageFinish = {};
 
   void Function(
           String friend, SignalingState state, String data, String? offerId)?
@@ -452,6 +454,8 @@ class Contacts {
         }
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+      offlinePrivateMessageFinish[relay] = true;
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
       if (unCompletedRelays.isEmpty) {
         offlinePrivateMessageFinishCallBack?.call();
       }
@@ -538,6 +542,9 @@ class Contacts {
           friendMessageUntil: {relay: eventTime},
           friendMessageSince: {relay: eventTime});
     }
-    Relays.sharedInstance.syncRelaysToDB();
+    if (offlinePrivateMessageFinish[relay] == true &&
+        offlineSecretMessageFinish[relay] == true) {
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
+    }
   }
 }

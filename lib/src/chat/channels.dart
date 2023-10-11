@@ -27,6 +27,7 @@ class Channels {
   ChannelsUpdatedCallBack? myChannelsUpdatedCallBack;
   ChannelMessageCallBack? channelMessageCallBack;
   OfflineChannelMessageFinishCallBack? offlineChannelMessageFinishCallBack;
+  Map<String, bool> offlineChannelMessageFinish = {};
 
   Future<void> _loadAllChannelsFromDB() async {
     List<Object?> maps = await DB.sharedInstance.objects<ChannelDB>();
@@ -78,6 +79,8 @@ class Channels {
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+      offlineChannelMessageFinish[relay] = true;
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
       if (unCompletedRelays.isEmpty) {
         offlineChannelMessageFinishCallBack?.call();
       }
@@ -152,7 +155,9 @@ class Channels {
           channelMessageUntil: {relay: eventTime},
           channelMessageSince: {relay: eventTime});
     }
-    Relays.sharedInstance.syncRelaysToDB();
+    if(offlineChannelMessageFinish[relay] == true) {
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
+    }
   }
 
   Future<void> _loadMyChannelsFromRelay({String? relay}) async {

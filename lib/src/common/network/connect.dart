@@ -126,7 +126,7 @@ class Connect {
             if (subscriptionId.endsWith(relay)) {
               callBack(requestsMap[subscriptionId]!.subscriptions[relay]!, ok,
                   relay, []);
-              requestsMap[subscriptionId]!.relays.remove(relay);
+              requestsMap[subscriptionId]?.relays.remove(relay);
             }
           }
         }

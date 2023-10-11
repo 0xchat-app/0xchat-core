@@ -495,6 +495,8 @@ extension SecretChat on Contacts {
         }
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+      offlineSecretMessageFinish[relay] = true;
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
       if (unCompletedRelays.isEmpty) {
         offlineSecretMessageFinishCallBack?.call();
       }
