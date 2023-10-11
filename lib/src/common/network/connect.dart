@@ -121,7 +121,9 @@ class Connect {
           EOSECallBack? callBack = requestsMap[subscriptionId]!.eoseCallBack;
           OKEvent ok = OKEvent(subscriptionId, false, 'Time Out');
           for (var relay in requestsMap[subscriptionId]!.relays) {
-            if (callBack != null && requestsMap[subscriptionId] != null) {
+            if (callBack != null &&
+                requestsMap[subscriptionId] != null &&
+                subscriptionId.endsWith(relay)) {
               callBack(requestsMap[subscriptionId]!.subscriptions[relay]!, ok,
                   relay, []);
             }
@@ -161,7 +163,7 @@ class Connect {
   }
 
   Future connect(String relay, {int type = 0}) async {
-    if(webSockets[relay]?.type == 0) type = 0;
+    if (webSockets[relay]?.type == 0) type = 0;
     // connecting or open
     if (webSockets[relay]?.connectStatus == 0 ||
         webSockets[relay]?.connectStatus == 1) return;
