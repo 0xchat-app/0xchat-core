@@ -108,8 +108,10 @@ class Channels {
         channel.badges != null &&
         channel.badges!.length > 10) {
       /// check badge request
-      String badgeId =
-          List<String>.from(jsonDecode(channel.badges ?? '')).first;
+      String badgeId = '';
+      try {
+        badgeId = List<String>.from(jsonDecode(channel.badges ?? '')).first;
+      } catch (_) {}
       UserDB? sender =
           await Account.sharedInstance.getUserInfo(channelMessage.sender);
       if (sender != null &&
@@ -155,7 +157,7 @@ class Channels {
           channelMessageUntil: {relay: eventTime},
           channelMessageSince: {relay: eventTime});
     }
-    if(offlineChannelMessageFinish[relay] == true) {
+    if (offlineChannelMessageFinish[relay] == true) {
       Relays.sharedInstance.syncRelaysToDB(r: relay);
     }
   }
