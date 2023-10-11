@@ -42,7 +42,7 @@ class Requests {
 }
 
 class ISocket {
-  WebSocket socket;
+  WebSocket? socket;
 
   /// connecting = 0;
   /// open = 1;
@@ -71,7 +71,7 @@ class Connect {
   ConnectStatusCallBack? connectStatusCallBack;
 
   /// sockets
-  Map<String, ISocket?> webSockets = {};
+  Map<String, ISocket> webSockets = {};
 
   // subscriptionId+relay, Requests
   Map<String, Requests> requestsMap = {};
@@ -161,6 +161,7 @@ class Connect {
   }
 
   Future connect(String relay, {int type = 0}) async {
+    if(webSockets[relay]?.type == 0) type = 0;
     // connecting or open
     if (webSockets[relay]?.connectStatus == 0 ||
         webSockets[relay]?.connectStatus == 1) return;
@@ -175,7 +176,7 @@ class Connect {
       }
     }
     print("connecting...");
-    webSockets[relay] = null;
+    webSockets[relay] = ISocket(null, 0, type);
     socket = await _connectWs(relay);
     if (socket != null) {
       socket.done.then((dynamic _) => _onDisconnected(relay));
@@ -194,7 +195,7 @@ class Connect {
 
   Future closeConnect(String relay) async {
     if (webSockets.containsKey(relay)) {
-      if (webSockets[relay] != null) webSockets[relay]!.socket.close();
+      if (webSockets[relay] != null) webSockets[relay]!.socket?.close();
       webSockets.remove(relay);
     }
   }
@@ -288,8 +289,8 @@ class Connect {
       }
     } else {
       webSockets.forEach((url, iSocket) {
-        if (webSockets[url]?.connectStatus == 1 && iSocket?.socket != null) {
-          iSocket?.socket.add(data);
+        if (webSockets[url]?.connectStatus == 1 && iSocket.socket != null) {
+          iSocket.socket?.add(data);
         }
       });
     }

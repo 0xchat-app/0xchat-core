@@ -470,8 +470,9 @@ class Channels {
     await Messages.saveMessageToDB(messageDB);
 
     if (local) {
-      if (!completer.isCompleted)
+      if (!completer.isCompleted) {
         completer.complete(OKEvent(event.id, true, ''));
+      }
     } else {
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;

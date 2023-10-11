@@ -22,9 +22,9 @@ class Relays {
   }
 
   Future<void> syncRelaysToDB() async {
-    for (var relay in relays.values) {
+    await Future.forEach(relays.values, (relay) async {
       await DB.sharedInstance.insert(relay);
-    }
+    });
   }
 
   Future<void> _syncRelayToDB(String url) async {
