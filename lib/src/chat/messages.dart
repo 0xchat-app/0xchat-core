@@ -232,6 +232,10 @@ class Messages {
         .rawUpdate('UPDATE MessageDB SET read = $read WHERE $where', whereArgs);
   }
 
+  static Future<void> updateMessageReadStatus(MessageDB message) async {
+    await DB.sharedInstance.update(message);
+  }
+
   static Future<int> saveMessageToDB(MessageDB message,
       {ConflictAlgorithm? conflictAlgorithm}) async {
     return await DB.sharedInstance.insert<MessageDB>(message,
