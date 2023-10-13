@@ -56,7 +56,7 @@ Make your 0xchat profile uniquely yours with our Badge Collection feature. Gathe
 
 0xchat proposes a method for message push notifications, includes the sending and processing of heartbeat signals to detect online status and provide timely push notifications.
 
-Spec link: [https://github.com/0xchat-app/0xchat-core/blob/main/doc/nofitications.md]((https://github.com/0xchat-app/0xchat-core/blob/main/doc/nofitications.md))
+Spec link: [https://github.com/0xchat-app/0xchat-core/blob/main/doc/nofitications.md](https://github.com/0xchat-app/0xchat-core/blob/main/doc/nofitications.md)
 	
 ```mermaid
 flowchart LR
