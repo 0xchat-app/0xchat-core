@@ -29,15 +29,34 @@ At present, the repository supports the following modules and functionalities:
 
 ## Features
 
-1. [Secured Private Messages](https://github.com/0xchat-app/0xchat-core/blob/main/doc/friends.md)
+**Secure DM**
+
+Currently, we support three types of direct messages (DMs):
+
+- [Normal DM](https://github.com/nostr-protocol/nips/blob/master/04.md)
+- [Sealed DM](https://github.com/vitorpamplona/nips/blob/sealed-dms/24.md)
+- [Secret DM](https://github.com/0xchat-app/0xchat-core/blob/main/doc/secretChat.md)
+
+Please review the provided links for a deeper understanding of each DM type.
+
+**Open Channels**
+
+Explore the boundless realm of open channels with 0xchat. Find and join channels seamlessly, unlocking a world of communication with ease.
+
+**Audio & Video Call**
+
+We offer audio and video calling capabilities between contacts. Signaling communication is carried out through Nostr relay using [NIP100](https://github.com/nostr-protocol/nips/blob/16d577fdf5e7fe1b25012919c6882efa1894319e/100.md). The actual audio and video calls are facilitated via ICE servers. Additionally, we allow users to select their own ICE servers if preferred.
+
+**Badge Collections**
+
+Make your 0xchat profile uniquely yours with our Badge Collection feature. Gather your favorite badges and proudly display them on your profile picture.
 
 
-	0xchat has optimized private messaging based on NIP04 to prevent leakage of users' real public keys (pubkeys) during private chats. This is achieved by implementing the [NIP101](https://github.com/water783/nips/blob/nip101/101.md) protocol, which creates an alias for users during private conversations.
+**Push Notifications**
 
+0xchat proposes a method for message push notifications, includes the sending and processing of heartbeat signals to detect online status and provide timely push notifications.
 
-2. [Push Notifications](https://github.com/0xchat-app/0xchat-core/blob/main/doc/nofitications.md)
-
-	0xchat proposes a method for message push notifications, includes the sending and processing of heartbeat signals to detect online status and provide timely push notifications.
+Spec link: [https://github.com/0xchat-app/0xchat-core/blob/main/doc/nofitications.md]((https://github.com/0xchat-app/0xchat-core/blob/main/doc/nofitications.md))
 	
 ```mermaid
 flowchart LR
@@ -77,12 +96,13 @@ We continuously aim to improve and enhance the features provided by this reposit
 
 Some important planned features:
 
-- [ ] Threads, mentions, reactions
-- [ ] Zap Red Envelopes between friends
-- [ ] P2P audio/video calling
+- [x] Threads, mentions, reactions
+- [x] Zap Red Envelopes between friends
+- [x] P2P audio/video calling
 - [ ] Private group
 - [ ] Audio/video chat room
 - [ ] Lightning wallet Integration
+- [ ] Private notes
 
 ## Support
 
