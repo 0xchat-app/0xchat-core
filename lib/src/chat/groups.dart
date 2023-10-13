@@ -48,39 +48,9 @@ class Groups {
     return result;
   }
 
-  Future<bool> _checkBlockedList(String user) async {
-    return Contacts.sharedInstance.inBlockList(user);
-  }
-
-  Future<void> handleMuteUser(String user) async {
-    UserDB? me = Account.sharedInstance.me;
-    if (me!.blockedList != null && me.blockedList!.contains(user) == false) {
-      me.blockedList!.add(user);
-    }
-    await DB.sharedInstance.insert<UserDB>(me);
-  }
-
-  Future<void> _receiveChannelMessages(Event event, String relay) async {
+  Future<void> _receiveGroupMessages(Event event, String relay) async {
     if (!Messages.addToLoaded(event.id)) return;
-    ChannelMessage channelMessage = Nip28.getChannelMessage(event);
-    if (await _checkBlockedList(channelMessage.sender)) return;
-    ChannelDB? channel = channels[channelMessage.channelId];
-    if (channel != null &&
-        channel.badges != null &&
-        channel.badges!.length > 10) {
-      /// check badge request
-      String badgeId =
-          List<String>.from(jsonDecode(channel.badges ?? '')).first;
-      UserDB? sender =
-      await Account.sharedInstance.getUserInfo(channelMessage.sender);
-      if (sender != null &&
-          sender.badgesList != null &&
-          sender.badgesList!.contains(badgeId)) {
-        /// meet the request
-      } else {
-        return;
-      }
-    }
+    EDMessage edMessage = Nip102.getMessage(event);
     MessageDB messageDB = MessageDB(
         messageId: event.id,
         sender: channelMessage.sender,
@@ -101,7 +71,7 @@ class Groups {
     await Relays.sharedInstance.syncRelaysToDB();
     int status = await Messages.saveMessageToDB(messageDB);
     if (status != 0) {
-      channelMessageCallBack?.call(messageDB);
+      groupMessageCallBack?.call(messageDB);
     }
   }
 
