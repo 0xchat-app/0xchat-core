@@ -5,6 +5,14 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension SecretChat on Contacts {
+  void _connectToRelay(String? relay) {
+    if (relay != null &&
+        relay.isNotEmpty &&
+        !Connect.sharedInstance.relays(type: 1).contains(relay)) {
+      Connect.sharedInstance.connect(relay, type: 1);
+    }
+  }
+
   Future<OKEvent> request(String toPubkey, String chatRelay,
       {int? interval, int? expiration}) async {
     Keychain randomKey = Keychain.generate();
@@ -15,10 +23,7 @@ extension SecretChat on Contacts {
         expiration: expiration, interval: interval, relay: chatRelay);
     if (okEvent.status) {
       // connect the chat relay
-      if (chatRelay.isNotEmpty &&
-          !Connect.sharedInstance.relays().contains(chatRelay)) {
-        Connect.sharedInstance.connect(chatRelay);
-      }
+      _connectToRelay(chatRelay);
       SecretSessionDB secretSessionDB = SecretSessionDB(
           sessionId: okEvent.eventId,
           myPubkey: pubkey,
@@ -71,9 +76,7 @@ extension SecretChat on Contacts {
     SecretSessionDB? db = secretSessionMap[sessionId];
     if (db != null) {
       // connect the chat relay
-      if (db.relay != null && db.relay!.isNotEmpty) {
-        Connect.sharedInstance.connect(db.relay!);
-      }
+      _connectToRelay(db.relay);
       Keychain randomKey = Keychain.generate();
       OKEvent okEvent =
           await _sendAcceptEvent(randomKey.public, db.toPubkey!, sessionId);
@@ -367,11 +370,7 @@ extension SecretChat on Contacts {
     SecretSessionDB? sessionDB = secretSessionMap[sessionId];
     if (sessionDB != null) {
       /// check chat relay
-      if (sessionDB.relay!.isNotEmpty &&
-          !Connect.sharedInstance.relays().contains(sessionDB.relay!)) {
-        Connect.sharedInstance.connect(sessionDB.relay!);
-      }
-
+      _connectToRelay(sessionDB.relay);
       event ??= await Nip24.encodeSealedGossipDM(
           toPubkey, MessageDB.getContent(type, content), replayId, privkey,
           sealedPrivkey: sessionDB.shareSecretKey!,
@@ -396,7 +395,9 @@ extension SecretChat on Contacts {
       await Messages.saveMessageToDB(messageDB);
 
       if (local) {
-        if (!completer.isCompleted) completer.complete(OKEvent(event.id, true, ''));
+        if (!completer.isCompleted) {
+          completer.complete(OKEvent(event.id, true, ''));
+        }
       } else {
         Connect.sharedInstance.sendEvent(event, relay: sessionDB.relay,
             sendCallBack: (ok, relay) async {
@@ -427,10 +428,11 @@ extension SecretChat on Contacts {
   Future<void> syncSecretSessionFromDB() async {
     List<SecretSessionDB> secretSessions =
         await DB.sharedInstance.objects<SecretSessionDB>();
-    if (secretSessions.isNotEmpty) {
-      secretSessionMap = {
-        for (SecretSessionDB item in secretSessions) item.sessionId: item
-      };
+    for (var session in secretSessions) {
+      secretSessionMap[session.sessionId] = session;
+
+      /// connect to session relay
+      _connectToRelay(session.relay);
     }
   }
 
@@ -458,7 +460,9 @@ extension SecretChat on Contacts {
 
     Map<String, List<Filter>> subscriptions = {};
     if (relay == null) {
-      for (var r in Connect.sharedInstance.relays()) {
+      List<String> relays = Connect.sharedInstance.relays(type: 0);
+      relays.addAll(Connect.sharedInstance.relays(type: 1));
+      for (var r in relays) {
         int friendMessageUntil = Relays.sharedInstance.getFriendMessageUntil(r);
         Filter f = Filter(
             kinds: [1059], authors: pubkeys, since: friendMessageUntil + 1);
@@ -489,6 +493,12 @@ extension SecretChat on Contacts {
               break;
           }
         }
+      }
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+      offlineSecretMessageFinish[relay] = true;
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
+      if (unCompletedRelays.isEmpty) {
+        offlineSecretMessageFinishCallBack?.call();
       }
     });
   }

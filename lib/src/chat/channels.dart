@@ -6,6 +6,7 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 
 typedef ChannelsUpdatedCallBack = void Function();
 typedef ChannelMessageCallBack = void Function(MessageDB);
+typedef OfflineChannelMessageFinishCallBack = void Function();
 
 class Channels {
   /// singleton
@@ -25,6 +26,8 @@ class Channels {
 
   ChannelsUpdatedCallBack? myChannelsUpdatedCallBack;
   ChannelMessageCallBack? channelMessageCallBack;
+  OfflineChannelMessageFinishCallBack? offlineChannelMessageFinishCallBack;
+  Map<String, bool> offlineChannelMessageFinish = {};
 
   Future<void> _loadAllChannelsFromDB() async {
     List<Object?> maps = await DB.sharedInstance.objects<ChannelDB>();
@@ -75,6 +78,12 @@ class Channels {
           print('unhandled message $event');
           break;
       }
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+      offlineChannelMessageFinish[relay] = true;
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
+      if (unCompletedRelays.isEmpty) {
+        offlineChannelMessageFinishCallBack?.call();
+      }
     });
   }
 
@@ -99,8 +108,10 @@ class Channels {
         channel.badges != null &&
         channel.badges!.length > 10) {
       /// check badge request
-      String badgeId =
-          List<String>.from(jsonDecode(channel.badges ?? '')).first;
+      String badgeId = '';
+      try {
+        badgeId = List<String>.from(jsonDecode(channel.badges ?? '')).first;
+      } catch (_) {}
       UserDB? sender =
           await Account.sharedInstance.getUserInfo(channelMessage.sender);
       if (sender != null &&
@@ -146,7 +157,9 @@ class Channels {
           channelMessageUntil: {relay: eventTime},
           channelMessageSince: {relay: eventTime});
     }
-    Relays.sharedInstance.syncRelaysToDB();
+    if (offlineChannelMessageFinish[relay] == true) {
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
+    }
   }
 
   Future<void> _loadMyChannelsFromRelay({String? relay}) async {
@@ -464,7 +477,9 @@ class Channels {
     await Messages.saveMessageToDB(messageDB);
 
     if (local) {
-      if (!completer.isCompleted) completer.complete(OKEvent(event.id, true, ''));
+      if (!completer.isCompleted) {
+        completer.complete(OKEvent(event.id, true, ''));
+      }
     } else {
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;

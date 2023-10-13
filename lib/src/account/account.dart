@@ -71,7 +71,7 @@ class Account {
   }
 
   void _tryAddToSyncProfiles(UserDB user) {
-    if (user.lastUpdatedTime != 0) return ;
+    if (user.lastUpdatedTime != 0) return;
     final pubkey = user.pubKey;
     if (pubkey.isNotEmpty && !pQueue.contains(pubkey)) {
       pQueue.add(pubkey);
@@ -314,18 +314,18 @@ class Account {
   }
 
   static Future<String?> getDNSPubkey(String name, String domain) async {
-    final response = await http
-        .get(Uri.parse('https://$domain/.well-known/nostr.json?name=$name'));
+    try {
+      final response = await http
+          .get(Uri.parse('https://$domain/.well-known/nostr.json?name=$name'));
 
-    if (response.statusCode == 200) {
-      try {
+      if (response.statusCode == 200) {
         var jsonResponse = jsonDecode(response.body);
         return jsonResponse["names"][name];
-      } catch (e) {
-        print(e);
+      } else {
         return null;
       }
-    } else {
+    } catch (e) {
+      print(e);
       return null;
     }
   }

@@ -53,13 +53,13 @@ class NotificationHelper {
   void _heartBeat(String serverPubkey, String privkey) {
     Map map = {'online': 1};
     Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event);
+    Connect.sharedInstance.sendEvent(event, relay: 'wss://relay.0xchat.com');
   }
 
   void setOffline() {
     Map map = {'online': 0};
     Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event);
+    Connect.sharedInstance.sendEvent(event, relay: 'wss://relay.0xchat.com');
 
     _stopHeartBeat();
   }

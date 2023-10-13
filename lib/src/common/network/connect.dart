@@ -41,6 +41,22 @@ class Requests {
       this.eventCallBack, this.eoseCallBack);
 }
 
+class ISocket {
+  WebSocket? socket;
+
+  /// connecting = 0;
+  /// open = 1;
+  /// closing = 2;
+  /// closed = 3;
+  int connectStatus;
+
+  /// 0: normal
+  /// 1: secret chat
+  int type;
+
+  ISocket(this.socket, this.connectStatus, this.type);
+}
+
 class Connect {
   Connect._internal() {
     _startCheckTimeOut();
@@ -55,13 +71,7 @@ class Connect {
   ConnectStatusCallBack? connectStatusCallBack;
 
   /// sockets
-  Map<String, WebSocket?> webSockets = {};
-
-  /// connecting = 0;
-  /// open = 1;
-  /// closing = 2;
-  /// closed = 3;
-  Map<String, int> connectStatus = {};
+  Map<String, ISocket> webSockets = {};
 
   // subscriptionId+relay, Requests
   Map<String, Requests> requestsMap = {};
@@ -104,16 +114,19 @@ class Connect {
     }
     Iterable<String> requestMapKeys = List<String>.from(requestsMap.keys);
     for (var subscriptionId in requestMapKeys) {
-      if (requestsMap[subscriptionId] != null) {
+      EOSECallBack? callBack = requestsMap[subscriptionId]!.eoseCallBack;
+      if (requestsMap[subscriptionId] != null && callBack != null) {
         var start = requestsMap[subscriptionId]!.requestTime;
-        if (start > 0 && now - start > timeout * 1000) {
+        if (start > 0 && now - start > timeout * 1000 * 2) {
           // timeout
-          EOSECallBack? callBack = requestsMap[subscriptionId]!.eoseCallBack;
           OKEvent ok = OKEvent(subscriptionId, false, 'Time Out');
-          for (var relay in requestsMap[subscriptionId]!.relays) {
-            if (callBack != null && requestsMap[subscriptionId] != null) {
+          Iterable<String> relays =
+              List<String>.from(requestsMap[subscriptionId]!.relays);
+          for (var relay in relays) {
+            if (subscriptionId.endsWith(relay)) {
               callBack(requestsMap[subscriptionId]!.subscriptions[relay]!, ok,
                   relay, []);
+              requestsMap[subscriptionId]?.relays.remove(relay);
             }
           }
         }
@@ -122,7 +135,7 @@ class Connect {
   }
 
   void _setConnectStatus(String relay, int status) {
-    connectStatus[relay] = status;
+    webSockets[relay]?.connectStatus = status;
     connectStatusCallBack?.call(relay, status);
     for (var callBack in connectStatusListeners) {
       callBack(relay, status);
@@ -141,34 +154,37 @@ class Connect {
     }
   }
 
-  List<String> relays() {
+  List<String> relays({int type = 0}) {
     List<String> result = [];
     for (var relay in webSockets.keys) {
-      if (connectStatus[relay] == 1) result.add(relay);
+      if (webSockets[relay]?.connectStatus == 1 &&
+          webSockets[relay]?.type == type) result.add(relay);
     }
     return result;
   }
 
-  Future connect(String relay) async {
+  Future connect(String relay, {int type = 0}) async {
+    if (webSockets[relay]?.type == 0) type = 0;
     // connecting or open
-    if (connectStatus[relay] == 0 || connectStatus[relay] == 1) return;
+    if (webSockets[relay]?.connectStatus == 0 ||
+        webSockets[relay]?.connectStatus == 1) return;
     WebSocket? socket;
     if (webSockets.containsKey(relay) && webSockets[relay] != null) {
-      socket = webSockets[relay]!;
+      socket = webSockets[relay]!.socket;
       // _setConnectStatus(relay, socket.readyState);
-      print('status =  ${connectStatus[relay]}');
-      if (connectStatus[relay] != 3) {
+      print('status =  ${webSockets[relay]?.connectStatus}');
+      if (webSockets[relay]?.connectStatus != 3) {
         /// not closed
         return;
       }
     }
     print("connecting...");
-    webSockets[relay] = null;
+    webSockets[relay] = ISocket(null, 0, type);
     socket = await _connectWs(relay);
-    if(socket != null){
+    if (socket != null) {
       socket.done.then((dynamic _) => _onDisconnected(relay));
       _listenEvent(socket, relay);
-      webSockets[relay] = socket;
+      webSockets[relay] = ISocket(socket, 1, type);
       print("socket connection initialized");
       _setConnectStatus(relay, 1);
     }
@@ -182,7 +198,7 @@ class Connect {
 
   Future closeConnect(String relay) async {
     if (webSockets.containsKey(relay)) {
-      if (webSockets[relay] != null) webSockets[relay]!.close();
+      if (webSockets[relay] != null) webSockets[relay]!.socket?.close();
       webSockets.remove(relay);
     }
   }
@@ -269,15 +285,15 @@ class Connect {
   void _send(String data, {String? relay}) {
     if (relay != null) {
       if (webSockets.containsKey(relay)) {
-        var socket = webSockets[relay];
-        if (connectStatus[relay] == 1 && socket != null) {
+        var socket = webSockets[relay]?.socket;
+        if (webSockets[relay]?.connectStatus == 1 && socket != null) {
           socket.add(data);
         }
       }
     } else {
-      webSockets.forEach((url, socket) {
-        if (connectStatus[url] == 1 && socket != null) {
-          socket.add(data);
+      webSockets.forEach((url, iSocket) {
+        if (webSockets[url]?.connectStatus == 1 && iSocket.socket != null) {
+          iSocket.socket?.add(data);
         }
       });
     }

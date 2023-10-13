@@ -14,6 +14,7 @@ typedef SecretChatCloseCallBack = void Function(SecretSessionDB);
 typedef PrivateChatMessageCallBack = void Function(MessageDB);
 typedef SecretChatMessageCallBack = void Function(MessageDB);
 typedef ContactUpdatedCallBack = void Function();
+typedef OfflinePrivateMessageFinishCallBack = void Function();
 
 enum CallMessageState {
   disconnect,
@@ -34,7 +35,8 @@ class CallMessage {
   int end;
   String media;
 
-  CallMessage(this.callId, this.sender, this.receiver, this.state, this.start, this.end, this.media);
+  CallMessage(this.callId, this.sender, this.receiver, this.state, this.start,
+      this.end, this.media);
 }
 
 class Contacts {
@@ -66,8 +68,13 @@ class Contacts {
   SecretChatMessageCallBack? secretChatMessageCallBack;
   PrivateChatMessageCallBack? privateChatMessageCallBack;
   ContactUpdatedCallBack? contactUpdatedCallBack;
+  OfflinePrivateMessageFinishCallBack? offlinePrivateMessageFinishCallBack;
+  OfflinePrivateMessageFinishCallBack? offlineSecretMessageFinishCallBack;
+  Map<String, bool> offlinePrivateMessageFinish = {};
+  Map<String, bool> offlineSecretMessageFinish = {};
 
-  void Function(String friend, SignalingState state, String data, String? offerId)?
+  void Function(
+          String friend, SignalingState state, String data, String? offerId)?
       onCallStateChange;
 
   Future<void> initContacts(ContactUpdatedCallBack? callBack) async {
@@ -76,8 +83,8 @@ class Contacts {
     contactUpdatedCallBack = callBack;
 
     // sync friend list from DB & relays
-    await _syncContactsFromDB();
     await syncBlockListFromDB();
+    await _syncContactsFromDB();
     await syncSecretSessionFromDB();
 
     _updateSubscriptions();
@@ -91,10 +98,10 @@ class Contacts {
   }
 
   Future<void> _updateSubscriptions({String? relay}) async {
-    await _syncContactsFromRelay(relay: relay);
     await syncBlockListFromRelay(relay: relay);
-    await _subscriptMessages(relay: relay);
-    await subscriptSecretChat(relay: relay);
+    await _syncContactsFromRelay(relay: relay);
+    _subscriptMessages(relay: relay);
+    subscriptSecretChat(relay: relay);
   }
 
   /// contact list
@@ -136,9 +143,9 @@ class Contacts {
     Event event = await Nip51.createCategorizedPeople(
         identifier, [], friendList, privkey, pubkey);
     if (event.content.isNotEmpty) {
-      await _syncContactsToDB(event.content);
+      _syncContactsToDB(event.content);
     } else {
-      throw Exception('_syncFriendsToRelay error content!, $friendList');
+      throw Exception('_syncFriendsToDB error content!, $friendList');
     }
   }
 
@@ -147,35 +154,11 @@ class Contacts {
     await Future.forEach(peoples, (p) async {
       UserDB? user = await Account.sharedInstance.getUserInfo(p.pubkey);
       if (user != null) {
-        if (user.toAliasPrivkey == null || user.toAliasPrivkey!.isEmpty) {
-          user.toAliasPrivkey =
-              bytesToHex(Nip44.shareSecret(privkey, user.pubKey));
-          user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
-        }
         user.nickName = p.petName;
         allContacts[user.pubKey] = user;
       }
     });
   }
-
-  // Future<void> _syncContactsProfilesFromRelay(List<String> pubkeys) async {
-  //   if (pubkeys.isNotEmpty) {
-  //     var usersMap = await Account.sharedInstance.syncProfilesFromRelay(pubkeys);
-  //     await Future.forEach(pubkeys, (p) async {
-  //       UserDB? user = usersMap[p];
-  //       if (user != null) {
-  //         if (user.toAliasPrivkey == null || user.toAliasPrivkey!.isEmpty) {
-  //           user.toAliasPrivkey =
-  //               bytesToHex(Nip44.shareSecret(privkey, user.pubKey));
-  //           user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
-  //         }
-  //         // sync to db
-  //         await DB.sharedInstance.insert<UserDB>(user);
-  //         allContacts[user.pubKey] = user;
-  //       }
-  //     });
-  //   }
-  // }
 
   Future<OKEvent> addToContact(List<String> pubkeys) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
@@ -183,12 +166,6 @@ class Contacts {
     await Future.forEach(pubkeys, (friendPubkey) async {
       UserDB? friend = await Account.sharedInstance.getUserInfo(friendPubkey);
       friend ??= UserDB(pubKey: friendPubkey);
-      if (friend.toAliasPubkey == null || friend.toAliasPubkey!.isEmpty) {
-        friend.toAliasPrivkey =
-            bytesToHex(Nip44.shareSecret(privkey, friend.pubKey));
-        friend.toAliasPubkey = Keychain.getPublicKey(friend.toAliasPrivkey!);
-        await DB.sharedInstance.update<UserDB>(friend);
-      }
       allContacts[friendPubkey] = friend;
     });
     _syncContactsToRelay(okCallBack: (OKEvent ok, String relay) {
@@ -302,11 +279,6 @@ class Contacts {
         await Future.forEach(friendsList, (p) async {
           UserDB? user = await Account.sharedInstance.getUserInfo(p.pubkey);
           if (user != null) {
-            if (user.toAliasPrivkey == null || user.toAliasPrivkey!.isEmpty) {
-              user.toAliasPrivkey =
-                  bytesToHex(Nip44.shareSecret(privkey, user.pubKey));
-              user.toAliasPubkey = Keychain.getPublicKey(user.toAliasPrivkey!);
-            }
             user.nickName = p.petName;
             allContacts[user.pubKey] = user;
           }
@@ -346,7 +318,7 @@ class Contacts {
         if (lastEvent != null) {
           Account.sharedInstance.me!.lastFriendsListUpdatedTime =
               lastEvent!.createdAt;
-          await Account.sharedInstance.syncMe();
+          Account.sharedInstance.syncMe();
           Lists result = await Nip51.getLists(lastEvent!, privkey);
           await _syncContactsProfiles(result.people);
         }
@@ -481,6 +453,12 @@ class Contacts {
           }
         }
       }
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+      offlinePrivateMessageFinish[relay] = true;
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
+      if (unCompletedRelays.isEmpty) {
+        offlinePrivateMessageFinishCallBack?.call();
+      }
     });
   }
 
@@ -501,7 +479,10 @@ class Contacts {
 
   Future<OKEvent> sendPrivateMessage(
       String toPubkey, String replyId, MessageType type, String content,
-      {Event? event, int kind = 4, String? subContent, bool local = false}) async {
+      {Event? event,
+      int kind = 4,
+      String? subContent,
+      bool local = false}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (event == null) {
       if (kind == 44) {
@@ -535,10 +516,11 @@ class Contacts {
     privateChatMessageCallBack?.call(messageDB);
     await Messages.saveMessageToDB(messageDB);
 
-    if(local){
-      if (!completer.isCompleted) completer.complete(OKEvent(event.id, true, ''));
-    }
-    else{
+    if (local) {
+      if (!completer.isCompleted) {
+        completer.complete(OKEvent(event.id, true, ''));
+      }
+    } else {
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
         await Messages.saveMessageToDB(messageDB,
@@ -560,6 +542,9 @@ class Contacts {
           friendMessageUntil: {relay: eventTime},
           friendMessageSince: {relay: eventTime});
     }
-    Relays.sharedInstance.syncRelaysToDB();
+    if (offlinePrivateMessageFinish[relay] == true &&
+        offlineSecretMessageFinish[relay] == true) {
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
+    }
   }
 }

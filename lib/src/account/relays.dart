@@ -21,9 +21,14 @@ class Relays {
     return await DB.sharedInstance.objects<RelayDB>();
   }
 
-  Future<void> syncRelaysToDB() async {
-    for (var relay in relays.values) {
-      await DB.sharedInstance.insert(relay);
+  Future<void> syncRelaysToDB({String? r}) async {
+    if(r != null && relays[r] != null){
+      await DB.sharedInstance.insert(relays[r]!);
+    }
+    else{
+      await Future.forEach(relays.values, (relay) async {
+        await DB.sharedInstance.insert(relay);
+      });
     }
   }
 
