@@ -471,7 +471,11 @@ class Contacts {
         if (giftWrapEventId != null) messageDB.messageId = giftWrapEventId;
         int status = await Messages.saveMessageToDB(messageDB);
         if (status != 0) {
-          privateChatMessageCallBack?.call(messageDB);
+          if (messageDB.groupId.isNotEmpty) {
+            Groups.sharedInstance.receiveGroupMessages(messageDB, relay);
+          } else {
+            privateChatMessageCallBack?.call(messageDB);
+          }
         }
       }
     }

@@ -296,7 +296,7 @@ class MessageDB extends DBObject {
         messageId: event.id,
         sender: message.sender,
         receiver: message.receiver,
-        groupId: '',
+        groupId: message.groupId ?? '',
         kind: event.kind,
         tags: jsonEncode(event.tags),
         content: event.content,

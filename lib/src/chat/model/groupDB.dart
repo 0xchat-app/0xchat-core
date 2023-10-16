@@ -13,7 +13,7 @@ class GroupDB extends DBObject {
   List<String>? pinned;
   String? about;
   String? picture;
-  List<String>? relays;
+  String? relay;
 
   GroupDB(
       {this.groupId = '',
@@ -25,7 +25,7 @@ class GroupDB extends DBObject {
       this.pinned,
       this.about,
       this.picture,
-      this.relays});
+      this.relay});
 
   @override
   Map<String, Object?> toMap() {
@@ -56,7 +56,7 @@ Map<String, dynamic> _groupInfoToMap(GroupDB instance) => <String, dynamic>{
       'pinned': instance.pinned ?? jsonEncode(instance.pinned),
       'about': instance.about ?? '',
       'picture': instance.picture ?? '',
-      'relays': instance.relays ?? jsonEncode(instance.relays),
+      'relay': instance.relay ?? '',
     };
 
 GroupDB _groupInfoFromMap(Map<String, dynamic> map) {
@@ -70,6 +70,6 @@ GroupDB _groupInfoFromMap(Map<String, dynamic> map) {
     pinned: UserDB.decodeStringList(map['pinned'].toString()),
     about: map['about'].toString(),
     picture: map['picture'].toString(),
-    relays: UserDB.decodeStringList(map['relays'].toString()),
+    relay: map['relay'].toString(),
   );
 }

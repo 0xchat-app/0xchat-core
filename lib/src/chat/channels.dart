@@ -405,7 +405,7 @@ class Channels {
     Event event = Nip28.setChannelMetaData(
         channelDB.name!,
         channelDB.about!,
-        channelDB.picture!,
+        channelDB.picture!, null, null,
         channelDB.badges!.isNotEmpty ? {'badges': channelDB.badges!} : null,
         channelDB.channelId,
         channelDB.relayURL!,
