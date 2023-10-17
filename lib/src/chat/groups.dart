@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 typedef GroupsUpdatedCallBack = void Function();
 typedef GroupMessageCallBack = void Function(MessageDB);
@@ -224,6 +225,80 @@ class Groups {
         .where((e) => e.value.mute == false)
         .map((e) => e.key)
         .toList();
+  }
+
+  Event? getSendGroupMessageEvent(
+      String groupId, MessageType type, String content,
+      {String? groupRelay,
+        String? replyMessage,
+        String? replyMessageRelay,
+        String? replyUser,
+        String? replyUserRelay,
+        String? actionsType}) {
+    Event event = Nip28.sendChannelMessage(
+        groupId, MessageDB.getContent(type, content), privkey,
+        channelRelay: groupRelay,
+        replyMessage: replyMessage,
+        replyMessageRelay: replyMessageRelay,
+        replyUser: replyUser,
+        replyUserRelay: replyUserRelay,
+        subContent: MessageDB.getSubContent(type, content),
+        actionsType: actionsType);
+    return event;
+  }
+
+  Future<OKEvent> sendGroupMessage(
+      String groupId, MessageType type, String content,
+      {String? groupRelay,
+        String? replyMessage,
+        String? replyMessageRelay,
+        String? replyUser,
+        String? replyUserRelay,
+        Event? event,
+        String? actionsType,
+        bool local = false}) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    event ??= Nip28.sendChannelMessage(
+        groupId, MessageDB.getContent(type, content), privkey,
+        channelRelay: groupRelay,
+        replyMessage: replyMessage,
+        replyMessageRelay: replyMessageRelay,
+        replyUser: replyUser,
+        replyUserRelay: replyUserRelay,
+        subContent: MessageDB.getSubContent(type, content),
+        actionsType: actionsType);
+
+    MessageDB messageDB = MessageDB(
+        messageId: event.id,
+        sender: event.pubkey,
+        receiver: '',
+        groupId: groupId,
+        kind: event.kind,
+        tags: jsonEncode(event.tags),
+        replyId: replyMessage ?? '',
+        content: event.content,
+        decryptContent: content,
+        type: MessageDB.messageTypeToString(type),
+        createTime: event.createdAt,
+        status: 0,
+        plaintEvent: jsonEncode(event));
+    groupMessageCallBack?.call(messageDB);
+    await Messages.saveMessageToDB(messageDB);
+
+    if (local) {
+      if (!completer.isCompleted) {
+        completer.complete(OKEvent(event.id, true, ''));
+      }
+    } else {
+      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
+        messageDB.status = ok.status ? 1 : 2;
+        await Messages.saveMessageToDB(messageDB,
+            conflictAlgorithm: ConflictAlgorithm.replace);
+        if (!completer.isCompleted) completer.complete(ok);
+      });
+    }
+
+    return completer.future;
   }
 
   static String encodeGroup(

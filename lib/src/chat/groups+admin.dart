@@ -65,7 +65,8 @@ extension Admin on Groups {
     return completer.future;
   }
 
-  Future<OKEvent> addGroupMembers(String groupId, List<String> members) async {
+  Future<OKEvent> addGroupMembers(
+      String groupId, String content, List<String> members) async {
     GroupDB? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
       List<String>? groupMembers = groupDB.members;
@@ -77,19 +78,29 @@ extension Admin on Groups {
       } else {
         groupDB.members = members;
       }
-      return await updateGroup(groupDB);
+      OKEvent okEvent = await updateGroup(groupDB);
+      if (okEvent.status) {
+        sendGroupMessage(groupId, MessageType.text, content,
+            actionsType: 'add');
+      }
+      return okEvent;
     } else {
-      return OKEvent(groupId, false, 'group dont exit');
+      return OKEvent(groupId, false, 'group does not exit');
     }
   }
 
   Future<OKEvent> removeGroupMembers(
-      String groupId, List<String> members) async {
+      String groupId, String content, List<String> members) async {
     GroupDB? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
       if (groupDB.members != null) {
         groupDB.members!.removeWhere((element) => members.contains(element));
-        return await updateGroup(groupDB);
+        OKEvent okEvent = await updateGroup(groupDB);
+        if (okEvent.status) {
+          sendGroupMessage(groupId, MessageType.text, content,
+              actionsType: 'remove');
+        }
+        return okEvent;
       } else {
         return OKEvent(groupId, true, 'success');
       }
@@ -98,21 +109,33 @@ extension Admin on Groups {
     }
   }
 
-  Future<OKEvent> updateGroupName(String groupId, String name) async {
+  Future<OKEvent> updateGroupName(
+      String groupId, String content, String name) async {
     GroupDB? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
       groupDB.name = name;
-      return await updateGroup(groupDB);
+      OKEvent okEvent = await updateGroup(groupDB);
+      if (okEvent.status) {
+        sendGroupMessage(groupId, MessageType.text, content,
+            actionsType: 'updateName');
+      }
+      return okEvent;
     } else {
       return OKEvent(groupId, false, 'group dont exit');
     }
   }
 
-  Future<OKEvent> updateGroupPinned(String groupId, String pinned) async {
+  Future<OKEvent> updateGroupPinned(
+      String groupId, String content, String pinned) async {
     GroupDB? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
       groupDB.pinned = [pinned];
-      return await updateGroup(groupDB);
+      OKEvent okEvent = await updateGroup(groupDB);
+      if (okEvent.status) {
+        sendGroupMessage(groupId, MessageType.text, content,
+            actionsType: 'updatePinned');
+      }
+      return okEvent;
     } else {
       return OKEvent(groupId, false, 'group dont exit');
     }

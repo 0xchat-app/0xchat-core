@@ -21,6 +21,8 @@ export 'src/account/model/zapRecordsDB.dart';
 export 'src/chat/contacts.dart';
 export 'src/chat/messages.dart';
 export 'src/chat/groups.dart';
+export 'src/chat/groups+admin.dart';
+export 'src/chat/groups+member.dart';
 export 'src/chat/contacts+calling.dart';
 export 'src/chat/contacts+blocklist.dart';
 export 'src/chat/contacts+secretchat.dart';
