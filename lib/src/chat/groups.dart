@@ -275,7 +275,8 @@ class Groups {
       String? replyMessage,
       String? replyMessageRelay,
       String? replyUser,
-      String? replyUserRelay}) {
+      String? replyUserRelay,
+      String? actionsType}) {
     Event event = Nip28.sendChannelMessage(
         groupId, MessageDB.getContent(type, content), privkey,
         channelRelay: groupRelay,
@@ -283,7 +284,8 @@ class Groups {
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDB.getSubContent(type, content));
+        subContent: MessageDB.getSubContent(type, content),
+        actionsType: actionsType);
     return event;
   }
 
@@ -295,6 +297,7 @@ class Groups {
       String? replyUser,
       String? replyUserRelay,
       Event? event,
+      String? actionsType,
       bool local = false}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= Nip28.sendChannelMessage(
@@ -304,7 +307,8 @@ class Groups {
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDB.getSubContent(type, content));
+        subContent: MessageDB.getSubContent(type, content),
+        actionsType: actionsType);
 
     MessageDB messageDB = MessageDB(
         messageId: event.id,
