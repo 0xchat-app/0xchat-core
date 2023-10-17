@@ -61,8 +61,60 @@ class Groups {
     return result;
   }
 
-  Future<void> receiveGroupMessages(MessageDB messageDB, String relay) async {
-    groupMessageCallBack?.call(messageDB);
+  Future<void> _handleGroupCreation(event) async {
+    if (!groups.containsKey(event.id)) {
+      Channel group = Nip28.getChannelCreation(event);
+      GroupDB groupDB = _channelToGroupDB(group);
+      await _syncGroupToDB(groupDB);
+    }
+  }
+
+  Future<void> _handleGroupMetadata(event) async {
+    Channel group = Nip28.getChannelMetadata(event);
+    if (groups.containsKey(group.channelId)) {
+      GroupDB groupDB = _channelToGroupDB(group);
+      await _syncGroupToDB(groupDB);
+    }
+  }
+
+  Future<void> _handleGroupMessage(event) async {
+    ChannelMessage groupMessage = Nip28.getChannelMessage(event);
+    MessageDB messageDB = MessageDB(
+        messageId: event.id,
+        sender: groupMessage.sender,
+        receiver: '',
+        groupId: groupMessage.channelId,
+        kind: event.kind,
+        tags: jsonEncode(event.tags),
+        content: event.content,
+        replyId: groupMessage.thread.reply?.eventId ?? '',
+        createTime: event.createdAt,
+        plaintEvent: jsonEncode(event));
+    var map = MessageDB.decodeContent(messageDB.content);
+    messageDB.decryptContent = map['content'];
+    messageDB.type = map['contentType'];
+
+    int status = await Messages.saveMessageToDB(messageDB);
+    if (status != 0) {
+      groupMessageCallBack?.call(messageDB);
+    }
+  }
+
+  Future<void> receiveGroupEvents(Event event, String relay) async {
+    switch (event.kind) {
+      case 40:
+        _handleGroupCreation(event);
+        break;
+      case 41:
+        _handleGroupMetadata(event);
+        break;
+      case 42:
+        _handleGroupMessage(event);
+        break;
+      default:
+        print('unknown event: ${event.kind}');
+        break;
+    }
   }
 
   Future<void> _loadMyGroupsFromRelay({String? relay}) async {
@@ -115,7 +167,7 @@ class Groups {
       groupDB.name = group.name;
       groupDB.about = group.about;
       groupDB.picture = group.picture;
-      groupDB.pinned = group.pinned;
+      groupDB.pinned = [group.pinned ?? ''];
       groupDB.owner = group.owner;
       groupDB.relay = group.relay;
       groupDB.members = group.members;
@@ -125,28 +177,12 @@ class Groups {
           owner: group.owner,
           name: group.name,
           members: group.members,
-          pinned: group.pinned,
+          pinned: [group.pinned ?? ''],
           about: group.about,
           picture: group.picture,
           relay: group.relay);
     }
     return groupDB;
-  }
-
-  Future<void> handleGroupCreation(event) async {
-    if (!groups.containsKey(event.id)) {
-      Channel group = Nip28.getChannelCreation(event);
-      GroupDB groupDB = _channelToGroupDB(group);
-      await _syncGroupToDB(groupDB);
-    }
-  }
-
-  Future<void> handleGroupMetadata(event) async {
-    Channel group = Nip28.getChannelMetadata(event);
-    if (groups.containsKey(group.channelId)) {
-      GroupDB groupDB = _channelToGroupDB(group);
-      await _syncGroupToDB(groupDB);
-    }
   }
 
   Future<void> _syncGroupToDB(GroupDB groupDB) async {
@@ -172,29 +208,38 @@ class Groups {
     _syncMyGroupListToDB();
   }
 
-  Future<GroupDB?> createGroup(
-      String name, String about, String picture, String relay,
-      {OKCallBack? callBack}) async {
+  Future<GroupDB?> createGroup(String name, List<String> members,
+      {String? about,
+      String? picture,
+      String? relay,
+      OKCallBack? callBack}) async {
     Completer<GroupDB?> completer = Completer<GroupDB?>();
-    Event event = Nip28.createChannel(name, about, picture, {}, privkey);
+    Event event =
+        Nip28.createChannel(name, about ?? '', picture ?? '', {}, privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (ok.status == true) {
         // update channel
         GroupDB groupDB = GroupDB(
-          groupId: event.id,
-          updateTime: event.createdAt,
-          owner: pubkey,
-          name: name,
-          about: about,
-          picture: picture,
-          relay: relay,
-        );
-        myGroups[groupDB.groupId] = groupDB;
-        await _syncGroupToDB(groupDB);
-        // update my channel list
-        await _syncMyGroupListToRelay();
-        myGroupsUpdatedCallBack?.call();
-        if (!completer.isCompleted) completer.complete(groupDB);
+            groupId: event.id,
+            updateTime: event.createdAt,
+            owner: pubkey,
+            name: name,
+            about: about,
+            picture: picture,
+            relay: relay,
+            members: members);
+
+        await updateGroup(groupDB, callBack: (OKEvent ok, String relay) async {
+          if (ok.status == true) {
+            myGroups[groupDB.groupId] = groupDB;
+            // update my channel list
+            await _syncMyGroupListToRelay();
+            myGroupsUpdatedCallBack?.call();
+            if (!completer.isCompleted) completer.complete(groupDB);
+          } else {
+            if (!completer.isCompleted) completer.complete(null);
+          }
+        });
       } else {
         if (!completer.isCompleted) completer.complete(null);
       }
@@ -203,7 +248,7 @@ class Groups {
     return completer.future;
   }
 
-  Future<OKEvent> setGroup(GroupDB groupDB, {OKCallBack? callBack}) async {
+  Future<OKEvent> updateGroup(GroupDB groupDB, {OKCallBack? callBack}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = Nip28.setChannelMetaData(
         groupDB.name,
