@@ -6,6 +6,18 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension Member on Groups {
+  Future<OKEvent> requestGroup(String groupId, String content) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    if (groups.containsKey(groupId)) {
+      OKEvent okEvent = await sendGroupMessage(groupId, MessageType.text, content, actionsType: 'request');
+      if (!completer.isCompleted) completer.complete(okEvent);
+    } else {
+      OKEvent okEvent = OKEvent(groupId, false, 'group not found');
+      if (!completer.isCompleted) completer.complete(okEvent);
+    }
+    return completer.future;
+  }
+
   Future<OKEvent> joinGroup(String groupId) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (groups.containsKey(groupId)) {
@@ -48,11 +60,11 @@ extension Member on Groups {
   Event? getSendGroupMessageEvent(
       String groupId, MessageType type, String content,
       {String? groupRelay,
-        String? replyMessage,
-        String? replyMessageRelay,
-        String? replyUser,
-        String? replyUserRelay,
-        String? actionsType}) {
+      String? replyMessage,
+      String? replyMessageRelay,
+      String? replyUser,
+      String? replyUserRelay,
+      String? actionsType}) {
     Event event = Nip28.sendChannelMessage(
         groupId, MessageDB.getContent(type, content), privkey,
         channelRelay: groupRelay,
@@ -68,13 +80,13 @@ extension Member on Groups {
   Future<OKEvent> sendGroupMessage(
       String groupId, MessageType type, String content,
       {String? groupRelay,
-        String? replyMessage,
-        String? replyMessageRelay,
-        String? replyUser,
-        String? replyUserRelay,
-        Event? event,
-        String? actionsType,
-        bool local = false}) async {
+      String? replyMessage,
+      String? replyMessageRelay,
+      String? replyUser,
+      String? replyUserRelay,
+      Event? event,
+      String? actionsType,
+      bool local = false}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= Nip28.sendChannelMessage(
         groupId, MessageDB.getContent(type, content), privkey,
@@ -117,5 +129,17 @@ extension Member on Groups {
     }
 
     return completer.future;
+  }
+
+  Future<List<UserDB>> getAllGroupMembers(String groupId) async {
+    GroupDB? groupDB = groups[groupId];
+    List<UserDB> result = [];
+    if (groupDB != null && groupDB.members != null) {
+      for (String member in groupDB.members!) {
+        UserDB? userDB = await Account.sharedInstance.getUserInfo(member);
+        if (userDB != null) result.add(userDB);
+      }
+    }
+    return result;
   }
 }

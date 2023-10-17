@@ -6,12 +6,12 @@ import 'package:nostr_core_dart/nostr.dart';
 extension Admin on Groups {
   Future<GroupDB?> createGroup(String name, List<String> members,
       {String? about,
-        String? picture,
-        String? relay,
-        OKCallBack? callBack}) async {
+      String? picture,
+      String? relay,
+      OKCallBack? callBack}) async {
     Completer<GroupDB?> completer = Completer<GroupDB?>();
     Event event =
-    Nip28.createChannel(name, about ?? '', picture ?? '', {}, privkey);
+        Nip28.createChannel(name, about ?? '', picture ?? '', {}, privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (ok.status == true) {
         // update channel
@@ -63,5 +63,58 @@ extension Admin on Groups {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
+  }
+
+  Future<OKEvent> addGroupMembers(String groupId, List<String> members) async {
+    GroupDB? groupDB = myGroups[groupId];
+    if (groupDB != null && groupDB.owner == pubkey) {
+      List<String>? groupMembers = groupDB.members;
+      if (groupMembers != null) {
+        List<String> uniqueMembers = members
+            .where((element) => !groupMembers.contains(element))
+            .toList();
+        groupDB.members!.addAll(uniqueMembers);
+      } else {
+        groupDB.members = members;
+      }
+      return await updateGroup(groupDB);
+    } else {
+      return OKEvent(groupId, false, 'group dont exit');
+    }
+  }
+
+  Future<OKEvent> removeGroupMembers(
+      String groupId, List<String> members) async {
+    GroupDB? groupDB = myGroups[groupId];
+    if (groupDB != null && groupDB.owner == pubkey) {
+      if (groupDB.members != null) {
+        groupDB.members!.removeWhere((element) => members.contains(element));
+        return await updateGroup(groupDB);
+      } else {
+        return OKEvent(groupId, true, 'success');
+      }
+    } else {
+      return OKEvent(groupId, false, 'group dont exit');
+    }
+  }
+
+  Future<OKEvent> updateGroupName(String groupId, String name) async {
+    GroupDB? groupDB = myGroups[groupId];
+    if (groupDB != null && groupDB.owner == pubkey) {
+      groupDB.name = name;
+      return await updateGroup(groupDB);
+    } else {
+      return OKEvent(groupId, false, 'group dont exit');
+    }
+  }
+
+  Future<OKEvent> updateGroupPinned(String groupId, String pinned) async {
+    GroupDB? groupDB = myGroups[groupId];
+    if (groupDB != null && groupDB.owner == pubkey) {
+      groupDB.pinned = [pinned];
+      return await updateGroup(groupDB);
+    } else {
+      return OKEvent(groupId, false, 'group dont exit');
+    }
   }
 }
