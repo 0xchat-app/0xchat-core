@@ -26,6 +26,20 @@ class Groups {
   GroupsUpdatedCallBack? myGroupsUpdatedCallBack;
   GroupMessageCallBack? groupMessageCallBack;
 
+  Future<void> init({GroupsUpdatedCallBack? callBack}) async {
+    privkey = Account.sharedInstance.currentPrivkey;
+    pubkey = Account.sharedInstance.currentPubkey;
+    myGroupsUpdatedCallBack = callBack;
+    await _loadAllGroupsFromDB();
+    _loadMyGroupsFromRelay();
+
+    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
+      if (status == 1) {
+        _loadMyGroupsFromRelay(relay: relay);
+      }
+    });
+  }
+
   Future<void> _loadAllGroupsFromDB() async {
     List<Object?> maps = await DB.sharedInstance.objects<GroupDB>();
     groups = {for (var groupDb in maps) (groupDb as GroupDB).groupId: groupDb};
@@ -156,20 +170,6 @@ class Groups {
         identifier, list, [], privkey, pubkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
     _syncMyGroupListToDB();
-  }
-
-  Future<void> init({GroupsUpdatedCallBack? callBack}) async {
-    privkey = Account.sharedInstance.currentPrivkey;
-    pubkey = Account.sharedInstance.currentPubkey;
-    myGroupsUpdatedCallBack = callBack;
-    await _loadAllGroupsFromDB();
-    _loadMyGroupsFromRelay();
-
-    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
-      if (status == 1) {
-        _loadMyGroupsFromRelay(relay: relay);
-      }
-    });
   }
 
   Future<GroupDB?> createGroup(
