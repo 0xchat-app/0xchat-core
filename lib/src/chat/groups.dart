@@ -79,6 +79,9 @@ class Groups {
 
   Future<void> _handleGroupMessage(event) async {
     ChannelMessage groupMessage = Nip28.getChannelMessage(event);
+    String subType = groupMessage.actionsType != null
+        ? Nip28.actionToType(groupMessage.actionsType!)
+        : '';
     MessageDB messageDB = MessageDB(
         messageId: event.id,
         sender: groupMessage.sender,
@@ -89,7 +92,9 @@ class Groups {
         content: event.content,
         replyId: groupMessage.thread.reply?.eventId ?? '',
         createTime: event.createdAt,
-        plaintEvent: jsonEncode(event));
+        plaintEvent: jsonEncode(event),
+        chatType: 1,
+        subType: subType);
     var map = MessageDB.decodeContent(messageDB.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
@@ -230,11 +235,11 @@ class Groups {
   Event? getSendGroupMessageEvent(
       String groupId, MessageType type, String content,
       {String? groupRelay,
-        String? replyMessage,
-        String? replyMessageRelay,
-        String? replyUser,
-        String? replyUserRelay,
-        String? actionsType}) {
+      String? replyMessage,
+      String? replyMessageRelay,
+      String? replyUser,
+      String? replyUserRelay,
+      String? actionsType}) {
     Event event = Nip28.sendChannelMessage(
         groupId, MessageDB.getContent(type, content), privkey,
         channelRelay: groupRelay,
@@ -250,13 +255,13 @@ class Groups {
   Future<OKEvent> sendGroupMessage(
       String groupId, MessageType type, String content,
       {String? groupRelay,
-        String? replyMessage,
-        String? replyMessageRelay,
-        String? replyUser,
-        String? replyUserRelay,
-        Event? event,
-        String? actionsType,
-        bool local = false}) async {
+      String? replyMessage,
+      String? replyMessageRelay,
+      String? replyUser,
+      String? replyUserRelay,
+      Event? event,
+      String? actionsType,
+      bool local = false}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= Nip28.sendChannelMessage(
         groupId, MessageDB.getContent(type, content), privkey,
@@ -281,7 +286,9 @@ class Groups {
         type: MessageDB.messageTypeToString(type),
         createTime: event.createdAt,
         status: 0,
-        plaintEvent: jsonEncode(event));
+        plaintEvent: jsonEncode(event),
+        chatType: 1,
+        subType: actionsType ?? '');
     groupMessageCallBack?.call(messageDB);
     await Messages.saveMessageToDB(messageDB);
 
