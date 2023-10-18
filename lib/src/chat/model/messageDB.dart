@@ -59,8 +59,8 @@ class MessageDB extends DBObject {
       this.type = 'text',
       this.status = 1,
       this.plaintEvent = '',
-      this.chatType = 0,
-      this.subType = ''});
+      this.chatType,
+      this.subType});
 
   @override
   Map<String, Object?> toMap() {
