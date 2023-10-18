@@ -40,8 +40,8 @@ class MessageDB extends DBObject {
   String plaintEvent;
 
   /// add type
-  int chatType; // 0 private chat 1 group chat 2 channel chat 3 secret chat 4 stranger 5 stranger secret
-  String subType; // subtype of template/system type
+  int? chatType; // 0 private chat 1 group chat 2 channel chat 3 secret chat 4 stranger 5 stranger secret
+  String? subType; // subtype of template/system type
 
   MessageDB(
       {this.messageId = '',
@@ -355,7 +355,7 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     type: map['type'],
     status: map['status'],
     plaintEvent: map['plaintEvent'].toString(),
-    chatType: map['chatType'] ?? 0,
-    subType: map['subType'] != null ? map['subType'].toString() : '',
+    chatType: map['chatType'],
+    subType: map['subType']?.toString(),
   );
 }
