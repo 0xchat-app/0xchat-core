@@ -261,7 +261,8 @@ class Groups {
       String? replyUserRelay,
       Event? event,
       String? actionsType,
-      bool local = false}) async {
+      bool local = false,
+      List<String>? inviteUsers}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= Nip28.sendChannelMessage(
         groupId, MessageDB.getContent(type, content), privkey,
@@ -297,14 +298,66 @@ class Groups {
         completer.complete(OKEvent(event.id, true, ''));
       }
     } else {
-      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
-        messageDB.status = ok.status ? 1 : 2;
-        await Messages.saveMessageToDB(messageDB,
-            conflictAlgorithm: ConflictAlgorithm.replace);
-        if (!completer.isCompleted) completer.complete(ok);
-      });
+      OKEvent ok;
+      switch (actionsType) {
+        case 'invite':
+          ok = await _sendGroupMessage(inviteUsers, event);
+          break;
+        case 'request':
+          ok = await _sendToOwner(groupId, event);
+          break;
+        case 'join':
+        case 'add':
+        case 'leave':
+        case 'remove':
+        case 'updateName':
+        case 'updatePinned':
+        default:
+          ok = await _sendToGroup(groupId, event);
+      }
+      messageDB.status = ok.status ? 1 : 2;
+      await Messages.saveMessageToDB(messageDB,
+          conflictAlgorithm: ConflictAlgorithm.replace);
+      if (!completer.isCompleted) completer.complete(ok);
     }
 
+    return completer.future;
+  }
+
+  Future<OKEvent> _sendToGroup(String groupId, Event event) async {
+    GroupDB? groupDB = groups[groupId];
+    if (groupDB != null) {
+      return await _sendGroupMessage(groupDB.members, event);
+    } else {
+      return OKEvent(event.id, false, 'group not found');
+    }
+  }
+
+  Future<OKEvent> _sendToOwner(String groupId, Event event) async {
+    GroupDB? groupDB = groups[groupId];
+    if (groupDB != null) {
+      return await _sendGroupMessage([groupDB.owner], event);
+    } else {
+      return OKEvent(event.id, false, 'group not found');
+    }
+  }
+
+  Future<OKEvent> _sendGroupMessage(
+      List<String>? receivers, Event event) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    if (receivers != null) {
+      for (var receiver in receivers) {
+        Event sealedEvent = await Nip24.encode(event, receiver, privkey);
+        Connect.sharedInstance.sendEvent(sealedEvent,
+            sendCallBack: (ok, relay) {
+          if (!completer.isCompleted) completer.complete(ok);
+        });
+      }
+    } else {
+      if (!completer.isCompleted) {
+        completer.complete(OKEvent(event.id, false, 'no members in the group'));
+      }
+    }
     return completer.future;
   }
 

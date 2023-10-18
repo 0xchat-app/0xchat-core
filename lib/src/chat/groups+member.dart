@@ -4,12 +4,12 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension Member on Groups {
-  Future<OKEvent> inviteGroup(String groupId, String content) async {
+  Future<OKEvent> inviteGroup(String groupId, List<String> inviteUsers, String content) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (groups.containsKey(groupId)) {
       OKEvent okEvent = await sendGroupMessage(
           groupId, MessageType.text, content,
-          actionsType: 'invite');
+          actionsType: 'invite', inviteUsers: inviteUsers);
       if (!completer.isCompleted) completer.complete(okEvent);
     } else {
       OKEvent okEvent = OKEvent(groupId, false, 'group not found');
