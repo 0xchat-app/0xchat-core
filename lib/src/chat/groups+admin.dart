@@ -48,8 +48,8 @@ extension Admin on Groups {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = Nip28.setChannelMetaData(
         groupDB.name,
-        groupDB.about!,
-        groupDB.picture!,
+        groupDB.about ?? '',
+        groupDB.picture ?? '',
         groupDB.pinned,
         groupDB.members,
         null,
