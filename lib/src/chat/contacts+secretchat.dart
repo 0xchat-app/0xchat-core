@@ -390,7 +390,7 @@ extension SecretChat on Contacts {
           decryptContent: content,
           type: MessageDB.messageTypeToString(type),
           status: 0,
-          plaintEvent: jsonEncode(event));
+          plaintEvent: jsonEncode(event), chatType: 3);
       secretChatMessageCallBack?.call(messageDB);
       await Messages.saveMessageToDB(messageDB);
 

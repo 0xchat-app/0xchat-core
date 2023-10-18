@@ -132,7 +132,7 @@ class Channels {
         content: event.content,
         replyId: channelMessage.thread.reply?.eventId ?? '',
         createTime: event.createdAt,
-        plaintEvent: jsonEncode(event));
+        plaintEvent: jsonEncode(event), chatType: 2);
     var map = MessageDB.decodeContent(messageDB.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
@@ -471,7 +471,7 @@ class Channels {
         type: MessageDB.messageTypeToString(type),
         createTime: event.createdAt,
         status: 0,
-        plaintEvent: jsonEncode(event));
+        plaintEvent: jsonEncode(event), chatType: 2);
     channelMessageCallBack?.call(messageDB);
     await Messages.saveMessageToDB(messageDB);
 

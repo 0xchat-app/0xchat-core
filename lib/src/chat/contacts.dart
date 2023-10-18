@@ -465,13 +465,12 @@ class Contacts {
   Future<void> _handlePrivateMessage(Event event, String relay,
       {String? giftWrapEventId}) async {
     if (Messages.addToLoaded(event.id)) {
-      if(event.kind == 40 || event.kind == 41 || event.kind == 42){
+      if (event.kind == 40 || event.kind == 41 || event.kind == 42) {
         /// private group messages
         Groups.sharedInstance.receiveGroupEvents(event, relay);
-      }
-      else{
+      } else {
         MessageDB? messageDB =
-        await MessageDB.fromPrivateMessage(event, pubkey, privkey);
+            await MessageDB.fromPrivateMessage(event, pubkey, privkey);
         if (messageDB != null) {
           if (giftWrapEventId != null) messageDB.messageId = giftWrapEventId;
           int status = await Messages.saveMessageToDB(messageDB);
@@ -518,7 +517,8 @@ class Contacts {
         decryptContent: content,
         type: MessageDB.messageTypeToString(type),
         status: 0,
-        plaintEvent: jsonEncode(event));
+        plaintEvent: jsonEncode(event),
+        chatType: 0);
     privateChatMessageCallBack?.call(messageDB);
     await Messages.saveMessageToDB(messageDB);
 

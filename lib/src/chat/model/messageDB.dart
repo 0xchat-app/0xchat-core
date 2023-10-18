@@ -40,7 +40,7 @@ class MessageDB extends DBObject {
   String plaintEvent;
 
   /// add type
-  int? chatType; // 0 private chat 1 group chat 2 channel chat 3 secret chat 4 stranger 5 stranger secret
+  int? chatType; // 0 private chat 1 group chat 2 channel chat 3 secret chat
   String? subType; // subtype of template/system type
 
   MessageDB(
@@ -292,12 +292,14 @@ class MessageDB extends DBObject {
   static Future<MessageDB?> fromPrivateMessage(
       Event event, String receiver, String privkey) async {
     EDMessage? message;
+    int chatType = 0;
     if (event.kind == 4) {
       message = Nip4.decode(event, receiver, privkey);
     } else if (event.kind == 44) {
       message = await Nip44.decode(event, receiver, privkey);
     } else if (event.kind == 14) {
       message = await Nip24.decodeSealedGossipDM(event, receiver);
+      chatType = 3;
     }
     if (message == null) return null;
     MessageDB messageDB = MessageDB(
@@ -310,7 +312,7 @@ class MessageDB extends DBObject {
         content: event.content,
         createTime: event.createdAt,
         replyId: message.replyId,
-        plaintEvent: jsonEncode(event));
+        plaintEvent: jsonEncode(event), chatType: chatType);
     var map = decodeContent(message.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
