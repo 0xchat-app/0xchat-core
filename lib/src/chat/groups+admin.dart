@@ -140,4 +140,32 @@ extension Admin on Groups {
       return OKEvent(groupId, false, 'group dont exit');
     }
   }
+
+  Future<List<MessageDB>> getRequestList({String? groupId}) async {
+    String where = groupId == null
+        ? 'chatType = ? AND type = ? AND subType = ?'
+        : 'groupId = ? AND chatType = ? AND type = ? AND subType = ?';
+    List<Object?> whereArgs = groupId == null
+        ? [3, 'system', 'request']
+        : [groupId, 3, 'system', 'request'];
+    List<Object?> maps = await DB.sharedInstance
+        .objects<MessageDB>(whereArgs: whereArgs, where: where);
+    return maps.map((e) => e as MessageDB).toList();
+  }
+
+  Future<void> ignoreRequest(MessageDB messageDB) async {
+    await DB.sharedInstance.delete<MessageDB>(
+        where: 'messageId = ?', whereArgs: [messageDB.messageId]);
+  }
+
+  Future<void> acceptRequest(MessageDB messageDB, String content) async {
+    String groupId = messageDB.groupId;
+    String sender = messageDB.sender;
+    GroupDB? groupDB = myGroups[groupId];
+    if (groupDB != null && groupDB.owner == pubkey) {
+      await addGroupMembers(groupId, content, [sender]);
+    }
+    await DB.sharedInstance.delete<MessageDB>(
+        where: 'messageId = ?', whereArgs: [messageDB.messageId]);
+  }
 }

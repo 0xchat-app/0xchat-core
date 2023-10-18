@@ -39,6 +39,10 @@ class MessageDB extends DBObject {
 
   String plaintEvent;
 
+  /// add type
+  int chatType; // 0 private chat 1 secret chat 2 channel chat 3 group chat
+  String subType; // subtype of template/system type
+
   MessageDB(
       {this.messageId = '',
       this.sender = '',
@@ -54,7 +58,9 @@ class MessageDB extends DBObject {
       this.decryptContent = '',
       this.type = 'text',
       this.status = 1,
-      this.plaintEvent = ''});
+      this.plaintEvent = '',
+      this.chatType = 0,
+      this.subType = ''});
 
   @override
   Map<String, Object?> toMap() {
@@ -86,7 +92,9 @@ class MessageDB extends DBObject {
   static Map<String, String?> updateTable() {
     return {
       "2":
-          '''alter table MessageDB add plaintEvent TEXT; alter table MessageDB add sessionId TEXT;'''
+          '''alter table MessageDB add plaintEvent TEXT; alter table MessageDB add sessionId TEXT;''',
+      "4":
+          '''alter table MessageDB add chatType INT; alter table MessageDB add subType TEXT;'''
     };
   }
 
@@ -326,6 +334,8 @@ Map<String, dynamic> _messageInfoToMap(MessageDB instance) => <String, dynamic>{
       'type': instance.type,
       'status': instance.status,
       'plaintEvent': instance.plaintEvent,
+      'subType': instance.subType,
+      'chatType': instance.chatType,
     };
 
 MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
@@ -345,5 +355,7 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     type: map['type'],
     status: map['status'],
     plaintEvent: map['plaintEvent'].toString(),
+    chatType: map['chatType'],
+    subType: map['subType'].toString(),
   );
 }
