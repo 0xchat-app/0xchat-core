@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:isolate';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
@@ -205,12 +206,16 @@ class Groups {
     await DB.sharedInstance.insert<UserDB>(me);
   }
 
-  Future<void> syncMyGroupListToRelay({OKCallBack? callBack}) async {
+  Future<OKEvent> syncMyGroupListToRelay() async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
     List<String> list = myGroups.keys.toList();
     Event event = await Nip51.createCategorizedBookmarks(
         identifier, list, [], privkey, pubkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
-    _syncMyGroupListToDB();
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay){
+      if(ok.status) _syncMyGroupListToDB();
+      if (!completer.isCompleted) completer.complete(ok);
+    });
+    return completer.future;
   }
 
   List<GroupDB>? fuzzySearch(String keyword) {
@@ -301,10 +306,10 @@ class Groups {
       OKEvent ok;
       switch (actionsType) {
         case 'invite':
-          ok = await _sendGroupMessage(inviteUsers, event);
+          ok = await sendMessageEvent(inviteUsers, event);
           break;
         case 'request':
-          ok = await _sendToOwner(groupId, event);
+          ok = await sendToOwner(groupId, event);
           break;
         case 'join':
         case 'add':
@@ -313,7 +318,7 @@ class Groups {
         case 'updateName':
         case 'updatePinned':
         default:
-          ok = await _sendToGroup(groupId, event);
+          ok = await sendToGroup(groupId, event);
       }
       messageDB.status = ok.status ? 1 : 2;
       await Messages.saveMessageToDB(messageDB,
@@ -324,34 +329,33 @@ class Groups {
     return completer.future;
   }
 
-  Future<OKEvent> _sendToGroup(String groupId, Event event) async {
+  Future<OKEvent> sendToGroup(String groupId, Event event) async {
     GroupDB? groupDB = groups[groupId];
     if (groupDB != null) {
-      return await _sendGroupMessage(groupDB.members, event);
+      return await sendMessageEvent(groupDB.members, event);
     } else {
       return OKEvent(event.id, false, 'group not found');
     }
   }
 
-  Future<OKEvent> _sendToOwner(String groupId, Event event) async {
+  Future<OKEvent> sendToOwner(String groupId, Event event) async {
     GroupDB? groupDB = groups[groupId];
     if (groupDB != null) {
-      return await _sendGroupMessage([groupDB.owner], event);
+      return await sendMessageEvent([groupDB.owner], event);
     } else {
       return OKEvent(event.id, false, 'group not found');
     }
   }
 
-  Future<OKEvent> _sendGroupMessage(
+  Future<OKEvent> sendMessageEvent(
       List<String>? receivers, Event event) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (receivers != null) {
       for (var receiver in receivers) {
-        Event sealedEvent = await Nip24.encode(event, receiver, privkey);
-        Connect.sharedInstance.sendEvent(sealedEvent,
-            sendCallBack: (ok, relay) {
-          if (!completer.isCompleted) completer.complete(ok);
-        });
+        Isolate.spawn(_runInIsolate, {'event': event, 'receiver': receiver});
+      }
+      if (!completer.isCompleted) {
+        completer.complete(OKEvent(event.id, true, ''));
       }
     } else {
       if (!completer.isCompleted) {
@@ -359,6 +363,13 @@ class Groups {
       }
     }
     return completer.future;
+  }
+
+  Future<void> _runInIsolate(Map<String, dynamic> params) async {
+    Event event = params['event'];
+    String receiver = params['receiver'];
+    Event sealedEvent = await Nip24.encode(event, receiver, privkey);
+    Connect.sharedInstance.sendEvent(sealedEvent);
   }
 
   static String encodeGroup(

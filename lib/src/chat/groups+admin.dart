@@ -5,47 +5,35 @@ import 'package:nostr_core_dart/nostr.dart';
 
 extension Admin on Groups {
   Future<GroupDB?> createGroup(String name, List<String> members,
-      {String? about,
-      String? picture,
-      String? relay,
-      OKCallBack? callBack}) async {
-    Completer<GroupDB?> completer = Completer<GroupDB?>();
+      {String? about, String? picture, String? relay}) async {
     Event event =
         Nip28.createChannel(name, about ?? '', picture ?? '', {}, privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
+    OKEvent ok = await sendMessageEvent(members, event);
+    if (ok.status == true) {
+      // update group
+      GroupDB groupDB = GroupDB(
+          groupId: event.id,
+          updateTime: event.createdAt,
+          owner: pubkey,
+          name: name,
+          about: about,
+          picture: picture,
+          relay: relay,
+          members: members);
+
+      ok = await updateGroup(groupDB);
       if (ok.status == true) {
-        // update channel
-        GroupDB groupDB = GroupDB(
-            groupId: event.id,
-            updateTime: event.createdAt,
-            owner: pubkey,
-            name: name,
-            about: about,
-            picture: picture,
-            relay: relay,
-            members: members);
-
-        await updateGroup(groupDB, callBack: (OKEvent ok, String relay) async {
-          if (ok.status == true) {
-            myGroups[groupDB.groupId] = groupDB;
-            // update my channel list
-            await syncMyGroupListToRelay();
-            myGroupsUpdatedCallBack?.call();
-            if (!completer.isCompleted) completer.complete(groupDB);
-          } else {
-            if (!completer.isCompleted) completer.complete(null);
-          }
-        });
-      } else {
-        if (!completer.isCompleted) completer.complete(null);
+        myGroups[groupDB.groupId] = groupDB;
+        // update my group list
+        await syncMyGroupListToRelay();
+        myGroupsUpdatedCallBack?.call();
+        return groupDB;
       }
-    });
-
-    return completer.future;
+    }
+    return null;
   }
 
-  Future<OKEvent> updateGroup(GroupDB groupDB, {OKCallBack? callBack}) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
+  Future<OKEvent> updateGroup(GroupDB groupDB) async {
     Event event = Nip28.setChannelMetaData(
         groupDB.name,
         groupDB.about ?? '',
@@ -56,13 +44,11 @@ extension Admin on Groups {
         groupDB.groupId,
         groupDB.relay ?? '',
         privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
-      if (ok.status) {
-        await syncGroupToDB(groupDB);
-      }
-      if (!completer.isCompleted) completer.complete(ok);
-    });
-    return completer.future;
+    OKEvent ok = await sendMessageEvent(groupDB.members, event);
+    if (ok.status) {
+      await syncGroupToDB(groupDB);
+    }
+    return ok;
   }
 
   Future<OKEvent> addGroupMembers(

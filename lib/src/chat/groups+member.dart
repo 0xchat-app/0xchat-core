@@ -4,63 +4,48 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension Member on Groups {
-  Future<OKEvent> inviteGroup(String groupId, List<String> inviteUsers, String content) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
+  Future<OKEvent> inviteGroup(
+      String groupId, List<String> inviteUsers, String content) async {
     if (groups.containsKey(groupId)) {
       OKEvent okEvent = await sendGroupMessage(
           groupId, MessageType.text, content,
           actionsType: 'invite', inviteUsers: inviteUsers);
-      if (!completer.isCompleted) completer.complete(okEvent);
-    } else {
-      OKEvent okEvent = OKEvent(groupId, false, 'group not found');
-      if (!completer.isCompleted) completer.complete(okEvent);
+      return okEvent;
     }
-    return completer.future;
+    return OKEvent(groupId, false, 'group not found');
   }
 
   Future<OKEvent> requestGroup(String groupId, String content) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
     if (groups.containsKey(groupId)) {
       OKEvent okEvent = await sendGroupMessage(
           groupId, MessageType.text, content,
           actionsType: 'request');
-      if (!completer.isCompleted) completer.complete(okEvent);
-    } else {
-      OKEvent okEvent = OKEvent(groupId, false, 'group not found');
-      if (!completer.isCompleted) completer.complete(okEvent);
+      return okEvent;
     }
-    return completer.future;
+    return OKEvent(groupId, false, 'group not found');
   }
 
   Future<OKEvent> joinGroup(String groupId, String content) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
     if (groups.containsKey(groupId)) {
       myGroups[groupId] = groups[groupId]!;
-      syncMyGroupListToRelay(callBack: (ok, relay) {
-        if (ok.status) {
-          sendGroupMessage(groupId, MessageType.text, content,
-              actionsType: 'join');
-        }
-        if (!completer.isCompleted) completer.complete(ok);
-      });
-    } else {
-      OKEvent okEvent = OKEvent(groupId, false, 'group not found');
-      if (!completer.isCompleted) completer.complete(okEvent);
+      OKEvent ok = await syncMyGroupListToRelay();
+      if (ok.status) {
+         sendGroupMessage(groupId, MessageType.text, content,
+            actionsType: 'join');
+      }
+      return ok;
     }
-    return completer.future;
+    return OKEvent(groupId, false, 'group not found');
   }
 
   Future<OKEvent> leaveGroup(String groupId, String content) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
     myGroups.remove(groupId);
-    syncMyGroupListToRelay(callBack: (ok, relay) {
-      if (ok.status) {
-        sendGroupMessage(groupId, MessageType.text, content,
-            actionsType: 'leave');
-      }
-      if (!completer.isCompleted) completer.complete(ok);
-    });
-    return completer.future;
+    OKEvent ok = await syncMyGroupListToRelay();
+    if (ok.status) {
+      sendGroupMessage(groupId, MessageType.text, content,
+          actionsType: 'leave');
+    }
+    return ok;
   }
 
   Future<void> muteGroup(String groupId) async {
