@@ -350,11 +350,16 @@ class Groups {
   Future<OKEvent> sendMessageEvent(List<String>? receivers, Event event) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (receivers != null) {
+      final receivePort = ReceivePort();
+      receivePort.listen((message) {
+        Connect.sharedInstance.sendEvent(Event.fromJson(message));
+      });
       for (var receiver in receivers) {
-        Map<String, String> map = {
-          'event': event.serialize(),
+        Map<String, dynamic> map = {
+          'event': event.toJson(),
           'receiver': receiver,
-          'privkey': privkey
+          'privkey': privkey,
+          'sendPort': receivePort.sendPort
         };
         Isolate.spawn(sendNip24InIsolate, map);
       }
@@ -369,12 +374,12 @@ class Groups {
     return completer.future;
   }
 
-  static Future<void> sendNip24InIsolate(Map<String, String> params) async {
-    Event event = Event.deserialize(params['event']);
+  static Future<void> sendNip24InIsolate(Map<String, dynamic> params) async {
+    Event event = Event.fromJson(params['event']);
     String receiver = params['receiver'] ?? '';
     Event sealedEvent =
         await Nip24.encode(event, receiver, params['privkey'] ?? '');
-    Connect.sharedInstance.sendEvent(sealedEvent);
+    params['sendPort'].send(sealedEvent.toJson());
   }
 
   static String encodeGroup(
