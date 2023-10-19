@@ -211,8 +211,8 @@ class Groups {
     List<String> list = myGroups.keys.toList();
     Event event = await Nip51.createCategorizedBookmarks(
         identifier, list, [], privkey, pubkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay){
-      if(ok.status) _syncMyGroupListToDB();
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+      if (ok.status) _syncMyGroupListToDB();
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
@@ -347,12 +347,16 @@ class Groups {
     }
   }
 
-  Future<OKEvent> sendMessageEvent(
-      List<String>? receivers, Event event) async {
+  Future<OKEvent> sendMessageEvent(List<String>? receivers, Event event) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (receivers != null) {
       for (var receiver in receivers) {
-        Isolate.spawn(_runInIsolate, {'event': event, 'receiver': receiver});
+        Map<String, String> map = {
+          'event': event.serialize(),
+          'receiver': receiver,
+          'privkey': privkey
+        };
+        Isolate.spawn(sendNip24InIsolate, map);
       }
       if (!completer.isCompleted) {
         completer.complete(OKEvent(event.id, true, ''));
@@ -365,10 +369,11 @@ class Groups {
     return completer.future;
   }
 
-  Future<void> _runInIsolate(Map<String, dynamic> params) async {
-    Event event = params['event'];
-    String receiver = params['receiver'];
-    Event sealedEvent = await Nip24.encode(event, receiver, privkey);
+  static Future<void> sendNip24InIsolate(Map<String, String> params) async {
+    Event event = Event.deserialize(params['event']);
+    String receiver = params['receiver'] ?? '';
+    Event sealedEvent =
+        await Nip24.encode(event, receiver, params['privkey'] ?? '');
     Connect.sharedInstance.sendEvent(sealedEvent);
   }
 
