@@ -80,7 +80,8 @@ class Channels {
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
       offlineChannelMessageFinish[relay] = true;
-      Relays.sharedInstance.syncRelaysToDB(r: relay);
+      _updateChannelMessageTime(
+          Relays.sharedInstance.getChannelMessageUntil(relay), relay);
       if (unCompletedRelays.isEmpty) {
         offlineChannelMessageFinishCallBack?.call();
       }
@@ -132,7 +133,8 @@ class Channels {
         content: event.content,
         replyId: channelMessage.thread.reply?.eventId ?? '',
         createTime: event.createdAt,
-        plaintEvent: jsonEncode(event), chatType: 2);
+        plaintEvent: jsonEncode(event),
+        chatType: 2);
     var map = MessageDB.decodeContent(messageDB.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
@@ -190,19 +192,18 @@ class Channels {
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty) {
-        if (lastEvent != null) {
+        if (lastEvent != null &&
+            lastEvent!.createdAt >
+                Account.sharedInstance.me!.lastChannelsListUpdatedTime) {
           Lists result = await Nip51.getLists(lastEvent!, privkey);
           UserDB? me = Account.sharedInstance.me;
           me!.lastChannelsListUpdatedTime = lastEvent!.createdAt;
           me.channelsList = result.bookmarks;
           await Account.sharedInstance.syncMe();
-          await syncChannelsFromRelay(result.owner, result.bookmarks);
-          myChannels = _myChannels();
-          _updateChannelSubscription();
-        } else {
-          myChannels = _myChannels();
-          _updateChannelSubscription();
+          await syncChannelsFromRelay(result.bookmarks);
         }
+        myChannels = _myChannels();
+        _updateChannelSubscription();
         if (!completer.isCompleted) completer.complete();
         myChannelsUpdatedCallBack?.call();
       }
@@ -224,8 +225,32 @@ class Channels {
     return result;
   }
 
-  Future<void> _syncChannelsInfos(String owner, List<String> channelIds,
-      bool updateInfos, EOSECallBack eoseCallBack) async {
+  ChannelDB _getChannelDBFromChannel(Channel channel, int createAt) {
+    ChannelDB? channelDB = channels[channel.channelId];
+    if (channelDB == null) {
+      channelDB = ChannelDB(
+          channelId: channel.channelId,
+          creator: channel.owner,
+          name: channel.name,
+          about: channel.about,
+          picture: channel.picture,
+          createTime: createAt);
+      channels[channel.channelId] = channelDB;
+    } else {
+      channelDB.creator = channel.owner;
+      channelDB.name = channel.name;
+      channelDB.about = channel.about;
+      channelDB.picture = channel.picture;
+      channelDB.createTime = createAt;
+      if (channel.additional.containsKey('badges')) {
+        channelDB.badges = channel.additional['badges']!;
+      }
+    }
+    return channelDB;
+  }
+
+  Future<void> _syncChannelsInfos(List<String> channelIds, bool updateInfos,
+      EOSECallBack eoseCallBack) async {
     Filter f = updateInfos
         ? Filter(
             kinds: [41],
@@ -241,29 +266,13 @@ class Channels {
           ? Nip28.getChannelMetadata(event)
           : Nip28.getChannelCreation(event);
 
-      String badges = '';
-      if (channel.additional.containsKey('badges')) {
-        badges = channel.additional['badges']!;
-      }
+      ChannelDB channelDB = _getChannelDBFromChannel(channel, event.createdAt);
 
-      ChannelDB channelDB = ChannelDB(
-        channelId: channel.channelId,
-        createTime: event.createdAt,
-        creator: channel.owner,
-        name: channel.name,
-        about: channel.about,
-        picture: channel.picture,
-        badges: badges,
-      );
       // check the owner for kind 41
       if (event.kind == 40 ||
           (event.kind == 41 &&
               channels.containsKey(channelDB.channelId) &&
               channels[channelDB.channelId]!.creator == channelDB.creator)) {
-        ChannelDB? storedChannel = channels[channelDB.channelId];
-        // restore mute
-        channelDB.mute = storedChannel?.mute;
-        channels[channelDB.channelId] = channelDB;
         _syncChannelToDB(channelDB);
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
@@ -375,19 +384,41 @@ class Channels {
     return completer.future;
   }
 
-  Future<void> syncChannelsFromRelay(
-      String owner, List<String> channelIds) async {
+  Future<void> syncChannelMetadataFromRelay(
+      String owner, String channelId) async {
+    Filter f = Filter(
+      authors: [owner],
+      kinds: [41],
+      e: [channelId],
+      limit: 1,
+    );
+    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) {
+      Channel channel = Nip28.getChannelMetadata(event);
+      ChannelDB channelDB = _getChannelDBFromChannel(channel, event.createdAt);
+      _syncChannelToDB(channelDB);
+    }, eoseCallBack: (requestId, ok, relay, unRelays) {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+    });
+  }
+
+  Future<void> syncChannelsFromRelay(List<String> channelIds) async {
     Completer<void> completer = Completer<void>();
 
-    List<String> unknownChannels = channelIds
-        .where((item) => !channels.keys.toList().contains(item))
-        .toList();
+    List<String> unknownChannels = [];
+    List<String> keys = List.from(channels.keys.toList());
+    for (var channelId in channelIds) {
+      if (!keys.contains(channelId)) {
+        unknownChannels.add(channelId);
+        channels[channelId] = ChannelDB(channelId: channelId);
+      }
+    }
+
     // get create infos
-    _syncChannelsInfos(owner, unknownChannels, false,
+    _syncChannelsInfos(unknownChannels, false,
         (requestId, status, relay, unRelays) {
       if (unRelays.isEmpty) {
         // get update infos
-        _syncChannelsInfos(owner, channelIds, true,
+        _syncChannelsInfos(channelIds, true,
             (requestId, status, relay, unRelays) {
           // update finished
           if (!completer.isCompleted) completer.complete();
@@ -405,7 +436,9 @@ class Channels {
     Event event = Nip28.setChannelMetaData(
         channelDB.name!,
         channelDB.about!,
-        channelDB.picture!, null, null,
+        channelDB.picture!,
+        null,
+        null,
         channelDB.badges!.isNotEmpty ? {'badges': channelDB.badges!} : null,
         channelDB.channelId,
         channelDB.relayURL!,
@@ -471,7 +504,8 @@ class Channels {
         type: MessageDB.messageTypeToString(type),
         createTime: event.createdAt,
         status: 0,
-        plaintEvent: jsonEncode(event), chatType: 2);
+        plaintEvent: jsonEncode(event),
+        chatType: 2);
     channelMessageCallBack?.call(messageDB);
     await Messages.saveMessageToDB(messageDB);
 
@@ -555,36 +589,25 @@ class Channels {
     Filter f = channelIds == null
         ? Filter(kinds: [40], limit: 20)
         : Filter(ids: channelIds, kinds: [40]);
-    List<ChannelDB> result = [];
+    Map<String, ChannelDB> result = {};
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       Channel channel = Nip28.getChannelCreation(event);
-      if (channels.containsKey(channel.channelId)) {
-        result.add(channels[channel.channelId]!);
+      if (channels.containsKey(channel.channelId) &&
+          !result.containsKey(channel.channelId)) {
+        result[channel.channelId] = (channels[channel.channelId]!);
       } else {
-        String badges = '';
-        if (channel.additional.containsKey('badges')) {
-          badges = channel.additional['badges']!;
-        }
-        ChannelDB channelDB = ChannelDB(
-          channelId: event.id,
-          createTime: event.createdAt,
-          creator: event.pubkey,
-          name: channel.name,
-          about: channel.about,
-          picture: channel.picture,
-          badges: badges,
-        );
-        result.add(channelDB);
-        channels[channel.channelId] = channelDB;
+        ChannelDB channelDB =
+            _getChannelDBFromChannel(channel, event.createdAt);
+        result[channel.channelId] = channelDB;
       }
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        completer.complete(result);
-        await Future.forEach(result, (channel) async {
-          _syncChannelsInfos(channel.creator, [channel.channelId], true,
-              (requestId, status, relay, unRelays) {});
+        completer.complete(result.values.toList());
+        await Future.forEach(result.values, (channel) async {
+          await syncChannelMetadataFromRelay(
+              channel.creator, channel.channelId);
         });
       }
     });
