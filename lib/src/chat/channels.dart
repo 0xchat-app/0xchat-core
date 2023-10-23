@@ -384,8 +384,9 @@ class Channels {
     return completer.future;
   }
 
-  Future<void> syncChannelMetadataFromRelay(
+  Future<ChannelDB?> syncChannelMetadataFromRelay(
       String owner, String channelId) async {
+    Completer<ChannelDB> completer = Completer<ChannelDB>();
     Filter f = Filter(
       authors: [owner],
       kinds: [41],
@@ -396,9 +397,12 @@ class Channels {
       Channel channel = Nip28.getChannelMetadata(event);
       ChannelDB channelDB = _getChannelDBFromChannel(channel, event.createdAt);
       _syncChannelToDB(channelDB);
+      if (!completer.isCompleted) completer.complete(channelDB);
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
       Connect.sharedInstance.closeSubscription(requestId, relay);
+      if (unRelays.isEmpty && !completer.isCompleted) completer.complete(null);
     });
+    return completer.future;
   }
 
   Future<void> syncChannelsFromRelay(List<String> channelIds) async {
