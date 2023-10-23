@@ -91,7 +91,7 @@ class Contacts {
 
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
-      if (status == 1) {
+      if (status == 1 && Account.sharedInstance.me != null) {
         _updateSubscriptions(relay: relay);
       }
     });
