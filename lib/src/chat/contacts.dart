@@ -447,6 +447,12 @@ class Contacts {
             case 25050:
               handleCallEvent(innerEvent, relay);
               break;
+            case 40:
+            case 41:
+            case 42:
+              Groups.sharedInstance
+                  .receiveGroupEvents(innerEvent, relay, event.id);
+              break;
             default:
               print('unhandled message $innerEvent');
               break;
@@ -465,18 +471,13 @@ class Contacts {
   Future<void> _handlePrivateMessage(Event event, String relay,
       {String? giftWrapEventId}) async {
     if (Messages.addToLoaded(event.id)) {
-      if (event.kind == 40 || event.kind == 41 || event.kind == 42) {
-        /// private group messages
-        Groups.sharedInstance.receiveGroupEvents(event, relay);
-      } else {
-        MessageDB? messageDB =
-            await MessageDB.fromPrivateMessage(event, pubkey, privkey);
-        if (messageDB != null) {
-          if (giftWrapEventId != null) messageDB.messageId = giftWrapEventId;
-          int status = await Messages.saveMessageToDB(messageDB);
-          if (status != 0) {
-            privateChatMessageCallBack?.call(messageDB);
-          }
+      MessageDB? messageDB =
+          await MessageDB.fromPrivateMessage(event, pubkey, privkey);
+      if (messageDB != null) {
+        if (giftWrapEventId != null) messageDB.messageId = giftWrapEventId;
+        int status = await Messages.saveMessageToDB(messageDB);
+        if (status != 0) {
+          privateChatMessageCallBack?.call(messageDB);
         }
       }
     }

@@ -106,20 +106,23 @@ class Groups {
     }
   }
 
-  Future<void> receiveGroupEvents(Event event, String relay) async {
-    switch (event.kind) {
-      case 40:
-        _handleGroupCreation(event);
-        break;
-      case 41:
-        _handleGroupMetadata(event);
-        break;
-      case 42:
-        _handleGroupMessage(event);
-        break;
-      default:
-        print('unknown event: ${event.kind}');
-        break;
+  Future<void> receiveGroupEvents(
+      Event event, String relay, String giftWrapEventId) async {
+    if (Messages.addToLoaded(event.id)) {
+      switch (event.kind) {
+        case 40:
+          _handleGroupCreation(event);
+          break;
+        case 41:
+          _handleGroupMetadata(event);
+          break;
+        case 42:
+          _handleGroupMessage(event);
+          break;
+        default:
+          print('unknown event: ${event.kind}');
+          break;
+      }
     }
   }
 
