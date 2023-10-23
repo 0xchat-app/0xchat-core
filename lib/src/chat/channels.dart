@@ -386,7 +386,7 @@ class Channels {
 
   Future<ChannelDB?> syncChannelMetadataFromRelay(
       String owner, String channelId) async {
-    Completer<ChannelDB> completer = Completer<ChannelDB>();
+    Completer<ChannelDB?> completer = Completer<ChannelDB>();
     Filter f = Filter(
       authors: [owner],
       kinds: [41],
