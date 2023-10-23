@@ -104,11 +104,12 @@ class Account {
 
   Future<UserDB> reloadProfileFromRelay(String pubkey) async {
     Completer<UserDB> completer = Completer<UserDB>();
+    UserDB? db = await getUserInfo(pubkey);
     Filter f = Filter(
       kinds: [0],
       authors: [pubkey],
+      since: (db?.lastUpdatedTime ?? 0) + 1
     );
-    UserDB? db = await getUserInfo(pubkey);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       Map map = jsonDecode(event.content);
