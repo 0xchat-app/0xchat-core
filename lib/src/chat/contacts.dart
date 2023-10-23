@@ -455,8 +455,7 @@ class Contacts {
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
       offlinePrivateMessageFinish[relay] = true;
-      updateFriendMessageTime(
-          Relays.sharedInstance.getFriendMessageUntil(relay), relay);
+      updateFriendMessageTime(currentUnixTimestampSeconds(), relay);
       if (unCompletedRelays.isEmpty) {
         offlinePrivateMessageFinishCallBack?.call();
       }

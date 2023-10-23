@@ -80,8 +80,7 @@ class Channels {
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
       offlineChannelMessageFinish[relay] = true;
-      _updateChannelMessageTime(
-          Relays.sharedInstance.getChannelMessageUntil(relay), relay);
+      _updateChannelMessageTime(currentUnixTimestampSeconds(), relay);
       if (unCompletedRelays.isEmpty) {
         offlineChannelMessageFinishCallBack?.call();
       }
