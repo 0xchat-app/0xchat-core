@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
@@ -128,12 +129,15 @@ extension Admin on Groups {
   }
 
   Future<List<MessageDB>> getRequestList({String? groupId}) async {
-    String where = groupId == null
-        ? 'chatType = ? AND type = ? AND subType = ?'
-        : 'groupId = ? AND chatType = ? AND type = ? AND subType = ?';
-    List<Object?> whereArgs = groupId == null
-        ? [3, 'system', 'request']
-        : [groupId, 3, 'system', 'request'];
+    String? where;
+    List<Object?>? whereArgs;
+    if (groupId == null) {
+      where = 'chatType = ? AND type = ? AND subType = ?';
+      whereArgs = [3, 'system', 'request'];
+    } else {
+      where = 'groupId = ? AND chatType = ? AND type = ? AND subType = ?';
+      whereArgs = [groupId, 3, 'system', 'request'];
+    }
     List<Object?> maps = await DB.sharedInstance
         .objects<MessageDB>(whereArgs: whereArgs, where: where);
     return maps.map((e) => e as MessageDB).toList();

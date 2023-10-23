@@ -361,7 +361,7 @@ class Groups {
           'privkey': privkey,
           'sendPort': receivePort.sendPort
         };
-        Isolate.spawn(sendNip24InIsolate, map);
+        Isolate.spawn(encodeNip24InIsolate, map);
       }
       if (!completer.isCompleted) {
         completer.complete(OKEvent(event.id, true, ''));
@@ -374,7 +374,7 @@ class Groups {
     return completer.future;
   }
 
-  static Future<void> sendNip24InIsolate(Map<String, dynamic> params) async {
+  static Future<void> encodeNip24InIsolate(Map<String, dynamic> params) async {
     Event event = Event.fromJson(params['event']);
     String receiver = params['receiver'] ?? '';
     Event sealedEvent =
