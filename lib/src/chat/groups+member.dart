@@ -26,11 +26,12 @@ extension Member on Groups {
   }
 
   Future<OKEvent> joinGroup(String groupId, String content) async {
-    if (groups.containsKey(groupId)) {
+    if (groups.containsKey(groupId) &&
+        groups[groupId]?.members?.contains(pubkey) == true) {
       myGroups[groupId] = groups[groupId]!;
       OKEvent ok = await syncMyGroupListToRelay();
       if (ok.status) {
-         sendGroupMessage(groupId, MessageType.text, content,
+        sendGroupMessage(groupId, MessageType.text, content,
             actionsType: 'join');
       }
       return ok;
