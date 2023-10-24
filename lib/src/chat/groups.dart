@@ -63,7 +63,9 @@ class Groups {
   }
 
   Future<void> _handleGroupCreation(event) async {
-    if (!groups.containsKey(event.id)) {
+    if (!groups.containsKey(event.id) ||
+        (groups.containsKey(event.id) &&
+            groups[event.id]?.owner != event.pubkey)) {
       Channel group = Nip28.getChannelCreation(event);
       GroupDB groupDB = _channelToGroupDB(group);
       await syncGroupToDB(groupDB);
@@ -72,6 +74,11 @@ class Groups {
 
   Future<void> _handleGroupMetadata(event) async {
     Channel group = Nip28.getChannelMetadata(event);
+    if (groups.containsKey(group.channelId) &&
+        groups[group.channelId]?.owner != group.owner) {
+      /// fake event
+      return;
+    }
     GroupDB groupDB = _channelToGroupDB(group);
     await syncGroupToDB(groupDB);
   }
