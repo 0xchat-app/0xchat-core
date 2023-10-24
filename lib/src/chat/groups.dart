@@ -72,10 +72,8 @@ class Groups {
 
   Future<void> _handleGroupMetadata(event) async {
     Channel group = Nip28.getChannelMetadata(event);
-    if (groups.containsKey(group.channelId)) {
-      GroupDB groupDB = _channelToGroupDB(group);
-      await syncGroupToDB(groupDB);
-    }
+    GroupDB groupDB = _channelToGroupDB(group);
+    await syncGroupToDB(groupDB);
   }
 
   Future<void> _handleGroupMessage(event) async {
