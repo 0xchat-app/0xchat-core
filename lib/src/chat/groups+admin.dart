@@ -23,6 +23,8 @@ extension Admin on Groups {
 
       ok = await updateGroup(groupDB);
       if (ok.status == true) {
+        sendGroupMessage(groupDB.groupId, MessageType.text, '',
+            actionsType: 'add');
         myGroups[groupDB.groupId] = groupDB;
         // update my group list
         await syncMyGroupListToRelay();
