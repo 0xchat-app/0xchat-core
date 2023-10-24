@@ -56,10 +56,10 @@ class BadgesHelper {
 
     badgeSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
+      Relays.sharedInstance.setCommonMessageUntil(event.createdAt, relay);
       BadgeAward? badgeAward = Nip58.getBadgeAward(event);
       if (badgeAward != null) {
         BadgeDB? badgeDB = _get0xchatBadgeInfo(badgeAward.identifies);
-        print('_updateSubscriptions ${badgeDB?.name}');
         if (badgeDB != null) {
           // save to DB
           BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
