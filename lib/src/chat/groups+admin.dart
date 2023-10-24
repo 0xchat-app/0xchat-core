@@ -73,7 +73,7 @@ extension Admin on Groups {
       }
       return okEvent;
     } else {
-      return OKEvent(groupId, false, 'group does not exit');
+      return OKEvent(groupId, false, 'group not exit');
     }
   }
 
@@ -82,18 +82,18 @@ extension Admin on Groups {
     GroupDB? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
       if (groupDB.members != null) {
-        groupDB.members!.removeWhere((element) => members.contains(element));
-        OKEvent okEvent = await updateGroup(groupDB);
-        if (okEvent.status) {
-          sendGroupMessage(groupId, MessageType.text, content,
-              actionsType: 'remove');
+        OKEvent okEvent = await sendGroupMessage(groupId, MessageType.text, content,
+            actionsType: 'remove');
+        if(okEvent.status){
+          groupDB.members!.removeWhere((element) => members.contains(element));
+          okEvent = await updateGroup(groupDB);
         }
         return okEvent;
       } else {
         return OKEvent(groupId, true, 'success');
       }
     } else {
-      return OKEvent(groupId, false, 'group dont exit');
+      return OKEvent(groupId, false, 'group not exit');
     }
   }
 
@@ -109,7 +109,7 @@ extension Admin on Groups {
       }
       return okEvent;
     } else {
-      return OKEvent(groupId, false, 'group dont exit');
+      return OKEvent(groupId, false, 'group not exit');
     }
   }
 
@@ -125,7 +125,7 @@ extension Admin on Groups {
       }
       return okEvent;
     } else {
-      return OKEvent(groupId, false, 'group dont exit');
+      return OKEvent(groupId, false, 'group not exit');
     }
   }
 
