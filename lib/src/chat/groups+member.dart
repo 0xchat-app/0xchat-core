@@ -51,6 +51,12 @@ extension Member on Groups {
     return ok;
   }
 
+  Future<void> deleteGroup(String groupId) async {
+    myGroups.remove(groupId);
+    await DB.sharedInstance
+        .delete<GroupDB>(where: 'groupId = ?', whereArgs: [groupId]);
+  }
+
   Future<void> muteGroup(String groupId) async {
     _setMuteGroup(groupId, true);
   }
