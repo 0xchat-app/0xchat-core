@@ -23,7 +23,7 @@ extension Admin on Groups {
 
       ok = await updateGroup(groupDB);
       if (ok.status == true) {
-        sendGroupMessage(groupDB.groupId, MessageType.text, '',
+        sendGroupMessage(groupDB.groupId, MessageType.system, 'Welcome!',
             actionsType: 'add');
         myGroups[groupDB.groupId] = groupDB;
         // update my group list
@@ -71,7 +71,7 @@ extension Admin on Groups {
       }
       OKEvent okEvent = await updateGroup(groupDB);
       if (okEvent.status) {
-        sendGroupMessage(groupId, MessageType.text, content,
+        sendGroupMessage(groupId, MessageType.system, content,
             actionsType: 'add');
       }
       return okEvent;
@@ -86,7 +86,7 @@ extension Admin on Groups {
     if (groupDB != null && groupDB.owner == pubkey) {
       if (groupDB.members != null) {
         OKEvent okEvent = await sendGroupMessage(
-            groupId, MessageType.text, content,
+            groupId, MessageType.system, content,
             actionsType: 'remove');
         if (okEvent.status) {
           List<String> removedMembers = [];
@@ -115,7 +115,7 @@ extension Admin on Groups {
       groupDB.name = name;
       OKEvent okEvent = await updateGroup(groupDB);
       if (okEvent.status) {
-        sendGroupMessage(groupId, MessageType.text, content,
+        sendGroupMessage(groupId, MessageType.system, content,
             actionsType: 'updateName');
       }
       return okEvent;
@@ -131,7 +131,7 @@ extension Admin on Groups {
       groupDB.pinned = [pinned];
       OKEvent okEvent = await updateGroup(groupDB);
       if (okEvent.status) {
-        sendGroupMessage(groupId, MessageType.text, content,
+        sendGroupMessage(groupId, MessageType.system, content,
             actionsType: 'updatePinned');
       }
       return okEvent;

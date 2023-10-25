@@ -8,7 +8,7 @@ extension Member on Groups {
       String groupId, List<String> inviteUsers, String content) async {
     if (groups.containsKey(groupId)) {
       OKEvent okEvent = await sendGroupMessage(
-          groupId, MessageType.text, content,
+          groupId, MessageType.system, content,
           actionsType: 'invite', inviteUsers: inviteUsers);
       return okEvent;
     }
@@ -18,7 +18,7 @@ extension Member on Groups {
   Future<OKEvent> requestGroup(String groupId, String content) async {
     if (groups.containsKey(groupId)) {
       OKEvent okEvent = await sendGroupMessage(
-          groupId, MessageType.text, content,
+          groupId, MessageType.system, content,
           actionsType: 'request');
       myGroups[groupId] = groups[groupId]!;
       okEvent = await syncMyGroupListToRelay();
@@ -33,7 +33,7 @@ extension Member on Groups {
       myGroups[groupId] = groups[groupId]!;
       OKEvent ok = await syncMyGroupListToRelay();
       if (ok.status) {
-        sendGroupMessage(groupId, MessageType.text, content,
+        sendGroupMessage(groupId, MessageType.system, content,
             actionsType: 'join');
       }
       return ok;
@@ -45,7 +45,7 @@ extension Member on Groups {
     myGroups.remove(groupId);
     OKEvent ok = await syncMyGroupListToRelay();
     if (ok.status) {
-      sendGroupMessage(groupId, MessageType.text, content,
+      sendGroupMessage(groupId, MessageType.system, content,
           actionsType: 'leave');
     }
     return ok;
