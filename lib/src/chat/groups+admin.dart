@@ -23,7 +23,7 @@ extension Admin on Groups {
 
       ok = await updateGroup(groupDB);
       if (ok.status == true) {
-        sendGroupMessage(groupDB.groupId, MessageType.system, 'Welcome!',
+        sendGroupMessage(groupDB.groupId, MessageType.system, 'Created New Group: $name',
             actionsType: 'add');
         myGroups[groupDB.groupId] = groupDB;
         // update my group list
