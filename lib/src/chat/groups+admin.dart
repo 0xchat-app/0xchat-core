@@ -35,7 +35,8 @@ extension Admin on Groups {
     return null;
   }
 
-  Future<OKEvent> updateGroup(GroupDB groupDB) async {
+  Future<OKEvent> updateGroup(GroupDB groupDB,
+      {List<String>? removedMembers}) async {
     Event event = Nip28.setChannelMetaData(
         groupDB.name,
         groupDB.about ?? '',
@@ -46,7 +47,9 @@ extension Admin on Groups {
         groupDB.groupId,
         groupDB.relay ?? '',
         privkey);
-    OKEvent ok = await sendMessageEvent(groupDB.members, event);
+    List<String> members = List.from(groupDB.members ?? []);
+    members.addAll(removedMembers ?? []);
+    OKEvent ok = await sendMessageEvent(members, event);
     if (ok.status) {
       await syncGroupToDB(groupDB);
     }
@@ -82,11 +85,19 @@ extension Admin on Groups {
     GroupDB? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
       if (groupDB.members != null) {
-        OKEvent okEvent = await sendGroupMessage(groupId, MessageType.text, content,
+        OKEvent okEvent = await sendGroupMessage(
+            groupId, MessageType.text, content,
             actionsType: 'remove');
-        if(okEvent.status){
+        if (okEvent.status) {
+          List<String> removedMembers = [];
+          for (var m in members) {
+            if (groupDB.members?.contains(m) == true) {
+              groupDB.members?.remove(m);
+              removedMembers.add(m);
+            }
+          }
           groupDB.members!.removeWhere((element) => members.contains(element));
-          okEvent = await updateGroup(groupDB);
+          okEvent = await updateGroup(groupDB, removedMembers: removedMembers);
         }
         return okEvent;
       } else {
