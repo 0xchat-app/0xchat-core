@@ -20,6 +20,8 @@ extension Member on Groups {
       OKEvent okEvent = await sendGroupMessage(
           groupId, MessageType.text, content,
           actionsType: 'request');
+      myGroups[groupId] = groups[groupId]!;
+      okEvent = await syncMyGroupListToRelay();
       return okEvent;
     }
     return OKEvent(groupId, false, 'group not found');

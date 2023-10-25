@@ -41,6 +41,14 @@ class Groups {
     });
   }
 
+  bool checkInGroup(String groupId){
+    return groups[groupId]?.members?.contains(pubkey) == true;
+  }
+
+  bool checkInMyGroupList(String groupId){
+    return myGroups.containsKey(groupId);
+  }
+
   Future<void> _loadAllGroupsFromDB() async {
     List<Object?> maps = await DB.sharedInstance.objects<GroupDB>();
     groups = {for (var groupDb in maps) (groupDb as GroupDB).groupId: groupDb};
@@ -79,6 +87,7 @@ class Groups {
       /// fake event
       return;
     }
+    print('receive _handleGroupMetadata & members: ${jsonEncode(group.members)}');
     GroupDB groupDB = _channelToGroupDB(group);
     await syncGroupToDB(groupDB);
   }
