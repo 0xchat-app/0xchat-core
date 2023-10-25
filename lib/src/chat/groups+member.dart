@@ -52,7 +52,6 @@ extension Member on Groups {
   }
 
   Future<void> deleteGroup(String groupId) async {
-    myGroups.remove(groupId);
     await DB.sharedInstance
         .delete<GroupDB>(where: 'groupId = ?', whereArgs: [groupId]);
   }

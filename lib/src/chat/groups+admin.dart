@@ -174,12 +174,12 @@ extension Admin on Groups {
   Future<OKEvent> deleteAndLeave(String groupId, String content) async {
     GroupDB? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
-      OKEvent okEvent = await leaveGroup(groupId, content);
+      OKEvent okEvent =
+          await removeGroupMembers(groupId, content, groupDB.members ?? []);
       if (okEvent.status) {
-        okEvent =
-            await removeGroupMembers(groupId, content, groupDB.members ?? []);
-        if (okEvent.status) await deleteGroup(groupId);
+        okEvent = await leaveGroup(groupId, content);
       }
+      if (okEvent.status) await deleteGroup(groupId);
       return okEvent;
     } else {
       return OKEvent(groupId, false, 'group not exit');
