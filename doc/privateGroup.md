@@ -4,7 +4,7 @@ We're introducing the "Private Group," which requires no new NIP (Only Adding Ne
 
 ### **Key Features**:
 - **Anonymity**: Members are anonymous externally but identifiable within the group.
-- **Privacy**: All messages are sealed, gift-wrapped, and individually delivered to each group member.
+- **Privacy**: All messages are gift-wrapped, and individually delivered to each group member.
 - **Ideal Size**: Best suited for groups with fewer than 500 members.
 
 ### **1. Group Creation (Kind 40)**
@@ -37,7 +37,7 @@ The metadata is the same as channel metadata, with the only difference being the
 
 ### **3. Group Message (Kind 42)**
 
-Group messages are the same as channel messages, with the only difference being the addition of the 'type' tag to declare the system message type, such as join, leave, request, etc.
+Group messages are the same as channel messages, with the only difference being the addition of the **optional** 'type' tag to declare the system message type, such as join, leave, request, etc.
 
 ```json
 {
