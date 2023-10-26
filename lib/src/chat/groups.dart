@@ -100,13 +100,13 @@ class Groups {
     await syncGroupToDB(groupDB);
   }
 
-  Future<void> _handleGroupMessage(Event event, String giftWrapEventId) async {
+  Future<void> _handleGroupMessage(Event event) async {
     ChannelMessage groupMessage = Nip28.getChannelMessage(event);
     String subType = groupMessage.actionsType != null
         ? Nip28.actionToType(groupMessage.actionsType!)
         : '';
     MessageDB messageDB = MessageDB(
-        messageId: giftWrapEventId,
+        messageId: event.id,
         sender: groupMessage.sender,
         receiver: '',
         groupId: groupMessage.channelId,
@@ -131,8 +131,11 @@ class Groups {
   }
 
   Future<void> receiveGroupEvents(
-      Event event, String relay, String giftWrapEventId) async {
-    if (Messages.addToLoaded(event.id)) {
+      Event event, String relay, String giftWrappedEventId) async {
+    MessageDB messageDB = MessageDB(messageId: giftWrappedEventId);
+    int result = await DB.sharedInstance.insert<MessageDB>(messageDB,
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    if (result != 0) {
       switch (event.kind) {
         case 40:
           _handleGroupCreation(event);
@@ -141,7 +144,7 @@ class Groups {
           _handleGroupMetadata(event);
           break;
         case 42:
-          _handleGroupMessage(event, giftWrapEventId);
+          _handleGroupMessage(event);
           break;
         default:
           print('unknown event: ${event.kind}');
