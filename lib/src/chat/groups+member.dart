@@ -23,7 +23,8 @@ extension Member on Groups {
     if (!checkInGroup(groupId)) {
       okEvent = await sendGroupMessage(groupId, MessageType.system, content,
           actionsType: 'request');
-      myGroups[groupId] = groups[groupId]!;
+      groups[groupId] = groupDB;
+      myGroups[groupId] = groupDB;
       okEvent = await syncMyGroupListToRelay();
     } else {
       okEvent = OKEvent(groupId, false, 'already in group');
