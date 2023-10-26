@@ -116,7 +116,7 @@ class Groups {
         plaintEvent: jsonEncode(event),
         chatType: 1,
         subType: subType);
-    var map = MessageDB.decodeContent(messageDB.content);
+    var map = MessageDB.decodeContent(groupMessage.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
 

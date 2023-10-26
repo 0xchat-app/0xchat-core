@@ -134,7 +134,7 @@ class Channels {
         createTime: event.createdAt,
         plaintEvent: jsonEncode(event),
         chatType: 2);
-    var map = MessageDB.decodeContent(messageDB.content);
+    var map = MessageDB.decodeContent(channelMessage.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
 
