@@ -309,7 +309,7 @@ class MessageDB extends DBObject {
         groupId: '',
         kind: event.kind,
         tags: jsonEncode(event.tags),
-        content: event.content,
+        content: message.content,
         createTime: event.createdAt,
         replyId: message.replyId,
         plaintEvent: jsonEncode(event), chatType: chatType);

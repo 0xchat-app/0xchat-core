@@ -112,7 +112,7 @@ class Groups {
         groupId: groupMessage.channelId,
         kind: event.kind,
         tags: jsonEncode(event.tags),
-        content: event.content,
+        content: groupMessage.content,
         replyId: groupMessage.thread.reply?.eventId ?? '',
         createTime: event.createdAt,
         plaintEvent: jsonEncode(event),
