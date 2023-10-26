@@ -41,11 +41,16 @@ class Groups {
     });
   }
 
-  bool checkInGroup(String groupId){
+  /// 0, not in the group, 1, in the group & not joined, 2. joined
+  int getInGroupStatus(String groupId) {
+    return !checkInGroup(groupId) ? 0 : !checkInMyGroupList(groupId) ? 1 : 2;
+  }
+
+  bool checkInGroup(String groupId) {
     return groups[groupId]?.members?.contains(pubkey) == true;
   }
 
-  bool checkInMyGroupList(String groupId){
+  bool checkInMyGroupList(String groupId) {
     return myGroups.containsKey(groupId);
   }
 
@@ -87,18 +92,19 @@ class Groups {
       /// fake event
       return;
     }
-    print('receive _handleGroupMetadata & members: ${jsonEncode(group.members)}');
+    print(
+        'receive _handleGroupMetadata & members: ${jsonEncode(group.members)}');
     GroupDB groupDB = _channelToGroupDB(group);
     await syncGroupToDB(groupDB);
   }
 
-  Future<void> _handleGroupMessage(event) async {
+  Future<void> _handleGroupMessage(Event event, String giftWrapEventId) async {
     ChannelMessage groupMessage = Nip28.getChannelMessage(event);
     String subType = groupMessage.actionsType != null
         ? Nip28.actionToType(groupMessage.actionsType!)
         : '';
     MessageDB messageDB = MessageDB(
-        messageId: event.id,
+        messageId: giftWrapEventId,
         sender: groupMessage.sender,
         receiver: '',
         groupId: groupMessage.channelId,
@@ -131,7 +137,7 @@ class Groups {
           _handleGroupMetadata(event);
           break;
         case 42:
-          _handleGroupMessage(event);
+          _handleGroupMessage(event, giftWrapEventId);
           break;
         default:
           print('unknown event: ${event.kind}');
