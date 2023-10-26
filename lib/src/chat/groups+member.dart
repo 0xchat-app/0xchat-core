@@ -15,16 +15,20 @@ extension Member on Groups {
   //   return OKEvent(groupId, false, 'group not found');
   // }
 
-  Future<OKEvent> requestGroup(String groupId, String content) async {
-    if (groups.containsKey(groupId)) {
-      OKEvent okEvent = await sendGroupMessage(
-          groupId, MessageType.system, content,
+  Future<OKEvent> requestGroup(
+      String groupId, String groupOwner, String content) async {
+    GroupDB? groupDB = groups[groupId];
+    groupDB ??= GroupDB(groupId: groupId, owner: groupOwner);
+    OKEvent? okEvent;
+    if (!checkInGroup(groupId)) {
+      okEvent = await sendGroupMessage(groupId, MessageType.system, content,
           actionsType: 'request');
       myGroups[groupId] = groups[groupId]!;
       okEvent = await syncMyGroupListToRelay();
-      return okEvent;
+    } else {
+      okEvent = OKEvent(groupId, false, 'already in group');
     }
-    return OKEvent(groupId, false, 'group not found');
+    return okEvent;
   }
 
   Future<OKEvent> joinGroup(String groupId, String content) async {
