@@ -21,10 +21,10 @@ extension Member on Groups {
     groupDB ??= GroupDB(groupId: groupId, owner: groupOwner);
     OKEvent? okEvent;
     if (!checkInGroup(groupId)) {
-      okEvent = await sendGroupMessage(groupId, MessageType.system, content,
-          actionsType: 'request');
       groups[groupId] = groupDB;
       myGroups[groupId] = groupDB;
+      okEvent = await sendGroupMessage(groupId, MessageType.system, content,
+          actionsType: 'request');
       okEvent = await syncMyGroupListToRelay();
     } else {
       okEvent = OKEvent(groupId, false, 'already in group');
