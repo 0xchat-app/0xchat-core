@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
+import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 /// notice callback
@@ -314,6 +315,9 @@ class Connect {
       case "OK":
         _handleOk(message, relay);
         break;
+      case "AUTH":
+        _handleAuth(message, relay);
+        break;
       default:
         print('Received message not supported: $message');
         break;
@@ -370,6 +374,12 @@ class Connect {
         }
       }
     }
+  }
+
+  void _handleAuth(String message, String relay){
+    print('receive auth: $message, $relay');
+    String auth = Nip42.encode(message, relay, Account.sharedInstance.currentPrivkey);
+    _send(auth, relay: relay);
   }
 
   void _listenEvent(WebSocket socket, String relay) {
