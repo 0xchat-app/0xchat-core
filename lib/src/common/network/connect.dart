@@ -316,7 +316,7 @@ class Connect {
         _handleOk(message, relay);
         break;
       case "AUTH":
-        _handleAuth(message, relay);
+        _handleAuth(m.message, relay);
         break;
       default:
         print('Received message not supported: $message');
@@ -376,10 +376,10 @@ class Connect {
     }
   }
 
-  void _handleAuth(String message, String relay){
-    print('receive auth: $message, $relay');
-    String auth = Nip42.encode(message, relay, Account.sharedInstance.currentPrivkey);
-    _send(auth, relay: relay);
+  void _handleAuth(Auth auth, String relay){
+    String data = Nip42.encode(auth.challenge, relay, Account.sharedInstance.currentPrivkey);
+    print('send auth: $data');
+    _send(data, relay: relay);
   }
 
   void _listenEvent(WebSocket socket, String relay) {
