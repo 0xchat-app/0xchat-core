@@ -43,7 +43,11 @@ class Groups {
 
   /// 0, not in the group, 1, in the group & not joined, 2. joined
   int getInGroupStatus(String groupId) {
-    return !checkInGroup(groupId) ? 0 : !checkInMyGroupList(groupId) ? 1 : 2;
+    return !checkInGroup(groupId)
+        ? 0
+        : !checkInMyGroupList(groupId)
+            ? 1
+            : 2;
   }
 
   bool checkInGroup(String groupId) {
@@ -92,8 +96,6 @@ class Groups {
       /// fake event
       return;
     }
-    print(
-        'receive _handleGroupMetadata & members: ${jsonEncode(group.members)}');
     GroupDB groupDB = _channelToGroupDB(group);
     await syncGroupToDB(groupDB);
   }
@@ -121,7 +123,9 @@ class Groups {
     messageDB.type = map['contentType'];
 
     int status = await Messages.saveMessageToDB(messageDB);
-    if (status != 0) {
+    if (status != 0 &&
+        myGroups.containsKey(groupMessage.channelId) &&
+        messageDB.subType != 'request') {
       groupMessageCallBack?.call(messageDB);
     }
   }

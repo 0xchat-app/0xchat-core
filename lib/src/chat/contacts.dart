@@ -430,19 +430,11 @@ class Contacts {
                   giftWrapEventId: event.id);
               break;
             case 10100:
-              handleRequest(innerEvent, relay);
-              break;
             case 10101:
-              handleAccept(innerEvent, relay);
-              break;
             case 10102:
-              handleReject(innerEvent, relay);
-              break;
             case 10103:
-              handleClose(innerEvent, relay);
-              break;
             case 10104:
-              handleUpdate(innerEvent, relay);
+              handleSecretSession(innerEvent, relay, event.id);
               break;
             case 25050:
               handleCallEvent(innerEvent, relay);

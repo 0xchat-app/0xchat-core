@@ -145,10 +145,10 @@ extension Admin on Groups {
     List<Object?>? whereArgs;
     if (groupId == null) {
       where = 'chatType = ? AND type = ? AND subType = ?';
-      whereArgs = [3, 'system', 'request'];
+      whereArgs = [1, 'system', 'request'];
     } else {
       where = 'groupId = ? AND chatType = ? AND type = ? AND subType = ?';
-      whereArgs = [groupId, 3, 'system', 'request'];
+      whereArgs = [groupId, 1, 'system', 'request'];
     }
     List<Object?> maps = await DB.sharedInstance
         .objects<MessageDB>(whereArgs: whereArgs, where: where);

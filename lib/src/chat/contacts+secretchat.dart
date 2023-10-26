@@ -224,6 +224,31 @@ extension SecretChat on Contacts {
         status: status);
   }
 
+  Future<void> handleSecretSession(
+      Event event, String relay, String giftWrapEventId) async {
+    MessageDB messageDB = MessageDB(messageId: giftWrapEventId);
+    int result = await DB.sharedInstance.insert<MessageDB>(messageDB,
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    if(result == 0) return;
+    switch (event.kind) {
+      case 10100:
+        handleRequest(event, relay);
+        break;
+      case 10101:
+        handleAccept(event, relay);
+        break;
+      case 10102:
+        handleReject(event, relay);
+        break;
+      case 10103:
+        handleClose(event, relay);
+        break;
+      case 10104:
+        handleUpdate(event, relay);
+        break;
+    }
+  }
+
   Future<void> handleRequest(Event event, String relay) async {
     /// get keyExchangeSession
     KeyExchangeSession keyExchangeSession = Nip101.getRequest(event);
@@ -390,7 +415,8 @@ extension SecretChat on Contacts {
           decryptContent: content,
           type: MessageDB.messageTypeToString(type),
           status: 0,
-          plaintEvent: jsonEncode(event), chatType: 3);
+          plaintEvent: jsonEncode(event),
+          chatType: 3);
       secretChatMessageCallBack?.call(messageDB);
       await Messages.saveMessageToDB(messageDB);
 
