@@ -4,7 +4,7 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension Admin on Groups {
-  Future<GroupDB?> createGroup(String name, List<String> members,
+  Future<GroupDB?> createGroup(String name, List<String> members, String content,
       {String? about, String? picture, String? relay}) async {
     Event event =
         Nip28.createChannel(name, about ?? '', picture ?? '', {}, privkey);
@@ -23,7 +23,7 @@ extension Admin on Groups {
 
       ok = await updateGroup(groupDB);
       if (ok.status == true) {
-        sendGroupMessage(groupDB.groupId, MessageType.system, 'Created New Group: $name',
+        sendGroupMessage(groupDB.groupId, MessageType.system, content,
             actionsType: 'add');
         myGroups[groupDB.groupId] = groupDB;
         // update my group list
