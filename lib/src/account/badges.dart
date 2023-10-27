@@ -225,16 +225,16 @@ class BadgesHelper {
       String userPubkey) async {
     Completer<List<BadgeAwardDB?>?> completer =
         Completer<List<BadgeAwardDB?>?>();
-    List<Event> badgeAwardEvents = [];
+    Map<String, Event> badgeAwardEvents = {};
     List<BadgeAwardDB> badgeAwardsDB = [];
     Filter f = Filter(kinds: [8], p: [userPubkey]);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      badgeAwardEvents.add(event);
+      badgeAwardEvents[event.id] = event;
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        for (var badgeAwardEvent in badgeAwardEvents) {
+        for (var badgeAwardEvent in badgeAwardEvents.values) {
           BadgeAward? badgeAward = Nip58.getBadgeAward(badgeAwardEvent);
           if (badgeAward != null) {
             BadgeDB? badgeDB = _get0xchatBadgeInfo(badgeAward.identifies);
