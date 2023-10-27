@@ -221,7 +221,7 @@ class BadgesHelper {
   }
 
   /// badge award
-  static Future<List<BadgeAwardDB?>?> getUserBadgeAwardsFromRelay(
+  Future<List<BadgeAwardDB?>?> getUserBadgeAwardsFromRelay(
       String userPubkey) async {
     Completer<List<BadgeAwardDB?>?> completer =
         Completer<List<BadgeAwardDB?>?>();
@@ -239,17 +239,14 @@ class BadgesHelper {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         for (var badgeAward in badgeAwards) {
-          List<BadgeDB> badges = await searchBadgeInfosFromDB([badgeAward]);
-          BadgeDB? badgeDB;
-          if (badges.isNotEmpty) badgeDB = badges.first;
-          badgeDB ??= await _searchBadgeFromRelay(
-              badgeAward.creator!, badgeAward.identifies!);
+          BadgeDB? badgeDB = _get0xchatBadgeInfo(badgeAward.identifies);
           if (badgeDB != null) {
             // save to DB
             BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
             badgeAwardDB.badgeId = badgeDB.id;
+            await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB,
+                conflictAlgorithm: ConflictAlgorithm.ignore);
             badgeAwardsDB.add(badgeAwardDB);
-            await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB);
           }
         }
         // cache to DB
