@@ -216,7 +216,9 @@ class Messages {
     for (MessageDB message in messages) {
       theLastTime =
           message.createTime > theLastTime ? message.createTime : theLastTime;
-      if (message.decryptContent.isEmpty) {
+      if (message.content.isNotEmpty &&
+          message.decryptContent.isEmpty &&
+          message.type != 'text') {
         var map = MessageDB.decodeContent(message.content);
         message.decryptContent = map['content'];
         message.type = map['contentType'];
