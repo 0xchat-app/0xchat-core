@@ -58,9 +58,19 @@ class Groups {
     return myGroups.containsKey(groupId);
   }
 
+  String _shortGroupId(String groupId) {
+    final String start = groupId.substring(0, 6);
+    final String end = groupId.substring(groupId.length - 6);
+    return '$start:$end';
+  }
+
   Future<void> _loadAllGroupsFromDB() async {
     List<Object?> maps = await DB.sharedInstance.objects<GroupDB>();
-    groups = {for (var groupDb in maps) (groupDb as GroupDB).groupId: groupDb};
+    for (var e in maps) {
+      GroupDB groupDB = e as GroupDB;
+      if(groupDB.name.isEmpty) groupDB.name = _shortGroupId(groupDB.groupId);
+      groups[groupDB.groupId] = groupDB;
+    }
     myGroups = _myGroups();
   }
 
