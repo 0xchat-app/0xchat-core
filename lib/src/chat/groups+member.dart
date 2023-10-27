@@ -83,7 +83,13 @@ extension Member on Groups {
     if (groupDB != null && groupDB.members != null) {
       for (String member in groupDB.members!) {
         UserDB? userDB = await Account.sharedInstance.getUserInfo(member);
-        if (userDB != null) result.add(userDB);
+        if (userDB != null){
+          if(groupDB.owner == member) {
+            result.insert(0, userDB);
+          } else {
+            result.add(userDB);
+          }
+        }
       }
     }
     return result;
