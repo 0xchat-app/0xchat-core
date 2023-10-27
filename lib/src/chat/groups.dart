@@ -68,7 +68,7 @@ class Groups {
     List<Object?> maps = await DB.sharedInstance.objects<GroupDB>();
     for (var e in maps) {
       GroupDB groupDB = e as GroupDB;
-      if(groupDB.name.isEmpty) groupDB.name = _shortGroupId(groupDB.groupId);
+      if (groupDB.name.isEmpty) groupDB.name = _shortGroupId(groupDB.groupId);
       groups[groupDB.groupId] = groupDB;
     }
     myGroups = _myGroups();
@@ -89,7 +89,7 @@ class Groups {
     return result;
   }
 
-  Future<void> _handleGroupCreation(event) async {
+  Future<void> _handleGroupCreation(Event event) async {
     if (!groups.containsKey(event.id) ||
         (groups.containsKey(event.id) &&
             groups[event.id]?.owner != event.pubkey)) {
@@ -99,9 +99,10 @@ class Groups {
     }
   }
 
-  Future<void> _handleGroupMetadata(event) async {
+  Future<void> _handleGroupMetadata(Event event) async {
     Channel group = Nip28.getChannelMetadata(event);
     if (groups.containsKey(group.channelId) &&
+        groups[group.channelId]?.owner.isNotEmpty == true &&
         groups[group.channelId]?.owner != group.owner) {
       /// fake event
       return;
@@ -232,11 +233,11 @@ class Groups {
   }
 
   Future<void> syncGroupToDB(GroupDB groupDB) async {
-    await DB.sharedInstance.insert<GroupDB>(groupDB);
     groups[groupDB.groupId] = groupDB;
     if (myGroups.containsKey(groupDB.groupId)) {
       myGroups[groupDB.groupId] = groupDB;
     }
+    await DB.sharedInstance.insert<GroupDB>(groupDB);
   }
 
   Future<void> _syncMyGroupListToDB() async {
