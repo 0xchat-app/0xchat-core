@@ -225,28 +225,26 @@ class BadgesHelper {
       String userPubkey) async {
     Completer<List<BadgeAwardDB?>?> completer =
         Completer<List<BadgeAwardDB?>?>();
-    List<BadgeAward> badgeAwards = [];
+    List<Event> badgeAwardEvents = [];
     List<BadgeAwardDB> badgeAwardsDB = [];
-
     Filter f = Filter(kinds: [8], p: [userPubkey]);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      BadgeAward? badgeAward = Nip58.getBadgeAward(event);
-      if (badgeAward != null) {
-        badgeAwards.add(badgeAward);
-      }
+      badgeAwardEvents.add(event);
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        for (var badgeAward in badgeAwards) {
-          BadgeDB? badgeDB = _get0xchatBadgeInfo(badgeAward.identifies);
-          if (badgeDB != null) {
-            // save to DB
-            BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
-            badgeAwardDB.badgeId = badgeDB.id;
-            await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB,
-                conflictAlgorithm: ConflictAlgorithm.ignore);
-            badgeAwardsDB.add(badgeAwardDB);
+        for (var badgeAwardEvent in badgeAwardEvents) {
+          BadgeAward? badgeAward = Nip58.getBadgeAward(badgeAwardEvent);
+          if (badgeAward != null) {
+            BadgeDB? badgeDB = _get0xchatBadgeInfo(badgeAward.identifies);
+            if (badgeDB != null) {
+              // save to DB
+              BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
+              badgeAwardDB.badgeId = badgeDB.id;
+              await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB);
+              badgeAwardsDB.add(badgeAwardDB);
+            }
           }
         }
         // cache to DB
