@@ -43,6 +43,11 @@ class Account {
     await DB.sharedInstance.update<UserDB>(me!);
   }
 
+  bool isValidPubKey(String pubKey) {
+    final pattern = RegExp(r'^[a-fA-F0-9]{64}$');
+    return pattern.hasMatch(pubKey);
+  }
+
   FutureOr<UserDB?> getUserInfo(String pubkey) {
     final user = userCache[pubkey];
     if (user != null) {
@@ -73,7 +78,9 @@ class Account {
   void _tryAddToSyncProfiles(UserDB user) {
     if (user.lastUpdatedTime != 0) return;
     final pubkey = user.pubKey;
-    if (pubkey.isNotEmpty && !pQueue.contains(pubkey)) {
+    if (pubkey.isNotEmpty &&
+        !pQueue.contains(pubkey) &&
+        isValidPubKey(pubkey)) {
       pQueue.add(pubkey);
     }
   }
@@ -103,13 +110,11 @@ class Account {
   }
 
   Future<UserDB> reloadProfileFromRelay(String pubkey) async {
+    if (!isValidPubKey(pubkey)) return UserDB(pubKey: pubkey);
     Completer<UserDB> completer = Completer<UserDB>();
     UserDB? db = await getUserInfo(pubkey);
     Filter f = Filter(
-      kinds: [0],
-      authors: [pubkey],
-      since: (db?.lastUpdatedTime ?? 0) + 1
-    );
+        kinds: [0], authors: [pubkey], since: (db?.lastUpdatedTime ?? 0) + 1);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       Map map = jsonDecode(event.content);
