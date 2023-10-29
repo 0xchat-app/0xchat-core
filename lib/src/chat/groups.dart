@@ -251,7 +251,7 @@ class Groups {
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<String> list = myGroups.keys.toList();
     Event event = await Nip51.createCategorizedBookmarks(
-        identifier, list, [], privkey, pubkey);
+        identifier, [], list, privkey, pubkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (ok.status) _syncMyGroupListToDB();
       if (!completer.isCompleted) completer.complete(ok);

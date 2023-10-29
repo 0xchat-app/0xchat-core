@@ -265,7 +265,6 @@ class Account {
     List<Object?> maps = await DB.sharedInstance
         .objects<UserDB>(where: 'pubKey = ?', whereArgs: [pubkey]);
     UserDB? db;
-    print(maps);
     if (maps.isNotEmpty) {
       db = maps.first as UserDB?;
       if (db != null &&
