@@ -209,9 +209,9 @@ class Contacts {
       RegExp regex = RegExp(keyword, caseSensitive: false);
       List<UserDB> filteredFriends = allContacts.values
           .where((person) =>
-              regex.hasMatch(person.name!) ||
-              regex.hasMatch(person.dns!) ||
-              regex.hasMatch(person.nickName!))
+              regex.hasMatch(person.name ?? '') ||
+              regex.hasMatch(person.dns ?? '') ||
+              regex.hasMatch(person.nickName ?? ''))
           .toList();
       return filteredFriends;
     }
