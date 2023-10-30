@@ -116,6 +116,25 @@ class Groups {
     String subType = groupMessage.actionsType != null
         ? Nip28.actionToType(groupMessage.actionsType!)
         : '';
+    GroupDB? groupDB = myGroups[groupMessage.channelId];
+
+    switch (subType) {
+      case 'invite':
+        break;
+      case 'request':
+        break;
+      case 'add':
+      case 'remove':
+      case 'updateName':
+      case 'updatePinned':
+        if (groupDB?.owner != groupMessage.sender) return;
+        break;
+      case 'join':
+      case 'leave':
+      default:
+        if (groupDB?.members?.contains(groupMessage.sender) == false) return;
+    }
+
     MessageDB messageDB = MessageDB(
         messageId: event.id,
         sender: groupMessage.sender,
@@ -134,9 +153,7 @@ class Groups {
     messageDB.type = map['contentType'];
 
     int status = await Messages.saveMessageToDB(messageDB);
-    if (status != 0 &&
-        myGroups.containsKey(groupMessage.channelId) &&
-        messageDB.subType != 'request') {
+    if (status != 0 && messageDB.subType != 'request') {
       groupMessageCallBack?.call(messageDB);
     }
   }
