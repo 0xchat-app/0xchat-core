@@ -94,7 +94,7 @@ class Groups {
         (groups.containsKey(event.id) &&
             groups[event.id]?.owner != event.pubkey)) {
       Channel group = Nip28.getChannelCreation(event);
-      GroupDB groupDB = _channelToGroupDB(group);
+      GroupDB groupDB = _channelToGroupDB(group, event.createdAt);
       await syncGroupToDB(groupDB);
     }
   }
@@ -104,10 +104,9 @@ class Groups {
     if (groups.containsKey(group.channelId) &&
         groups[group.channelId]?.owner.isNotEmpty == true &&
         groups[group.channelId]?.owner != group.owner) {
-      /// fake event
       return;
     }
-    GroupDB groupDB = _channelToGroupDB(group);
+    GroupDB groupDB = _channelToGroupDB(group, event.createdAt);
     await syncGroupToDB(groupDB);
   }
 
@@ -225,9 +224,9 @@ class Groups {
     return completer.future;
   }
 
-  GroupDB _channelToGroupDB(Channel group) {
+  GroupDB _channelToGroupDB(Channel group, int updateTime) {
     GroupDB? groupDB = groups[group.channelId];
-    if (groupDB != null) {
+    if (groupDB != null && groupDB.updateTime < updateTime) {
       groupDB.name = group.name;
       groupDB.about = group.about;
       groupDB.picture = group.picture;
@@ -235,17 +234,18 @@ class Groups {
       groupDB.owner = group.owner;
       groupDB.relay = group.relay;
       groupDB.members = group.members;
-    } else {
-      groupDB = GroupDB(
-          groupId: group.channelId,
-          owner: group.owner,
-          name: group.name,
-          members: group.members,
-          pinned: [group.pinned ?? ''],
-          about: group.about,
-          picture: group.picture,
-          relay: group.relay);
+      groupDB.updateTime = updateTime;
     }
+    groupDB ??= GroupDB(
+        groupId: group.channelId,
+        owner: group.owner,
+        name: group.name,
+        members: group.members,
+        pinned: [group.pinned ?? ''],
+        about: group.about,
+        picture: group.picture,
+        relay: group.relay,
+        updateTime: updateTime);
     return groupDB;
   }
 
