@@ -16,9 +16,12 @@ extension Member on Groups {
   // }
 
   Future<OKEvent> requestGroup(
-      String groupId, String groupOwner, String content) async {
+      String groupId, String groupOwner, String groupName, String content) async {
+    content = "${Account.sharedInstance.me?.name} request to join the group";
     GroupDB? groupDB = groups[groupId];
-    groupDB ??= GroupDB(groupId: groupId, owner: groupOwner);
+    groupDB ??= GroupDB(groupId: groupId, owner: groupOwner, name: groupName);
+    if(groupDB.owner.isEmpty) groupDB.owner = groupOwner;
+    if(groupDB.name.isEmpty) groupDB.name = groupName;
     OKEvent? okEvent;
     if (!checkInGroup(groupId)) {
       groups[groupId] = groupDB;

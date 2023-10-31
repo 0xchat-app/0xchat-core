@@ -116,11 +116,14 @@ class Groups {
         ? Nip28.actionToType(groupMessage.actionsType!)
         : '';
     GroupDB? groupDB = myGroups[groupMessage.channelId];
-
     switch (subType) {
       case 'invite':
         break;
       case 'request':
+        if (groupDB?.owner != pubkey &&
+            groupDB?.members?.contains(groupMessage.sender) == false) {
+          return;
+        }
         break;
       case 'add':
       case 'remove':
@@ -152,7 +155,7 @@ class Groups {
     messageDB.type = map['contentType'];
 
     int status = await Messages.saveMessageToDB(messageDB);
-    if (status != 0 && messageDB.subType != 'request') {
+    if (status != 0) {
       groupMessageCallBack?.call(messageDB);
     }
   }
@@ -413,13 +416,15 @@ class Groups {
         Connect.sharedInstance.sendEvent(Event.fromJson(message));
       });
       for (var receiver in receivers) {
-        Map<String, dynamic> map = {
-          'event': event.toJson(),
-          'receiver': receiver,
-          'privkey': privkey,
-          'sendPort': receivePort.sendPort
-        };
-        Isolate.spawn(encodeNip24InIsolate, map);
+        if (receiver.isNotEmpty) {
+          Map<String, dynamic> map = {
+            'event': event.toJson(),
+            'receiver': receiver,
+            'privkey': privkey,
+            'sendPort': receivePort.sendPort
+          };
+          Isolate.spawn(encodeNip24InIsolate, map);
+        }
       }
       if (!completer.isCompleted) {
         completer.complete(OKEvent(event.id, true, ''));
