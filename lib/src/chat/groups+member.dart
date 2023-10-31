@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension Member on Groups {
   // Future<OKEvent> inviteGroup(
@@ -22,6 +23,7 @@ extension Member on Groups {
     groupDB ??= GroupDB(groupId: groupId, owner: groupOwner, name: groupName);
     if(groupDB.owner.isEmpty) groupDB.owner = groupOwner;
     if(groupDB.name.isEmpty) groupDB.name = groupName;
+    await DB.sharedInstance.insert<GroupDB>(groupDB, conflictAlgorithm: ConflictAlgorithm.ignore);
     OKEvent? okEvent;
     if (!checkInGroup(groupId)) {
       groups[groupId] = groupDB;
