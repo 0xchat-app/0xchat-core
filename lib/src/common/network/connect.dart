@@ -378,8 +378,7 @@ class Connect {
 
   void _handleAuth(Auth auth, String relay){
     String data = Nip42.encode(auth.challenge, relay, Account.sharedInstance.currentPrivkey);
-    print('send auth: $data');
-    // _send(data, relay: relay);
+    _send(data, relay: relay);
   }
 
   void _listenEvent(WebSocket socket, String relay) {
