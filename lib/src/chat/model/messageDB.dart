@@ -234,8 +234,9 @@ class MessageDB extends DBObject {
       return {'contentType': 'text', 'content': content};
     } catch (e) {
       print('decodeContent fail: $content, error msg: ${e.toString()}');
-      MessageType type = _identifyUrl(content);
-      return {'contentType': messageTypeToString(type), 'content': content};
+      String trimmedContent = content.trim();
+      MessageType type = _identifyUrl(trimmedContent);
+      return {'contentType': messageTypeToString(type), 'content': trimmedContent};
     }
   }
 
