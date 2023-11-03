@@ -214,6 +214,7 @@ class MessageDB extends DBObject {
   }
 
   static Map<String, dynamic> decodeContent(String content) {
+    content = content.trim();
     try {
       Map<String, dynamic> map = jsonDecode(content);
       if (map.containsKey('contentType') && map.containsKey('content')) {
@@ -231,12 +232,11 @@ class MessageDB extends DBObject {
             type == 'system' ||
             type == 'call') return map;
       }
-      return {'contentType': 'text', 'content': content.trim()};
+      return {'contentType': 'text', 'content': content};
     } catch (e) {
       print('decodeContent fail: $content, error msg: ${e.toString()}');
-      String trimmedContent = content.trim();
-      MessageType type = _identifyUrl(trimmedContent);
-      return {'contentType': messageTypeToString(type), 'content': trimmedContent};
+      MessageType type = _identifyUrl(content);
+      return {'contentType': messageTypeToString(type), 'content': content};
     }
   }
 
