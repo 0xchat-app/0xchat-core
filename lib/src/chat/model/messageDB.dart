@@ -43,6 +43,9 @@ class MessageDB extends DBObject {
   int? chatType; // 0 private chat 1 group chat 2 channel chat 3 secret chat
   String? subType; // subtype of template/system type
 
+  /// add previewData
+  String? previewData;
+
   MessageDB(
       {this.messageId = '',
       this.sender = '',
@@ -60,7 +63,8 @@ class MessageDB extends DBObject {
       this.status = 1,
       this.plaintEvent = '',
       this.chatType,
-      this.subType});
+      this.subType,
+      this.previewData});
 
   @override
   Map<String, Object?> toMap() {
@@ -94,7 +98,8 @@ class MessageDB extends DBObject {
       "2":
           '''alter table MessageDB add plaintEvent TEXT; alter table MessageDB add sessionId TEXT;''',
       "4":
-          '''alter table MessageDB add chatType INT; alter table MessageDB add subType TEXT;'''
+          '''alter table MessageDB add chatType INT; alter table MessageDB add subType TEXT;''',
+      "5": '''alter table MessageDB add previewData TEXT;'''
     };
   }
 
@@ -313,11 +318,19 @@ class MessageDB extends DBObject {
         content: message.content,
         createTime: event.createdAt,
         replyId: message.replyId,
-        plaintEvent: jsonEncode(event), chatType: chatType);
+        plaintEvent: jsonEncode(event),
+        chatType: chatType);
     var map = decodeContent(message.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
     return messageDB;
+  }
+
+  static Future<void> savePreviewData(
+      String messageId, String previewData) async {
+    await DB.sharedInstance.rawUpdate(
+        'UPDATE MessageDB SET previewData = ? WHERE messageId = ?',
+        [previewData, messageId]);
   }
 }
 
@@ -339,6 +352,7 @@ Map<String, dynamic> _messageInfoToMap(MessageDB instance) => <String, dynamic>{
       'plaintEvent': instance.plaintEvent,
       'subType': instance.subType,
       'chatType': instance.chatType,
+      'previewData': instance.previewData,
     };
 
 MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
@@ -360,5 +374,6 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     plaintEvent: map['plaintEvent'].toString(),
     chatType: map['chatType'],
     subType: map['subType']?.toString(),
+    previewData: map['previewData']?.toString(),
   );
 }
