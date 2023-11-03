@@ -231,7 +231,7 @@ class MessageDB extends DBObject {
             type == 'system' ||
             type == 'call') return map;
       }
-      return {'contentType': 'text', 'content': content};
+      return {'contentType': 'text', 'content': content.trim()};
     } catch (e) {
       print('decodeContent fail: $content, error msg: ${e.toString()}');
       String trimmedContent = content.trim();
