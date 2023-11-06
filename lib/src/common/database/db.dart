@@ -27,7 +27,7 @@ class DB {
     return sharedInstance;
   }
 
-  Future open(String dbPath, {int? version}) async {
+  Future open(String dbPath, {int? version, String? password}) async {
     if (deleteDBIfNeedMirgration) {
       bool exists = await databaseExists(dbPath);
       if (exists) {
@@ -35,7 +35,7 @@ class DB {
         await deleteDatabase(dbPath);
       }
     }
-    db = await openDatabase(dbPath, version: version,
+    db = await openDatabase(dbPath, version: version, password: password,
         onCreate: (db, version) async {
       var batch = db.batch();
       for (var type in schemes) {
