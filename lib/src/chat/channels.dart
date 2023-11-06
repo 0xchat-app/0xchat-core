@@ -295,8 +295,14 @@ class Channels {
     List<String> list = myChannels.keys.toList();
     Event event = await Nip51.createCategorizedBookmarks(
         identifier, list, [], privkey, pubkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: callBack);
-    _syncMyChannelListToDB();
+    Connect.sharedInstance.sendEvent(event,
+        sendCallBack: (OKEvent ok, String relay) {
+      if (ok.status) {
+        Account.sharedInstance.me!.lastChannelsListUpdatedTime =
+            event.createdAt;
+        _syncMyChannelListToDB();
+      }
+    });
   }
 
   void _loadChannelPreMessages(String channelId, int until, int maxAmount) {

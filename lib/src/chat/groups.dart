@@ -273,7 +273,10 @@ class Groups {
     Event event = await Nip51.createCategorizedBookmarks(
         identifier, [], list, privkey, pubkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
-      if (ok.status) _syncMyGroupListToDB();
+      if (ok.status) {
+        Account.sharedInstance.me!.lastGroupsListUpdatedTime = event.createdAt;
+        _syncMyGroupListToDB();
+      }
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;

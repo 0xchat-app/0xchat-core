@@ -123,6 +123,8 @@ class Contacts {
       Connect.sharedInstance.sendEvent(event,
           sendCallBack: (OKEvent ok, String relay) async {
         if (ok.status) {
+          Account.sharedInstance.me!.lastFriendsListUpdatedTime =
+              event.createdAt;
           await _syncContactsToDB(event.content);
         }
         okCallBack?.call(ok, relay);
