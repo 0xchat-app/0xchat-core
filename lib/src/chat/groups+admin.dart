@@ -90,7 +90,8 @@ extension Admin on Groups {
             actionsType: 'remove');
         if (okEvent.status) {
           List<String> removedMembers = [];
-          for (var m in members) {
+          List<String> ms = List.from(members);
+          for (var m in ms) {
             if (groupDB.members?.contains(m) == true) {
               groupDB.members?.remove(m);
               removedMembers.add(m);
