@@ -97,6 +97,37 @@ class DB {
     allTablenames = tables.map((item) => item["name"].toString()).toList();
   }
 
+  Future<void> cipherMigrate(
+      String newPath, int version, String password) async {
+    Completer<void> completer = Completer<void>();
+    await openDatabase(newPath, version: version, password: password,
+        onCreate: (newDb, version) async {
+      // all table from oldDB
+      List<Map> list = await db
+          .rawQuery('SELECT name FROM sqlite_master WHERE type="table"');
+      await Future.forEach(list, (Map row) async {
+        String tableName = row['name'];
+        // create new table
+        String createTableSql = await db
+            .query('sqlite_master',
+                columns: ['sql'], where: 'name = ?', whereArgs: [tableName])
+            .then((value) => value.first['sql'] as String);
+        await newDb.execute(createTableSql);
+        // copy all data to new DB
+        List<Map<String, Object?>> tableData = await db.query(tableName);
+        await Future.forEach(tableData, (Map<String, Object?> row) async {
+          await newDb.insert(tableName, row);
+        });
+      });
+      String dbPath = db.path;
+      await db.close();
+      await deleteDatabase(dbPath);
+      db = newDb;
+      if (!completer.isCompleted) completer.complete();
+    });
+    return completer.future;
+  }
+
   Future<void> closDatabase() async {
     allTablenames.clear();
     await db.close();
