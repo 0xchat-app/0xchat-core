@@ -251,7 +251,7 @@ class Messages {
     if (where != null) {
       await DB.sharedInstance
           .delete<MessageDB>(where: where, whereArgs: whereArgs);
-    } else if (messageIds != null) {
+    } else if (messageIds != null && messageIds.isNotEmpty) {
       await DB.sharedInstance
           .delete<MessageDB>(where: 'messageId = ?', whereArgs: messageIds);
     }
