@@ -54,38 +54,42 @@ class UserDB extends DBObject {
 
   // banner, website, display_name
   String? otherField;
+  // nostr wallet connect URI
+  String? nwcURI;
 
-  UserDB(
-      {this.pubKey = '',
-      this.encryptedPrivKey = '',
-      this.privkey = '',
-      this.defaultPassword = '',
-      this.name = '',
-      this.nickName = '',
-      this.mainRelay = '',
-      this.dns = '',
-      this.lnurl = '',
-      this.badges = '',
-      this.gender = '',
-      this.area = '',
-      this.about = '',
-      this.picture = '',
-      this.aliasPubkey = '',
-      this.toAliasPubkey = '',
-      this.toAliasPrivkey = '',
-      this.friendsList,
-      this.channelsList,
-      this.groupsList,
-      this.badgesList,
-      this.blockedList,
-      this.mute = false,
-      this.lastUpdatedTime = 0,
-      this.lastBadgesListUpdatedTime = 0,
-      this.lastBlockListUpdatedTime = 0,
-      this.lastChannelsListUpdatedTime = 0,
-      this.lastFriendsListUpdatedTime = 0,
-      this.lastGroupsListUpdatedTime = 0,
-      this.otherField = '{}'});
+  UserDB({
+    this.pubKey = '',
+    this.encryptedPrivKey = '',
+    this.privkey = '',
+    this.defaultPassword = '',
+    this.name = '',
+    this.nickName = '',
+    this.mainRelay = '',
+    this.dns = '',
+    this.lnurl = '',
+    this.badges = '',
+    this.gender = '',
+    this.area = '',
+    this.about = '',
+    this.picture = '',
+    this.aliasPubkey = '',
+    this.toAliasPubkey = '',
+    this.toAliasPrivkey = '',
+    this.friendsList,
+    this.channelsList,
+    this.groupsList,
+    this.badgesList,
+    this.blockedList,
+    this.mute = false,
+    this.lastUpdatedTime = 0,
+    this.lastBadgesListUpdatedTime = 0,
+    this.lastBlockListUpdatedTime = 0,
+    this.lastChannelsListUpdatedTime = 0,
+    this.lastFriendsListUpdatedTime = 0,
+    this.lastGroupsListUpdatedTime = 0,
+    this.otherField = '{}',
+    this.nwcURI,
+  });
 
   @override
   //Map
@@ -111,7 +115,8 @@ class UserDB extends DBObject {
     return {
       "1": '''alter table userDB add otherField TEXT;''',
       "3":
-          '''alter table userDB add lastBadgesListUpdatedTime INT; alter table userDB add lastBlockListUpdatedTime INT; alter table userDB add lastChannelsListUpdatedTime INT; alter table userDB add lastFriendsListUpdatedTime INT; alter table userDB add lastGroupsListUpdatedTime INT;'''
+          '''alter table userDB add lastBadgesListUpdatedTime INT; alter table userDB add lastBlockListUpdatedTime INT; alter table userDB add lastChannelsListUpdatedTime INT; alter table userDB add lastFriendsListUpdatedTime INT; alter table userDB add lastGroupsListUpdatedTime INT;''',
+      "5": '''alter table userDB add nwcURI TEXT;'''
     };
   }
 
@@ -150,10 +155,14 @@ class UserDB extends DBObject {
 
     return '$start:$end';
   }
+  
+  NostrWalletConnection? get nwc {
+    return NostrWalletConnection.fromURI(nwcURI);
+  }
 
   static List<String> decodeStringList(String list) {
     try {
-      if(list.isNotEmpty && list != 'null' && list != '[]'){
+      if (list.isNotEmpty && list != 'null' && list != '[]') {
         List<dynamic> result = jsonDecode(list);
         return result.map((e) => e.toString()).toList();
       }
@@ -161,6 +170,28 @@ class UserDB extends DBObject {
       return [];
     }
     return [];
+  }
+}
+
+class NostrWalletConnection {
+  String server; // server pubkey
+  List<String> relays;
+  String secret;
+  String? lud16;
+
+  NostrWalletConnection(this.server, this.relays, this.secret, this.lud16);
+
+  static NostrWalletConnection? fromURI(String? uri) {
+    if(uri != null && uri.matchAsPrefix('nostr+walletconnect://') != null){
+      var decodedUri = Uri.parse(uri);
+      var server = decodedUri.host;
+      var queryParams = decodedUri.queryParametersAll;
+      var relays = queryParams['relay'] ?? [];
+      var secret = queryParams['secret']?.first ?? '';
+      var lud16 = queryParams['lud16']?.first;
+      return NostrWalletConnection(server, relays, secret, lud16);
+    }
+    return null;
   }
 }
 
@@ -192,7 +223,8 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     lastChannelsListUpdatedTime: map['lastChannelsListUpdatedTime'] ?? 0,
     lastFriendsListUpdatedTime: map['lastFriendsListUpdatedTime'] ?? 0,
     lastGroupsListUpdatedTime: map['lastGroupsListUpdatedTime'] ?? 0,
-    otherField: map['otherField'].toString(),
+    otherField: map['otherField']?.toString(),
+    nwcURI: map['nwcURI']?.toString(),
   );
 }
 
@@ -223,5 +255,6 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'lastChannelsListUpdatedTime': instance.lastChannelsListUpdatedTime,
       'lastFriendsListUpdatedTime': instance.lastFriendsListUpdatedTime,
       'lastGroupsListUpdatedTime': instance.lastGroupsListUpdatedTime,
-      'otherField': instance.otherField
+      'otherField': instance.otherField,
+      'nwcURI': instance.nwcURI
     };

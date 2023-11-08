@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:chatcore/src/account/model/zapRecordsDB.dart';
 import 'package:http/http.dart' as http;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
@@ -18,6 +17,84 @@ class Zaps {
 
   Map<String, ZapRecordsDB> zapRecords = {};
   ZapRecordsCallBack? zapRecordsCallBack;
+  NostrWalletConnection? nwc;
+  String nwcSubscription = '';
+  String currentPubkey = '';
+
+  void _connectToRelay(List<String> relays) {
+    for (var relay in relays) {
+      if (relay.isNotEmpty &&
+          !Connect.sharedInstance.relays(type: 1).contains(relay)) {
+        Connect.sharedInstance.connect(relay, type: 1);
+      }
+    }
+  }
+
+  void init() {
+    currentPubkey = Account.sharedInstance.me!.pubKey;
+    updateNWC();
+    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
+      if (status == 1 &&
+          Account.sharedInstance.me != null &&
+          nwc?.relays.contains(relay) == true) {
+        updateNWCSubscription(relay: relay);
+      }
+    });
+  }
+
+  void updateNWC() {
+    nwc = Account.sharedInstance.me?.nwc;
+    if (nwc != null) {
+      _connectToRelay(nwc!.relays);
+    }
+    updateNWCSubscription();
+  }
+
+  Future<OKEvent> requestNWC(String invoice) {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    if (nwc == null) {
+      completer.complete(OKEvent(invoice, false, 'nwc not exit'));
+    }
+    Event event = Nip47.request(invoice, nwc!.server, nwc!.secret);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+      if (!completer.isCompleted) completer.complete(ok);
+    });
+    return completer.future;
+  }
+
+  void updateNWCSubscription({String? relay}) {
+    if (nwc == null) return;
+    if (nwcSubscription.isNotEmpty) {
+      Connect.sharedInstance.closeRequests(nwcSubscription, relay: relay);
+    }
+    Map<String, List<Filter>> subscriptions = {};
+
+    if (relay == null) {
+      for (String relayURL in nwc!.relays) {
+        Filter f = Filter(
+            kinds: [23195],
+            p: [currentPubkey],
+            since: currentUnixTimestampSeconds());
+        subscriptions[relayURL] = [f];
+      }
+    } else {
+      Filter f = Filter(
+          kinds: [23195],
+          p: [currentPubkey],
+          since: currentUnixTimestampSeconds());
+      subscriptions[relay] = [f];
+    }
+
+    nwcSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
+        eventCallBack: (event, relay) async {
+      PayInvoiceResult? payInvoiceResult =
+          Nip47.response(event, currentPubkey, nwc!.secret);
+      if (payInvoiceResult != null) {
+        print(
+            'nwc success: ${payInvoiceResult.preimage}, id: ${payInvoiceResult.requestId}');
+      }
+    });
+  }
 
   static Future<String> getLnurlFromLnaddr(String lnaddr) async {
     try {
