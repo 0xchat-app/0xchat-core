@@ -45,6 +45,8 @@ class MessageDB extends DBObject {
 
   /// add previewData
   String? previewData;
+  /// add disappearing time
+  int? expiration;
 
   MessageDB(
       {this.messageId = '',
@@ -64,7 +66,8 @@ class MessageDB extends DBObject {
       this.plaintEvent = '',
       this.chatType,
       this.subType,
-      this.previewData});
+      this.previewData,
+      this.expiration});
 
   @override
   Map<String, Object?> toMap() {
@@ -99,7 +102,8 @@ class MessageDB extends DBObject {
           '''alter table MessageDB add plaintEvent TEXT; alter table MessageDB add sessionId TEXT;''',
       "4":
           '''alter table MessageDB add chatType INT; alter table MessageDB add subType TEXT;''',
-      "5": '''alter table MessageDB add previewData TEXT;'''
+      "5":
+          '''alter table MessageDB add previewData TEXT; alter table MessageDB add expiration INT;'''
     };
   }
 
@@ -353,6 +357,7 @@ Map<String, dynamic> _messageInfoToMap(MessageDB instance) => <String, dynamic>{
       'subType': instance.subType,
       'chatType': instance.chatType,
       'previewData': instance.previewData,
+      'expiration': instance.expiration,
     };
 
 MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
@@ -375,5 +380,6 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     chatType: map['chatType'],
     subType: map['subType']?.toString(),
     previewData: map['previewData']?.toString(),
+    expiration: map['expiration'],
   );
 }

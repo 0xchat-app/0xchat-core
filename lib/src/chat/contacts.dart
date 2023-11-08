@@ -222,24 +222,26 @@ class Contacts {
 
   Future<Event?> getSendMessageEvent(
       String friendPubkey, String replayId, MessageType type, String content,
-      {int kind = 4}) async {
+      {int? kind, int? expiration}) async {
     Event? event;
-
-    if (kind == 44) {
+    if (kind == 4) {
+      event ??= Nip4.encode(
+          friendPubkey, MessageDB.getContent(type, content), replayId, privkey,
+          subContent: MessageDB.getSubContent(type, content),
+          expiration: expiration);
+    } else if (kind == 44) {
       event ??= await Nip44.encode(
           friendPubkey, MessageDB.getContent(type, content), replayId, privkey,
-          subContent: MessageDB.getSubContent(type, content));
-    } else if (kind == 1059 || kind == 14) {
+          subContent: MessageDB.getSubContent(type, content),
+          expiration: expiration);
+    } else {
       var intValue = Random().nextInt(24 * 60 * 60 * 7);
       int createAt = currentUnixTimestampSeconds() - intValue;
       event ??= await Nip24.encodeSealedGossipDM(
           friendPubkey, MessageDB.getContent(type, content), replayId, privkey,
           createAt: createAt,
-          subContent: MessageDB.getSubContent(type, content));
-    } else {
-      event ??= Nip4.encode(
-          friendPubkey, MessageDB.getContent(type, content), replayId, privkey,
-          subContent: MessageDB.getSubContent(type, content));
+          subContent: MessageDB.getSubContent(type, content),
+          expiration: expiration);
     }
     return event;
   }
@@ -480,27 +482,15 @@ class Contacts {
   Future<OKEvent> sendPrivateMessage(
       String toPubkey, String replyId, MessageType type, String content,
       {Event? event,
-      int kind = 4,
+      int? kind,
       String? subContent,
+      int? expiration,
       bool local = false}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    if (event == null) {
-      if (kind == 44) {
-        event = await Nip44.encode(
-            toPubkey, MessageDB.getContent(type, content), replyId, privkey,
-            subContent: MessageDB.getSubContent(type, content));
-      } else if (kind == 1059 || kind == 14) {
-        event = await Nip24.encodeSealedGossipDM(
-            toPubkey, MessageDB.getContent(type, content), replyId, privkey,
-            subContent: MessageDB.getSubContent(type, content));
-      } else {
-        event = Nip4.encode(
-            toPubkey, MessageDB.getContent(type, content), replyId, privkey,
-            subContent: MessageDB.getSubContent(type, content));
-      }
-    }
+    event ??= await getSendMessageEvent(toPubkey, replyId, type, content,
+        kind: kind, expiration: expiration);
     MessageDB messageDB = MessageDB(
-        messageId: event.id,
+        messageId: event!.id,
         sender: pubkey,
         receiver: toPubkey,
         groupId: '',
@@ -513,7 +503,8 @@ class Contacts {
         type: MessageDB.messageTypeToString(type),
         status: 0,
         plaintEvent: jsonEncode(event),
-        chatType: 0);
+        chatType: 0,
+        expiration: expiration);
     privateChatMessageCallBack?.call(messageDB);
     await Messages.saveMessageToDB(messageDB);
 

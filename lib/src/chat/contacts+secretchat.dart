@@ -229,7 +229,7 @@ extension SecretChat on Contacts {
     MessageDB messageDB = MessageDB(messageId: giftWrapEventId);
     int result = await DB.sharedInstance.insert<MessageDB>(messageDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
-    if(result == 0) return;
+    if (result == 0) return;
     switch (event.kind) {
       case 10100:
         handleRequest(event, relay);
@@ -372,8 +372,13 @@ extension SecretChat on Contacts {
     }
   }
 
-  Future<Event?> getSendSecretMessageEvent(String sessionId, String toPubkey,
-      String replayId, MessageType type, String content) async {
+  Future<Event?> getSendSecretMessageEvent(
+      String sessionId,
+      String toPubkey,
+      String replayId,
+      MessageType type,
+      String content,
+      int? expiration) async {
     SecretSessionDB? sessionDB = secretSessionMap[sessionId];
     if (sessionDB != null &&
         sessionDB.shareSecretKey != null &&
@@ -382,28 +387,26 @@ extension SecretChat on Contacts {
           toPubkey, MessageDB.getContent(type, content), replayId, privkey,
           sealedPrivkey: sessionDB.shareSecretKey!,
           sealedReceiver: sessionDB.sharePubkey!,
-          subContent: MessageDB.getSubContent(type, content));
+          subContent: MessageDB.getSubContent(type, content),
+          expiration: expiration);
     }
     return null;
   }
 
   Future<OKEvent> sendSecretMessage(String sessionId, String toPubkey,
       String replayId, MessageType type, String content,
-      {Event? event, bool local = false}) async {
+      {Event? event, bool local = false, int? expiration}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     SecretSessionDB? sessionDB = secretSessionMap[sessionId];
     if (sessionDB != null) {
       /// check chat relay
       _connectToRelay(sessionDB.relay);
-      event ??= await Nip24.encodeSealedGossipDM(
-          toPubkey, MessageDB.getContent(type, content), replayId, privkey,
-          sealedPrivkey: sessionDB.shareSecretKey!,
-          sealedReceiver: sessionDB.sharePubkey!,
-          subContent: MessageDB.getSubContent(type, content));
+      event ??= await getSendSecretMessageEvent(
+          sessionId, toPubkey, replayId, type, content, expiration);
 
       MessageDB messageDB = MessageDB(
-          messageId: event.id,
+          messageId: event!.id,
           sender: pubkey,
           receiver: toPubkey,
           groupId: '',
@@ -416,7 +419,8 @@ extension SecretChat on Contacts {
           type: MessageDB.messageTypeToString(type),
           status: 0,
           plaintEvent: jsonEncode(event),
-          chatType: 3);
+          chatType: 3,
+          expiration: expiration);
       secretChatMessageCallBack?.call(messageDB);
       await Messages.saveMessageToDB(messageDB);
 

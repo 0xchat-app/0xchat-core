@@ -44,7 +44,7 @@ class NotificationHelper {
   Event _encode(
       String receiver, String content, String replyId, String privkey) {
     String enContent = Nip4.encryptContent(content, privkey, receiver);
-    List<List<String>> tags = Nip4.toTags(receiver, replyId);
+    List<List<String>> tags = Nip4.toTags(receiver, replyId, null);
     Event event = Event.from(
         kind: 22456, tags: tags, content: enContent, privkey: privkey);
     return event;
