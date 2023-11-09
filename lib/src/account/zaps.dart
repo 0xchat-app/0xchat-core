@@ -32,7 +32,7 @@ class Zaps {
 
   void init() {
     currentPubkey = Account.sharedInstance.me!.pubKey;
-    updateNWC();
+    updateNWC(null);
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 &&
           Account.sharedInstance.me != null &&
@@ -42,12 +42,17 @@ class Zaps {
     });
   }
 
-  void updateNWC() {
+  NostrWalletConnection? updateNWC(String? nwcURI) {
+    if(nwcURI != null && nwcURI != Account.sharedInstance.me?.nwcURI){
+      Account.sharedInstance.me?.nwcURI = nwcURI;
+      Account.sharedInstance.syncMe();
+    }
     nwc = Account.sharedInstance.me?.nwc;
     if (nwc != null) {
       _connectToRelay(nwc!.relays);
     }
     updateNWCSubscription();
+    return nwc;
   }
 
   Future<OKEvent> requestNWC(String invoice) {
@@ -173,7 +178,6 @@ class Zaps {
       }
       final result = await http.get(Uri.parse(url));
       if (result.statusCode == 200) {
-        print(result.body);
         try {
           String pr = jsonDecode(result.body)['pr'];
           if (!completer.isCompleted) {

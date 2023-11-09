@@ -182,7 +182,7 @@ class NostrWalletConnection {
   NostrWalletConnection(this.server, this.relays, this.secret, this.lud16);
 
   static NostrWalletConnection? fromURI(String? uri) {
-    if(uri != null && uri.matchAsPrefix('nostr+walletconnect://') != null){
+    if(uri != null && uri.startsWith('nostr+walletconnect://')){
       var decodedUri = Uri.parse(uri);
       var server = decodedUri.host;
       var queryParams = decodedUri.queryParametersAll;
