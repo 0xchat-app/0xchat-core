@@ -68,6 +68,7 @@ class Zaps {
   }
 
   void updateNWCSubscription({String? relay}) {
+    return;
     if (nwc == null) return;
     if (nwcSubscription.isNotEmpty) {
       Connect.sharedInstance.closeRequests(nwcSubscription, relay: relay);

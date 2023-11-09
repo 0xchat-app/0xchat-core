@@ -346,6 +346,9 @@ class Channels {
   }
 
   Future<void> _updateSubscriptions({String? relay}) async {
+    if (relay != null && !Connect.sharedInstance.relays().contains(relay)) {
+      return;
+    }
     await _loadMyChannelsFromRelay(relay: relay);
     _updateChannelSubscription(relay: relay);
   }

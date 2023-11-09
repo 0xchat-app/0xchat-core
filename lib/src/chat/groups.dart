@@ -35,7 +35,9 @@ class Groups {
     _loadMyGroupsFromRelay();
 
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
-      if (status == 1 && Account.sharedInstance.me != null) {
+      if (status == 1 &&
+          Account.sharedInstance.me != null &&
+          Connect.sharedInstance.relays().contains(relay)) {
         _loadMyGroupsFromRelay(relay: relay);
       }
     });

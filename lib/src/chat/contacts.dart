@@ -98,9 +98,11 @@ class Contacts {
   }
 
   Future<void> _updateSubscriptions({String? relay}) async {
-    await syncBlockListFromRelay(relay: relay);
-    await _syncContactsFromRelay(relay: relay);
-    _subscriptMessages(relay: relay);
+    if (relay == null || Connect.sharedInstance.relays().contains(relay)) {
+      await syncBlockListFromRelay(relay: relay);
+      await _syncContactsFromRelay(relay: relay);
+      _subscriptMessages(relay: relay);
+    }
     subscriptSecretChat(relay: relay);
   }
 
