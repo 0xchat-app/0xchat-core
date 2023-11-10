@@ -400,7 +400,7 @@ extension SecretChat on Contacts {
       /// check chat relay
       _connectToRelay(sessionDB.relay);
       event ??= await getSendSecretMessageEvent(
-          sessionId, toPubkey, replayId, type, content, expiration);
+          sessionId, toPubkey, replayId, type, content, expiration, decryptSecret: decryptSecret);
 
       MessageDB messageDB = MessageDB(
           messageId: event!.id,
