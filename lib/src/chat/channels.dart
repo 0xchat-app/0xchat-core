@@ -472,7 +472,8 @@ class Channels {
       String? replyMessage,
       String? replyMessageRelay,
       String? replyUser,
-      String? replyUserRelay}) {
+      String? replyUserRelay,
+      String? decryptSecret}) {
     Event event = Nip28.sendChannelMessage(
         channelId, MessageDB.getContent(type, content), privkey,
         channelRelay: channelRelay,
@@ -480,7 +481,8 @@ class Channels {
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDB.getSubContent(type, content));
+        subContent: MessageDB.getSubContent(type, content,
+            decryptSecret: decryptSecret));
     return event;
   }
 
@@ -492,7 +494,8 @@ class Channels {
       String? replyUser,
       String? replyUserRelay,
       Event? event,
-      bool local = false}) async {
+      bool local = false,
+      String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= Nip28.sendChannelMessage(
         channelId, MessageDB.getContent(type, content), privkey,
@@ -501,7 +504,8 @@ class Channels {
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDB.getSubContent(type, content));
+        subContent: MessageDB.getSubContent(type, content,
+            decryptSecret: decryptSecret));
 
     MessageDB messageDB = MessageDB(
         messageId: event.id,

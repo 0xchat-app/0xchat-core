@@ -378,7 +378,8 @@ extension SecretChat on Contacts {
       String replayId,
       MessageType type,
       String content,
-      int? expiration) async {
+      int? expiration,
+      String? decryptSecret) async {
     SecretSessionDB? sessionDB = secretSessionMap[sessionId];
     if (sessionDB != null &&
         sessionDB.shareSecretKey != null &&
@@ -387,7 +388,8 @@ extension SecretChat on Contacts {
           toPubkey, MessageDB.getContent(type, content), replayId, privkey,
           sealedPrivkey: sessionDB.shareSecretKey!,
           sealedReceiver: sessionDB.sharePubkey!,
-          subContent: MessageDB.getSubContent(type, content),
+          subContent: MessageDB.getSubContent(type, content,
+              decryptSecret: decryptSecret),
           expiration: expiration);
     }
     return null;

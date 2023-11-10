@@ -310,7 +310,8 @@ class Groups {
       String? replyMessageRelay,
       String? replyUser,
       String? replyUserRelay,
-      String? actionsType}) {
+      String? actionsType,
+      String? decryptSecret}) {
     Event event = Nip28.sendChannelMessage(
         groupId, MessageDB.getContent(type, content), privkey,
         channelRelay: groupRelay,
@@ -318,7 +319,8 @@ class Groups {
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDB.getSubContent(type, content),
+        subContent: MessageDB.getSubContent(type, content,
+            decryptSecret: decryptSecret),
         actionsType: actionsType);
     return event;
   }
@@ -333,7 +335,8 @@ class Groups {
       Event? event,
       String? actionsType,
       bool local = false,
-      List<String>? inviteUsers}) async {
+      List<String>? inviteUsers,
+      String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= Nip28.sendChannelMessage(
         groupId, MessageDB.getContent(type, content), privkey,
@@ -342,7 +345,8 @@ class Groups {
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDB.getSubContent(type, content),
+        subContent: MessageDB.getSubContent(type, content,
+            decryptSecret: decryptSecret),
         actionsType: actionsType);
 
     MessageDB messageDB = MessageDB(

@@ -224,17 +224,19 @@ class Contacts {
 
   Future<Event?> getSendMessageEvent(
       String friendPubkey, String replayId, MessageType type, String content,
-      {int? kind, int? expiration}) async {
+      {int? kind, int? expiration, String? decryptSecret}) async {
     Event? event;
     if (kind == 4) {
       event ??= Nip4.encode(
           friendPubkey, MessageDB.getContent(type, content), replayId, privkey,
-          subContent: MessageDB.getSubContent(type, content),
+          subContent: MessageDB.getSubContent(type, content,
+              decryptSecret: decryptSecret),
           expiration: expiration);
     } else if (kind == 44) {
       event ??= await Nip44.encode(
           friendPubkey, MessageDB.getContent(type, content), replayId, privkey,
-          subContent: MessageDB.getSubContent(type, content),
+          subContent: MessageDB.getSubContent(type, content,
+              decryptSecret: decryptSecret),
           expiration: expiration);
     } else {
       var intValue = Random().nextInt(24 * 60 * 60 * 7);
@@ -242,7 +244,8 @@ class Contacts {
       event ??= await Nip24.encodeSealedGossipDM(
           friendPubkey, MessageDB.getContent(type, content), replayId, privkey,
           createAt: createAt,
-          subContent: MessageDB.getSubContent(type, content),
+          subContent: MessageDB.getSubContent(type, content,
+              decryptSecret: decryptSecret),
           expiration: expiration);
     }
     return event;

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
@@ -45,29 +46,35 @@ class MessageDB extends DBObject {
 
   /// add previewData
   String? previewData;
+
   /// add disappearing time
   int? expiration;
 
-  MessageDB(
-      {this.messageId = '',
-      this.sender = '',
-      this.receiver = '',
-      this.groupId = '',
-      this.sessionId = '',
-      this.kind = 0,
-      this.tags = '',
-      this.content = '',
-      this.createTime = 0,
-      this.read = false,
-      this.replyId = '',
-      this.decryptContent = '',
-      this.type = 'text',
-      this.status = 1,
-      this.plaintEvent = '',
-      this.chatType,
-      this.subType,
-      this.previewData,
-      this.expiration});
+  /// add decryptSecret
+  String? decryptSecret;
+
+  MessageDB({
+    this.messageId = '',
+    this.sender = '',
+    this.receiver = '',
+    this.groupId = '',
+    this.sessionId = '',
+    this.kind = 0,
+    this.tags = '',
+    this.content = '',
+    this.createTime = 0,
+    this.read = false,
+    this.replyId = '',
+    this.decryptContent = '',
+    this.type = 'text',
+    this.status = 1,
+    this.plaintEvent = '',
+    this.chatType,
+    this.subType,
+    this.previewData,
+    this.expiration,
+    this.decryptSecret,
+  });
 
   @override
   Map<String, Object?> toMap() {
@@ -103,8 +110,13 @@ class MessageDB extends DBObject {
       "4":
           '''alter table MessageDB add chatType INT; alter table MessageDB add subType TEXT;''',
       "5":
-          '''alter table MessageDB add previewData TEXT; alter table MessageDB add expiration INT;'''
+          '''alter table MessageDB add previewData TEXT; alter table MessageDB add expiration INT; alter table MessageDB add decryptSecret TEXT;'''
     };
+  }
+
+  static Uint8List getRandomSecret() {
+    Keychain k = Keychain.generate();
+    return hexToBytes(k.private);
   }
 
   static String messageTypeToString(MessageType type) {
@@ -277,7 +289,8 @@ class MessageDB extends DBObject {
     }
   }
 
-  static String? getSubContent(MessageType type, String content) {
+  static String? getSubContent(MessageType type, String content,
+      {String? decryptSecret}) {
     switch (type) {
       case MessageType.text:
       case MessageType.image:
@@ -292,8 +305,11 @@ class MessageDB extends DBObject {
       case MessageType.encryptedFile:
       case MessageType.system:
       case MessageType.call:
-        return jsonEncode(
-            {'contentType': messageTypeToString(type), 'content': content});
+        return jsonEncode({
+          'contentType': messageTypeToString(type),
+          'content': content,
+          'decryptSecret': decryptSecret
+        });
       default:
         return null;
     }
@@ -327,6 +343,7 @@ class MessageDB extends DBObject {
     var map = decodeContent(message.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
+    messageDB.decryptSecret = map['decryptSecret'];
     return messageDB;
   }
 
@@ -358,6 +375,7 @@ Map<String, dynamic> _messageInfoToMap(MessageDB instance) => <String, dynamic>{
       'chatType': instance.chatType,
       'previewData': instance.previewData,
       'expiration': instance.expiration,
+      'decryptSecret': instance.decryptSecret,
     };
 
 MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
@@ -381,5 +399,6 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     subType: map['subType']?.toString(),
     previewData: map['previewData']?.toString(),
     expiration: map['expiration'],
+    decryptSecret: map['decryptSecret']?.toString(),
   );
 }
