@@ -42,6 +42,11 @@ class Zaps {
     });
   }
 
+  void disconnectNWC(){
+    Account.sharedInstance.me?.nwcURI = null;
+    Account.sharedInstance.syncMe();
+  }
+
   NostrWalletConnection? updateNWC(String? nwcURI) {
     if(nwcURI != null && nwcURI != Account.sharedInstance.me?.nwcURI){
       Account.sharedInstance.me?.nwcURI = nwcURI;
