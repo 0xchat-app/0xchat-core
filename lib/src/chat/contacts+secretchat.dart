@@ -372,14 +372,9 @@ extension SecretChat on Contacts {
     }
   }
 
-  Future<Event?> getSendSecretMessageEvent(
-      String sessionId,
-      String toPubkey,
-      String replayId,
-      MessageType type,
-      String content,
-      int? expiration,
-      String? decryptSecret) async {
+  Future<Event?> getSendSecretMessageEvent(String sessionId, String toPubkey,
+      String replayId, MessageType type, String content, int? expiration,
+      {String? decryptSecret}) async {
     SecretSessionDB? sessionDB = secretSessionMap[sessionId];
     if (sessionDB != null &&
         sessionDB.shareSecretKey != null &&
@@ -397,7 +392,7 @@ extension SecretChat on Contacts {
 
   Future<OKEvent> sendSecretMessage(String sessionId, String toPubkey,
       String replayId, MessageType type, String content,
-      {Event? event, bool local = false, int? expiration}) async {
+      {Event? event, bool local = false, int? expiration, String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     SecretSessionDB? sessionDB = secretSessionMap[sessionId];
