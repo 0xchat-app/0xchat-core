@@ -359,8 +359,9 @@ extension SecretChat on Contacts {
   Future<void> _handleSecretMessage(
       String sessionId, Event event, String giftWrapEventId) async {
     if (Messages.addToLoaded(event.id)) {
-      MessageDB? messageDB =
-          await MessageDB.fromPrivateMessage(event, pubkey, privkey, chatType: 3);
+      MessageDB? messageDB = await MessageDB.fromPrivateMessage(
+          event, pubkey, privkey,
+          chatType: 3);
       if (messageDB != null) {
         messageDB.sessionId = sessionId;
         messageDB.messageId = giftWrapEventId;
@@ -392,7 +393,10 @@ extension SecretChat on Contacts {
 
   Future<OKEvent> sendSecretMessage(String sessionId, String toPubkey,
       String replayId, MessageType type, String content,
-      {Event? event, bool local = false, int? expiration, String? decryptSecret}) async {
+      {Event? event,
+      bool local = false,
+      int? expiration,
+      String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     SecretSessionDB? sessionDB = secretSessionMap[sessionId];
@@ -400,7 +404,8 @@ extension SecretChat on Contacts {
       /// check chat relay
       _connectToRelay(sessionDB.relay);
       event ??= await getSendSecretMessageEvent(
-          sessionId, toPubkey, replayId, type, content, expiration, decryptSecret: decryptSecret);
+          sessionId, toPubkey, replayId, type, content, expiration,
+          decryptSecret: decryptSecret);
 
       MessageDB messageDB = MessageDB(
           messageId: event!.id,
@@ -417,7 +422,8 @@ extension SecretChat on Contacts {
           status: 0,
           plaintEvent: jsonEncode(event),
           chatType: 3,
-          expiration: expiration);
+          expiration: expiration,
+          decryptSecret: decryptSecret);
       secretChatMessageCallBack?.call(messageDB);
       await Messages.saveMessageToDB(messageDB);
 

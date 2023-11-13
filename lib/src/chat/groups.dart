@@ -364,7 +364,8 @@ class Groups {
         status: 0,
         plaintEvent: jsonEncode(event),
         chatType: 1,
-        subType: actionsType ?? '');
+        subType: actionsType ?? '',
+        decryptSecret: decryptSecret);
     groupMessageCallBack?.call(messageDB);
     await Messages.saveMessageToDB(messageDB);
 
