@@ -490,10 +490,11 @@ class Contacts {
       int? kind,
       String? subContent,
       int? expiration,
-      bool local = false}) async {
+      bool local = false,
+      String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= await getSendMessageEvent(toPubkey, replyId, type, content,
-        kind: kind, expiration: expiration);
+        kind: kind, expiration: expiration, decryptSecret: decryptSecret);
     MessageDB messageDB = MessageDB(
         messageId: event!.id,
         sender: pubkey,
@@ -509,7 +510,8 @@ class Contacts {
         status: 0,
         plaintEvent: jsonEncode(event),
         chatType: 0,
-        expiration: expiration);
+        expiration: expiration,
+        decryptSecret: decryptSecret);
     privateChatMessageCallBack?.call(messageDB);
     await Messages.saveMessageToDB(messageDB);
 
