@@ -560,4 +560,10 @@ class Account {
     }
     return null;
   }
+
+  Map<String, dynamic> signEvent(Map<String, dynamic> json){
+    Event event = Event.fromJson(json, verify: false);
+    event.sig = event.getSignature(currentPrivkey);
+    return event.toJson();
+  }
 }
