@@ -155,7 +155,7 @@ class Groups {
     var map = MessageDB.decodeContent(groupMessage.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
-
+    messageDB.decryptSecret = map['decryptSecret'];
     int status = await Messages.saveMessageToDB(messageDB);
     if (status != 0) {
       groupMessageCallBack?.call(messageDB);
