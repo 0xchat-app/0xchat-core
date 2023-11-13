@@ -360,7 +360,7 @@ extension SecretChat on Contacts {
       String sessionId, Event event, String giftWrapEventId) async {
     if (Messages.addToLoaded(event.id)) {
       MessageDB? messageDB =
-          await MessageDB.fromPrivateMessage(event, pubkey, privkey);
+          await MessageDB.fromPrivateMessage(event, pubkey, privkey, chatType: 3);
       if (messageDB != null) {
         messageDB.sessionId = sessionId;
         messageDB.messageId = giftWrapEventId;

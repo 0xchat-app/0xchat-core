@@ -316,16 +316,14 @@ class MessageDB extends DBObject {
   }
 
   static Future<MessageDB?> fromPrivateMessage(
-      Event event, String receiver, String privkey) async {
+      Event event, String receiver, String privkey, {int chatType = 0}) async {
     EDMessage? message;
-    int chatType = 0;
     if (event.kind == 4) {
       message = Nip4.decode(event, receiver, privkey);
     } else if (event.kind == 44) {
       message = await Nip44.decode(event, receiver, privkey);
     } else if (event.kind == 14) {
       message = await Nip24.decodeSealedGossipDM(event, receiver);
-      chatType = 3;
     }
     if (message == null) return null;
     MessageDB messageDB = MessageDB(
