@@ -671,14 +671,16 @@ class Channels {
         return {
           'channelId': result['special'],
           'relays': result['relays'],
-          'author': result['author']
+          'author': result['author'],
+          'kind': result['kind']
         };
       }
     } else if (encodedChannel.startsWith('note')) {
       return {
         'channelId': Nip19.decodeNote(encodedChannel),
         'relays': [],
-        'author': null
+        'author': null,
+        'kind': 40
       };
     }
     return null;
