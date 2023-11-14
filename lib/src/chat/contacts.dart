@@ -226,6 +226,9 @@ class Contacts {
       String friendPubkey, String replayId, MessageType type, String content,
       {int? kind, int? expiration, String? decryptSecret}) async {
     Event? event;
+    expiration = expiration != null
+        ? (expiration + currentUnixTimestampSeconds())
+        : null;
     if (kind == 4) {
       event ??= Nip4.encode(
           friendPubkey, MessageDB.getContent(type, content), replayId, privkey,
