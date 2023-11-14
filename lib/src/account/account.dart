@@ -561,9 +561,26 @@ class Account {
     return null;
   }
 
-  Map<String, dynamic> signEvent(Map<String, dynamic> json){
+  Map<String, dynamic> signEvent(Map<String, dynamic> json) {
+    if (json['pubkey'] == null) json['pubkey'] = currentPubkey;
+    if (json['id'] == null) {
+      var tags = (json['tags'] as List<dynamic>)
+          .map((e) => (e as List<dynamic>).map((e) => e as String).toList())
+          .toList();
+      json['id'] = Event.processEventId(json['pubkey'], json['created_at'],
+          json['kind'], tags, json['content']);
+    }
     Event event = Event.fromJson(json, verify: false);
     event.sig = event.getSignature(currentPrivkey);
+    assert(event.isValid() == true);
     return event.toJson();
+  }
+
+  String encryptNip04(String content, String peer) {
+    return Nip4.encryptContent(content, currentPrivkey, peer);
+  }
+
+  String decryptNip04(String content, String peer) {
+    return Nip4.decryptContent(content, currentPrivkey, peer);
   }
 }
