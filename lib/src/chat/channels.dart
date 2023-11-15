@@ -190,18 +190,19 @@ class Channels {
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unCompletedRelays.isEmpty &&
-          lastEvent != null &&
-          lastEvent!.createdAt >
-              Account.sharedInstance.me!.lastChannelsListUpdatedTime) {
-        Lists result = await Nip51.getLists(lastEvent!, privkey);
-        UserDB? me = Account.sharedInstance.me;
-        me!.lastChannelsListUpdatedTime = lastEvent!.createdAt;
-        me.channelsList = result.bookmarks;
-        await Account.sharedInstance.syncMe();
-        await syncChannelsFromRelay(result.bookmarks);
-        myChannels = _myChannels();
-        _updateChannelSubscription();
+      if (unCompletedRelays.isEmpty) {
+        if (lastEvent != null &&
+            lastEvent!.createdAt >
+                Account.sharedInstance.me!.lastChannelsListUpdatedTime) {
+          Lists result = await Nip51.getLists(lastEvent!, privkey);
+          UserDB? me = Account.sharedInstance.me;
+          me!.lastChannelsListUpdatedTime = lastEvent!.createdAt;
+          me.channelsList = result.bookmarks;
+          await Account.sharedInstance.syncMe();
+          await syncChannelsFromRelay(result.bookmarks);
+          myChannels = _myChannels();
+          _updateChannelSubscription();
+        }
         if (!completer.isCompleted) completer.complete();
         myChannelsUpdatedCallBack?.call();
       }
