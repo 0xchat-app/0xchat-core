@@ -376,6 +376,9 @@ extension SecretChat on Contacts {
   Future<Event?> getSendSecretMessageEvent(String sessionId, String toPubkey,
       String replayId, MessageType type, String content, int? expiration,
       {String? decryptSecret}) async {
+    expiration = expiration != null
+        ? (expiration + currentUnixTimestampSeconds())
+        : null;
     SecretSessionDB? sessionDB = secretSessionMap[sessionId];
     if (sessionDB != null &&
         sessionDB.shareSecretKey != null &&
