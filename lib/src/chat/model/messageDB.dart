@@ -316,7 +316,8 @@ class MessageDB extends DBObject {
   }
 
   static Future<MessageDB?> fromPrivateMessage(
-      Event event, String receiver, String privkey, {int chatType = 0}) async {
+      Event event, String receiver, String privkey,
+      {int chatType = 0}) async {
     EDMessage? message;
     if (event.kind == 4) {
       message = Nip4.decode(event, receiver, privkey);
@@ -337,7 +338,9 @@ class MessageDB extends DBObject {
         createTime: event.createdAt,
         replyId: message.replyId,
         plaintEvent: jsonEncode(event),
-        chatType: chatType);
+        chatType: chatType,
+        expiration:
+            message.expiration == null ? null : int.parse(message.expiration!));
     var map = decodeContent(message.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
