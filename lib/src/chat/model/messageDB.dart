@@ -202,7 +202,9 @@ class MessageDB extends DBObject {
         path.endsWith('.gif') ||
         path.endsWith('.bmp') ||
         path.endsWith('.svg') ||
-        path.endsWith('.webp')) {
+        path.endsWith('.webp') ||
+        path.startsWith('data:image/gif;base64,') ||
+        path.startsWith('data:image/png;base64,')) {
       return MessageType.image;
     } else if (path.endsWith('.mp3') ||
         path.endsWith('.wav') ||
