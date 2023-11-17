@@ -6,6 +6,7 @@ import 'package:nostr_core_dart/nostr.dart';
 extension Admin on Groups {
   Future<GroupDB?> createGroup(String name, List<String> members, String content,
       {String? about, String? picture, String? relay}) async {
+    members = members.toSet().toList();
     Event event =
         Nip28.createChannel(name, about ?? '', picture ?? '', {}, privkey);
     OKEvent ok = await sendMessageEvent(members, event);
@@ -58,6 +59,7 @@ extension Admin on Groups {
 
   Future<OKEvent> addGroupMembers(
       String groupId, String content, List<String> members) async {
+    members = members.toSet().toList();
     GroupDB? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
       List<String>? groupMembers = groupDB.members;
@@ -82,6 +84,7 @@ extension Admin on Groups {
 
   Future<OKEvent> removeGroupMembers(
       String groupId, String content, List<String> members) async {
+    members = members.toSet().toList();
     GroupDB? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
       if (groupDB.members != null) {
