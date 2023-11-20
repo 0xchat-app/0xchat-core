@@ -409,7 +409,9 @@ extension SecretChat on Contacts {
       event ??= await getSendSecretMessageEvent(
           sessionId, toPubkey, replayId, type, content, expiration,
           decryptSecret: decryptSecret);
-
+      expiration = expiration != null
+          ? (expiration + currentUnixTimestampSeconds())
+          : null;
       MessageDB messageDB = MessageDB(
           messageId: event!.id,
           sender: pubkey,

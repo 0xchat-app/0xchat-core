@@ -498,6 +498,9 @@ class Contacts {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= await getSendMessageEvent(toPubkey, replyId, type, content,
         kind: kind, expiration: expiration, decryptSecret: decryptSecret);
+    expiration = expiration != null
+        ? (expiration + currentUnixTimestampSeconds())
+        : null;
     MessageDB messageDB = MessageDB(
         messageId: event!.id,
         sender: pubkey,
