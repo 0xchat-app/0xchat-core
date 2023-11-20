@@ -78,7 +78,7 @@ extension Admin on Groups {
       }
       return okEvent;
     } else {
-      return OKEvent(groupId, false, 'group not exit');
+      return OKEvent(groupId, false, 'Not the owner of group');
     }
   }
 
@@ -108,7 +108,7 @@ extension Admin on Groups {
         return OKEvent(groupId, true, 'success');
       }
     } else {
-      return OKEvent(groupId, false, 'group not exit');
+      return OKEvent(groupId, false, 'Not the owner of group');
     }
   }
 
@@ -124,7 +124,7 @@ extension Admin on Groups {
       }
       return okEvent;
     } else {
-      return OKEvent(groupId, false, 'group not exit');
+      return OKEvent(groupId, false, 'Not the owner of group');
     }
   }
 
@@ -140,7 +140,7 @@ extension Admin on Groups {
       }
       return okEvent;
     } else {
-      return OKEvent(groupId, false, 'group not exit');
+      return OKEvent(groupId, false, 'Not the owner of group');
     }
   }
 
@@ -186,7 +186,7 @@ extension Admin on Groups {
       if (okEvent.status) await deleteGroup(groupId);
       return okEvent;
     } else {
-      return OKEvent(groupId, false, 'group not exit');
+      return OKEvent(groupId, false, 'Not the owner of group');
     }
   }
 }
