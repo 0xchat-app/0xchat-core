@@ -243,7 +243,10 @@ class BadgesHelper {
               BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
               badgeAwardDB.badgeId = badgeDB.id;
               await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB);
-              badgeAwardsDB.add(badgeAwardDB);
+              var exists = badgeAwardsDB.any((badgeAward) => badgeAward.badgeId == badgeAwardDB.badgeId);
+              if (!exists) {
+                badgeAwardsDB.add(badgeAwardDB);
+              }
             }
           }
         }

@@ -198,10 +198,9 @@ class Connect {
   }
 
   Future closeConnect(String relay) async {
-    if (webSockets.containsKey(relay)) {
-      if (webSockets[relay] != null) webSockets[relay]!.socket?.close();
-      webSockets.remove(relay);
-    }
+    print('closeConnect ${webSockets[relay]?.socket}');
+    webSockets[relay]?.socket?.close();
+    webSockets.remove(relay);
   }
 
   String addSubscription(List<Filter> filters,
@@ -381,19 +380,24 @@ class Connect {
     _send(data, relay: relay);
   }
 
+  Future<void> _connectToRelay(String relay) async{
+    if (webSockets.containsKey(relay)) {
+      await Future.delayed(Duration(milliseconds: 3000));
+      connect(relay);
+    }
+  }
+
   void _listenEvent(WebSocket socket, String relay) {
     socket.listen((message) {
       _handleMessage(message, relay);
     }, onDone: () async {
       print("connect aborted");
       _setConnectStatus(relay, 3); // closed
-      await Future.delayed(Duration(milliseconds: 3000));
-      connect(relay);
+      await _connectToRelay(relay);
     }, onError: (e) async {
       print('Server error: $e');
       _setConnectStatus(relay, 3); // closed
-      await Future.delayed(Duration(milliseconds: 3000));
-      connect(relay);
+      await _connectToRelay(relay);
     });
   }
 
@@ -414,7 +418,6 @@ class Connect {
   Future<void> _onDisconnected(String relay) async {
     print("_onDisconnected");
     _setConnectStatus(relay, 3); // closed
-    await Future.delayed(Duration(milliseconds: 3000));
-    connect(relay);
+    await _connectToRelay(relay);
   }
 }
