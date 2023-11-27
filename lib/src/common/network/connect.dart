@@ -375,8 +375,8 @@ class Connect {
     }
   }
 
-  void _handleAuth(Auth auth, String relay){
-    String data = Nip42.encode(auth.challenge, relay, Account.sharedInstance.currentPrivkey);
+  Future<void> _handleAuth(Auth auth, String relay) async {
+    String data = await Nip42.encode(auth.challenge, relay, Account.sharedInstance.currentPrivkey);
     _send(data, relay: relay);
   }
 

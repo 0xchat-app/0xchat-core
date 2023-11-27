@@ -485,7 +485,7 @@ class Account {
     };
     Map additionMap = jsonDecode(db.otherField ?? '{}');
     map.addAll(additionMap);
-    Event event = Nip1.setMetadata(jsonEncode(map), currentPrivkey);
+    Event event = await Nip1.setMetadata(jsonEncode(map), currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (ok.status) {
         completer.complete(db);
@@ -502,7 +502,7 @@ class Account {
     for (var relay in relays) {
       list.add(Relay(relay, null));
     }
-    Event event = Nip65.encode(list, currentPrivkey);
+    Event event = await Nip65.encode(list, currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
@@ -571,16 +571,19 @@ class Account {
           json['kind'], tags, json['content']);
     }
     Event event = Event.fromJson(json, verify: false);
+    //todo: sign from signer
     event.sig = event.getSignature(currentPrivkey);
     assert(event.isValid() == true);
     return event.toJson();
   }
 
-  String encryptNip04(String content, String peer) {
-    return Nip4.encryptContent(content, currentPrivkey, peer);
+  Future<String> encryptNip04(String content, String peer) async {
+    return await Nip4.encryptContent(
+        content, peer, currentPubkey, currentPrivkey);
   }
 
-  String decryptNip04(String content, String peer) {
-    return Nip4.decryptContent(content, currentPrivkey, peer);
+  Future<String> decryptNip04(String content, String peer) async {
+    return await Nip4.decryptContent(
+        content, peer, currentPubkey, currentPrivkey);
   }
 }

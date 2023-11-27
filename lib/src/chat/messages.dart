@@ -266,7 +266,7 @@ class Messages {
 
     /// send delete event to relay
     Event event =
-        Nip9.encode(messageIds, reason, Account.sharedInstance.currentPrivkey);
+        await Nip9.encode(messageIds, reason, Account.sharedInstance.currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });

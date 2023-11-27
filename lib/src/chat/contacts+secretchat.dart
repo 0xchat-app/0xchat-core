@@ -44,7 +44,7 @@ extension SecretChat on Contacts {
   Future<OKEvent> _sendRequestEvent(String friendPubkey, String aliasPubkey,
       {int? expiration, int? interval, String? relay}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    Event event = Nip101.request(aliasPubkey, friendPubkey, privkey,
+    Event event = await Nip101.request(aliasPubkey, friendPubkey, privkey,
         expiration: expiration, interval: interval, relay: relay);
 
     /// expired 24 hours later
@@ -98,7 +98,7 @@ extension SecretChat on Contacts {
       String myAliasPubkey, String toPubkey, String sessionId) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
-    Event event = Nip101.accept(myAliasPubkey, toPubkey, sessionId, privkey);
+    Event event = await Nip101.accept(myAliasPubkey, toPubkey, sessionId, privkey);
     Event sealedEvent = await Nip24.encode(event, toPubkey, privkey);
     Connect.sharedInstance.sendEvent(sealedEvent,
         sendCallBack: (ok, relay) async {
@@ -124,7 +124,7 @@ extension SecretChat on Contacts {
   Future<OKEvent> _sendRejectEvent(String toPubkey, String sessionId) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
-    Event event = Nip101.reject(toPubkey, sessionId, privkey);
+    Event event = await Nip101.reject(toPubkey, sessionId, privkey);
     Event sealedEvent = await Nip24.encode(event, toPubkey, privkey);
     Connect.sharedInstance.sendEvent(sealedEvent,
         sendCallBack: (ok, relay) async {
@@ -163,7 +163,7 @@ extension SecretChat on Contacts {
       String myAliasPubkey, String toPubkey, String sessionId) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
-    Event event = Nip101.update(myAliasPubkey, toPubkey, sessionId, privkey);
+    Event event = await Nip101.update(myAliasPubkey, toPubkey, sessionId, privkey);
     Event sealedEvent = await Nip24.encode(event, toPubkey, privkey);
     Connect.sharedInstance.sendEvent(sealedEvent,
         sendCallBack: (ok, relay) async {
@@ -187,7 +187,7 @@ extension SecretChat on Contacts {
   Future<OKEvent> _sendCloseEvent(String toPubkey, String sessionId) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
-    Event event = Nip101.close(toPubkey, sessionId, privkey);
+    Event event = await Nip101.close(toPubkey, sessionId, privkey);
     Event sealedEvent = await Nip24.encode(event, toPubkey, privkey);
     Connect.sharedInstance.sendEvent(sealedEvent,
         sendCallBack: (ok, relay) async {

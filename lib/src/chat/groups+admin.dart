@@ -8,7 +8,7 @@ extension Admin on Groups {
       {String? about, String? picture, String? relay}) async {
     members = members.toSet().toList();
     Event event =
-        Nip28.createChannel(name, about ?? '', picture ?? '', {}, privkey);
+        await Nip28.createChannel(name, about ?? '', picture ?? '', {}, privkey);
     OKEvent ok = await sendMessageEvent(members, event);
     if (ok.status == true) {
       // update group
@@ -38,7 +38,7 @@ extension Admin on Groups {
 
   Future<OKEvent> updateGroup(GroupDB groupDB,
       {List<String>? removedMembers}) async {
-    Event event = Nip28.setChannelMetaData(
+    Event event = await Nip28.setChannelMetaData(
         groupDB.name,
         groupDB.about ?? '',
         groupDB.picture ?? '',

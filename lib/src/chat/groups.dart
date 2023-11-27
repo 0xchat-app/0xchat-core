@@ -303,7 +303,7 @@ class Groups {
         .toList();
   }
 
-  Event? getSendGroupMessageEvent(
+  Future<Event?> getSendGroupMessageEvent(
       String groupId, MessageType type, String content,
       {String? groupRelay,
       String? replyMessage,
@@ -311,8 +311,8 @@ class Groups {
       String? replyUser,
       String? replyUserRelay,
       String? actionsType,
-      String? decryptSecret}) {
-    Event event = Nip28.sendChannelMessage(
+      String? decryptSecret}) async {
+    Event event = await Nip28.sendChannelMessage(
         groupId, MessageDB.getContent(type, content), privkey,
         channelRelay: groupRelay,
         replyMessage: replyMessage,
@@ -338,7 +338,7 @@ class Groups {
       List<String>? inviteUsers,
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    event ??= Nip28.sendChannelMessage(
+    event ??= await Nip28.sendChannelMessage(
         groupId, MessageDB.getContent(type, content), privkey,
         channelRelay: groupRelay,
         replyMessage: replyMessage,

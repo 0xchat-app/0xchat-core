@@ -243,7 +243,8 @@ class BadgesHelper {
               BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
               badgeAwardDB.badgeId = badgeDB.id;
               await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB);
-              var exists = badgeAwardsDB.any((badgeAward) => badgeAward.badgeId == badgeAwardDB.badgeId);
+              var exists = badgeAwardsDB.any(
+                  (badgeAward) => badgeAward.badgeId == badgeAwardDB.badgeId);
               if (!exists) {
                 badgeAwardsDB.add(badgeAwardDB);
               }
@@ -352,7 +353,7 @@ class BadgesHelper {
       }
     }
     if (badgeAwards.isNotEmpty) {
-      Event event = Nip58.setProfileBadges(
+      Event event = await Nip58.setProfileBadges(
           badgeAwards, Account.sharedInstance.currentPrivkey);
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         if (ok.status) {

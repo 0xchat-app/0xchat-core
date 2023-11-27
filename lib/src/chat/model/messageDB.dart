@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
+import 'package:bip340/bip340.dart' as bip340;
 
 enum MessageType {
   text,
@@ -321,8 +322,9 @@ class MessageDB extends DBObject {
       Event event, String receiver, String privkey,
       {int chatType = 0}) async {
     EDMessage? message;
+    String myPubkey = bip340.getPublicKey(privkey);
     if (event.kind == 4) {
-      message = Nip4.decode(event, receiver, privkey);
+      message = await Nip4.decode(event, myPubkey, privkey);
     } else if (event.kind == 44) {
       message = await Nip44.decode(event, receiver, privkey);
     } else if (event.kind == 14) {

@@ -42,13 +42,13 @@ class Zaps {
     });
   }
 
-  void disconnectNWC(){
+  void disconnectNWC() {
     Account.sharedInstance.me?.nwcURI = null;
     Account.sharedInstance.syncMe();
   }
 
   NostrWalletConnection? updateNWC(String? nwcURI) {
-    if(nwcURI != null && nwcURI != Account.sharedInstance.me?.nwcURI){
+    if (nwcURI != null && nwcURI != Account.sharedInstance.me?.nwcURI) {
       Account.sharedInstance.me?.nwcURI = nwcURI;
       Account.sharedInstance.syncMe();
     }
@@ -60,12 +60,12 @@ class Zaps {
     return nwc;
   }
 
-  Future<OKEvent> requestNWC(String invoice) {
+  Future<OKEvent> requestNWC(String invoice) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (nwc == null) {
       completer.complete(OKEvent(invoice, false, 'nwc not exit'));
     }
-    Event event = Nip47.request(invoice, nwc!.server, nwc!.secret);
+    Event event = await Nip47.request(invoice, currentPubkey, nwc!.server, nwc!.secret);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
@@ -99,7 +99,7 @@ class Zaps {
     nwcSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
       PayInvoiceResult? payInvoiceResult =
-          Nip47.response(event, currentPubkey, nwc!.secret);
+          await Nip47.response(event, nwc!.server, currentPubkey, nwc!.secret);
       if (payInvoiceResult != null) {
         print(
             'nwc success: ${payInvoiceResult.preimage}, id: ${payInvoiceResult.requestId}');

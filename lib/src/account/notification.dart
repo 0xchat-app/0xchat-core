@@ -41,30 +41,31 @@ class NotificationHelper {
     }
   }
 
-  Event _encode(
-      String receiver, String content, String replyId, String privkey) {
-    String enContent = Nip4.encryptContent(content, privkey, receiver);
+  Future<Event> _encode(
+      String receiver, String content, String replyId, String privkey) async {
+    String enContent =
+        await Nip4.encryptContent(content, receiver, pubkey, privkey);
     List<List<String>> tags = Nip4.toTags(receiver, replyId, null);
-    Event event = Event.from(
+    Event event = await Event.from(
         kind: 22456, tags: tags, content: enContent, privkey: privkey);
     return event;
   }
 
-  void _heartBeat(String serverPubkey, String privkey) {
+  Future<void> _heartBeat(String serverPubkey, String privkey) async {
     Map map = {'online': 1};
-    Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
+    Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
     Connect.sharedInstance.sendEvent(event, relay: 'wss://relay.0xchat.com');
   }
 
-  void setOffline() {
+  Future<void> setOffline() async {
     Map map = {'online': 0};
-    Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
+    Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
     Connect.sharedInstance.sendEvent(event, relay: 'wss://relay.0xchat.com');
 
     _stopHeartBeat();
   }
 
-  void setOnline(){
+  void setOnline() {
     _heartBeat(serverPubkey, privkey);
     _startHeartBeat();
   }
@@ -96,7 +97,7 @@ class NotificationHelper {
       '#e': channels,
       '#p': ptags
     };
-    Event event = _encode(serverPubkey, jsonEncode(map), '', privkey);
+    Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     }, relay: 'wss://relay.0xchat.com');

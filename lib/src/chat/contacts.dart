@@ -230,8 +230,8 @@ class Contacts {
         ? (expiration + currentUnixTimestampSeconds())
         : null;
     if (kind == 4) {
-      event ??= Nip4.encode(
-          friendPubkey, MessageDB.getContent(type, content), replayId, privkey,
+      event ??= await Nip4.encode(pubkey, friendPubkey,
+          MessageDB.getContent(type, content), replayId, privkey,
           subContent: MessageDB.getSubContent(type, content,
               decryptSecret: decryptSecret),
           expiration: expiration);

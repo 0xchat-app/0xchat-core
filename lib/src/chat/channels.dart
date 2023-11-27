@@ -360,7 +360,7 @@ class Channels {
     Completer<ChannelDB?> completer = Completer<ChannelDB?>();
     Map<String, String> additional = {'badges': jsonEncode(badges)};
     Event event =
-        Nip28.createChannel(name, about, picture, additional, privkey);
+        await Nip28.createChannel(name, about, picture, additional, privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (ok.status == true) {
         // update channel
@@ -446,7 +446,7 @@ class Channels {
   Future<OKEvent> setChannel(ChannelDB channelDB,
       {OKCallBack? callBack}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    Event event = Nip28.setChannelMetaData(
+    Event event = await Nip28.setChannelMetaData(
         channelDB.name!,
         channelDB.about!,
         channelDB.picture!,
@@ -467,15 +467,15 @@ class Channels {
     return completer.future;
   }
 
-  Event? getSendChannelMessageEvent(
+  Future<Event?> getSendChannelMessageEvent(
       String channelId, MessageType type, String content,
       {String? channelRelay,
       String? replyMessage,
       String? replyMessageRelay,
       String? replyUser,
       String? replyUserRelay,
-      String? decryptSecret}) {
-    Event event = Nip28.sendChannelMessage(
+      String? decryptSecret}) async {
+    Event event = await Nip28.sendChannelMessage(
         channelId, MessageDB.getContent(type, content), privkey,
         channelRelay: channelRelay,
         replyMessage: replyMessage,
@@ -498,7 +498,7 @@ class Channels {
       bool local = false,
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    event ??= Nip28.sendChannelMessage(
+    event ??= await Nip28.sendChannelMessage(
         channelId, MessageDB.getContent(type, content), privkey,
         channelRelay: channelRelay,
         replyMessage: replyMessage,
@@ -546,7 +546,7 @@ class Channels {
       {OKCallBack? callBack}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Messages.deleteMessagesFromDB(messageIds: [messageId]);
-    Event event = Nip28.hideChannelMessage(messageId, reason, privkey);
+    Event event = await Nip28.hideChannelMessage(messageId, reason, privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
@@ -555,7 +555,7 @@ class Channels {
 
   Future<OKEvent> muteUser(String userPubkey, String reason) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    Event event = Nip28.muteUser(userPubkey, reason, privkey);
+    Event event = await Nip28.muteUser(userPubkey, reason, privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });

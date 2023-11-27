@@ -37,7 +37,7 @@ extension Calling on Contacts {
     int kind = 25051;
     switch (state) {
       case SignalingState.disconnect:
-        event = Nip100.close(toPubkey, content, offerId, privkey);
+        event = await Nip100.close(toPubkey, content, offerId, privkey);
         try {
           Map map = jsonDecode(content);
           reason = map['reason'];
@@ -45,14 +45,14 @@ extension Calling on Contacts {
         break;
       case SignalingState.offer:
         kind = 25050;
-        event = Nip100.offer(toPubkey, content, privkey);
+        event = await Nip100.offer(toPubkey, content, privkey);
         offerId = event.id;
         break;
       case SignalingState.answer:
-        event = Nip100.answer(toPubkey, content, offerId, privkey);
+        event = await Nip100.answer(toPubkey, content, offerId, privkey);
         break;
       case SignalingState.candidate:
-        event = Nip100.candidate(toPubkey, content, offerId, privkey);
+        event = await Nip100.candidate(toPubkey, content, offerId, privkey);
         break;
       default:
         throw Exception('error state');
