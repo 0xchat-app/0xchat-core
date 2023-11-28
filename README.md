@@ -99,7 +99,7 @@ Some important planned features:
 - [x] Threads, mentions, reactions
 - [x] Zap Red Envelopes between friends
 - [x] P2P audio/video calling
-- [ ] Private group
+- [x] Private group
 - [ ] Audio/video chat room
 - [ ] Lightning wallet Integration
 - [ ] Private notes
