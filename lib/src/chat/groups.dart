@@ -431,6 +431,7 @@ class Groups {
             'event': event.toJson(),
             'receiver': receiver,
             'privkey': privkey,
+            'pubkey': pubkey,
             'sendPort': receivePort.sendPort
           };
           Isolate.spawn(encodeNip24InIsolate, map);
@@ -450,8 +451,8 @@ class Groups {
   static Future<void> encodeNip24InIsolate(Map<String, dynamic> params) async {
     Event event = Event.fromJson(params['event']);
     String receiver = params['receiver'] ?? '';
-    Event sealedEvent =
-        await Nip24.encode(event, receiver, params['privkey'] ?? '');
+    Event sealedEvent = await Nip24.encode(
+        event, receiver, params['pubkey'] ?? '', params['privkey'] ?? '');
     params['sendPort'].send(sealedEvent.toJson());
   }
 

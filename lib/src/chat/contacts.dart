@@ -236,16 +236,16 @@ class Contacts {
               decryptSecret: decryptSecret),
           expiration: expiration);
     } else if (kind == 44) {
-      event ??= await Nip44.encode(
-          friendPubkey, MessageDB.getContent(type, content), replayId, privkey,
+      event ??= await Nip44.encode(pubkey, friendPubkey,
+          MessageDB.getContent(type, content), replayId, privkey,
           subContent: MessageDB.getSubContent(type, content,
               decryptSecret: decryptSecret),
           expiration: expiration);
     } else {
       var intValue = Random().nextInt(24 * 60 * 60 * 7);
       int createAt = currentUnixTimestampSeconds() - intValue;
-      event ??= await Nip24.encodeSealedGossipDM(
-          friendPubkey, MessageDB.getContent(type, content), replayId, privkey,
+      event ??= await Nip24.encodeSealedGossipDM(friendPubkey,
+          MessageDB.getContent(type, content), replayId, pubkey, privkey,
           createAt: createAt,
           subContent: MessageDB.getSubContent(type, content,
               decryptSecret: decryptSecret),
@@ -433,7 +433,7 @@ class Contacts {
         updateFriendMessageTime(event.createdAt, relay);
         Zaps.handleZapRecordEvent(event);
       } else if (event.kind == 1059 && Messages.addToLoaded(event.id)) {
-        Event? innerEvent = await Nip24.decode(event, privkey);
+        Event? innerEvent = await Nip24.decode(event, pubkey, privkey);
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {

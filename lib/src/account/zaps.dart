@@ -174,6 +174,7 @@ class Zaps {
             (sats * 1000).toString(),
             lnurl,
             recipient,
+            Account.sharedInstance.currentPubkey,
             Account.sharedInstance.currentPrivkey,
             privateZap ?? false,
             eventId: eventId,
@@ -284,7 +285,7 @@ class Zaps {
 
   static Future<ZapRecordsDB> handleZapRecordEvent(Event event) async {
     ZapReceipt zapReceipt =
-        await Nip57.getZapReceipt(event, Account.sharedInstance.currentPrivkey);
+        await Nip57.getZapReceipt(event, Account.sharedInstance.currentPubkey, Account.sharedInstance.currentPrivkey);
     ZapRecordsDB zapRecordsDB =
         ZapRecordsDB.zapReceiptToZapRecordsDB(zapReceipt);
     await DB.sharedInstance.insert<ZapRecordsDB>(zapRecordsDB,

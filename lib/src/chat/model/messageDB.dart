@@ -326,7 +326,7 @@ class MessageDB extends DBObject {
     if (event.kind == 4) {
       message = await Nip4.decode(event, myPubkey, privkey);
     } else if (event.kind == 44) {
-      message = await Nip44.decode(event, receiver, privkey);
+      message = await Nip44.decode(event, myPubkey, privkey);
     } else if (event.kind == 14) {
       message = await Nip24.decodeSealedGossipDM(event, receiver);
     }
