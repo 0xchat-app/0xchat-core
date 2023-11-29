@@ -260,6 +260,23 @@ class Account {
     return completer.future;
   }
 
+  Future<UserDB?> loginWithPubKey(String pubkey) async {
+    List<Object?> maps = await DB.sharedInstance
+        .objects<UserDB>(where: 'pubKey = ?', whereArgs: [pubkey]);
+    UserDB? db;
+    if (maps.isNotEmpty) {
+      db = maps.first as UserDB?;
+      if (db != null) {
+        me = db;
+        currentPrivkey = '';
+        currentPubkey = db.pubKey;
+        userCache[currentPubkey] = db;
+        return db;
+      }
+    }
+    return null;
+  }
+
   Future<UserDB?> loginWithPubKeyAndPassword(
       String pubkey, String password) async {
     List<Object?> maps = await DB.sharedInstance
