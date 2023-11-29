@@ -95,9 +95,6 @@ class ChatcorePlugin: FlutterPlugin, MethodCallHandler, ActivityAware, ActivityR
   }
 
   override fun onActivityResult(requestCode: Int, resultCode: Int, result: Intent?): Boolean {
-    Log.e("Michael", "---mSignatureRequestCode ="+mSignatureRequestCode);
-    Log.e("Michael", "---resultCode ="+resultCode);
-    Log.e("Michael", "---result ="+result);
     if (mSignatureRequestCode == requestCode) {
       if (resultCode == Activity.RESULT_OK && result != null) {
         val dataMap: MutableMap<String, String?> = HashMap()
