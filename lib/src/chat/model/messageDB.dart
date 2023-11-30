@@ -322,11 +322,10 @@ class MessageDB extends DBObject {
       Event event, String receiver, String privkey,
       {int chatType = 0}) async {
     EDMessage? message;
-    String myPubkey = bip340.getPublicKey(privkey);
     if (event.kind == 4) {
-      message = await Nip4.decode(event, myPubkey, privkey);
+      message = await Nip4.decode(event, receiver, privkey);
     } else if (event.kind == 44) {
-      message = await Nip44.decode(event, myPubkey, privkey);
+      message = await Nip44.decode(event, receiver, privkey);
     } else if (event.kind == 14) {
       message = await Nip24.decodeSealedGossipDM(event, receiver);
     }

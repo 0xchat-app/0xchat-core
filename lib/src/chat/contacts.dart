@@ -284,7 +284,7 @@ class Contacts {
   /// sync contacts
   Future<void> _syncContactsFromDB() async {
     String? list = Account.sharedInstance.me?.friendsList;
-    if (list != null && list.isNotEmpty) {
+    if (list != null && list.isNotEmpty && list != 'null') {
       Map? map = await Nip51.fromContent(list, privkey, pubkey);
       if (map != null) {
         List<People> friendsList = map['people'];
