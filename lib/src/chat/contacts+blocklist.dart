@@ -51,7 +51,7 @@ extension BlockList on Contacts {
           Account.sharedInstance.me!.lastBlockListUpdatedTime =
               lastEvent!.createdAt;
           await Account.sharedInstance.syncMe();
-          Lists result = await Nip51.getLists(lastEvent!, privkey);
+          Lists result = await Nip51.getLists(lastEvent!, pubkey, privkey);
           blockList = result.people.map((p) => p.pubkey).toList();
           await _syncBlockListToDB();
         }

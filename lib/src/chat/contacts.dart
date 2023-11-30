@@ -331,7 +331,7 @@ class Contacts {
           Account.sharedInstance.me!.lastFriendsListUpdatedTime =
               lastEvent!.createdAt;
           Account.sharedInstance.syncMe();
-          Lists result = await Nip51.getLists(lastEvent!, privkey);
+          Lists result = await Nip51.getLists(lastEvent!, pubkey, privkey);
           await _syncContactsProfiles(result.people);
         }
         contactUpdatedCallBack?.call();

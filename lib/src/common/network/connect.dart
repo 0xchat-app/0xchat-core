@@ -376,11 +376,15 @@ class Connect {
   }
 
   Future<void> _handleAuth(Auth auth, String relay) async {
-    String data = await Nip42.encode(auth.challenge, relay, Account.sharedInstance.currentPrivkey);
+    String data = await Nip42.encode(
+        auth.challenge,
+        relay,
+        Account.sharedInstance.currentPubkey,
+        Account.sharedInstance.currentPrivkey);
     _send(data, relay: relay);
   }
 
-  Future<void> _connectToRelay(String relay) async{
+  Future<void> _connectToRelay(String relay) async {
     if (webSockets.containsKey(relay)) {
       await Future.delayed(Duration(milliseconds: 3000));
       connect(relay);

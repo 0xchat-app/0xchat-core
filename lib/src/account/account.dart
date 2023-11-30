@@ -496,7 +496,7 @@ class Account {
     };
     Map additionMap = jsonDecode(db.otherField ?? '{}');
     map.addAll(additionMap);
-    Event event = await Nip1.setMetadata(jsonEncode(map), currentPrivkey);
+    Event event = await Nip1.setMetadata(jsonEncode(map), currentPubkey, currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (ok.status) {
         completer.complete(db);
@@ -513,7 +513,7 @@ class Account {
     for (var relay in relays) {
       list.add(Relay(relay, null));
     }
-    Event event = await Nip65.encode(list, currentPrivkey);
+    Event event = await Nip65.encode(list, currentPubkey, currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });

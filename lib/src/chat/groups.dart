@@ -215,7 +215,7 @@ class Groups {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty) {
         if (lastEvent != null) {
-          Lists result = await Nip51.getLists(lastEvent!, privkey);
+          Lists result = await Nip51.getLists(lastEvent!, pubkey, privkey);
           UserDB? me = Account.sharedInstance.me;
           me!.lastGroupsListUpdatedTime = lastEvent!.createdAt;
           me.groupsList = result.bookmarks;
@@ -313,7 +313,7 @@ class Groups {
       String? actionsType,
       String? decryptSecret}) async {
     Event event = await Nip28.sendChannelMessage(
-        groupId, MessageDB.getContent(type, content), privkey,
+        groupId, MessageDB.getContent(type, content), pubkey, privkey,
         channelRelay: groupRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
@@ -339,7 +339,7 @@ class Groups {
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= await Nip28.sendChannelMessage(
-        groupId, MessageDB.getContent(type, content), privkey,
+        groupId, MessageDB.getContent(type, content), pubkey, privkey,
         channelRelay: groupRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,

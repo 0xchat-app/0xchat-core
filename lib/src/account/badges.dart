@@ -354,7 +354,7 @@ class BadgesHelper {
     }
     if (badgeAwards.isNotEmpty) {
       Event event = await Nip58.setProfileBadges(
-          badgeAwards, Account.sharedInstance.currentPrivkey);
+          badgeAwards, Account.sharedInstance.currentPubkey, Account.sharedInstance.currentPrivkey);
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         if (ok.status) {
           UserDB? userDB = Account.sharedInstance.me;

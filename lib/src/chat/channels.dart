@@ -194,7 +194,7 @@ class Channels {
         if (lastEvent != null &&
             lastEvent!.createdAt >
                 Account.sharedInstance.me!.lastChannelsListUpdatedTime) {
-          Lists result = await Nip51.getLists(lastEvent!, privkey);
+          Lists result = await Nip51.getLists(lastEvent!, pubkey, privkey);
           UserDB? me = Account.sharedInstance.me;
           me!.lastChannelsListUpdatedTime = lastEvent!.createdAt;
           me.channelsList = result.bookmarks;
@@ -359,8 +359,8 @@ class Channels {
       {OKCallBack? callBack}) async {
     Completer<ChannelDB?> completer = Completer<ChannelDB?>();
     Map<String, String> additional = {'badges': jsonEncode(badges)};
-    Event event =
-        await Nip28.createChannel(name, about, picture, additional, privkey);
+    Event event = await Nip28.createChannel(
+        name, about, picture, additional, pubkey, privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (ok.status == true) {
         // update channel
@@ -455,6 +455,7 @@ class Channels {
         channelDB.badges!.isNotEmpty ? {'badges': channelDB.badges!} : null,
         channelDB.channelId,
         channelDB.relayURL!,
+        pubkey,
         privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (ok.status) {
@@ -476,7 +477,7 @@ class Channels {
       String? replyUserRelay,
       String? decryptSecret}) async {
     Event event = await Nip28.sendChannelMessage(
-        channelId, MessageDB.getContent(type, content), privkey,
+        channelId, MessageDB.getContent(type, content), pubkey, privkey,
         channelRelay: channelRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
@@ -499,7 +500,7 @@ class Channels {
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= await Nip28.sendChannelMessage(
-        channelId, MessageDB.getContent(type, content), privkey,
+        channelId, MessageDB.getContent(type, content), pubkey, privkey,
         channelRelay: channelRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
@@ -546,7 +547,8 @@ class Channels {
       {OKCallBack? callBack}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Messages.deleteMessagesFromDB(messageIds: [messageId]);
-    Event event = await Nip28.hideChannelMessage(messageId, reason, privkey);
+    Event event =
+        await Nip28.hideChannelMessage(messageId, reason, pubkey, privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
@@ -555,7 +557,7 @@ class Channels {
 
   Future<OKEvent> muteUser(String userPubkey, String reason) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    Event event = await Nip28.muteUser(userPubkey, reason, privkey);
+    Event event = await Nip28.muteUser(userPubkey, reason, pubkey, privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });

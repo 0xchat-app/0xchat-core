@@ -47,7 +47,11 @@ class NotificationHelper {
         await Nip4.encryptContent(content, receiver, pubkey, privkey);
     List<List<String>> tags = Nip4.toTags(receiver, replyId, null);
     Event event = await Event.from(
-        kind: 22456, tags: tags, content: enContent, privkey: privkey);
+        kind: 22456,
+        tags: tags,
+        content: enContent,
+        pubkey: pubkey,
+        privkey: privkey);
     return event;
   }
 

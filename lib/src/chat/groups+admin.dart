@@ -4,11 +4,12 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension Admin on Groups {
-  Future<GroupDB?> createGroup(String name, List<String> members, String content,
+  Future<GroupDB?> createGroup(
+      String name, List<String> members, String content,
       {String? about, String? picture, String? relay}) async {
     members = members.toSet().toList();
-    Event event =
-        await Nip28.createChannel(name, about ?? '', picture ?? '', {}, privkey);
+    Event event = await Nip28.createChannel(
+        name, about ?? '', picture ?? '', {}, pubkey, privkey);
     OKEvent ok = await sendMessageEvent(members, event);
     if (ok.status == true) {
       // update group
@@ -47,6 +48,7 @@ extension Admin on Groups {
         null,
         groupDB.groupId,
         groupDB.relay ?? '',
+        pubkey,
         privkey);
     List<String> members = List.from(groupDB.members ?? []);
     members.addAll(removedMembers ?? []);
