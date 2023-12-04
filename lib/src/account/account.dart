@@ -540,6 +540,8 @@ class Account {
     Channels.sharedInstance.myChannels.clear();
     Relays.sharedInstance.relays.clear();
     Messages.sharedInstance.messagesLoaded.clear();
+    me?.defaultPassword = '';
+    syncMe();
     me = null;
     currentPubkey = '';
     currentPrivkey = '';
