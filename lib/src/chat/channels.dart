@@ -224,6 +224,15 @@ class Channels {
     return result;
   }
 
+  static ChannelDB channelToChannelDB(Channel channel){
+    return ChannelDB(
+        channelId: channel.channelId,
+        creator: channel.owner,
+        name: channel.name,
+        about: channel.about,
+        picture: channel.picture);
+  }
+
   ChannelDB _getChannelDBFromChannel(Channel channel, int createAt) {
     ChannelDB? channelDB = channels[channel.channelId];
     if (channelDB == null) {
