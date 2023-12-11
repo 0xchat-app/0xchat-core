@@ -553,6 +553,21 @@ class Account {
         .delete<UserDB>(where: 'pubKey = ?', whereArgs: [currentPubkey]);
   }
 
+  static Future<Event?> loadAddress(String d, String pubkey) async {
+    Completer<Event?> completer = Completer<Event?>();
+    Filter f = Filter(d: [d], authors: [pubkey]);
+    Connect.sharedInstance.addSubscription([f],
+        eventCallBack: (event, relay) async {
+          if (!completer.isCompleted) completer.complete(event);
+        }, eoseCallBack: (requestId, status, relay, unRelays) {
+          Connect.sharedInstance.closeSubscription(requestId, relay);
+          if(unRelays.isEmpty){
+            if (!completer.isCompleted) completer.complete(null);
+          }
+        });
+    return completer.future;
+  }
+
   static Future<Event?> loadEvent(String eventId) async {
     Completer<Event?> completer = Completer<Event?>();
     Filter f = Filter(ids: [eventId]);
