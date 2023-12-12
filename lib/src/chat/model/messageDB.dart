@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
-import 'package:bip340/bip340.dart' as bip340;
 
 enum MessageType {
   text,
@@ -274,6 +273,9 @@ class MessageDB extends DBObject {
       case MessageType.file:
         return '[You\'ve received a file via 0xChat!]';
       case MessageType.template:
+        if (Zaps.isLightningInvoice(content) || getNostrScheme(content) != null) {
+          return content;
+        }
         return '[You\'ve received a template via 0xChat!]';
       case MessageType.encryptedImage:
         return '[You\'ve received an end-to-end encrypted image via 0xChat!]';
@@ -356,6 +358,14 @@ class MessageDB extends DBObject {
     await DB.sharedInstance.rawUpdate(
         'UPDATE MessageDB SET previewData = ? WHERE messageId = ?',
         [previewData, messageId]);
+  }
+
+  static String? getNostrScheme(String content) {
+    final regexNostr =
+        r'(nostr:)?(npub|nsec|note|nprofile|nevent|nrelay|naddr)[0-9a-zA-Z]{8,}(?=\s|$)';
+    final urlRegexp = RegExp(regexNostr, caseSensitive: false);
+    final match = urlRegexp.firstMatch(content);
+    return match?[0];
   }
 }
 
