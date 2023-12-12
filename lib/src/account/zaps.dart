@@ -6,6 +6,7 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:bolt11_decoder/bolt11_decoder.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'package:decimal/decimal.dart';
 
 typedef ZapRecordsCallBack = void Function(ZapRecordsDB);
 
@@ -65,7 +66,8 @@ class Zaps {
     if (nwc == null) {
       completer.complete(OKEvent(invoice, false, 'nwc not exit'));
     }
-    Event event = await Nip47.request(invoice, currentPubkey, nwc!.server, nwc!.secret);
+    Event event =
+        await Nip47.request(invoice, currentPubkey, nwc!.server, nwc!.secret);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
@@ -284,8 +286,10 @@ class Zaps {
   }
 
   static Future<ZapRecordsDB> handleZapRecordEvent(Event event) async {
-    ZapReceipt zapReceipt =
-        await Nip57.getZapReceipt(event, Account.sharedInstance.currentPubkey, Account.sharedInstance.currentPrivkey);
+    ZapReceipt zapReceipt = await Nip57.getZapReceipt(
+        event,
+        Account.sharedInstance.currentPubkey,
+        Account.sharedInstance.currentPrivkey);
     ZapRecordsDB zapRecordsDB =
         ZapRecordsDB.zapReceiptToZapRecordsDB(zapReceipt);
     await DB.sharedInstance.insert<ZapRecordsDB>(zapRecordsDB,
@@ -293,5 +297,18 @@ class Zaps {
     Zaps.sharedInstance.zapRecords[zapRecordsDB.bolt11] = zapRecordsDB;
     Zaps.sharedInstance.zapRecordsCallBack?.call(zapRecordsDB);
     return zapRecordsDB;
+  }
+
+  static bool isLightningInvoice(String input) {
+    RegExp regExp = RegExp(r'^(lnbc|lntb)[0-9a-zA-Z]+');
+    return regExp.hasMatch(input);
+  }
+
+  static Map<String, String> decodeInvoice(String invoice) {
+    Bolt11PaymentRequest req = Bolt11PaymentRequest(invoice);
+    return {
+      'amount': (req.amount * Decimal.fromInt(100000000)).toString(),
+      'timestamp': req.timestamp.toString()
+    };
   }
 }
