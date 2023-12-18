@@ -133,6 +133,10 @@ class DB {
     await db.close();
   }
 
+  Future<void> deleteDatabaseFile(String path) async {
+    await deleteDatabase(path);
+  }
+
   Future<void> execute(String sql, [List<Object?>? arguments]) async {
     await db.execute(sql, arguments);
   }
