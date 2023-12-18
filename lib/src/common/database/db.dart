@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:reflectable/reflectable.dart';
 import 'db_helper.dart';
 import 'db_object.dart';
+import 'package:path/path.dart' as p;
 
 // Annotate with this class to enable reflection.
 class Reflector extends Reflectable {
@@ -135,6 +137,11 @@ class DB {
 
   Future<void> deleteDatabaseFile(String path) async {
     await deleteDatabase(path);
+  }
+
+  Future<String> getDatabaseFilePath(String dbName) async {
+    final String dbPath = await getDatabasesPath();
+    return  p.join(dbPath, dbName);
   }
 
   Future<void> execute(String sql, [List<Object?>? arguments]) async {
