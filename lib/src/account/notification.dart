@@ -74,6 +74,14 @@ class NotificationHelper {
     _startHeartBeat();
   }
 
+  Future<void> logout() async {
+    Map map = {'online': 0, 'deviceId': ''};
+    Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
+    Connect.sharedInstance.sendEvent(event, relay: 'wss://relay.0xchat.com');
+
+    _stopHeartBeat();
+  }
+
   // call setNotification when online or updating notification
   Future<OKEvent> setNotification(
       String deviceId, List<int> kinds, List<String> relays) async {

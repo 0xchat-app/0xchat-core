@@ -540,6 +540,7 @@ class Account {
     Channels.sharedInstance.myChannels.clear();
     Relays.sharedInstance.relays.clear();
     Messages.sharedInstance.messagesLoaded.clear();
+    NotificationHelper.sharedInstance.logout();
     me?.defaultPassword = '';
     syncMe();
     me = null;
