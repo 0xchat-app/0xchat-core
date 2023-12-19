@@ -113,8 +113,7 @@ class Account {
     if (!isValidPubKey(pubkey)) return UserDB(pubKey: pubkey);
     Completer<UserDB> completer = Completer<UserDB>();
     UserDB? db = await getUserInfo(pubkey);
-    Filter f = Filter(
-        kinds: [0], authors: [pubkey]);
+    Filter f = Filter(kinds: [0], authors: [pubkey]);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       Map map = jsonDecode(event.content);
@@ -262,7 +261,7 @@ class Account {
 
   Future<UserDB?> loginWithPubKey(String pubkey) async {
     UserDB? userDB = await _getUserFromDB(pubkey: pubkey);
-    if(userDB != null){
+    if (userDB != null) {
       me = userDB;
       currentPubkey = userDB.pubKey;
       currentPrivkey = '';
@@ -271,8 +270,7 @@ class Account {
     return userDB;
   }
 
-  Future<UserDB?> loginWithPubKeyAndPassword(
-      String pubkey, String password) async {
+  Future<UserDB?> loginWithPubKeyAndPassword(String pubkey) async {
     List<Object?> maps = await DB.sharedInstance
         .objects<UserDB>(where: 'pubKey = ?', whereArgs: [pubkey]);
     UserDB? db;
@@ -280,10 +278,12 @@ class Account {
       db = maps.first as UserDB?;
       if (db != null &&
           db.encryptedPrivKey != null &&
-          db.encryptedPrivKey!.isNotEmpty) {
+          db.encryptedPrivKey!.isNotEmpty &&
+          db.defaultPassword != null &&
+          db.defaultPassword!.isNotEmpty) {
         String encryptedPrivKey = db.encryptedPrivKey!;
-        Uint8List privkey =
-            decryptPrivateKey(hexToBytes(encryptedPrivKey), password);
+        Uint8List privkey = decryptPrivateKey(
+            hexToBytes(encryptedPrivKey), db.defaultPassword!);
         if (Keychain.getPublicKey(bytesToHex(privkey)) == pubkey) {
           me = db;
           currentPrivkey = bytesToHex(privkey);
@@ -496,7 +496,8 @@ class Account {
     };
     Map additionMap = jsonDecode(db.otherField ?? '{}');
     map.addAll(additionMap);
-    Event event = await Nip1.setMetadata(jsonEncode(map), currentPubkey, currentPrivkey);
+    Event event =
+        await Nip1.setMetadata(jsonEncode(map), currentPubkey, currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (ok.status) {
         completer.complete(db);
@@ -559,13 +560,13 @@ class Account {
     Filter f = Filter(d: [d], authors: [pubkey]);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-          if (!completer.isCompleted) completer.complete(event);
-        }, eoseCallBack: (requestId, status, relay, unRelays) {
-          Connect.sharedInstance.closeSubscription(requestId, relay);
-          if(unRelays.isEmpty){
-            if (!completer.isCompleted) completer.complete(null);
-          }
-        });
+      if (!completer.isCompleted) completer.complete(event);
+    }, eoseCallBack: (requestId, status, relay, unRelays) {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+      if (unRelays.isEmpty) {
+        if (!completer.isCompleted) completer.complete(null);
+      }
+    });
     return completer.future;
   }
 
@@ -574,13 +575,13 @@ class Account {
     Filter f = Filter(ids: [eventId]);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-          if (!completer.isCompleted) completer.complete(event);
-        }, eoseCallBack: (requestId, status, relay, unRelays) {
-          Connect.sharedInstance.closeSubscription(requestId, relay);
-          if(unRelays.isEmpty){
-            if (!completer.isCompleted) completer.complete(null);
-          }
-        });
+      if (!completer.isCompleted) completer.complete(event);
+    }, eoseCallBack: (requestId, status, relay, unRelays) {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+      if (unRelays.isEmpty) {
+        if (!completer.isCompleted) completer.complete(null);
+      }
+    });
     return completer.future;
   }
 
