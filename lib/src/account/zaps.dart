@@ -300,7 +300,7 @@ class Zaps {
   }
 
   static bool isLightningInvoice(String input) {
-    RegExp regExp = RegExp(r'^(lnbc|lntb)[0-9a-zA-Z]+');
+    RegExp regExp = RegExp(r'\s*(lnbc|lntb)[0-9a-zA-Z]+');
     return regExp.hasMatch(input);
   }
 
