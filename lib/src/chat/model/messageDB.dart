@@ -362,8 +362,8 @@ class MessageDB extends DBObject {
 
   static String? getNostrScheme(String content) {
     final regexNostr =
-        r'\s*(nostr:)?(npub|nsec|note|nprofile|nevent|nrelay|naddr)[0-9a-zA-Z]{8,}(?=\s|$)';
-    final urlRegexp = RegExp(regexNostr, caseSensitive: false);
+        r'^(?:\s+)?(nostr:)?(npub|nsec|note|nprofile|nevent|nrelay|naddr)[0-9a-zA-Z]{8,}(?=\s|$)';
+    final urlRegexp = RegExp(regexNostr);
     final match = urlRegexp.firstMatch(content);
     return match?[0];
   }
