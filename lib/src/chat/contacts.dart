@@ -224,28 +224,35 @@ class Contacts {
 
   Future<Event?> getSendMessageEvent(
       String friendPubkey, String replayId, MessageType type, String content,
-      {int? kind, int? expiration, String? decryptSecret}) async {
+      {String? source,
+      int? kind,
+      int? expiration,
+      String? decryptSecret}) async {
     Event? event;
     expiration = expiration != null
         ? (expiration + currentUnixTimestampSeconds())
         : null;
     if (kind == 4) {
       event ??= await Nip4.encode(pubkey, friendPubkey,
-          MessageDB.getContent(type, content), replayId, privkey,
+          MessageDB.getContent(type, content, source), replayId, privkey,
           subContent: MessageDB.getSubContent(type, content,
               decryptSecret: decryptSecret),
           expiration: expiration);
     } else if (kind == 44) {
       event ??= await Nip44.encode(pubkey, friendPubkey,
-          MessageDB.getContent(type, content), replayId, privkey,
+          MessageDB.getContent(type, content, source), replayId, privkey,
           subContent: MessageDB.getSubContent(type, content,
               decryptSecret: decryptSecret),
           expiration: expiration);
     } else {
       var intValue = Random().nextInt(24 * 60 * 60 * 7);
       int createAt = currentUnixTimestampSeconds() - intValue;
-      event ??= await Nip24.encodeSealedGossipDM(friendPubkey,
-          MessageDB.getContent(type, content), replayId, pubkey, privkey,
+      event ??= await Nip24.encodeSealedGossipDM(
+          friendPubkey,
+          MessageDB.getContent(type, content, source),
+          replayId,
+          pubkey,
+          privkey,
           createAt: createAt,
           subContent: MessageDB.getSubContent(type, content,
               decryptSecret: decryptSecret),
@@ -494,10 +501,14 @@ class Contacts {
       String? subContent,
       int? expiration,
       bool local = false,
+      String? source,
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= await getSendMessageEvent(toPubkey, replyId, type, content,
-        kind: kind, expiration: expiration, decryptSecret: decryptSecret);
+        kind: kind,
+        expiration: expiration,
+        decryptSecret: decryptSecret,
+        source: source);
     expiration = expiration != null
         ? (expiration + currentUnixTimestampSeconds())
         : null;

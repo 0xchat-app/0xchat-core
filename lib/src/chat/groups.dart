@@ -305,7 +305,7 @@ class Groups {
 
   Future<Event?> getSendGroupMessageEvent(
       String groupId, MessageType type, String content,
-      {String? groupRelay,
+      {String? source, String? groupRelay,
       String? replyMessage,
       String? replyMessageRelay,
       String? replyUser,
@@ -313,7 +313,7 @@ class Groups {
       String? actionsType,
       String? decryptSecret}) async {
     Event event = await Nip28.sendChannelMessage(
-        groupId, MessageDB.getContent(type, content), pubkey, privkey,
+        groupId, MessageDB.getContent(type, content, source), pubkey, privkey,
         channelRelay: groupRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
@@ -327,7 +327,7 @@ class Groups {
 
   Future<OKEvent> sendGroupMessage(
       String groupId, MessageType type, String content,
-      {String? groupRelay,
+      {String? source, String? groupRelay,
       String? replyMessage,
       String? replyMessageRelay,
       String? replyUser,
@@ -339,7 +339,7 @@ class Groups {
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= await Nip28.sendChannelMessage(
-        groupId, MessageDB.getContent(type, content), pubkey, privkey,
+        groupId, MessageDB.getContent(type, content, source), pubkey, privkey,
         channelRelay: groupRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,

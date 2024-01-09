@@ -479,14 +479,14 @@ class Channels {
 
   Future<Event?> getSendChannelMessageEvent(
       String channelId, MessageType type, String content,
-      {String? channelRelay,
+      {String? source, String? channelRelay,
       String? replyMessage,
       String? replyMessageRelay,
       String? replyUser,
       String? replyUserRelay,
       String? decryptSecret}) async {
     Event event = await Nip28.sendChannelMessage(
-        channelId, MessageDB.getContent(type, content), pubkey, privkey,
+        channelId, MessageDB.getContent(type, content, source), pubkey, privkey,
         channelRelay: channelRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
@@ -499,7 +499,7 @@ class Channels {
 
   Future<OKEvent> sendChannelMessage(
       String channelId, MessageType type, String content,
-      {String? channelRelay,
+      {String? source, String? channelRelay,
       String? replyMessage,
       String? replyMessageRelay,
       String? replyUser,
@@ -509,7 +509,7 @@ class Channels {
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= await Nip28.sendChannelMessage(
-        channelId, MessageDB.getContent(type, content), pubkey, privkey,
+        channelId, MessageDB.getContent(type, content, source), pubkey, privkey,
         channelRelay: channelRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,

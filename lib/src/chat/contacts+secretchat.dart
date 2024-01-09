@@ -378,7 +378,7 @@ extension SecretChat on Contacts {
 
   Future<Event?> getSendSecretMessageEvent(String sessionId, String toPubkey,
       String replayId, MessageType type, String content, int? expiration,
-      {String? decryptSecret}) async {
+      {String? source, String? decryptSecret}) async {
     expiration = expiration != null
         ? (expiration + currentUnixTimestampSeconds())
         : null;
@@ -386,8 +386,12 @@ extension SecretChat on Contacts {
     if (sessionDB != null &&
         sessionDB.shareSecretKey != null &&
         sessionDB.shareSecretKey!.isNotEmpty) {
-      return await Nip24.encodeSealedGossipDM(toPubkey,
-          MessageDB.getContent(type, content), replayId, pubkey, privkey,
+      return await Nip24.encodeSealedGossipDM(
+          toPubkey,
+          MessageDB.getContent(type, content, source),
+          replayId,
+          pubkey,
+          privkey,
           sealedPrivkey: sessionDB.shareSecretKey!,
           sealedReceiver: sessionDB.sharePubkey!,
           subContent: MessageDB.getSubContent(type, content,
@@ -402,6 +406,7 @@ extension SecretChat on Contacts {
       {Event? event,
       bool local = false,
       int? expiration,
+      String? source,
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
@@ -411,7 +416,7 @@ extension SecretChat on Contacts {
       _connectToRelay(sessionDB.relay);
       event ??= await getSendSecretMessageEvent(
           sessionId, toPubkey, replayId, type, content, expiration,
-          decryptSecret: decryptSecret);
+          decryptSecret: decryptSecret, source: source);
       expiration = expiration != null
           ? (expiration + currentUnixTimestampSeconds())
           : null;

@@ -263,7 +263,8 @@ class MessageDB extends DBObject {
     }
   }
 
-  static String getContent(MessageType type, String content) {
+  static String getContent(MessageType type, String content, String? source) {
+    if(source != null && source.isNotEmpty == true) return source;
     switch (type) {
       case MessageType.text:
       case MessageType.image:
