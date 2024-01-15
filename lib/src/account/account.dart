@@ -118,24 +118,24 @@ class Account {
         eventCallBack: (event, relay) async {
       Map map = jsonDecode(event.content);
       if (db != null && db.lastUpdatedTime < event.createdAt) {
-        db.name = map['name'];
-        db.gender = map['gender'];
-        db.area = map['area'];
-        db.about = map['about'];
-        db.picture = map['picture'];
-        db.dns = map['nip05'];
-        db.lnurl = map['lnurl'];
+        db.name = map['name']?.toString();
+        db.gender = map['gender']?.toString();
+        db.area = map['area']?.toString();
+        db.about = map['about']?.toString();
+        db.picture = map['picture']?.toString();
+        db.dns = map['nip05']?.toString();
+        db.lnurl = map['lnurl']?.toString();
         if (db.lnurl == null || db.lnurl == 'null' || db.lnurl!.isEmpty) {
           db.lnurl = null;
         }
-        db.lnurl ??= map['lud06'];
-        db.lnurl ??= map['lud16'];
+        db.lnurl ??= map['lud06']?.toString();
+        db.lnurl ??= map['lud16']?.toString();
         db.lastUpdatedTime = event.createdAt;
         if (db.name == null || db.name!.isEmpty) {
-          db.name = map['display_name'];
+          db.name = map['display_name']?.toString();
         }
         if (db.name == null || db.name!.isEmpty) {
-          db.name = map['username'];
+          db.name = map['username']?.toString();
         }
         if (db.name == null || db.name!.isEmpty) {
           db.name = db.shortEncodedPubkey;
