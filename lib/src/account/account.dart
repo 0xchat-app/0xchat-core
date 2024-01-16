@@ -571,6 +571,7 @@ class Account {
   }
 
   static Future<Event?> loadEvent(String eventId) async {
+    if(Connect.sharedInstance.relays().isEmpty) return null;
     Completer<Event?> completer = Completer<Event?>();
     Filter f = Filter(ids: [eventId]);
     Connect.sharedInstance.addSubscription([f],
