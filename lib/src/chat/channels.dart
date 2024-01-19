@@ -633,7 +633,7 @@ class Channels {
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        completer.complete(result.values.toList());
+        if(!completer.isCompleted) completer.complete(result.values.toList());
         await Future.forEach(result.values, (channel) async {
           await syncChannelMetadataFromRelay(
               channel.creator, channel.channelId);
