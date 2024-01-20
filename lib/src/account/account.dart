@@ -304,19 +304,15 @@ class Account {
     if (maps.isNotEmpty) {
       db = maps.first as UserDB?;
     }
-    if (db == null ||
-        db.encryptedPrivKey == null ||
-        db.encryptedPrivKey!.isEmpty) {
-      /// insert a new account
-      db = UserDB();
-      db.pubKey = pubkey;
-      String defaultPassword = generateStrongPassword(16);
-      Uint8List enPrivkey =
-          encryptPrivateKey(hexToBytes(privkey), defaultPassword);
-      db.encryptedPrivKey = bytesToHex(enPrivkey);
-      db.defaultPassword = defaultPassword;
-      await DB.sharedInstance.insert<UserDB>(db);
-    }
+    /// insert a new account
+    db ??= UserDB();
+    db.pubKey = pubkey;
+    String defaultPassword = generateStrongPassword(16);
+    Uint8List enPrivkey =
+        encryptPrivateKey(hexToBytes(privkey), defaultPassword);
+    db.encryptedPrivKey = bytesToHex(enPrivkey);
+    db.defaultPassword = defaultPassword;
+    await DB.sharedInstance.insert<UserDB>(db);
     me = db;
     currentPrivkey = privkey;
     currentPubkey = db.pubKey;
