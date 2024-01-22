@@ -162,7 +162,6 @@ class Account {
         }
         db?.lnurl ??= map['lud16'];
         db?.lnurl ??= map['lud06'];
-        print('db?.lnurl: ${db?.lnurl}');
       }
       userCache[pubkey] = db!;
       if (pubkey == currentPubkey) me = db;
@@ -178,13 +177,11 @@ class Account {
   Future<void> _syncProfilesFromRelay() async {
     if (pQueue.isEmpty) return;
     Completer<void> completer = Completer<void>();
-    Filter f = Filter(
-      kinds: [0],
-      authors: pQueue,
-    );
+
     Map<String, UserDB> users = {};
     // init users from cache & DB
-    for (var key in pQueue) {
+    List<String> pQueueTemp = List.from(pQueue);
+    for (var key in pQueueTemp) {
       UserDB? db = userCache[key];
       db ??= await _getUserFromDB(pubkey: key);
       if (db == null) {
@@ -195,8 +192,13 @@ class Account {
         db.name = db.shortEncodedPubkey;
       }
       users[key] = db;
+      if(db.lastUpdatedTime > 0) pQueue.remove(db.pubKey);
     }
 
+    Filter f = Filter(
+      kinds: [0],
+      authors: pQueue,
+    );
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       Map map = jsonDecode(event.content);
