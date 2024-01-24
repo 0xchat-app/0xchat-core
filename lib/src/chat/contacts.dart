@@ -227,7 +227,8 @@ class Contacts {
       {String? source,
       int? kind,
       int? expiration,
-      String? decryptSecret}) async {
+      String? decryptSecret,
+      String? sealedReceiver}) async {
     Event? event;
     expiration = expiration != null
         ? (expiration + currentUnixTimestampSeconds())
@@ -253,6 +254,7 @@ class Contacts {
           replayId,
           pubkey,
           privkey,
+          sealedReceiver: sealedReceiver,
           createAt: createAt,
           subContent: MessageDB.getSubContent(type, content,
               decryptSecret: decryptSecret),
@@ -439,7 +441,7 @@ class Contacts {
       } else if (event.kind == 9735) {
         updateFriendMessageTime(event.createdAt, relay);
         Zaps.handleZapRecordEvent(event);
-      } else if (event.kind == 1059 && Messages.addToLoaded(event.id)) {
+      } else if (event.kind == 1059) {
         Event? innerEvent = await Nip24.decode(event, pubkey, privkey);
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
@@ -504,6 +506,17 @@ class Contacts {
       String? source,
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
+
+    if (kind != 4 && kind != 44) {
+      await sendPrivateMessageToSelf(toPubkey, replyId, type, content,
+          kind: kind,
+          subContent: subContent,
+          expiration: expiration,
+          local: local,
+          source: source,
+          decryptSecret: decryptSecret);
+    }
+
     event ??= await getSendMessageEvent(toPubkey, replyId, type, content,
         kind: kind,
         expiration: expiration,
@@ -541,6 +554,38 @@ class Contacts {
         messageDB.status = ok.status ? 1 : 2;
         await Messages.saveMessageToDB(messageDB,
             conflictAlgorithm: ConflictAlgorithm.replace);
+        if (!completer.isCompleted) completer.complete(ok);
+      });
+    }
+    return completer.future;
+  }
+
+  Future<OKEvent> sendPrivateMessageToSelf(
+      String toPubkey, String replyId, MessageType type, String content,
+      {Event? event,
+      int? kind,
+      String? subContent,
+      int? expiration,
+      bool local = false,
+      String? source,
+      String? decryptSecret}) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    event ??= await getSendMessageEvent(toPubkey, replyId, type, content,
+        kind: kind,
+        expiration: expiration,
+        decryptSecret: decryptSecret,
+        source: source,
+        sealedReceiver: pubkey);
+    expiration = expiration != null
+        ? (expiration + currentUnixTimestampSeconds())
+        : null;
+    if (local) {
+      if (!completer.isCompleted) {
+        completer.complete(OKEvent(event!.id, true, ''));
+      }
+    } else {
+      print('sendPrivateMessageToSelf: ${event?.id}');
+      Connect.sharedInstance.sendEvent(event!, sendCallBack: (ok, relay) async {
         if (!completer.isCompleted) completer.complete(ok);
       });
     }
