@@ -85,6 +85,10 @@ extension BlockList on Contacts {
   }
 
   Future<OKEvent> addToBlockList(String blockPubkey) async {
+    if (blockPubkey == pubkey) {
+      return OKEvent(blockPubkey, false, 'can not block self');
+    }
+
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     blockList ??= [];
