@@ -506,17 +506,6 @@ class Contacts {
       String? source,
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-
-    if (kind != 4 && kind != 44) {
-      await sendPrivateMessageToSelf(toPubkey, replyId, type, content,
-          kind: kind,
-          subContent: subContent,
-          expiration: expiration,
-          local: local,
-          source: source,
-          decryptSecret: decryptSecret);
-    }
-
     event ??= await getSendMessageEvent(toPubkey, replyId, type, content,
         kind: kind,
         expiration: expiration,
@@ -555,6 +544,16 @@ class Contacts {
         await Messages.saveMessageToDB(messageDB,
             conflictAlgorithm: ConflictAlgorithm.replace);
         if (!completer.isCompleted) completer.complete(ok);
+        if (kind != 4 && kind != 44) {
+          await sendPrivateMessageToSelf(toPubkey, replyId, type, content,
+              kind: kind,
+              subContent: subContent,
+              expiration: expiration,
+              local: local,
+              source: source,
+              decryptSecret: decryptSecret,
+              innerEvent: event?.innerEvent);
+        }
       });
     }
     return completer.future;
@@ -568,24 +567,35 @@ class Contacts {
       int? expiration,
       bool local = false,
       String? source,
-      String? decryptSecret}) async {
+      String? decryptSecret,
+      Event? innerEvent}) async {
+    if (innerEvent == null) return OKEvent('', false, 'innerEvent == null');
     Completer<OKEvent> completer = Completer<OKEvent>();
-    event ??= await getSendMessageEvent(toPubkey, replyId, type, content,
-        kind: kind,
+    var intValue = Random().nextInt(24 * 60 * 60 * 7);
+    int createAt = currentUnixTimestampSeconds() - intValue;
+    event ??= await Nip24.encodeSealedGossipDM(toPubkey,
+        MessageDB.getContent(type, content, source), replyId, pubkey, privkey,
+        sealedReceiver: pubkey,
+        createAt: createAt,
+        subContent: MessageDB.getSubContent(type, content,
+            decryptSecret: decryptSecret),
         expiration: expiration,
-        decryptSecret: decryptSecret,
-        source: source,
-        sealedReceiver: pubkey);
+        innerEvent: innerEvent);
     expiration = expiration != null
         ? (expiration + currentUnixTimestampSeconds())
         : null;
+    if (Messages.addToLoaded(innerEvent.id)) {
+      MessageDB messageDB =
+          MessageDB(messageId: innerEvent.id, expiration: expiration);
+      await Messages.saveMessageToDB(messageDB);
+    }
+
     if (local) {
       if (!completer.isCompleted) {
-        completer.complete(OKEvent(event!.id, true, ''));
+        completer.complete(OKEvent(event.id, true, ''));
       }
     } else {
-      print('sendPrivateMessageToSelf: ${event?.id}');
-      Connect.sharedInstance.sendEvent(event!, sendCallBack: (ok, relay) async {
+      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         if (!completer.isCompleted) completer.complete(ok);
       });
     }
