@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
+import 'dart:ui';
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/services.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
@@ -427,12 +429,14 @@ class Groups {
       });
       for (var receiver in receivers) {
         if (receiver.isNotEmpty) {
+          var rootToken = RootIsolateToken.instance!;
           Map<String, dynamic> map = {
             'event': event.toJson(),
             'receiver': receiver,
             'privkey': privkey,
             'pubkey': pubkey,
-            'sendPort': receivePort.sendPort
+            'sendPort': receivePort.sendPort,
+            'token': rootToken
           };
           Isolate.spawn(encodeNip24InIsolate, map);
         }
@@ -449,6 +453,10 @@ class Groups {
   }
 
   static Future<void> encodeNip24InIsolate(Map<String, dynamic> params) async {
+    String privkey = params['privkey'] ?? '';
+    if(SignerHelper.needSigner(privkey)){
+      BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
+    }
     Event event = Event.fromJson(params['event']);
     String receiver = params['receiver'] ?? '';
     Event sealedEvent = await Nip24.encode(
