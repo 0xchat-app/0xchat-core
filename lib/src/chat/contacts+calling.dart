@@ -76,7 +76,7 @@ extension Calling on Contacts {
   }
 
   Future<void> handleCallEvent(Event event, String relay) async {
-    Signaling signaling = Nip100.decode(event, privkey);
+    Signaling signaling = Nip100.decode(event, pubkey);
     String? reason;
     if (signaling.state == SignalingState.disconnect) {
       try {
