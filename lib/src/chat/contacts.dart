@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/services.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
@@ -374,6 +376,37 @@ class Contacts {
     });
   }
 
+  static Future<void> decodeNip24InIsolate(Map<String, dynamic> params) async {
+    String privkey = params['privkey'] ?? '';
+    if(SignerHelper.needSigner(privkey)){
+      BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
+    }
+    Event event = Event.fromJson(params['event']);
+    Event? innerEvent = await Nip24.decode(
+        event, params['pubkey'] ?? '', params['privkey'] ?? '');
+    params['sendPort'].send(innerEvent?.toJson());
+  }
+
+  Future<Event?> decodeNip24Event(Event event) async {
+    Completer<Event?> completer = Completer<Event?>();
+    final receivePort = ReceivePort();
+    receivePort.listen((message) {
+      if (!completer.isCompleted) {
+        completer.complete(Event.fromJson(message, verify: false));
+      }
+    });
+    var rootToken = RootIsolateToken.instance!;
+    Map<String, dynamic> map = {
+      'event': event.toJson(),
+      'privkey': privkey,
+      'pubkey': pubkey,
+      'sendPort': receivePort.sendPort,
+      'token': rootToken
+    };
+    Isolate.spawn(decodeNip24InIsolate, map);
+    return completer.future;
+  }
+
   Future<void> _subscriptMessages({String? relay}) async {
     if (friendMessageSubscription.isNotEmpty) {
       await Connect.sharedInstance
@@ -443,7 +476,7 @@ class Contacts {
         updateFriendMessageTime(event.createdAt, relay);
         Zaps.handleZapRecordEvent(event);
       } else if (event.kind == 1059) {
-        Event? innerEvent = await Nip24.decode(event, pubkey, privkey);
+        Event? innerEvent = await decodeNip24Event(event);
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
