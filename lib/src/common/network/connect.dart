@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/common/network/config.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 /// notice callback
@@ -408,7 +409,14 @@ class Connect {
   Future _connectWs(String relay) async {
     try {
       _setConnectStatus(relay, 0); // connecting
-      return await WebSocket.connect(relay);
+      Map<String, dynamic>? headers;
+      String? host = Config.sharedInstance.getHost(relay);
+      if (host != null && host.isNotEmpty) {
+        headers = {
+          'Host': host,
+        };
+      }
+      return await WebSocket.connect(relay, headers: headers);
     } catch (e) {
       print("Error! can not connect WS connectWs $e");
       _setConnectStatus(relay, 3); // closed
