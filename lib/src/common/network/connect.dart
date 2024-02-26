@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
 import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/common/network/config.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 /// notice callback
@@ -410,7 +409,7 @@ class Connect {
     try {
       _setConnectStatus(relay, 0); // connecting
       Map<String, dynamic>? headers;
-      String? host = Config.sharedInstance.getHost(relay);
+      String? host = Config.sharedInstance.host[relay];
       if (host != null && host.isNotEmpty) {
         headers = {
           'Host': host,
