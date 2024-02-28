@@ -16,12 +16,24 @@ class Config {
 
   String _configRequestsId = '';
   Map<String, ConfigDB> configs = {};
-  final String _serverPubkey = '';
-  // config host
-  Map<String, String> host = {};
 
-  void initConfig() {
-    _loadConfig();
+  // recommendChannels config
+  List<String> recommendChannels = [
+    'db0c7f767e730c71e008ca674094fd6446abc4404a5a04197f5516779f627752',
+    '25e5c82273a271cb1a840d0060391a0bf4965cafeb029d5ab55350b418953fbb',
+    '40b50ef7e5c83e12b106e45c4646a07c722e08676455cd6e796e7ae1c82ac5f5'
+  ];
+  // host config
+  Map<String, String> hostConfig = {
+    "wss://relay.0xchat.com": "ws://54.179.158.105:6969"
+  };
+  final String _serverPubkey =
+      '093dff31a87bbf838c54fd39ff755e72b38bd6b7975c670c0f2633fa7c54ddd0';
+  final String configD = '0xchat-config';
+  final String chatHost = 'wss://relay.0xchat.com';
+
+  Future<void> initConfig() async {
+    await _loadConfig();
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 && Account.sharedInstance.me != null) {
@@ -38,7 +50,7 @@ class Config {
   Future<void> _loadConfigFromDB() async {
     List<Object?> maps = await DB.sharedInstance.objects<ConfigDB>();
     configs = {for (var configDB in maps) (configDB as ConfigDB).d: configDB};
-    _setHostConfig();
+    _setConfig();
   }
 
   void _loadConfigFromRelay({String? relay}) {
@@ -47,7 +59,7 @@ class Config {
     }
 
     Map<String, List<Filter>> subscriptions = {};
-    Filter f = Filter(kinds: [30078], authors: [_serverPubkey]);
+    Filter f = Filter(kinds: [30078], d: [configD], authors: [_serverPubkey]);
 
     if (relay == null) {
       for (var r in Connect.sharedInstance.relays()) {
@@ -85,20 +97,23 @@ class Config {
         eventId: event.id,
         time: appData.createAt,
         configJson: appData.content);
-    int result = await DB.sharedInstance.insert<ConfigDB>(configDB,
-        conflictAlgorithm: ConflictAlgorithm.ignore);
+    int result = await DB.sharedInstance.insert<ConfigDB>(configDB);
     if (result > 0) {
       configs[configDB.d] = configDB;
-      _setHostConfig();
+      _setConfig();
     }
   }
 
-  void _setHostConfig(){
-    String? json = configs['']?.configJson;
-    if(json != null){
+  void _setConfig() {
+    String? json = configs[configD]?.configJson;
+    if (json != null) {
       Map map = jsonDecode(json);
-      String? ip = map['ip'];
-      if(ip != null) host['wss://relay.0xchat.com'] = ip;
+      String? dns = map['dns'];
+      hostConfig[chatHost] = 'ws://${dns ?? '54.179.158.105:6969'}';
+      List<String>? channels = (map['recommendChannels'] as List<dynamic>?)
+          ?.map((item) => item.toString())
+          .toList();
+      if (channels != null) recommendChannels = channels;
     }
   }
 }

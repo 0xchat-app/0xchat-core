@@ -408,14 +408,12 @@ class Connect {
   Future _connectWs(String relay) async {
     try {
       _setConnectStatus(relay, 0); // connecting
-      Map<String, dynamic>? headers;
-      String? host = Config.sharedInstance.host[relay];
+      String? host = Config.sharedInstance.hostConfig[relay];
       if (host != null && host.isNotEmpty) {
-        headers = {
-          'Host': host,
-        };
+        print('connect to host: $host, relay: $relay');
+        return await WebSocket.connect(host);
       }
-      return await WebSocket.connect(relay, headers: headers);
+      return await WebSocket.connect(relay);
     } catch (e) {
       print("Error! can not connect WS connectWs $e");
       _setConnectStatus(relay, 3); // closed

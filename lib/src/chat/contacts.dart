@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
 import 'dart:math';
-import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/services.dart';
 import 'package:nostr_core_dart/nostr.dart';

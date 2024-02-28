@@ -11,6 +11,7 @@ class Relays {
   Map<String, RelayDB> relays = {};
 
   Future<void> init() async {
+    await Config.sharedInstance.initConfig();
     List<RelayDB> result = await _loadRelaysFromDB() ?? [];
     if (result.isNotEmpty) {
       relays = {for (var item in result) item.url: item};
