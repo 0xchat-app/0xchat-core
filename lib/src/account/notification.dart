@@ -24,10 +24,10 @@ class NotificationHelper {
     pubkey = Account.sharedInstance.currentPubkey;
     serverPubkey = serverKey;
 
-    _startHeartBeat();
+    startHeartBeat();
   }
 
-  void _startHeartBeat() {
+  void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
       timer = Timer.periodic(Duration(seconds: 60), (Timer t) {
         _heartBeat(serverPubkey, privkey);
@@ -71,7 +71,7 @@ class NotificationHelper {
 
   void setOnline() {
     _heartBeat(serverPubkey, privkey);
-    _startHeartBeat();
+    startHeartBeat();
   }
 
   Future<void> logout() async {

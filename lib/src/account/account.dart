@@ -8,7 +8,7 @@ import 'package:http/http.dart' as http;
 class Account {
   /// singleton
   Account._internal() {
-    _startHeartBeat();
+    startHeartBeat();
     _loadAllUsers();
   }
   factory Account() => sharedInstance;
@@ -22,7 +22,7 @@ class Account {
   Map<String, UserDB> userCache = {};
   List<String> pQueue = [];
 
-  void _startHeartBeat() {
+  void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
       timer = Timer.periodic(Duration(seconds: 5), (Timer t) async {
         await _syncProfilesFromRelay();

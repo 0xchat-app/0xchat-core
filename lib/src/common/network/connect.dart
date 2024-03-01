@@ -60,7 +60,7 @@ class ISocket {
 
 class Connect {
   Connect._internal() {
-    _startCheckTimeOut();
+    startHeartBeat();
   }
   factory Connect() => sharedInstance;
   static final Connect sharedInstance = Connect._internal();
@@ -83,7 +83,7 @@ class Connect {
   // for timeout
   Timer? timer;
 
-  void _startCheckTimeOut() {
+  void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
       timer = Timer.periodic(Duration(seconds: 5), (Timer t) {
         _checkTimeout();
@@ -410,7 +410,6 @@ class Connect {
       _setConnectStatus(relay, 0); // connecting
       String? host = Config.sharedInstance.hostConfig[relay];
       if (host != null && host.isNotEmpty) {
-        print('connect to host: $host, relay: $relay');
         return await WebSocket.connect(host);
       }
       return await WebSocket.connect(relay);
