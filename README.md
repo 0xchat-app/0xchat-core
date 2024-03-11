@@ -1,11 +1,15 @@
 # 0xChat-Core
 
-Welcome to the 0xChat-Core Repository. This repository houses the core code of 0xChat App, dealing with all data requests and local data storage. With this repository at your disposal, you can effortlessly build your own user interface, without the need to manage any underlying logic.
+Welcome to 0xChat⚡️
+
+0xchat is a secure chat app built on the Nostr protocol. It prioritizes privacy, featuring private key login, encrypted private chats and contacts, encrypted group chats, and private payments([Cashu](https://cashu.space/)). Additionally, it also offers an open communication platform through public channels.
 
 0xchat Download links:
 
-  - [0xchat on iOS](https://apps.apple.com/app/0xchat/id1637607169)
-  - [0xchat on Android](https://play.google.com/store/apps/details?id=com.oxchat.nostr)
+  - [0xchat on Appstore](https://apps.apple.com/app/0xchat/id1637607169)
+  - [0xchat Testflight](https://testflight.apple.com/join/AjdJFBmU)
+  - [0xchat on Google play](https://play.google.com/store/apps/details?id=com.oxchat.nostr)
+  - [0xchat APK download](https://github.com/0xchat-app/0xchat-app-main/releases)
 
 ![](https://github.com/0xchat-app/.github/blob/main/profile/banner.jpeg)
 
@@ -34,37 +38,48 @@ At present, the repository supports the following modules and functionalities:
 Currently, we support three types of direct messages (DMs):
 
 - [Normal DM](https://github.com/nostr-protocol/nips/blob/master/04.md)
-- [Sealed DM](https://github.com/vitorpamplona/nips/blob/sealed-dms/24.md)
+
+Nip04 DM is the most widely used DM type in nostr, but it is not our recommended option currently because nip04 is not private in terms of DMs. Even though the content is encrypted, it leaks a lot of metadata. We do not use this DM type by default but are compatible with Nip04 DM from other nostr clients.
+
+- [Gift-Wrapped DM](https://github.com/nostr-protocol/nips/blob/master/59.md)
+
+This is our default and recommended DM type. By using Gift-Wrapped for event messages, it minimizes metadata leakage. Not only is the message content encrypted, but the sender and the timestamp are also concealed. Moreover, the encryption algorithm employed is the latest audited [nip44](https://github.com/nostr-protocol/nips/blob/master/44.md) algorithm.
+
 - [Secret DM](https://github.com/0xchat-app/0xchat-core/blob/main/doc/secretChat.md)
+
+Secret Chat is our third DM type, an extension of the Gift-Wrapped DM. Since Gift-Wrapped DM does not support forward secrecy, if a user's private key is compromised, all DM messages could be recovered. Therefore, we added a [nip101](https://github.com/water783/nips/blob/nip101/101.md) key exchange protocol to ensure each message session uses a different receiver key, securing forward secrecy. Additionally, we have incorporated the option to select a fixed relay for these sessions, allowing messages to be transmitted through a single trusted relay for both parties.
 
 Please review the provided links for a deeper understanding of each DM type.
 
+**Private Group**
+
+For [private group](https://github.com/0xchat-app/0xchat-core/blob/main/doc/privateGroup.md), we combine [Nip28](https://github.com/nostr-protocol/nips/blob/master/28.md) and [Nip59](https://github.com/nostr-protocol/nips/blob/master/59.md) to support group member management, where group messages, processed through gift-wrapping, are sent to all group members, ensuring messages are received only by group members even with frequent joins and leaves.
+
+Since our private group chats do not use a shared group private key, each group message is individually encrypted and sent to group members, which is not ideal for large groups. After testing, the 0xchat app, with a multi-threading approach, can support groups with fewer than 500 members.
+
 **Open Channels**
 
-Explore the boundless realm of open channels with 0xchat. Find and join channels seamlessly, unlocking a world of communication with ease.
+We also provide an open channels feature, compatible with other nostr clients. These channels are public, allowing anyone to join and speak, with message content visible to all. This feature is primarily aimed at fostering community and enhancing chat enjoyment.
 
 **Audio & Video Call**
 
-We offer audio and video calling capabilities between contacts. Signaling communication is carried out through Nostr relay using [NIP100](https://github.com/jacany/nips/blob/webrtc/100.md). The actual audio and video calls are facilitated via ICE servers. Additionally, we allow users to select their own ICE servers if preferred.
-
-**Badge Collections**
-
-Make your 0xchat profile uniquely yours with our Badge Collection feature. Gather your favorite badges and proudly display them on your profile picture.
-
+We offer E2EE audio and video call functionalities between contacts. Signaling communication is conducted through Nostr relay using [NIP100](https://github.com/jacany/nips/blob/webrtc/100.md), with actual audio and video calls facilitated via ICE servers. Users can also choose their preferred ICE servers.
 
 **Push Notifications**
 
-0xchat proposes a method for message push notifications, includes the sending and processing of heartbeat signals to detect online status and provide timely push notifications.
+0xchat proposes a push notification method, involving sending and processing heartbeat signals to determine online status and ensure timely notifications.
 
 Spec link: [https://github.com/0xchat-app/0xchat-core/blob/main/doc/nofitications.md](https://github.com/0xchat-app/0xchat-core/blob/main/doc/nofitications.md)
-	
-```mermaid
-flowchart LR
-    NostrClients --> |Kind 22456 event| Relay  
-    Relay --> |Req response| PushServer--> |Notification| APNs --> |iOS notification| NostrClients
-    PushServer --> |Notification| FCM--> |Android notification| NostrClients
-    PushServer --> |Subscription |Relay
-```
+
+In the latest Android version, we have integrated [Unifiedpush](https://unifiedpush.org/) with an embedded FCM distributor, also allowing users to select their preferred distributor in the settings.
+
+**Private Payments**
+
+We have integrated a cashu wallet into the app, utilizing the Lightning Network for ecash deposits and withdrawals. Within the app, users can send Ecash to friends and group members. The Ecash is stored locally, anonymizing ownership and effectively protecting user privacy.
+
+**Badge Collections**
+
+Finally, we offer a badge collection feature, where you can obtain badges of different levels by making donations to us. You can set these badges as your profile picture and also enjoy the corresponding privileges.
 
 ## Nips Supported
 - [x] [NIP 01 Basic protocol flow description](https://github.com/nostr-protocol/nips/blob/master/01.md)
