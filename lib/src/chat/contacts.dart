@@ -199,13 +199,14 @@ class Contacts {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     UserDB? friend = allContacts[friendPubkey];
-    if (friend != null && friend.aliasPubkey!.isNotEmpty) {
+    if (friend != null) {
       friend.nickName = nickName;
       await DB.sharedInstance.update<UserDB>(friend);
       _syncContactsToRelay(okCallBack: (ok, relay) {
         if (!completer.isCompleted) completer.complete(ok);
       });
     }
+    if (!completer.isCompleted) completer.complete(OKEvent(friendPubkey, false, ''));
     return completer.future;
   }
 
