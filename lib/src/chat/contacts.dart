@@ -206,7 +206,9 @@ class Contacts {
         if (!completer.isCompleted) completer.complete(ok);
       });
     }
-    if (!completer.isCompleted) completer.complete(OKEvent(friendPubkey, false, ''));
+    else if (!completer.isCompleted) {
+      completer.complete(OKEvent(friendPubkey, false, ''));
+    }
     return completer.future;
   }
 
