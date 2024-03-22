@@ -26,13 +26,15 @@ class Config {
   // host config
   Map<String, String> hostConfig = {
     "wss://relay.0xchat.com": "ws://54.179.158.105:6969",
-    "https://www.0xchat.com": "54.179.158.105:9601",
+    "www.0xchat.com": "54.179.158.105:9601",
+    "mint.0xchat.com": "13.38.85.175:3338",
   };
   final String _serverPubkey =
       '093dff31a87bbf838c54fd39ff755e72b38bd6b7975c670c0f2633fa7c54ddd0';
   final String configD = '0xchat-config';
   final String wssHost = 'wss://relay.0xchat.com';
-  final String httpHost = 'https://www.0xchat.com';
+  final String httpHost = 'www.0xchat.com';
+  final String mintHost = 'mint.0xchat.com';
 
   Future<void> initConfig() async {
     await _loadConfig();
@@ -110,14 +112,20 @@ class Config {
     String? json = configs[configD]?.configJson;
     if (json != null) {
       Map map = jsonDecode(json);
+
       String? wssdns = map['wssdns'];
       hostConfig[wssHost] = 'ws://${wssdns ?? '54.179.158.105:6969'}';
+
       String? httpsdns = map['httpsdns'];
       hostConfig[httpHost] = httpsdns ?? '54.179.158.105:9601';
+
       List<String>? channels = (map['recommendChannels'] as List<dynamic>?)
           ?.map((item) => item.toString())
           .toList();
       if (channels != null) recommendChannels = channels;
+
+      String? mintdns = map['mintdns'];
+      hostConfig[mintHost] = mintdns ?? '13.38.85.175:3338';
     }
   }
 }
