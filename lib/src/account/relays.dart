@@ -74,6 +74,18 @@ class Relays {
         : 0;
   }
 
+  int getContactsNotesSince(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.getContactsNotesSince(relayURL)
+        : 0;
+  }
+
+  int getContactsNotesUntil(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.getContactsNotesUntil(relayURL)
+        : 0;
+  }
+
   int getCommonMessageUntil(String relayURL) {
     return relays.containsKey(relayURL)
         ? relays[relayURL]!.commonMessagesUntil
@@ -114,6 +126,13 @@ class Relays {
         updateTime > until ? updateTime : until;
   }
 
+  void setContactsNotesUntil(int updateTime, String relay) {
+    int until = Relays.sharedInstance.getContactsNotesUntil(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
+    Relays.sharedInstance.relays[relay]!.contactsNotesUntil![relay] =
+        updateTime > until ? updateTime : until;
+  }
+
   void setGroupMessageUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.getGroupMessageUntil(relay);
     if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
@@ -149,6 +168,13 @@ class Relays {
         updateTime < since ? updateTime : since;
   }
 
+  void setContactsNotesSince(int updateTime, String relay) {
+    int since = Relays.sharedInstance.getContactsNotesSince(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
+    Relays.sharedInstance.relays[relay]!.contactsNotesSince![relay] =
+        updateTime < since ? updateTime : since;
+  }
+
   void setGroupMessageSince(int updateTime, String relay) {
     int since = Relays.sharedInstance.getGroupMessageSince(relay);
     if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
@@ -169,17 +195,21 @@ class Relays {
     return null;
   }
 
-  static Future<RelayDB?> getRelayDetails(String relayURL, {bool? refresh}) async{
-    if(refresh != null && refresh == false){
+  static Future<RelayDB?> getRelayDetails(String relayURL,
+      {bool? refresh}) async {
+    if (refresh != null && refresh == false) {
       RelayDB? relayDB = await getRelayDetailsFromDB(relayURL);
-      if(relayDB != null) return relayDB;
+      if (relayDB != null) return relayDB;
     }
 
     var url = Uri.parse(relayURL).replace(scheme: 'https');
-    var response = await http.get(url, headers: {'Accept': 'application/nostr+json'});
+    var response =
+        await http.get(url, headers: {'Accept': 'application/nostr+json'});
 
     if (response.statusCode == 200) {
-      RelayDB? relayDB = Relays.sharedInstance.relays.containsKey(relayURL) ? Relays.sharedInstance.relays[relayURL] : RelayDB(url: relayURL);
+      RelayDB? relayDB = Relays.sharedInstance.relays.containsKey(relayURL)
+          ? Relays.sharedInstance.relays[relayURL]
+          : RelayDB(url: relayURL);
       relayDB = RelayDB.relayDBInfoFromJSON(response.body, relayDB!);
       await DB.sharedInstance.insert(relayDB);
       return relayDB;

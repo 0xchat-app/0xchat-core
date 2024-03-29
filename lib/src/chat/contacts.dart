@@ -496,6 +496,9 @@ class Contacts {
             case 25050:
               handleCallEvent(innerEvent, relay);
               break;
+            case 1:
+              Moment.sharedInstance.handleNoteEvent(innerEvent, relay, true);
+              break;
             case 40:
             case 41:
             case 42:

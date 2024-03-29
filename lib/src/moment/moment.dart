@@ -1,6 +1,8 @@
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
+typedef NewNotesCallBack = void Function(NoteDB);
+
 class Moment {
   /// singleton
   Moment._internal();
@@ -10,9 +12,73 @@ class Moment {
   /// memory storage
   String pubkey = '';
   String privkey = '';
+  Map<String, NoteDB> notesCache = {};
+  NewNotesCallBack? newPrivateNotesCallBack;
+  NewNotesCallBack? newContactsNotesCallBack;
+  NewNotesCallBack? newUserNotesCallBack;
+  String notesSubscription = '';
 
   Future<void> init() async {
     privkey = Account.sharedInstance.currentPrivkey;
     pubkey = Account.sharedInstance.currentPubkey;
+
+    _updateSubscriptions();
+    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
+      if (status == 1) {
+        _updateSubscriptions(relay: relay);
+      }
+    });
+  }
+
+  Future<void> _updateSubscriptions({String? relay}) async {
+    if (notesSubscription.isNotEmpty) {
+      Connect.sharedInstance.closeRequests(notesSubscription, relay: relay);
+    }
+
+    List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
+    if (authors.isNotEmpty) {
+      Map<String, List<Filter>> subscriptions = {};
+      if (relay == null) {
+        for (String relayURL in Connect.sharedInstance.relays()) {
+          int contactsNotesUntil =
+              Relays.sharedInstance.getContactsNotesUntil(relayURL);
+          Filter f =
+              Filter(authors: authors, kinds: [1], since: contactsNotesUntil);
+          subscriptions[relayURL] = [f];
+        }
+      } else {
+        int contactsNotesUntil =
+            Relays.sharedInstance.getContactsNotesUntil(relay);
+        Filter f =
+            Filter(authors: authors, kinds: [1], since: contactsNotesUntil);
+        subscriptions[relay] = [f];
+      }
+
+      notesSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
+          eventCallBack: (event, relay) async {
+        switch (event.kind) {
+          case 1:
+            handleNoteEvent(event, relay, false);
+            break;
+          default:
+            print('unhandled message $event');
+            break;
+        }
+      });
+    }
+  }
+
+  void updateContactsNotesTime(int eventTime, String relay) {
+    /// set channelMessageUntil channelMessageSince
+    if (Relays.sharedInstance.relays.containsKey(relay)) {
+      Relays.sharedInstance.setChannelMessageUntil(eventTime, relay);
+      Relays.sharedInstance.setChannelMessageSince(eventTime, relay);
+    } else {
+      Relays.sharedInstance.relays[relay] = RelayDB(
+          url: relay,
+          channelMessageUntil: {relay: eventTime},
+          channelMessageSince: {relay: eventTime});
+    }
+    Relays.sharedInstance.syncRelaysToDB();
   }
 }

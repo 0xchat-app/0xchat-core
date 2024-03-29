@@ -33,6 +33,9 @@ class RelayDB extends DBObject {
   int commonMessagesSince;
   int commonMessagesUntil;
 
+  Map<String, int>? contactsNotesSince;
+  Map<String, int>? contactsNotesUntil;
+
   // group messages {groupID1: time1, groupID2: time2,...}
   Map<String, int>? groupMessageSince;
   Map<String, int>? groupMessageUntil;
@@ -59,7 +62,9 @@ class RelayDB extends DBObject {
       this.commonMessagesSince = 0,
       this.commonMessagesUntil = 0,
       this.groupMessageSince,
-      this.groupMessageUntil});
+      this.groupMessageUntil,
+      this.contactsNotesUntil,
+      this.contactsNotesSince});
 
   @override
   //Map
@@ -115,6 +120,22 @@ class RelayDB extends DBObject {
     return 0;
   }
 
+  int getContactsNotesSince(String relay) {
+    contactsNotesSince ??= {};
+    if (contactsNotesSince!.containsKey(relay)) {
+      return contactsNotesSince![relay]!;
+    }
+    return 0;
+  }
+
+  int getContactsNotesUntil(String relay) {
+    contactsNotesUntil ??= {};
+    if (contactsNotesUntil!.containsKey(relay)) {
+      return contactsNotesUntil![relay]!;
+    }
+    return 0;
+  }
+
   static RelayDB fromMap(Map<String, Object?> map) {
     return _relayDBInfoFromMap(map);
   }
@@ -122,6 +143,14 @@ class RelayDB extends DBObject {
   //primaryKey
   static List<String?> primaryKey() {
     return ['url'];
+  }
+
+  //'ALTER TABLE Company ADD description TEXT'
+  static Map<String, String?> updateTable() {
+    return {
+      "4":
+          '''alter table RelayDB add contactsNotesUntil TEXT; alter table RelayDB add contactsNotesSince TEXT;'''
+    };
   }
 
   static Map<String, int> decodeMap(String map) {
@@ -137,14 +166,24 @@ class RelayDB extends DBObject {
   static RelayDB relayDBInfoFromJSON(String json, RelayDB relayDB) {
     Map map = jsonDecode(json);
     relayDB.pubkey = map.containsKey('pubkey') ? map['pubkey'].toString() : '';
-    relayDB.description = map.containsKey('description') ? map['description'].toString() : '';
-    relayDB.contact = map.containsKey('contact') ? map['contact'].toString() : '';
-    relayDB.supportedNips = map.containsKey('supported_nips') ? map['supported_nips'].toString() : '';
-    relayDB.supportedNipExtensions = map.containsKey('supported_nip_extensions') ? map['supported_nip_extensions'].toString() : '';
-    relayDB.software = map.containsKey('software') ? map['software'].toString() : '';
-    relayDB.version = map.containsKey('version') ? map['version'].toString() : '';
-    relayDB.limitation = map.containsKey('limitation') ? map['limitation'].toString() : '';
-    relayDB.paymentsUrl = map.containsKey('payments_url') ? map['payments_url'].toString() : '';
+    relayDB.description =
+        map.containsKey('description') ? map['description'].toString() : '';
+    relayDB.contact =
+        map.containsKey('contact') ? map['contact'].toString() : '';
+    relayDB.supportedNips = map.containsKey('supported_nips')
+        ? map['supported_nips'].toString()
+        : '';
+    relayDB.supportedNipExtensions = map.containsKey('supported_nip_extensions')
+        ? map['supported_nip_extensions'].toString()
+        : '';
+    relayDB.software =
+        map.containsKey('software') ? map['software'].toString() : '';
+    relayDB.version =
+        map.containsKey('version') ? map['version'].toString() : '';
+    relayDB.limitation =
+        map.containsKey('limitation') ? map['limitation'].toString() : '';
+    relayDB.paymentsUrl =
+        map.containsKey('payments_url') ? map['payments_url'].toString() : '';
     relayDB.fees = map.containsKey('fees') ? map['fees'].toString() : '';
     relayDB.icon = map.containsKey('icon') ? map['icon'].toString() : '';
 
@@ -178,6 +217,8 @@ RelayDB _relayDBInfoFromMap(Map<String, dynamic> map) {
     commonMessagesUntil: map['commonMessagesUntil'],
     groupMessageSince: RelayDB.decodeMap(map['groupMessageSince'].toString()),
     groupMessageUntil: RelayDB.decodeMap(map['groupMessageUntil'].toString()),
+    contactsNotesUntil: RelayDB.decodeMap(map['contactsNotesUntil'].toString()),
+    contactsNotesSince: RelayDB.decodeMap(map['contactsNotesSince'].toString()),
   );
 }
 
@@ -204,4 +245,6 @@ Map<String, dynamic> _relayDBInfoToMap(RelayDB instance) => <String, dynamic>{
       'commonMessagesUntil': instance.commonMessagesUntil,
       'groupMessageSince': jsonEncode(instance.groupMessageSince),
       'groupMessageUntil': jsonEncode(instance.groupMessageUntil),
+      'contactsNotesSince': jsonEncode(instance.contactsNotesSince),
+      'contactsNotesUntil': jsonEncode(instance.contactsNotesUntil),
     };
