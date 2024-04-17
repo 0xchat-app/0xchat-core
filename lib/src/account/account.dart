@@ -123,6 +123,7 @@ class Account {
         db.area = map['area']?.toString();
         db.about = map['about']?.toString();
         db.picture = map['picture']?.toString();
+        db.banner = map['banner']?.toString();
         db.dns = map['nip05']?.toString();
         db.lnurl = map['lnurl']?.toString();
         if (db.lnurl == null || db.lnurl == 'null' || db.lnurl!.isEmpty) {
@@ -148,6 +149,7 @@ class Account {
           'area',
           'about',
           'picture',
+          'banner',
           'nip05',
           'lnurl',
           'lud16',
@@ -209,6 +211,7 @@ class Account {
         db.area = map['area']?.toString();
         db.about = map['about']?.toString();
         db.picture = map['picture']?.toString();
+        db.banner = map['banner']?.toString();
         db.dns = map['nip05']?.toString();
         db.lnurl = map['lnurl']?.toString();
         if (db.lnurl == null || db.lnurl == 'null' || db.lnurl!.isEmpty) {
@@ -234,6 +237,7 @@ class Account {
           'area',
           'about',
           'picture',
+          'banner',
           'nip05',
           'lnurl',
           'lud16',
@@ -477,6 +481,7 @@ class Account {
     db.area = updateDB.area;
     db.about = updateDB.about;
     db.picture = updateDB.picture;
+    db.banner = updateDB.banner;
     db.dns = updateDB.dns;
     db.lnurl = updateDB.lnurl;
     db.mute = updateDB.mute;
@@ -489,6 +494,7 @@ class Account {
       'gender': updateDB.gender ?? '',
       'area': updateDB.area ?? '',
       'picture': updateDB.picture ?? '',
+      'banner': updateDB.banner ?? '',
       'nip05': updateDB.dns ?? '',
       'lud16': updateDB.lnurl ?? ''
     };
