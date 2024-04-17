@@ -3,8 +3,29 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension Load on Moment {
+  Future<List<NoteDB>?> loadFriendNotes(String pubkey,
+      {int limit = 50, int? until, NewNotesCallBack? callBack}) async {
+    newPrivateNotesCallBack = callBack;
+    until ??= currentUnixTimestampSeconds() + 1;
+    List<NoteDB>? notes = await _loadNotesFromDB(
+        where: 'author = ? AND createAt < ?',
+        whereArgs: [pubkey, until],
+        orderBy: 'createAt desc',
+        limit: limit);
+    return notes;
+  }
+
+  Future<List<NoteDB>?> loadMyNotes(
+      {int limit = 50, int? until, NewNotesCallBack? callBack}) async {
+    return await loadFriendNotes(pubkey,
+        limit: limit, until: until, callBack: callBack);
+  }
+
   Future<List<NoteDB>?> loadPrivateNotes(
-      {int limit = 50, int? until, NewNotesCallBack? callBack, bool? read}) async {
+      {int limit = 50,
+      int? until,
+      NewNotesCallBack? callBack,
+      bool? read}) async {
     newPrivateNotesCallBack = callBack;
     until ??= currentUnixTimestampSeconds() + 1;
     List<NoteDB>? notes = await _loadNotesFromDB(
@@ -19,7 +40,10 @@ extension Load on Moment {
   }
 
   Future<List<NoteDB>?> loadContactsNotes(
-      {int limit = 50, int? until, NewNotesCallBack? callBack, bool? read}) async {
+      {int limit = 50,
+      int? until,
+      NewNotesCallBack? callBack,
+      bool? read}) async {
     newContactsNotesCallBack = callBack;
     until ??= currentUnixTimestampSeconds() + 1;
     List<NoteDB>? notes = await _loadNotesFromDB(
@@ -43,20 +67,21 @@ extension Load on Moment {
 
   Future<void> loadOldNotes() async {}
 
-  Future<List<NoteDB>?> loadNoteIdToNoteDB(List<String> noteIds) async{}
+  Future<List<NoteDB>?> loadNoteIdToNoteDB(List<String> noteIds) async {}
 
   Future<List<NoteDB>?> loadNoteReplies(String noteId) async {
     NoteDB? noteDB = notesCache[noteId];
-    if(noteDB == null){
+    if (noteDB == null) {
       List<NoteDB>? notes = await loadNoteFromRelay(noteId);
       noteDB = notes?[0];
     }
 
-    if(noteDB?.replyEventIds?.isNotEmpty == true){
+    if (noteDB?.replyEventIds?.isNotEmpty == true) {
       return await loadNoteIdToNoteDB(noteDB!.replyEventIds!);
     }
     return null;
   }
+
   Future<void> loadNoteReactions() async {}
   Future<void> loadNoteZaps() async {}
   Future<void> loadNoteReposts() async {}
