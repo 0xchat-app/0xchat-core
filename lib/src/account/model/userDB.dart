@@ -29,6 +29,8 @@ class UserDB extends DBObject {
   String? about;
   String? picture;
 
+  String? banner;
+
   /// private chat
   String? aliasPubkey;
   String? toAliasPubkey;
@@ -72,6 +74,7 @@ class UserDB extends DBObject {
     this.area = '',
     this.about = '',
     this.picture = '',
+    this.banner = '',
     this.aliasPubkey = '',
     this.toAliasPubkey = '',
     this.toAliasPrivkey = '',
@@ -116,7 +119,8 @@ class UserDB extends DBObject {
       "1": '''alter table userDB add otherField TEXT;''',
       "3":
           '''alter table userDB add lastBadgesListUpdatedTime INT; alter table userDB add lastBlockListUpdatedTime INT; alter table userDB add lastChannelsListUpdatedTime INT; alter table userDB add lastFriendsListUpdatedTime INT; alter table userDB add lastGroupsListUpdatedTime INT;''',
-      "5": '''alter table userDB add nwcURI TEXT;'''
+      "5": '''alter table userDB add nwcURI TEXT;''',
+      "6": '''alter table userDB add banner TEXT;'''
     };
   }
 
@@ -155,7 +159,7 @@ class UserDB extends DBObject {
 
     return '$start:$end';
   }
-  
+
   NostrWalletConnection? get nwc {
     return NostrWalletConnection.fromURI(nwcURI);
   }
@@ -182,7 +186,7 @@ class NostrWalletConnection {
   NostrWalletConnection(this.server, this.relays, this.secret, this.lud16);
 
   static NostrWalletConnection? fromURI(String? uri) {
-    if(uri != null && uri.startsWith('nostr+walletconnect://')){
+    if (uri != null && uri.startsWith('nostr+walletconnect://')) {
       var decodedUri = Uri.parse(uri);
       var server = decodedUri.host;
       var queryParams = decodedUri.queryParametersAll;
@@ -210,6 +214,7 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     area: map['area'].toString(),
     about: map['about'].toString(),
     picture: map['picture'].toString(),
+    banner: map['banner'].toString(),
     friendsList: map['friendsList'].toString(),
     channelsList: UserDB.decodeStringList(map['channelsList'].toString()),
     groupsList: UserDB.decodeStringList(map['groupsList'].toString()),
@@ -242,6 +247,7 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'area': instance.area,
       'about': instance.about,
       'picture': instance.picture,
+      'banner': instance.banner,
       'friendsList': instance.friendsList,
       'channelsList': jsonEncode(instance.channelsList),
       'groupsList': jsonEncode(instance.groupsList),
