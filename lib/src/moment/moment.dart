@@ -69,15 +69,15 @@ class Moment {
   }
 
   void updateContactsNotesTime(int eventTime, String relay) {
-    /// set channelMessageUntil channelMessageSince
+    /// set setContactsNotesSince setContactsNotesUntil
     if (Relays.sharedInstance.relays.containsKey(relay)) {
-      Relays.sharedInstance.setChannelMessageUntil(eventTime, relay);
-      Relays.sharedInstance.setChannelMessageSince(eventTime, relay);
+      Relays.sharedInstance.setContactsNotesSince(eventTime, relay);
+      Relays.sharedInstance.setContactsNotesUntil(eventTime, relay);
     } else {
       Relays.sharedInstance.relays[relay] = RelayDB(
           url: relay,
-          channelMessageUntil: {relay: eventTime},
-          channelMessageSince: {relay: eventTime});
+          contactsNotesSince: {relay: eventTime},
+          contactsNotesUntil: {relay: eventTime});
     }
     Relays.sharedInstance.syncRelaysToDB();
   }

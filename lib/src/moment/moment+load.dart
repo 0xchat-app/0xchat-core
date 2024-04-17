@@ -4,12 +4,12 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension Load on Moment {
   Future<List<NoteDB>?> loadPrivateNotes(
-      {int limit = 50, int? until, NewNotesCallBack? callBack}) async {
+      {int limit = 50, int? until, NewNotesCallBack? callBack, bool? read}) async {
     newPrivateNotesCallBack = callBack;
     until ??= currentUnixTimestampSeconds() + 1;
     List<NoteDB>? notes = await _loadNotesFromDB(
-        where: 'private = ? AND createAt < ?',
-        whereArgs: [true, until],
+        where: 'private = ? AND createAt < ? AND read = ?',
+        whereArgs: [true, until, read],
         orderBy: 'createAt desc',
         limit: limit);
     List<NoteDB>? result = notes
@@ -19,12 +19,12 @@ extension Load on Moment {
   }
 
   Future<List<NoteDB>?> loadContactsNotes(
-      {int limit = 50, int? until, NewNotesCallBack? callBack}) async {
+      {int limit = 50, int? until, NewNotesCallBack? callBack, bool? read}) async {
     newContactsNotesCallBack = callBack;
     until ??= currentUnixTimestampSeconds() + 1;
     List<NoteDB>? notes = await _loadNotesFromDB(
-        where: 'private = ? AND createAt < ?',
-        whereArgs: [false, until],
+        where: 'private = ? AND createAt < ? AND read = ?',
+        whereArgs: [false, until, read],
         orderBy: 'createAt desc',
         limit: limit);
     List<NoteDB>? result = notes
@@ -33,15 +33,30 @@ extension Load on Moment {
     return result;
   }
 
-  Future<List<NoteDB>?> loadNotes(
-      {List<String>? noteIds, bool? private, String? author}) async {
+  Future<List<NoteDB>?> loadNoteFromRelay(String noteId) async {
     return null;
   }
 
-  Future<void> loadNewNotes() async {}
+  Future<List<NoteDB>?> loadNewNotes() async {
+    return await loadContactsNotes(read: false);
+  }
+
   Future<void> loadOldNotes() async {}
 
-  Future<void> loadNoteReplies() async {}
+  Future<List<NoteDB>?> loadNoteIdToNoteDB(List<String> noteIds) async{}
+
+  Future<List<NoteDB>?> loadNoteReplies(String noteId) async {
+    NoteDB? noteDB = notesCache[noteId];
+    if(noteDB == null){
+      List<NoteDB>? notes = await loadNoteFromRelay(noteId);
+      noteDB = notes?[0];
+    }
+
+    if(noteDB?.replyEventIds?.isNotEmpty == true){
+      return await loadNoteIdToNoteDB(noteDB!.replyEventIds!);
+    }
+    return null;
+  }
   Future<void> loadNoteReactions() async {}
   Future<void> loadNoteZaps() async {}
   Future<void> loadNoteReposts() async {}

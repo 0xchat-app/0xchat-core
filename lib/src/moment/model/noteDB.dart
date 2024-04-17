@@ -17,6 +17,7 @@ class NoteDB extends DBObject {
 
   /// private or public notes
   bool private;
+  bool read;
   String? warning;
 
   /// actions count
@@ -45,6 +46,7 @@ class NoteDB extends DBObject {
     this.mentions,
     this.pTags,
     this.private = false,
+    this.read = false,
     this.warning,
     this.replyCount = 0,
     this.repostCount = 0,
@@ -120,6 +122,7 @@ Map<String, dynamic> _noteInfoToMap(NoteDB instance) => <String, dynamic>{
       'mentions': jsonEncode(instance.mentions),
       'pTags': jsonEncode(instance.pTags),
       'private': instance.private,
+      'read': instance.read,
       'warning': instance.warning,
       'replyCount': instance.replyCount,
       'repostCount': instance.repostCount,
@@ -146,6 +149,7 @@ NoteDB _noteInfoFromMap(Map<String, dynamic> map) {
     mentions: NoteDB.decodeStringList(map['mentions']?.toString()),
     pTags: NoteDB.decodeStringList(map['pTags']?.toString()),
     private: (map['private'] ?? 0) > 0 ? true : false,
+    read: (map['read'] ?? 0) > 0 ? true : false,
     warning: map['warning']?.toString(),
     replyCount: map['replyCount'],
     repostCount: map['repostCount'],
