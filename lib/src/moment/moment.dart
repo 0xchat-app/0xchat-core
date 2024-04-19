@@ -36,6 +36,7 @@ class Moment {
     }
 
     List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
+    authors.add(pubkey); // add self
     if (authors.isNotEmpty) {
       Map<String, List<Filter>> subscriptions = {};
       if (relay == null) {
