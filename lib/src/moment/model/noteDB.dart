@@ -88,6 +88,21 @@ class NoteDB extends DBObject {
     }
   }
 
+  static Map<String, dynamic>? decodeNote(String encodedNote) {
+    if (encodedNote.startsWith('nostr:')) {
+      encodedNote = Nip21.decode(encodedNote)!;
+    }
+    if (encodedNote.startsWith('note')) {
+      return {
+        'channelId': Nip19.decodeNote(encodedNote),
+        'relays': [],
+        'author': null,
+        'kind': 40
+      };
+    }
+    return null;
+  }
+
   static NoteDB noteDBFromNote(Note note) {
     Thread thread = note.thread;
     String root = thread.root.eventId;
