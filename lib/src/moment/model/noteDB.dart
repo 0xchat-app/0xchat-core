@@ -20,6 +20,10 @@ class NoteDB extends DBObject {
   bool read;
   String? warning;
 
+  /// repost & quote repost
+  String? repostId;
+  String? quoteRepostId;
+
   /// actions count
   int replyCount;
   int repostCount;
@@ -48,6 +52,8 @@ class NoteDB extends DBObject {
     this.private = false,
     this.read = false,
     this.warning,
+    this.repostId = '',
+    this.quoteRepostId = '',
     this.replyCount = 0,
     this.repostCount = 0,
     this.reactionCount = 0,
@@ -139,6 +145,8 @@ Map<String, dynamic> _noteInfoToMap(NoteDB instance) => <String, dynamic>{
       'private': instance.private,
       'read': instance.read,
       'warning': instance.warning,
+      'repostId': instance.repostId,
+      'quoteRepostId': instance.quoteRepostId,
       'replyCount': instance.replyCount,
       'repostCount': instance.repostCount,
       'reactionCount': instance.reactionCount,
@@ -166,6 +174,8 @@ NoteDB _noteInfoFromMap(Map<String, dynamic> map) {
     private: (map['private'] ?? 0) > 0 ? true : false,
     read: (map['read'] ?? 0) > 0 ? true : false,
     warning: map['warning']?.toString(),
+    repostId: map['repostId']?.toString(),
+    quoteRepostId: map['quoteRepostId']?.toString(),
     replyCount: map['replyCount'],
     repostCount: map['repostCount'],
     reactionCount: map['reactionCount'],
