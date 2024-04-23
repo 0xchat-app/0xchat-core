@@ -120,12 +120,13 @@ class Groups {
         ? Nip28.actionToType(groupMessage.actionsType!)
         : '';
     GroupDB? groupDB = myGroups[groupMessage.channelId];
+    if (groupDB == null) return;
     switch (subType) {
       case 'invite':
         break;
       case 'request':
-        if (groupDB?.owner != pubkey &&
-            groupDB?.members?.contains(groupMessage.sender) == false) {
+        if (groupDB.owner != pubkey &&
+            groupDB.members?.contains(groupMessage.sender) == false) {
           return;
         }
         break;
@@ -133,12 +134,12 @@ class Groups {
       case 'remove':
       case 'updateName':
       case 'updatePinned':
-        if (groupDB?.owner != groupMessage.sender) return;
+        if (groupDB.owner != groupMessage.sender) return;
         break;
       case 'join':
       case 'leave':
       default:
-        if (groupDB?.members?.contains(groupMessage.sender) == false) return;
+        if (groupDB.members?.contains(groupMessage.sender) == false) return;
     }
 
     MessageDB messageDB = MessageDB(
@@ -307,7 +308,8 @@ class Groups {
 
   Future<Event?> getSendGroupMessageEvent(
       String groupId, MessageType type, String content,
-      {String? source, String? groupRelay,
+      {String? source,
+      String? groupRelay,
       String? replyMessage,
       String? replyMessageRelay,
       String? replyUser,
@@ -329,7 +331,8 @@ class Groups {
 
   Future<OKEvent> sendGroupMessage(
       String groupId, MessageType type, String content,
-      {String? source, String? groupRelay,
+      {String? source,
+      String? groupRelay,
       String? replyMessage,
       String? replyMessageRelay,
       String? replyUser,
@@ -454,7 +457,7 @@ class Groups {
 
   static Future<void> encodeNip24InIsolate(Map<String, dynamic> params) async {
     String privkey = params['privkey'] ?? '';
-    if(SignerHelper.needSigner(privkey)){
+    if (SignerHelper.needSigner(privkey)) {
       BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
     }
     Event event = Event.fromJson(params['event']);
