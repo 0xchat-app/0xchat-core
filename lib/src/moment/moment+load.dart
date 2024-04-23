@@ -5,13 +5,13 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension Load on Moment {
-  Future<List<NoteDB>?> loadFriendNotes(String pubkey,
+  Future<List<NoteDB>?> loadAllNotesFromDB(
       {int limit = 50, int? until, NewNotesCallBack? callBack}) async {
     newPrivateNotesCallBack = callBack;
     until ??= currentUnixTimestampSeconds() + 1;
     List<NoteDB>? notes = await _loadNotesFromDB(
-        where: 'author = ? AND createAt < ?',
-        whereArgs: [pubkey, until],
+        where: 'createAt < ?',
+        whereArgs: [until],
         orderBy: 'createAt desc',
         limit: limit);
     return notes;
@@ -19,8 +19,20 @@ extension Load on Moment {
 
   Future<List<NoteDB>?> loadMyNotes(
       {int limit = 50, int? until, NewNotesCallBack? callBack}) async {
-    return await loadFriendNotes(pubkey,
+    return await loadUserNotesFromDB(pubkey,
         limit: limit, until: until, callBack: callBack);
+  }
+
+  Future<List<NoteDB>?> loadUserNotesFromDB(String userPubkey,
+      {int limit = 50, int? until, NewNotesCallBack? callBack}) async {
+    newPrivateNotesCallBack = callBack;
+    until ??= currentUnixTimestampSeconds() + 1;
+    List<NoteDB>? notes = await _loadNotesFromDB(
+        where: 'author = ? AND createAt < ?',
+        whereArgs: [userPubkey, until],
+        orderBy: 'createAt desc',
+        limit: limit);
+    return notes;
   }
 
   Future<NoteDB?> loadPrivateNoteWithId(String noteId) async {
