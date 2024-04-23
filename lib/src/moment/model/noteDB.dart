@@ -98,7 +98,17 @@ class NoteDB extends DBObject {
     if (encodedNote.startsWith('nostr:')) {
       encodedNote = Nip21.decode(encodedNote)!;
     }
-    if (encodedNote.startsWith('note')) {
+    if (encodedNote.startsWith('nevent')) {
+      Map result = Nip19.decodeShareableEntity(encodedNote);
+      if (result['prefix'] == 'nevent') {
+        return {
+          'channelId': result['special'],
+          'relays': result['relays'],
+          'author': result['author'],
+          'kind': result['kind']
+        };
+      }
+    } else if (encodedNote.startsWith('note')) {
       return {
         'channelId': Nip19.decodeNote(encodedNote),
         'relays': [],
