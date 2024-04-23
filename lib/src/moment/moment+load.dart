@@ -17,7 +17,7 @@ extension Load on Moment {
     return notes;
   }
 
-  Future<List<NoteDB>?> loadMyNotes(
+  Future<List<NoteDB>?> loadMyNotesFromDB(
       {int limit = 50, int? until, NewNotesCallBack? callBack}) async {
     return await loadUserNotesFromDB(pubkey,
         limit: limit, until: until, callBack: callBack);
@@ -35,13 +35,7 @@ extension Load on Moment {
     return notes;
   }
 
-  Future<NoteDB?> loadPrivateNoteWithId(String noteId) async {
-    List<NoteDB>? result =
-        await _loadNotesFromDB(where: 'noteId = ?', whereArgs: [noteId]);
-    return result[0];
-  }
-
-  Future<List<NoteDB>?> loadPrivateNotes(
+  Future<List<NoteDB>?> loadPrivateNotesFromDB(
       {int limit = 50,
       int? until,
       NewNotesCallBack? callBack,
@@ -59,7 +53,7 @@ extension Load on Moment {
     return result;
   }
 
-  Future<List<NoteDB>?> loadContactsNotes(
+  Future<List<NoteDB>?> loadContactsNotesFromDB(
       {int limit = 50,
       int? until,
       NewNotesCallBack? callBack,
@@ -77,9 +71,15 @@ extension Load on Moment {
     return result;
   }
 
-  Future<NoteDB?> loadNote(String noteId) async {
+  Future<NoteDB?> _loadPrivateNoteWithNoteId(String noteId) async {
+    List<NoteDB>? result =
+    await _loadNotesFromDB(where: 'noteId = ?', whereArgs: [noteId]);
+    return result[0];
+  }
+
+  Future<NoteDB?> loadNoteWithNoteId(String noteId) async {
     NoteDB? note = notesCache[noteId];
-    note ??= await loadPrivateNoteWithId(noteId);
+    note ??= await _loadPrivateNoteWithNoteId(noteId);
     note ??= await loadPublicNoteFromRelay(noteId);
     return note;
   }
@@ -131,9 +131,10 @@ extension Load on Moment {
     return completer.future;
   }
 
-  Future<List<NoteDB>?> loadNewNotesFromRelay({int limit = 50}) async {
+  Future<List<NoteDB>?> loadNewNotesFromRelay({int limit = 50, List<String>? authors}) async {
     Completer<List<NoteDB>?> completer = Completer<List<NoteDB>?>();
-    List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
+    authors ??= Contacts.sharedInstance.allContacts.keys.toList();
+    authors.add(pubkey);
     Filter f = Filter(kinds: [1], authors: authors, limit: limit);
     List<NoteDB> result = [];
     Connect.sharedInstance.addSubscription([f],
