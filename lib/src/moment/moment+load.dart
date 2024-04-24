@@ -71,15 +71,15 @@ extension Load on Moment {
     return result;
   }
 
-  Future<NoteDB?> _loadPrivateNoteWithNoteId(String noteId) async {
+  Future<NoteDB?> _loadNoteFromDB(String noteId) async {
     List<NoteDB>? result =
-    await _loadNotesFromDB(where: 'noteId = ?', whereArgs: [noteId]);
+        await _loadNotesFromDB(where: 'noteId = ?', whereArgs: [noteId]);
     return result[0];
   }
 
   Future<NoteDB?> loadNoteWithNoteId(String noteId) async {
     NoteDB? note = notesCache[noteId];
-    note ??= await _loadPrivateNoteWithNoteId(noteId);
+    note ??= await _loadNoteFromDB(noteId);
     note ??= await loadPublicNoteFromRelay(noteId);
     return note;
   }
@@ -93,16 +93,13 @@ extension Load on Moment {
         eventCallBack: (event, relay) async {
       Note note = Nip1.decodeNote(event);
       result = NoteDB.noteDBFromNote(note);
+      if (!completer.isCompleted) completer.complete(result);
+      await DB.sharedInstance
+          .insert<NoteDB>(result!, conflictAlgorithm: ConflictAlgorithm.ignore);
+      notesCache[result!.noteId] = result!;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unRelays.isEmpty) {
-        if (!completer.isCompleted) completer.complete(result);
-        if (result != null) {
-          await DB.sharedInstance.insert<NoteDB>(result!,
-              conflictAlgorithm: ConflictAlgorithm.ignore);
-          notesCache[result!.noteId] = result!;
-        }
-      }
+      if (unRelays.isEmpty && !completer.isCompleted) completer.complete(null);
     });
     return completer.future;
   }
@@ -131,7 +128,8 @@ extension Load on Moment {
     return completer.future;
   }
 
-  Future<List<NoteDB>?> loadNewNotesFromRelay({int limit = 50, List<String>? authors}) async {
+  Future<List<NoteDB>?> loadNewNotesFromRelay(
+      {int limit = 50, List<String>? authors}) async {
     Completer<List<NoteDB>?> completer = Completer<List<NoteDB>?>();
     authors ??= Contacts.sharedInstance.allContacts.keys.toList();
     authors.add(pubkey);
