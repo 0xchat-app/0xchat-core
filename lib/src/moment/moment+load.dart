@@ -211,4 +211,29 @@ extension Load on Moment {
       }
     }
   }
+
+  Future<void> handleRepostsEvent(
+      Event event, String relay, bool private) async {
+    if (!notesCache.containsKey(event.id)) {
+      updateContactsNotesTime(event.createdAt, relay);
+      Reposts repost = Nip18.decodeReposts(event);
+      // save repost event to DB
+      if (repost.repostNote != null) {
+        NoteDB repostNoteDB = NoteDB.noteDBFromReposts(repost);
+        await DB.sharedInstance.insert<NoteDB>(repostNoteDB,
+            conflictAlgorithm: ConflictAlgorithm.ignore);
+        notesCache[repostNoteDB.noteId] = repostNoteDB;
+      }
+
+      NoteDB noteDB = NoteDB.noteDBFromReposts(repost);
+      await DB.sharedInstance
+          .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
+      notesCache[noteDB.noteId] = noteDB;
+      if (private) {
+        newPrivateNotesCallBack?.call(noteDB);
+      } else {
+        newContactsNotesCallBack?.call(noteDB);
+      }
+    }
+  }
 }

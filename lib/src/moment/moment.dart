@@ -44,14 +44,14 @@ class Moment {
           int contactsNotesUntil =
               Relays.sharedInstance.getContactsNotesUntil(relayURL);
           Filter f =
-              Filter(authors: authors, kinds: [1], since: contactsNotesUntil);
+              Filter(authors: authors, kinds: [1, 6], since: contactsNotesUntil);
           subscriptions[relayURL] = [f];
         }
       } else {
         int contactsNotesUntil =
             Relays.sharedInstance.getContactsNotesUntil(relay);
         Filter f =
-            Filter(authors: authors, kinds: [1], since: contactsNotesUntil);
+            Filter(authors: authors, kinds: [1, 6], since: contactsNotesUntil);
         subscriptions[relay] = [f];
       }
 
@@ -60,6 +60,9 @@ class Moment {
         switch (event.kind) {
           case 1:
             handleNoteEvent(event, relay, false);
+            break;
+          case 6:
+            handleRepostsEvent(event, relay, false);
             break;
           default:
             print('unhandled message $event');

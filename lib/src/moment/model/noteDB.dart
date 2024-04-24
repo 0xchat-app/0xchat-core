@@ -8,7 +8,7 @@ class NoteDB extends DBObject {
   String author;
   int createAt;
   String content;
-  String root;
+  String? root;
   String? rootRelay;
   String? reply;
   String? replyRelay;
@@ -30,6 +30,8 @@ class NoteDB extends DBObject {
   int reactionCount;
   int zapCount;
   int zapAmount;
+
+  String? rawEvent;
 
   /// actions event ids
   List<String>? replyEventIds;
@@ -59,6 +61,7 @@ class NoteDB extends DBObject {
     this.reactionCount = 0,
     this.zapCount = 0,
     this.zapAmount = 0,
+    this.rawEvent = '',
     this.replyEventIds,
     this.repostEventIds,
     this.quoteRepostEventIds,
@@ -139,6 +142,15 @@ class NoteDB extends DBObject {
         mentions: mentions,
         pTags: pTags);
   }
+
+  static NoteDB noteDBFromReposts(Reposts reposts) {
+    return NoteDB(
+        noteId: reposts.eventId,
+        author: reposts.pubkey,
+        createAt: reposts.createAt,
+        content: reposts.content,
+        repostId: reposts.repostId);
+  }
 }
 
 Map<String, dynamic> _noteInfoToMap(NoteDB instance) => <String, dynamic>{
@@ -162,6 +174,7 @@ Map<String, dynamic> _noteInfoToMap(NoteDB instance) => <String, dynamic>{
       'reactionCount': instance.reactionCount,
       'zapCount': instance.zapCount,
       'zapAmount': instance.zapAmount,
+      'rawEvent': instance.rawEvent,
       'replyEventIds': jsonEncode(instance.replyEventIds),
       'repostEventIds': jsonEncode(instance.repostEventIds),
       'quoteRepostEventIds': jsonEncode(instance.quoteRepostEventIds),
@@ -191,6 +204,7 @@ NoteDB _noteInfoFromMap(Map<String, dynamic> map) {
     reactionCount: map['reactionCount'],
     zapCount: map['zapCount'],
     zapAmount: map['zapAmount'],
+    rawEvent: map['rawEvent']?.toString(),
     replyEventIds: NoteDB.decodeStringList(map['replyEventIds']?.toString()),
     repostEventIds: NoteDB.decodeStringList(map['repostEventIds']?.toString()),
     quoteRepostEventIds:
