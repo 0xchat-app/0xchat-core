@@ -441,7 +441,7 @@ class Groups {
             'sendPort': receivePort.sendPort,
             'token': rootToken
           };
-          Isolate.spawn(encodeNip24InIsolate, map);
+          Isolate.spawn(encodeNip17InIsolate, map);
         }
       }
       if (!completer.isCompleted) {
@@ -449,13 +449,13 @@ class Groups {
       }
     } else {
       if (!completer.isCompleted) {
-        completer.complete(OKEvent(event.id, false, 'no members in the group'));
+        completer.complete(OKEvent(event.id, false, 'no receivers'));
       }
     }
     return completer.future;
   }
 
-  static Future<void> encodeNip24InIsolate(Map<String, dynamic> params) async {
+  static Future<void> encodeNip17InIsolate(Map<String, dynamic> params) async {
     String privkey = params['privkey'] ?? '';
     if (SignerHelper.needSigner(privkey)) {
       BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);

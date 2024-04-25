@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:isolate';
+import 'dart:ui';
 
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/services.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension Send on Moment {
@@ -29,10 +32,115 @@ extension Send on Moment {
     return completer.future;
   }
 
-  Future<void> sendNoteContacts(String content) async {}
-  Future<void> sendNoteCloseFriends(
-      List<String> toPubkeys, String content) async {}
-  Future<void> sendNoteJustMe(String content) async {}
+  Future<OKEvent> _sendPrivateNote(String content, List<String> pubkeys,
+      {String? rootEvent,
+      String? rootEventRelay,
+      String? replyEvent,
+      String? replyEventRelay,
+      List<String>? replyUsers,
+      List<String>? replyUserRelays}) async {
+    Event event = await Nip1.encodeNote(content, pubkey, privkey,
+        rootEvent: rootEvent,
+        rootEventRelay: rootEventRelay,
+        replyEvent: replyEvent,
+        replyEventRelay: replyEventRelay,
+        replyUsers: replyUsers,
+        replyUserRelays: replyUserRelays);
+    return await sendMessageEvent(pubkeys, event);
+  }
+
+  Future<OKEvent> sendMessageEvent(List<String>? receivers, Event event) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    if (receivers != null) {
+      final receivePort = ReceivePort();
+      receivePort.listen((message) {
+        Connect.sharedInstance.sendEvent(Event.fromJson(message));
+      });
+      for (var receiver in receivers) {
+        if (receiver.isNotEmpty) {
+          var rootToken = RootIsolateToken.instance!;
+          Map<String, dynamic> map = {
+            'event': event.toJson(),
+            'receiver': receiver,
+            'privkey': privkey,
+            'pubkey': pubkey,
+            'sendPort': receivePort.sendPort,
+            'token': rootToken
+          };
+          Isolate.spawn(encodeNip17InIsolate, map);
+        }
+      }
+      if (!completer.isCompleted) {
+        completer.complete(OKEvent(event.id, true, ''));
+      }
+    } else {
+      if (!completer.isCompleted) {
+        completer.complete(OKEvent(event.id, false, 'no receivers'));
+      }
+    }
+    return completer.future;
+  }
+
+  static Future<void> encodeNip17InIsolate(Map<String, dynamic> params) async {
+    String privkey = params['privkey'] ?? '';
+    if (SignerHelper.needSigner(privkey)) {
+      BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
+    }
+    Event event = Event.fromJson(params['event']);
+    String receiver = params['receiver'] ?? '';
+    Event sealedEvent = await Nip17.encode(
+        event, receiver, params['pubkey'] ?? '', params['privkey'] ?? '');
+    params['sendPort'].send(sealedEvent.toJson());
+  }
+
+  Future<OKEvent> sendNoteContacts(String content,
+      {String? rootEvent,
+      String? rootEventRelay,
+      String? replyEvent,
+      String? replyEventRelay,
+      List<String>? replyUsers,
+      List<String>? replyUserRelays}) async {
+    List<String> toPubkeys = Contacts.sharedInstance.allContacts.keys.toList();
+    return await _sendPrivateNote(content, toPubkeys,
+        rootEvent: rootEvent,
+        rootEventRelay: rootEventRelay,
+        replyEvent: replyEvent,
+        replyEventRelay: replyEventRelay,
+        replyUsers: replyUsers,
+        replyUserRelays: replyUserRelays);
+  }
+
+  Future<OKEvent> sendNoteCloseFriends(List<String> toPubkeys, String content,
+      {String? rootEvent,
+      String? rootEventRelay,
+      String? replyEvent,
+      String? replyEventRelay,
+      List<String>? replyUsers,
+      List<String>? replyUserRelays}) async {
+    return await _sendPrivateNote(content, toPubkeys,
+        rootEvent: rootEvent,
+        rootEventRelay: rootEventRelay,
+        replyEvent: replyEvent,
+        replyEventRelay: replyEventRelay,
+        replyUsers: replyUsers,
+        replyUserRelays: replyUserRelays);
+  }
+
+  Future<OKEvent> sendNoteJustMe(String content,
+      {String? rootEvent,
+      String? rootEventRelay,
+      String? replyEvent,
+      String? replyEventRelay,
+      List<String>? replyUsers,
+      List<String>? replyUserRelays}) async {
+    return await _sendPrivateNote(content, [pubkey],
+        rootEvent: rootEvent,
+        rootEventRelay: rootEventRelay,
+        replyEvent: replyEvent,
+        replyEventRelay: replyEventRelay,
+        replyUsers: replyUsers,
+        replyUserRelays: replyUserRelays);
+  }
 
   Future<OKEvent> sendReply(String replyNoteId, String content) async {
     NoteDB? note = notesCache[replyNoteId];
