@@ -502,6 +502,9 @@ class Contacts {
             case 6:
               Moment.sharedInstance.handleRepostsEvent(innerEvent, relay, true);
               break;
+            case 7:
+              Moment.sharedInstance.handleReactionEvent(innerEvent, relay, true);
+              break;
             case 40:
             case 41:
             case 42:

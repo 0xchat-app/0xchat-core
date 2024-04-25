@@ -236,4 +236,8 @@ extension Load on Moment {
       }
     }
   }
+
+  Future<void> handleReactionEvent(
+      Event event, String relay, bool private) async {
+  }
 }

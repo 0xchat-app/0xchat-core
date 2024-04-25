@@ -43,16 +43,20 @@ class Moment {
         for (String relayURL in Connect.sharedInstance.relays()) {
           int contactsNotesUntil =
               Relays.sharedInstance.getContactsNotesUntil(relayURL);
-          Filter f =
-              Filter(authors: authors, kinds: [1, 6], since: contactsNotesUntil);
-          subscriptions[relayURL] = [f];
+          Filter f1 = Filter(
+              authors: authors, kinds: [1, 6], since: contactsNotesUntil);
+          Filter f2 =
+              Filter(p: [pubkey], kinds: [1, 6, 7], since: contactsNotesUntil);
+          subscriptions[relayURL] = [f1, f2];
         }
       } else {
         int contactsNotesUntil =
             Relays.sharedInstance.getContactsNotesUntil(relay);
-        Filter f =
+        Filter f1 =
             Filter(authors: authors, kinds: [1, 6], since: contactsNotesUntil);
-        subscriptions[relay] = [f];
+        Filter f2 =
+            Filter(p: [pubkey], kinds: [1, 6, 7], since: contactsNotesUntil);
+        subscriptions[relay] = [f1, f2];
       }
 
       notesSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
@@ -63,6 +67,9 @@ class Moment {
             break;
           case 6:
             handleRepostsEvent(event, relay, false);
+            break;
+          case 7:
+            handleReactionEvent(event, relay, false);
             break;
           default:
             print('unhandled message $event');

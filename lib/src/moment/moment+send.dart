@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:isolate';
-import 'dart:ui';
 
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/services.dart';
