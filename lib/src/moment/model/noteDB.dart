@@ -24,6 +24,12 @@ class NoteDB extends DBObject {
   String? repostId;
   String? quoteRepostId;
 
+  /// reaction
+  String? reactedId;
+  String? reactedKind;
+  String? emojiShortcode;
+  String? emojiURL;
+
   /// actions count
   int replyCount;
   int repostCount;
@@ -56,6 +62,10 @@ class NoteDB extends DBObject {
     this.warning,
     this.repostId = '',
     this.quoteRepostId = '',
+    this.reactedId = '',
+    this.reactedKind = '',
+    this.emojiShortcode = '',
+    this.emojiURL = '',
     this.replyCount = 0,
     this.repostCount = 0,
     this.reactionCount = 0,
@@ -151,6 +161,18 @@ class NoteDB extends DBObject {
         content: reposts.content,
         repostId: reposts.repostId);
   }
+
+  static NoteDB noteDBFromReactions(Reactions reactions) {
+    return NoteDB(
+        noteId: reactions.id,
+        author: reactions.pubkey,
+        createAt: reactions.createAt,
+        content: reactions.content,
+        reactedId: reactions.reactedEventId,
+        reactedKind: reactions.reactedKind,
+        emojiShortcode: reactions.emojiReaction?.shortcode,
+        emojiURL: reactions.emojiReaction?.url);
+  }
 }
 
 Map<String, dynamic> _noteInfoToMap(NoteDB instance) => <String, dynamic>{
@@ -169,6 +191,10 @@ Map<String, dynamic> _noteInfoToMap(NoteDB instance) => <String, dynamic>{
       'warning': instance.warning,
       'repostId': instance.repostId,
       'quoteRepostId': instance.quoteRepostId,
+      'reactedId': instance.reactedId,
+      'reactedKind': instance.reactedKind,
+      'emojiShortcode': instance.emojiShortcode,
+      'emojiURL': instance.emojiURL,
       'replyCount': instance.replyCount,
       'repostCount': instance.repostCount,
       'reactionCount': instance.reactionCount,
@@ -199,6 +225,10 @@ NoteDB _noteInfoFromMap(Map<String, dynamic> map) {
     warning: map['warning']?.toString(),
     repostId: map['repostId']?.toString(),
     quoteRepostId: map['quoteRepostId']?.toString(),
+    reactedId: map['reactedId']?.toString(),
+    reactedKind: map['reactedKind']?.toString(),
+    emojiShortcode: map['emojiShortcode']?.toString(),
+    emojiURL: map['emojiURL']?.toString(),
     replyCount: map['replyCount'],
     repostCount: map['repostCount'],
     reactionCount: map['reactionCount'],

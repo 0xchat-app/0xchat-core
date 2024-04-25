@@ -219,7 +219,7 @@ extension Load on Moment {
       Reposts repost = Nip18.decodeReposts(event);
       // save repost event to DB
       if (repost.repostNote != null) {
-        NoteDB repostNoteDB = NoteDB.noteDBFromReposts(repost);
+        NoteDB repostNoteDB = NoteDB.noteDBFromNote(repost.repostNote!);
         await DB.sharedInstance.insert<NoteDB>(repostNoteDB,
             conflictAlgorithm: ConflictAlgorithm.ignore);
         notesCache[repostNoteDB.noteId] = repostNoteDB;
@@ -239,5 +239,19 @@ extension Load on Moment {
 
   Future<void> handleReactionEvent(
       Event event, String relay, bool private) async {
+    if (!notesCache.containsKey(event.id)) {
+      updateContactsNotesTime(event.createdAt, relay);
+      Reactions reactions = Nip25.decode(event);
+      NoteDB reactionsNoteDB = NoteDB.noteDBFromReactions(reactions);
+      await DB.sharedInstance.insert<NoteDB>(reactionsNoteDB,
+          conflictAlgorithm: ConflictAlgorithm.ignore);
+      notesCache[reactionsNoteDB.noteId] = reactionsNoteDB;
+
+      if (private) {
+        newPrivateNotesCallBack?.call(reactionsNoteDB);
+      } else {
+        newContactsNotesCallBack?.call(reactionsNoteDB);
+      }
+    }
   }
 }
