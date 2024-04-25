@@ -330,7 +330,7 @@ class MessageDB extends DBObject {
     } else if (event.kind == 44) {
       message = await Nip44.decode(event, receiver, privkey);
     } else if (event.kind == 14) {
-      message = await Nip24.decodeSealedGossipDM(event, receiver);
+      message = await Nip17.decodeSealedGossipDM(event, receiver);
     }
     if (message == null) return null;
     MessageDB messageDB = MessageDB(

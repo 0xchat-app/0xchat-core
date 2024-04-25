@@ -252,7 +252,7 @@ class Contacts {
     } else {
       var intValue = Random().nextInt(24 * 60 * 60 * 7);
       int createAt = currentUnixTimestampSeconds() - intValue;
-      event ??= await Nip24.encodeSealedGossipDM(
+      event ??= await Nip17.encodeSealedGossipDM(
           friendPubkey,
           MessageDB.getContent(type, content, source),
           replayId,
@@ -384,7 +384,7 @@ class Contacts {
       BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
     }
     Event event = Event.fromJson(params['event']);
-    Event? innerEvent = await Nip24.decode(
+    Event? innerEvent = await Nip17.decode(
         event, params['pubkey'] ?? '', params['privkey'] ?? '');
     params['sendPort'].send(innerEvent?.toJson());
   }
@@ -615,7 +615,7 @@ class Contacts {
     Completer<OKEvent> completer = Completer<OKEvent>();
     var intValue = Random().nextInt(24 * 60 * 60 * 7);
     int createAt = currentUnixTimestampSeconds() - intValue;
-    event ??= await Nip24.encodeSealedGossipDM(toPubkey,
+    event ??= await Nip17.encodeSealedGossipDM(toPubkey,
         MessageDB.getContent(type, content, source), replyId, pubkey, privkey,
         sealedReceiver: pubkey,
         createAt: createAt,
