@@ -100,6 +100,7 @@ extension Send on Moment {
       List<String>? replyUsers,
       List<String>? replyUserRelays}) async {
     List<String> toPubkeys = Contacts.sharedInstance.allContacts.keys.toList();
+    toPubkeys.add(pubkey);
     return await _sendPrivateNote(content, toPubkeys,
         rootEvent: rootEvent,
         rootEventRelay: rootEventRelay,
@@ -116,6 +117,7 @@ extension Send on Moment {
       String? replyEventRelay,
       List<String>? replyUsers,
       List<String>? replyUserRelays}) async {
+    toPubkeys.add(pubkey);
     return await _sendPrivateNote(content, toPubkeys,
         rootEvent: rootEvent,
         rootEventRelay: rootEventRelay,
