@@ -5,9 +5,7 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension Load on Moment {
-  Future<List<NoteDB>?> loadAllNotesFromDB(
-      {int limit = 50, int? until, NewNotesCallBack? callBack}) async {
-    newPrivateNotesCallBack = callBack;
+  Future<List<NoteDB>?> loadAllNotesFromDB({int limit = 50, int? until}) async {
     until ??= currentUnixTimestampSeconds() + 1;
     List<NoteDB>? notes = await _loadNotesFromDB(
         where: 'createAt < ?',
@@ -17,15 +15,12 @@ extension Load on Moment {
     return notes;
   }
 
-  Future<List<NoteDB>?> loadMyNotesFromDB(
-      {int limit = 50, int? until, NewNotesCallBack? callBack}) async {
-    return await loadUserNotesFromDB(pubkey,
-        limit: limit, until: until, callBack: callBack);
+  Future<List<NoteDB>?> loadMyNotesFromDB({int limit = 50, int? until}) async {
+    return await loadUserNotesFromDB(pubkey, limit: limit, until: until);
   }
 
   Future<List<NoteDB>?> loadUserNotesFromDB(String userPubkey,
-      {int limit = 50, int? until, NewNotesCallBack? callBack}) async {
-    newPrivateNotesCallBack = callBack;
+      {int limit = 50, int? until}) async {
     until ??= currentUnixTimestampSeconds() + 1;
     List<NoteDB>? notes = await _loadNotesFromDB(
         where: 'author = ? AND createAt < ?',
@@ -36,11 +31,7 @@ extension Load on Moment {
   }
 
   Future<List<NoteDB>?> loadPrivateNotesFromDB(
-      {int limit = 50,
-      int? until,
-      NewNotesCallBack? callBack,
-      bool? read}) async {
-    newPrivateNotesCallBack = callBack;
+      {int limit = 50, int? until, bool? read}) async {
     until ??= currentUnixTimestampSeconds() + 1;
     List<NoteDB>? notes = await _loadNotesFromDB(
         where: 'private = ? AND createAt < ? AND read = ?',
@@ -54,11 +45,7 @@ extension Load on Moment {
   }
 
   Future<List<NoteDB>?> loadContactsNotesFromDB(
-      {int limit = 50,
-      int? until,
-      NewNotesCallBack? callBack,
-      bool? read}) async {
-    newContactsNotesCallBack = callBack;
+      {int limit = 50, int? until, bool? read}) async {
     until ??= currentUnixTimestampSeconds() + 1;
     List<NoteDB>? notes = await _loadNotesFromDB(
         where: 'private = ? AND createAt < ? AND read = ?',
@@ -196,7 +183,14 @@ extension Load on Moment {
         offset: offset);
   }
 
-  Future<void> handleNotification(NoteDB noteDB) async {
+  Future<void> handleNewNotes(NoteDB noteDB) async {
+    notesCache[noteDB.noteId] = noteDB;
+    int result = await DB.sharedInstance
+        .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
+    if (result == 1) {
+      newNotes.add(noteDB);
+      newNotesCallBack?.call(newNotes);
+    }
     if (noteDB.pTags?.contains(pubkey) == true) {
       NotificationDB notificationDB =
           NotificationDB.notificationDBFromNoteDB(noteDB);
@@ -204,7 +198,8 @@ extension Load on Moment {
           notificationDB,
           conflictAlgorithm: ConflictAlgorithm.ignore);
       if (result == 1) {
-        newNotificationCallBack?.call(notificationDB);
+        newNotifications.add(notificationDB);
+        newNotificationCallBack?.call(newNotifications);
       }
     }
   }
@@ -214,15 +209,7 @@ extension Load on Moment {
       updateContactsNotesTime(event.createdAt, relay);
       Note note = Nip1.decodeNote(event);
       NoteDB noteDB = NoteDB.noteDBFromNote(note);
-      await DB.sharedInstance
-          .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
-      notesCache[noteDB.noteId] = noteDB;
-      if (private) {
-        newPrivateNotesCallBack?.call(noteDB);
-      } else {
-        newContactsNotesCallBack?.call(noteDB);
-      }
-      handleNotification(noteDB);
+      handleNewNotes(noteDB);
     }
   }
 
@@ -240,15 +227,7 @@ extension Load on Moment {
       }
 
       NoteDB noteDB = NoteDB.noteDBFromReposts(repost);
-      await DB.sharedInstance
-          .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
-      notesCache[noteDB.noteId] = noteDB;
-      if (private) {
-        newPrivateNotesCallBack?.call(noteDB);
-      } else {
-        newContactsNotesCallBack?.call(noteDB);
-      }
-      handleNotification(noteDB);
+      handleNewNotes(noteDB);
     }
   }
 
@@ -258,16 +237,7 @@ extension Load on Moment {
       updateContactsNotesTime(event.createdAt, relay);
       Reactions reactions = Nip25.decode(event);
       NoteDB reactionsNoteDB = NoteDB.noteDBFromReactions(reactions);
-      await DB.sharedInstance.insert<NoteDB>(reactionsNoteDB,
-          conflictAlgorithm: ConflictAlgorithm.ignore);
-      notesCache[reactionsNoteDB.noteId] = reactionsNoteDB;
-
-      if (private) {
-        newPrivateNotesCallBack?.call(reactionsNoteDB);
-      } else {
-        newContactsNotesCallBack?.call(reactionsNoteDB);
-      }
-      handleNotification(reactionsNoteDB);
+      handleNewNotes(reactionsNoteDB);
     }
   }
 }

@@ -1,8 +1,8 @@
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
-typedef NewNotesCallBack = void Function(NoteDB);
-typedef NewNotificationCallBack = void Function(NotificationDB);
+typedef NewNotesCallBack = void Function(List<NoteDB>);
+typedef NewNotificationCallBack = void Function(List<NotificationDB>);
 
 class Moment {
   /// singleton
@@ -14,9 +14,9 @@ class Moment {
   String pubkey = '';
   String privkey = '';
   Map<String, NoteDB> notesCache = {};
-  NewNotesCallBack? newPrivateNotesCallBack;
-  NewNotesCallBack? newContactsNotesCallBack;
-  NewNotesCallBack? newUserNotesCallBack;
+  List<NoteDB> newNotes = [];
+  List<NotificationDB> newNotifications = [];
+  NewNotesCallBack? newNotesCallBack;
   NewNotificationCallBack? newNotificationCallBack;
 
   String notesSubscription = '';
@@ -47,9 +47,9 @@ class Moment {
           int contactsNotesUntil =
               Relays.sharedInstance.getContactsNotesUntil(relayURL);
           Filter f1 = Filter(
-              authors: authors, kinds: [1, 6], since: contactsNotesUntil);
+              authors: authors, kinds: [1, 6], since: contactsNotesUntil, limit: 1000);
           Filter f2 =
-              Filter(p: [pubkey], kinds: [1, 6, 7], since: contactsNotesUntil);
+              Filter(p: [pubkey], kinds: [1, 6, 7], since: contactsNotesUntil, limit: 1000);
           subscriptions[relayURL] = [f1, f2];
         }
       } else {
@@ -94,5 +94,13 @@ class Moment {
           contactsNotesUntil: {relay: eventTime});
     }
     Relays.sharedInstance.syncRelaysToDB();
+  }
+
+  void clearNewNotes(){
+    newNotes.clear();
+  }
+
+  void clearNewNotifications(){
+    newNotifications.clear();
   }
 }
