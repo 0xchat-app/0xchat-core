@@ -196,6 +196,19 @@ extension Load on Moment {
         offset: offset);
   }
 
+  Future<void> handleNotification(NoteDB noteDB) async {
+    if (noteDB.pTags?.contains(pubkey) == true) {
+      NotificationDB notificationDB =
+          NotificationDB.notificationDBFromNoteDB(noteDB);
+      int result = await DB.sharedInstance.insert<NotificationDB>(
+          notificationDB,
+          conflictAlgorithm: ConflictAlgorithm.ignore);
+      if (result == 1) {
+        newNotificationCallBack?.call(notificationDB);
+      }
+    }
+  }
+
   Future<void> handleNoteEvent(Event event, String relay, bool private) async {
     if (!notesCache.containsKey(event.id)) {
       updateContactsNotesTime(event.createdAt, relay);
@@ -209,6 +222,7 @@ extension Load on Moment {
       } else {
         newContactsNotesCallBack?.call(noteDB);
       }
+      handleNotification(noteDB);
     }
   }
 
@@ -234,6 +248,7 @@ extension Load on Moment {
       } else {
         newContactsNotesCallBack?.call(noteDB);
       }
+      handleNotification(noteDB);
     }
   }
 
@@ -252,6 +267,7 @@ extension Load on Moment {
       } else {
         newContactsNotesCallBack?.call(reactionsNoteDB);
       }
+      handleNotification(reactionsNoteDB);
     }
   }
 }

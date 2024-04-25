@@ -2,6 +2,7 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 typedef NewNotesCallBack = void Function(NoteDB);
+typedef NewNotificationCallBack = void Function(NotificationDB);
 
 class Moment {
   /// singleton
@@ -16,6 +17,8 @@ class Moment {
   NewNotesCallBack? newPrivateNotesCallBack;
   NewNotesCallBack? newContactsNotesCallBack;
   NewNotesCallBack? newUserNotesCallBack;
+  NewNotificationCallBack? newNotificationCallBack;
+
   String notesSubscription = '';
 
   Future<void> init() async {

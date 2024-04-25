@@ -1,7 +1,14 @@
 import 'package:chatcore/chat-core.dart';
-import 'package:nostr_core_dart/nostr.dart';
 
 extension Notification on Moment {
-  Future<void> handleNotifications() async {}
-  Future<void> loadNotifications() async {}
+  Future<List<NotificationDB>?> loadNotificationsFromDB(int until,
+      {int limit = 50}) async {
+    List<NotificationDB>? notifications = await DB.sharedInstance
+        .objects<NotificationDB>(
+            where: 'createAt < ?',
+            whereArgs: [until],
+            orderBy: 'createAt desc',
+            limit: limit);
+    return notifications;
+  }
 }
