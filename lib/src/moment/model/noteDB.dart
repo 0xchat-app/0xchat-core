@@ -162,6 +162,15 @@ class NoteDB extends DBObject {
         repostId: reposts.repostId);
   }
 
+  static NoteDB noteDBFromQuoteReposts(QuoteReposts quoteReposts) {
+    return NoteDB(
+        noteId: quoteReposts.eventId,
+        author: quoteReposts.pubkey,
+        createAt: quoteReposts.createAt,
+        content: quoteReposts.content,
+        quoteRepostId: quoteReposts.quoteRepostsId);
+  }
+
   static NoteDB noteDBFromReactions(Reactions reactions) {
     return NoteDB(
         noteId: reactions.id,

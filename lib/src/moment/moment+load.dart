@@ -91,20 +91,21 @@ extension Load on Moment {
     return completer.future;
   }
 
-  Future<List<String>> loadPublicNoteRepliesFromRelay(String noteId) async {
+  Future<List<String>> loadPublicNoteActionsFromRelay(String noteId) async {
     Completer<List<String>> completer = Completer<List<String>>();
 
-    Filter f = Filter(kinds: [1], e: [noteId]);
+    Filter f = Filter(kinds: [1, 6, 7], e: [noteId]);
     List<String> result = [];
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       if (!notesCache.containsKey(event.id)) {
-        Note note = Nip1.decodeNote(event);
-        NoteDB noteDB = NoteDB.noteDBFromNote(note);
-        result.add(noteDB.noteId);
-        notesCache[noteDB.noteId] = noteDB;
-        DB.sharedInstance.insert<NoteDB>(noteDB,
-            conflictAlgorithm: ConflictAlgorithm.ignore);
+        NoteDB? noteDB = actionToNoteDB(event);
+        if (noteDB != null) {
+          result.add(noteDB.noteId);
+          notesCache[noteDB.noteId] = noteDB;
+          DB.sharedInstance.insert<NoteDB>(noteDB,
+              conflictAlgorithm: ConflictAlgorithm.ignore);
+        }
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
@@ -115,28 +116,24 @@ extension Load on Moment {
     return completer.future;
   }
 
-  Future<List<String>> loadPublicNoteReactionsFromRelay(String noteId) async {
-    Completer<List<String>> completer = Completer<List<String>>();
-
-    Filter f = Filter(kinds: [7], e: [noteId]);
-    List<String> result = [];
-    Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event, relay) async {
-          if (!notesCache.containsKey(event.id)) {
-            Reactions reactions = Nip25.decode(event);
-            NoteDB reactionsNoteDB = NoteDB.noteDBFromReactions(reactions);
-            result.add(reactionsNoteDB.noteId);
-            notesCache[reactionsNoteDB.noteId] = reactionsNoteDB;
-            DB.sharedInstance.insert<NoteDB>(reactionsNoteDB,
-                conflictAlgorithm: ConflictAlgorithm.ignore);
-          }
-        }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-          Connect.sharedInstance.closeSubscription(requestId, relay);
-          if (unRelays.isEmpty) {
-            if (!completer.isCompleted) completer.complete(result);
-          }
-        });
-    return completer.future;
+  NoteDB? actionToNoteDB(Event event) {
+    NoteDB? result;
+    if (event.kind == 1) {
+      if (Nip18.hasQTag(event)) {
+        QuoteReposts quoteReposts = Nip18.decodeQuoteReposts(event);
+        result = NoteDB.noteDBFromQuoteReposts(quoteReposts);
+      } else {
+        Note note = Nip1.decodeNote(event);
+        result = NoteDB.noteDBFromNote(note);
+      }
+    } else if (event.kind == 6) {
+      Reposts reposts = Nip18.decodeReposts(event);
+      result = NoteDB.noteDBFromReposts(reposts);
+    } else if (event.kind == 7) {
+      Reactions reactions = Nip25.decode(event);
+      result = NoteDB.noteDBFromReactions(reactions);
+    }
+    return result;
   }
 
   Future<List<NoteDB>?> loadNewNotesFromRelay(
@@ -167,12 +164,13 @@ extension Load on Moment {
 
   Future<void> loadOldNotes() async {}
 
-  Future<List<NoteDB>?> _loadNoteIdToNoteDB(List<String> noteIds, bool private) async {
+  Future<List<NoteDB>?> _loadNoteIdToNoteDB(
+      List<String> noteIds, bool private) async {
     List<NoteDB> result = [];
     for (var noteId in noteIds) {
       NoteDB? noteDB = notesCache[noteId];
       noteDB ??= await _loadNoteFromDB(noteId);
-      if(!private) {
+      if (!private) {
         noteDB ??= await loadPublicNoteFromRelay(noteId);
       }
       if (noteDB != null) result.add(noteDB);
@@ -180,44 +178,18 @@ extension Load on Moment {
     return result;
   }
 
-  Future<List<NoteDB>?> loadNoteReplies(String noteId) async {
+  Future<List<NoteDB>?> loadNoteActions(String noteId) async {
     NoteDB? noteDB = notesCache[noteId];
     noteDB ??= await _loadNoteFromDB(noteId);
-    if(noteDB != null && noteDB.private){
+    if (noteDB != null && noteDB.private) {
       return await _loadNoteIdToNoteDB(noteDB.replyEventIds!, true);
     }
     noteDB ??= await loadPublicNoteFromRelay(noteId);
-    noteDB?.replyEventIds = await loadPublicNoteRepliesFromRelay(noteId);
+    noteDB?.replyEventIds = await loadPublicNoteActionsFromRelay(noteId);
     if (noteDB?.replyEventIds?.isNotEmpty == true) {
       return await _loadNoteIdToNoteDB(noteDB!.replyEventIds!, false);
     }
     return null;
-  }
-
-  Future<List<NoteDB>?> loadNoteReactions(String noteId) async {
-    NoteDB? noteDB = notesCache[noteId];
-    noteDB ??= await loadPublicNoteFromRelay(noteId);
-    if(noteDB != null && noteDB.private){
-      return await _loadNoteIdToNoteDB(noteDB.reactionEventIds!, true);
-    }
-    noteDB ??= await loadPublicNoteFromRelay(noteId);
-    noteDB?.reactionEventIds = await loadPublicNoteReactionsFromRelay(noteId);
-    if (noteDB?.reactionEventIds?.isNotEmpty == true) {
-      return await _loadNoteIdToNoteDB(noteDB!.reactionEventIds!, false);
-    }
-    return null;
-  }
-
-  Future<void> loadNoteZaps() async {
-
-  }
-
-  Future<void> loadNoteReposts() async {
-
-  }
-
-  Future<void> loadNoteQuoteReposts() async {
-    
   }
 
   Future<List<NoteDB>> _loadNotesFromDB({
