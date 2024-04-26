@@ -115,6 +115,30 @@ extension Load on Moment {
     return completer.future;
   }
 
+  Future<List<String>> loadPublicNoteReactionsFromRelay(String noteId) async {
+    Completer<List<String>> completer = Completer<List<String>>();
+
+    Filter f = Filter(kinds: [7], e: [noteId]);
+    List<String> result = [];
+    Connect.sharedInstance.addSubscription([f],
+        eventCallBack: (event, relay) async {
+          if (!notesCache.containsKey(event.id)) {
+            Reactions reactions = Nip25.decode(event);
+            NoteDB reactionsNoteDB = NoteDB.noteDBFromReactions(reactions);
+            result.add(reactionsNoteDB.noteId);
+            notesCache[reactionsNoteDB.noteId] = reactionsNoteDB;
+            DB.sharedInstance.insert<NoteDB>(reactionsNoteDB,
+                conflictAlgorithm: ConflictAlgorithm.ignore);
+          }
+        }, eoseCallBack: (requestId, ok, relay, unRelays) async {
+          Connect.sharedInstance.closeSubscription(requestId, relay);
+          if (unRelays.isEmpty) {
+            if (!completer.isCompleted) completer.complete(result);
+          }
+        });
+    return completer.future;
+  }
+
   Future<List<NoteDB>?> loadNewNotesFromRelay(
       {int limit = 50, List<String>? authors}) async {
     Completer<List<NoteDB>?> completer = Completer<List<NoteDB>?>();
@@ -143,11 +167,14 @@ extension Load on Moment {
 
   Future<void> loadOldNotes() async {}
 
-  Future<List<NoteDB>?> loadNoteIdToNoteDB(List<String> noteIds) async {
+  Future<List<NoteDB>?> _loadNoteIdToNoteDB(List<String> noteIds, bool private) async {
     List<NoteDB> result = [];
     for (var noteId in noteIds) {
       NoteDB? noteDB = notesCache[noteId];
-      noteDB ??= await loadPublicNoteFromRelay(noteId);
+      noteDB ??= await _loadNoteFromDB(noteId);
+      if(!private) {
+        noteDB ??= await loadPublicNoteFromRelay(noteId);
+      }
       if (noteDB != null) result.add(noteDB);
     }
     return result;
@@ -155,18 +182,43 @@ extension Load on Moment {
 
   Future<List<NoteDB>?> loadNoteReplies(String noteId) async {
     NoteDB? noteDB = notesCache[noteId];
+    noteDB ??= await _loadNoteFromDB(noteId);
+    if(noteDB != null && noteDB.private){
+      return await _loadNoteIdToNoteDB(noteDB.replyEventIds!, true);
+    }
     noteDB ??= await loadPublicNoteFromRelay(noteId);
     noteDB?.replyEventIds = await loadPublicNoteRepliesFromRelay(noteId);
     if (noteDB?.replyEventIds?.isNotEmpty == true) {
-      return await loadNoteIdToNoteDB(noteDB!.replyEventIds!);
+      return await _loadNoteIdToNoteDB(noteDB!.replyEventIds!, false);
     }
     return null;
   }
 
-  Future<void> loadNoteReactions() async {}
-  Future<void> loadNoteZaps() async {}
-  Future<void> loadNoteReposts() async {}
-  Future<void> loadNoteQuoteReposts() async {}
+  Future<List<NoteDB>?> loadNoteReactions(String noteId) async {
+    NoteDB? noteDB = notesCache[noteId];
+    noteDB ??= await loadPublicNoteFromRelay(noteId);
+    if(noteDB != null && noteDB.private){
+      return await _loadNoteIdToNoteDB(noteDB.reactionEventIds!, true);
+    }
+    noteDB ??= await loadPublicNoteFromRelay(noteId);
+    noteDB?.reactionEventIds = await loadPublicNoteReactionsFromRelay(noteId);
+    if (noteDB?.reactionEventIds?.isNotEmpty == true) {
+      return await _loadNoteIdToNoteDB(noteDB!.reactionEventIds!, false);
+    }
+    return null;
+  }
+
+  Future<void> loadNoteZaps() async {
+
+  }
+
+  Future<void> loadNoteReposts() async {
+
+  }
+
+  Future<void> loadNoteQuoteReposts() async {
+    
+  }
 
   Future<List<NoteDB>> _loadNotesFromDB({
     String? where,
@@ -187,7 +239,7 @@ extension Load on Moment {
     notesCache[noteDB.noteId] = noteDB;
     int result = await DB.sharedInstance
         .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
-    if (result == 1) {
+    if (result > 0) {
       newNotes.add(noteDB);
       newNotesCallBack?.call(newNotes);
     }
@@ -197,7 +249,7 @@ extension Load on Moment {
       int result = await DB.sharedInstance.insert<NotificationDB>(
           notificationDB,
           conflictAlgorithm: ConflictAlgorithm.ignore);
-      if (result == 1) {
+      if (result > 0) {
         newNotifications.add(notificationDB);
         newNotificationCallBack?.call(newNotifications);
       }
