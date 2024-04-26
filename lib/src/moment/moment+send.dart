@@ -161,8 +161,21 @@ extension Send on Moment {
     }
   }
 
-  Future<void> sendReaction(
-      List<String> toPubkeys, bool like, String eventId) async {}
+  Future<OKEvent> sendReaction(String reactedNoteId, bool like) async {
+    NoteDB? note = notesCache[reactedNoteId];
+    if (note != null) {
+      Completer<OKEvent> completer = Completer<OKEvent>();
+      Event event = await Nip25.encode(
+          reactedNoteId, note.author, '1', like, pubkey, privkey);
+      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
+        if (!completer.isCompleted) completer.complete(ok);
+      });
+      return completer.future;
+    } else {
+      return OKEvent(reactedNoteId, false, 'reacted note DB == null');
+    }
+  }
+
   Future<void> sendZapNote(List<String> relays, int sats, String lnurl,
       String recipient, String eventId, bool private) async {}
 
