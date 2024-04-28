@@ -22,7 +22,17 @@ extension Send on Moment {
         replyUsers: replyUsers,
         replyUserRelays: replyUserRelays);
 
-    // todo: save notedb
+    NoteDB? note;
+    if (rootEvent != null && replyEvent == null) {
+      note = await loadNoteWithNoteId(rootEvent);
+    } else if (replyEvent != null) {
+      note = await loadNoteWithNoteId(replyEvent);
+    }
+    if (note != null) {
+      note.replyEventIds ??= [];
+      note.replyEventIds!.add(event.id);
+      DB.sharedInstance.insert<NoteDB>(note);
+    }
 
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
@@ -144,14 +154,14 @@ extension Send on Moment {
   }
 
   Future<OKEvent> sendReply(String replyNoteId, String content) async {
-    NoteDB? note = notesCache[replyNoteId];
+    NoteDB? note = await loadNoteWithNoteId(replyNoteId);
     if (note != null) {
       String? rootEventId = note.root;
       if (rootEventId == null || rootEventId.isEmpty) {
         return await sendPublicNote(content,
             rootEvent: replyNoteId, replyUsers: [note.author]);
       } else {
-        NoteDB? rootNote = notesCache[rootEventId];
+        NoteDB? rootNote = await loadNoteWithNoteId(rootEventId);
         return await sendPublicNote(content,
             rootEvent: replyNoteId,
             replyUsers: [rootNote?.author ?? '', note.author]);
@@ -162,11 +172,14 @@ extension Send on Moment {
   }
 
   Future<OKEvent> sendReaction(String reactedNoteId, bool like) async {
-    NoteDB? note = notesCache[reactedNoteId];
+    NoteDB? note = await loadNoteWithNoteId(reactedNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       Event event = await Nip25.encode(
           reactedNoteId, note.author, '1', like, pubkey, privkey);
+      note.reactionEventIds ??= [];
+      note.reactionEventIds!.add(event.id);
+      DB.sharedInstance.insert<NoteDB>(note);
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         if (!completer.isCompleted) completer.complete(ok);
       });
@@ -181,11 +194,14 @@ extension Send on Moment {
 
   Future<OKEvent> sendRepost(
       String repostNoteId, String? repostNoteRelay) async {
-    NoteDB? note = notesCache[repostNoteId];
+    NoteDB? note = await loadNoteWithNoteId(repostNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       Event event = await Nip18.encodeReposts(
           repostNoteId, repostNoteRelay, note.rawEvent, pubkey, privkey);
+      note.repostEventIds ??= [];
+      note.repostEventIds!.add(event.id);
+      DB.sharedInstance.insert<NoteDB>(note);
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         if (!completer.isCompleted) completer.complete(ok);
       });
@@ -197,11 +213,14 @@ extension Send on Moment {
 
   Future<OKEvent> sendQuoteRepost(
       String quoteRepostNoteId, String content) async {
-    NoteDB? note = notesCache[quoteRepostNoteId];
+    NoteDB? note = await loadNoteWithNoteId(quoteRepostNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       Event event = await Nip18.encodeQuoteReposts(
           quoteRepostNoteId, content, pubkey, privkey);
+      note.quoteRepostEventIds ??= [];
+      note.quoteRepostEventIds!.add(event.id);
+      DB.sharedInstance.insert<NoteDB>(note);
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         if (!completer.isCompleted) completer.complete(ok);
       });
