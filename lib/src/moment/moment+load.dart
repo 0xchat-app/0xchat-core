@@ -12,6 +12,9 @@ extension Load on Moment {
         whereArgs: [until],
         orderBy: 'createAt desc',
         limit: limit);
+    for(var note in notes){
+      notesCache[note.noteId] = note;
+    }
     return notes;
   }
 
@@ -27,6 +30,9 @@ extension Load on Moment {
         whereArgs: [userPubkey, until],
         orderBy: 'createAt desc',
         limit: limit);
+    for(var note in notes){
+      notesCache[note.noteId] = note;
+    }
     return notes;
   }
 
@@ -41,6 +47,9 @@ extension Load on Moment {
     List<NoteDB>? result = notes
         .where((n) => Contacts.sharedInstance.allContacts.containsKey(n.author))
         .toList();
+    for(var note in result){
+      notesCache[note.noteId] = note;
+    }
     return result;
   }
 
@@ -55,6 +64,9 @@ extension Load on Moment {
     List<NoteDB>? result = notes
         .where((n) => Contacts.sharedInstance.allContacts.containsKey(n.author))
         .toList();
+    for(var note in result){
+      notesCache[note.noteId] = note;
+    }
     return result;
   }
 
