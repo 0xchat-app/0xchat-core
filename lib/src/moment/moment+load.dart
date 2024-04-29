@@ -119,6 +119,9 @@ extension Load on Moment {
               conflictAlgorithm: ConflictAlgorithm.ignore);
         }
       }
+      else{
+        result.add(event.id);
+      }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
