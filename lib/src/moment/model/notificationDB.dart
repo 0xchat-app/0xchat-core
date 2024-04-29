@@ -61,7 +61,7 @@ class NotificationDB extends DBObject {
         kind: kind,
         author: note.author,
         createAt: note.createAt,
-        content: note.author,
+        content: note.content,
         zapAmount: 0,
         associatedNoteId: associatedNoteId);
   }
