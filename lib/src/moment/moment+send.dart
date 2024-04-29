@@ -180,6 +180,7 @@ extension Send on Moment {
 
       NoteDB noteDB = NoteDB.noteDBFromReactions(Nip25.decode(event));
       await DB.sharedInstance.insert<NoteDB>(noteDB);
+      notesCache[noteDB.noteId] = noteDB;
 
       note.reactionEventIds ??= [];
       note.reactionEventIds!.add(event.id);
@@ -206,6 +207,7 @@ extension Send on Moment {
 
       NoteDB noteDB = NoteDB.noteDBFromReposts(Nip18.decodeReposts(event));
       await DB.sharedInstance.insert<NoteDB>(noteDB);
+      notesCache[noteDB.noteId] = noteDB;
 
       note.repostEventIds ??= [];
       note.repostEventIds!.add(event.id);
@@ -230,6 +232,7 @@ extension Send on Moment {
       NoteDB noteDB =
           NoteDB.noteDBFromQuoteReposts(Nip18.decodeQuoteReposts(event));
       await DB.sharedInstance.insert<NoteDB>(noteDB);
+      notesCache[noteDB.noteId] = noteDB;
 
       note.quoteRepostEventIds ??= [];
       note.quoteRepostEventIds!.add(event.id);
