@@ -31,6 +31,8 @@ extension Send on Moment {
     if (note != null) {
       note.replyEventIds ??= [];
       note.replyEventIds!.add(event.id);
+      note.replyCount++;
+      note.replyCountByMe++;
       DB.sharedInstance.insert<NoteDB>(note);
     }
 
@@ -186,7 +188,11 @@ extension Send on Moment {
 
       note.reactionEventIds ??= [];
       note.reactionEventIds!.add(event.id);
+      note.reactionCount++;
+      note.reactionCountByMe++;
       DB.sharedInstance.insert<NoteDB>(note);
+      notesCache[note.noteId] = note;
+
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         if (!completer.isCompleted) completer.complete(ok);
       });
@@ -213,6 +219,8 @@ extension Send on Moment {
 
       note.repostEventIds ??= [];
       note.repostEventIds!.add(event.id);
+      note.repostCount++;
+      note.repostCountByMe++;
       DB.sharedInstance.insert<NoteDB>(note);
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         if (!completer.isCompleted) completer.complete(ok);
@@ -238,6 +246,8 @@ extension Send on Moment {
 
       note.quoteRepostEventIds ??= [];
       note.quoteRepostEventIds!.add(event.id);
+      note.quoteRepostCount++;
+      note.quoteRepostCountByMe++;
       DB.sharedInstance.insert<NoteDB>(note);
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         if (!completer.isCompleted) completer.complete(ok);

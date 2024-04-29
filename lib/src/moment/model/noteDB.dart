@@ -33,9 +33,18 @@ class NoteDB extends DBObject {
   /// actions count
   int replyCount;
   int repostCount;
+  int quoteRepostCount;
   int reactionCount;
   int zapCount;
   int zapAmount;
+
+  /// actions count by me
+  int replyCountByMe;
+  int repostCountByMe;
+  int quoteRepostCountByMe;
+  int reactionCountByMe;
+  int zapCountByMe;
+  int zapAmountByMe;
 
   String? rawEvent;
 
@@ -68,9 +77,16 @@ class NoteDB extends DBObject {
     this.emojiURL = '',
     this.replyCount = 0,
     this.repostCount = 0,
+    this.quoteRepostCount = 0,
     this.reactionCount = 0,
     this.zapCount = 0,
     this.zapAmount = 0,
+    this.replyCountByMe = 0,
+    this.repostCountByMe = 0,
+    this.quoteRepostCountByMe = 0,
+    this.reactionCountByMe = 0,
+    this.zapCountByMe = 0,
+    this.zapAmountByMe = 0,
     this.rawEvent = '',
     this.replyEventIds,
     this.repostEventIds,
@@ -206,9 +222,16 @@ Map<String, dynamic> _noteInfoToMap(NoteDB instance) => <String, dynamic>{
       'emojiURL': instance.emojiURL,
       'replyCount': instance.replyCount,
       'repostCount': instance.repostCount,
+      'quoteRepostCount': instance.quoteRepostCount,
       'reactionCount': instance.reactionCount,
       'zapCount': instance.zapCount,
       'zapAmount': instance.zapAmount,
+      'replyCountByMe': instance.replyCountByMe,
+      'repostCountByMe': instance.repostCountByMe,
+      'quoteRepostCountByMe': instance.quoteRepostCountByMe,
+      'reactionCountByMe': instance.reactionCountByMe,
+      'zapCountByMe': instance.zapCountByMe,
+      'zapAmountByMe': instance.zapAmountByMe,
       'rawEvent': instance.rawEvent,
       'replyEventIds': jsonEncode(instance.replyEventIds),
       'repostEventIds': jsonEncode(instance.repostEventIds),
@@ -240,9 +263,16 @@ NoteDB _noteInfoFromMap(Map<String, dynamic> map) {
     emojiURL: map['emojiURL']?.toString(),
     replyCount: map['replyCount'],
     repostCount: map['repostCount'],
+    quoteRepostCount: map['quoteRepostCount'],
     reactionCount: map['reactionCount'],
     zapCount: map['zapCount'],
     zapAmount: map['zapAmount'],
+    replyCountByMe: map['replyCountByMe'],
+    repostCountByMe: map['repostCountByMe'],
+    quoteRepostCountByMe: map['quoteRepostCountByMe'],
+    reactionCountByMe: map['reactionCountByMe'],
+    zapCountByMe: map['zapCountByMe'],
+    zapAmountByMe: map['zapAmountByMe'],
     rawEvent: map['rawEvent']?.toString(),
     replyEventIds: NoteDB.decodeStringList(map['replyEventIds']?.toString()),
     repostEventIds: NoteDB.decodeStringList(map['repostEventIds']?.toString()),
