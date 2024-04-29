@@ -211,7 +211,7 @@ extension Send on Moment {
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       Event event = await Nip18.encodeReposts(
-          repostNoteId, repostNoteRelay, note.rawEvent, pubkey, privkey);
+          repostNoteId, repostNoteRelay, note.author, note.rawEvent, pubkey, privkey);
 
       NoteDB noteDB = NoteDB.noteDBFromReposts(Nip18.decodeReposts(event));
       await DB.sharedInstance.insert<NoteDB>(noteDB);
@@ -237,7 +237,7 @@ extension Send on Moment {
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       Event event = await Nip18.encodeQuoteReposts(
-          quoteRepostNoteId, content, pubkey, privkey);
+          quoteRepostNoteId, note.author, content, pubkey, privkey);
 
       NoteDB noteDB =
           NoteDB.noteDBFromQuoteReposts(Nip18.decodeQuoteReposts(event));
