@@ -171,12 +171,14 @@ extension Send on Moment {
     }
   }
 
-  Future<OKEvent> sendReaction(String reactedNoteId, bool like) async {
+  Future<OKEvent> sendReaction(String reactedNoteId,
+      {bool like = true, String? emojiShotCode, String? emojiURL}) async {
     NoteDB? note = await loadNoteWithNoteId(reactedNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       Event event = await Nip25.encode(
-          reactedNoteId, note.author, '1', like, pubkey, privkey);
+          reactedNoteId, note.author, '1', like, pubkey, privkey,
+          emojiShotCode: emojiShotCode, emojiURL: emojiURL);
 
       NoteDB noteDB = NoteDB.noteDBFromReactions(Nip25.decode(event));
       await DB.sharedInstance.insert<NoteDB>(noteDB);
