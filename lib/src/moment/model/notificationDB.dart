@@ -37,22 +37,33 @@ class NotificationDB extends DBObject {
     return ['notificationId'];
   }
 
+  static NotificationDB notificationDBFromZapRecordsDB(
+      ZapRecordsDB zapRecordsDB, String eventId) {
+    final requestInfo = Zaps.getPaymentRequestInfo(zapRecordsDB.bolt11);
+    int amount = (requestInfo.amount.toDouble() * 100000000).toInt();
+    return NotificationDB(
+        notificationId: eventId,
+        kind: 9735,
+        author: zapRecordsDB.sender,
+        createAt: zapRecordsDB.paidAt,
+        content: zapRecordsDB.content,
+        zapAmount: amount,
+        associatedNoteId: zapRecordsDB.eventId);
+  }
+
   static NotificationDB notificationDBFromNoteDB(NoteDB note) {
     int kind = 0;
     String associatedNoteId = '';
-    if(note.reply != null){
+    if (note.reply != null) {
       kind = 1;
       associatedNoteId = note.reply!;
-    }
-    else if(note.repostId != null){
+    } else if (note.repostId != null) {
       kind = 6;
       associatedNoteId = note.repostId!;
-    }
-    else if(note.quoteRepostId != null){
+    } else if (note.quoteRepostId != null) {
       kind = 2;
       associatedNoteId = note.quoteRepostId!;
-    }
-    else if(note.reactedId != null){
+    } else if (note.reactedId != null) {
       kind = 7;
       associatedNoteId = note.reactedId!;
     }

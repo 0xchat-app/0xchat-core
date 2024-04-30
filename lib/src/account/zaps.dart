@@ -292,10 +292,19 @@ class Zaps {
         Account.sharedInstance.currentPrivkey);
     ZapRecordsDB zapRecordsDB =
         ZapRecordsDB.zapReceiptToZapRecordsDB(zapReceipt);
+    //add to zap records
     await DB.sharedInstance.insert<ZapRecordsDB>(zapRecordsDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
     Zaps.sharedInstance.zapRecords[zapRecordsDB.bolt11] = zapRecordsDB;
     Zaps.sharedInstance.zapRecordsCallBack?.call(zapRecordsDB);
+    //add to moment notifications
+    NotificationDB notificationDB =
+        NotificationDB.notificationDBFromZapRecordsDB(zapRecordsDB, event.id);
+    await DB.sharedInstance.insert<NotificationDB>(notificationDB,
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    Moment.sharedInstance.newNotifications.add(notificationDB);
+    Moment.sharedInstance.newNotificationCallBack
+        ?.call(Moment.sharedInstance.newNotifications);
     return zapRecordsDB;
   }
 
