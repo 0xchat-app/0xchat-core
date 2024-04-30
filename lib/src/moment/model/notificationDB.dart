@@ -54,10 +54,7 @@ class NotificationDB extends DBObject {
   static NotificationDB notificationDBFromNoteDB(NoteDB note) {
     int kind = 0;
     String associatedNoteId = '';
-    if (note.reply != null) {
-      kind = 1;
-      associatedNoteId = note.reply!;
-    } else if (note.repostId != null) {
+    if (note.repostId != null) {
       kind = 6;
       associatedNoteId = note.repostId!;
     } else if (note.quoteRepostId != null) {
@@ -66,6 +63,12 @@ class NotificationDB extends DBObject {
     } else if (note.reactedId != null) {
       kind = 7;
       associatedNoteId = note.reactedId!;
+    } else if (note.reply != null) {
+      kind = 1;
+      associatedNoteId = note.reply!;
+    } else if (note.root != null) {
+      kind = 1;
+      associatedNoteId = note.root!;
     }
     return NotificationDB(
         notificationId: note.noteId,
