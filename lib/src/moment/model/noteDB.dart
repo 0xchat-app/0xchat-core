@@ -14,6 +14,7 @@ class NoteDB extends DBObject {
   String? replyRelay;
   List<String>? mentions;
   List<String>? pTags;
+  List<String>? hashTags;
 
   /// private or public notes
   bool private;
@@ -66,6 +67,7 @@ class NoteDB extends DBObject {
     this.replyRelay,
     this.mentions,
     this.pTags,
+    this.hashTags,
     this.private = false,
     this.read = false,
     this.warning,
@@ -218,6 +220,7 @@ Map<String, dynamic> _noteInfoToMap(NoteDB instance) => <String, dynamic>{
       'replyRelay': instance.replyRelay,
       'mentions': jsonEncode(instance.mentions),
       'pTags': jsonEncode(instance.pTags),
+      'hashTags': jsonEncode(instance.hashTags),
       'private': instance.private,
       'read': instance.read,
       'warning': instance.warning,
@@ -259,6 +262,7 @@ NoteDB _noteInfoFromMap(Map<String, dynamic> map) {
     replyRelay: map['replyRelay']?.toString(),
     mentions: NoteDB.decodeStringList(map['mentions']?.toString()),
     pTags: NoteDB.decodeStringList(map['pTags']?.toString()),
+    hashTags: NoteDB.decodeStringList(map['hashTags']?.toString()),
     private: (map['private'] ?? 0) > 0 ? true : false,
     read: (map['read'] ?? 0) > 0 ? true : false,
     warning: map['warning']?.toString(),

@@ -12,7 +12,8 @@ extension Send on Moment {
       String? replyEvent,
       String? replyEventRelay,
       List<String>? replyUsers,
-      List<String>? replyUserRelays}) async {
+      List<String>? replyUserRelays,
+      List<String>? hashTags}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = await Nip1.encodeNote(content, pubkey, privkey,
         rootEvent: rootEvent,
@@ -20,7 +21,8 @@ extension Send on Moment {
         replyEvent: replyEvent,
         replyEventRelay: replyEventRelay,
         replyUsers: replyUsers,
-        replyUserRelays: replyUserRelays);
+        replyUserRelays: replyUserRelays,
+        hashTags: hashTags);
 
     NoteDB? note;
     if (rootEvent != null && replyEvent == null) {
@@ -49,14 +51,16 @@ extension Send on Moment {
       String? replyEvent,
       String? replyEventRelay,
       List<String>? replyUsers,
-      List<String>? replyUserRelays}) async {
+      List<String>? replyUserRelays,
+      List<String>? hashTags}) async {
     Event event = await Nip1.encodeNote(content, pubkey, privkey,
         rootEvent: rootEvent,
         rootEventRelay: rootEventRelay,
         replyEvent: replyEvent,
         replyEventRelay: replyEventRelay,
         replyUsers: replyUsers,
-        replyUserRelays: replyUserRelays);
+        replyUserRelays: replyUserRelays,
+        hashTags: hashTags);
 
     NoteDB? note;
     if (rootEvent != null && replyEvent == null) {
@@ -126,7 +130,8 @@ extension Send on Moment {
       String? replyEvent,
       String? replyEventRelay,
       List<String>? replyUsers,
-      List<String>? replyUserRelays}) async {
+      List<String>? replyUserRelays,
+      List<String>? hashTags}) async {
     List<String> toPubkeys = Contacts.sharedInstance.allContacts.keys.toList();
     toPubkeys.add(pubkey);
     return await _sendPrivateNote(content, toPubkeys,
@@ -135,7 +140,8 @@ extension Send on Moment {
         replyEvent: replyEvent,
         replyEventRelay: replyEventRelay,
         replyUsers: replyUsers,
-        replyUserRelays: replyUserRelays);
+        replyUserRelays: replyUserRelays,
+        hashTags: hashTags);
   }
 
   Future<OKEvent> sendNoteCloseFriends(List<String> toPubkeys, String content,
@@ -144,7 +150,8 @@ extension Send on Moment {
       String? replyEvent,
       String? replyEventRelay,
       List<String>? replyUsers,
-      List<String>? replyUserRelays}) async {
+      List<String>? replyUserRelays,
+      List<String>? hashTags}) async {
     toPubkeys.add(pubkey);
     return await _sendPrivateNote(content, toPubkeys,
         rootEvent: rootEvent,
@@ -152,7 +159,8 @@ extension Send on Moment {
         replyEvent: replyEvent,
         replyEventRelay: replyEventRelay,
         replyUsers: replyUsers,
-        replyUserRelays: replyUserRelays);
+        replyUserRelays: replyUserRelays,
+        hashTags: hashTags);
   }
 
   Future<OKEvent> sendNoteJustMe(String content,
@@ -161,14 +169,16 @@ extension Send on Moment {
       String? replyEvent,
       String? replyEventRelay,
       List<String>? replyUsers,
-      List<String>? replyUserRelays}) async {
+      List<String>? replyUserRelays,
+      List<String>? hashTags}) async {
     return await _sendPrivateNote(content, [pubkey],
         rootEvent: rootEvent,
         rootEventRelay: rootEventRelay,
         replyEvent: replyEvent,
         replyEventRelay: replyEventRelay,
         replyUsers: replyUsers,
-        replyUserRelays: replyUserRelays);
+        replyUserRelays: replyUserRelays,
+        hashTags: hashTags);
   }
 
   Future<OKEvent> sendReply(String replyNoteId, String content) async {
