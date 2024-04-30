@@ -152,11 +152,11 @@ extension Load on Moment {
   }
 
   Future<List<NoteDB>?> loadNewNotesFromRelay(
-      {int limit = 50, List<String>? authors}) async {
+      {int limit = 50, List<String>? authors, int? until}) async {
     Completer<List<NoteDB>?> completer = Completer<List<NoteDB>?>();
     authors ??= Contacts.sharedInstance.allContacts.keys.toList();
     authors.add(pubkey);
-    Filter f = Filter(kinds: [1], authors: authors, limit: limit);
+    Filter f = Filter(kinds: [1], authors: authors, limit: limit, until: until);
     List<NoteDB> result = [];
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
@@ -184,20 +184,20 @@ extension Load on Moment {
     List<NoteDB> result = [];
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-          if (!notesCache.containsKey(event.id)) {
-            Note note = Nip1.decodeNote(event);
-            NoteDB noteDB = NoteDB.noteDBFromNote(note);
-            result.add(noteDB);
-            notesCache[noteDB.noteId] = noteDB;
-            DB.sharedInstance.insert<NoteDB>(noteDB,
-                conflictAlgorithm: ConflictAlgorithm.ignore);
-          }
-        }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-          Connect.sharedInstance.closeSubscription(requestId, relay);
-          if (unRelays.isEmpty) {
-            if (!completer.isCompleted) completer.complete(result);
-          }
-        });
+      if (!notesCache.containsKey(event.id)) {
+        Note note = Nip1.decodeNote(event);
+        NoteDB noteDB = NoteDB.noteDBFromNote(note);
+        result.add(noteDB);
+        notesCache[noteDB.noteId] = noteDB;
+        DB.sharedInstance.insert<NoteDB>(noteDB,
+            conflictAlgorithm: ConflictAlgorithm.ignore);
+      }
+    }, eoseCallBack: (requestId, ok, relay, unRelays) async {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+      if (unRelays.isEmpty) {
+        if (!completer.isCompleted) completer.complete(result);
+      }
+    });
     return completer.future;
   }
 
@@ -266,42 +266,36 @@ extension Load on Moment {
   }
 
   Future<void> handleNoteEvent(Event event, String relay, bool private) async {
-    if (!notesCache.containsKey(event.id)) {
-      updateContactsNotesTime(event.createdAt, relay);
-      Note note = Nip1.decodeNote(event);
-      NoteDB noteDB = NoteDB.noteDBFromNote(note);
-      noteDB.private = private;
-      handleNewNotes(noteDB);
-    }
+    updateContactsNotesTime(event.createdAt, relay);
+    Note note = Nip1.decodeNote(event);
+    NoteDB noteDB = NoteDB.noteDBFromNote(note);
+    noteDB.private = private;
+    handleNewNotes(noteDB);
   }
 
   Future<void> handleRepostsEvent(
       Event event, String relay, bool private) async {
-    if (!notesCache.containsKey(event.id)) {
-      updateContactsNotesTime(event.createdAt, relay);
-      Reposts repost = Nip18.decodeReposts(event);
-      // save repost event to DB
-      if (repost.repostNote != null) {
-        NoteDB repostNoteDB = NoteDB.noteDBFromNote(repost.repostNote!);
-        await DB.sharedInstance.insert<NoteDB>(repostNoteDB,
-            conflictAlgorithm: ConflictAlgorithm.ignore);
-        notesCache[repostNoteDB.noteId] = repostNoteDB;
-      }
-
-      NoteDB noteDB = NoteDB.noteDBFromReposts(repost);
-      noteDB.private = private;
-      handleNewNotes(noteDB);
+    updateContactsNotesTime(event.createdAt, relay);
+    Reposts repost = Nip18.decodeReposts(event);
+    // save repost event to DB
+    if (repost.repostNote != null) {
+      NoteDB repostNoteDB = NoteDB.noteDBFromNote(repost.repostNote!);
+      await DB.sharedInstance.insert<NoteDB>(repostNoteDB,
+          conflictAlgorithm: ConflictAlgorithm.ignore);
+      notesCache[repostNoteDB.noteId] = repostNoteDB;
     }
+
+    NoteDB noteDB = NoteDB.noteDBFromReposts(repost);
+    noteDB.private = private;
+    handleNewNotes(noteDB);
   }
 
   Future<void> handleReactionEvent(
       Event event, String relay, bool private) async {
-    if (!notesCache.containsKey(event.id)) {
-      updateContactsNotesTime(event.createdAt, relay);
-      Reactions reactions = Nip25.decode(event);
-      NoteDB reactionsNoteDB = NoteDB.noteDBFromReactions(reactions);
-      reactionsNoteDB.private = private;
-      handleNewNotes(reactionsNoteDB);
-    }
+    updateContactsNotesTime(event.createdAt, relay);
+    Reactions reactions = Nip25.decode(event);
+    NoteDB reactionsNoteDB = NoteDB.noteDBFromReactions(reactions);
+    reactionsNoteDB.private = private;
+    handleNewNotes(reactionsNoteDB);
   }
 }
