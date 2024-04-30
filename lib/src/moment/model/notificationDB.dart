@@ -54,19 +54,19 @@ class NotificationDB extends DBObject {
   static NotificationDB notificationDBFromNoteDB(NoteDB note) {
     int kind = 0;
     String associatedNoteId = '';
-    if (note.repostId != null) {
+    if (note.repostId != null && note.repostId!.isNotEmpty) {
       kind = 6;
       associatedNoteId = note.repostId!;
-    } else if (note.quoteRepostId != null) {
+    } else if (note.quoteRepostId != null && note.quoteRepostId!.isNotEmpty) {
       kind = 2;
       associatedNoteId = note.quoteRepostId!;
-    } else if (note.reactedId != null) {
+    } else if (note.reactedId != null && note.reactedId!.isNotEmpty) {
       kind = 7;
       associatedNoteId = note.reactedId!;
-    } else if (note.reply != null) {
+    } else if (note.reply != null && note.reply!.isNotEmpty) {
       kind = 1;
       associatedNoteId = note.reply!;
-    } else if (note.root != null) {
+    } else if (note.root != null && note.root!.isNotEmpty) {
       kind = 1;
       associatedNoteId = note.root!;
     }
