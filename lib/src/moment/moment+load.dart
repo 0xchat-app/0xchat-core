@@ -12,7 +12,7 @@ extension Load on Moment {
         whereArgs: [until],
         orderBy: 'createAt desc',
         limit: limit);
-    for(var note in notes){
+    for (var note in notes) {
       notesCache[note.noteId] = note;
     }
     return notes;
@@ -30,7 +30,7 @@ extension Load on Moment {
         whereArgs: [userPubkey, until],
         orderBy: 'createAt desc',
         limit: limit);
-    for(var note in notes){
+    for (var note in notes) {
       notesCache[note.noteId] = note;
     }
     return notes;
@@ -47,7 +47,7 @@ extension Load on Moment {
     List<NoteDB>? result = notes
         .where((n) => Contacts.sharedInstance.allContacts.containsKey(n.author))
         .toList();
-    for(var note in result){
+    for (var note in result) {
       notesCache[note.noteId] = note;
     }
     return result;
@@ -64,7 +64,7 @@ extension Load on Moment {
     List<NoteDB>? result = notes
         .where((n) => Contacts.sharedInstance.allContacts.containsKey(n.author))
         .toList();
-    for(var note in result){
+    for (var note in result) {
       notesCache[note.noteId] = note;
     }
     return result;
@@ -76,10 +76,11 @@ extension Load on Moment {
     return result[0];
   }
 
-  Future<NoteDB?> loadNoteWithNoteId(String noteId) async {
+  Future<NoteDB?> loadNoteWithNoteId(String noteId,
+      {bool private = false}) async {
     NoteDB? note = notesCache[noteId];
     note ??= await _loadNoteFromDB(noteId);
-    note ??= await loadPublicNoteFromRelay(noteId);
+    if (!private) note ??= await loadPublicNoteFromRelay(noteId);
     return note;
   }
 
@@ -118,8 +119,7 @@ extension Load on Moment {
           DB.sharedInstance.insert<NoteDB>(noteDB,
               conflictAlgorithm: ConflictAlgorithm.ignore);
         }
-      }
-      else{
+      } else {
         result.add(event.id);
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
@@ -246,6 +246,7 @@ extension Load on Moment {
       updateContactsNotesTime(event.createdAt, relay);
       Note note = Nip1.decodeNote(event);
       NoteDB noteDB = NoteDB.noteDBFromNote(note);
+      noteDB.private = private;
       handleNewNotes(noteDB);
     }
   }
@@ -264,6 +265,7 @@ extension Load on Moment {
       }
 
       NoteDB noteDB = NoteDB.noteDBFromReposts(repost);
+      noteDB.private = private;
       handleNewNotes(noteDB);
     }
   }
@@ -274,6 +276,7 @@ extension Load on Moment {
       updateContactsNotesTime(event.createdAt, relay);
       Reactions reactions = Nip25.decode(event);
       NoteDB reactionsNoteDB = NoteDB.noteDBFromReactions(reactions);
+      reactionsNoteDB.private = private;
       handleNewNotes(reactionsNoteDB);
     }
   }

@@ -57,10 +57,26 @@ extension Send on Moment {
         replyEventRelay: replyEventRelay,
         replyUsers: replyUsers,
         replyUserRelays: replyUserRelays);
-    return await sendMessageEvent(pubkeys, event);
+
+    NoteDB? note;
+    if (rootEvent != null && replyEvent == null) {
+      note = await loadNoteWithNoteId(rootEvent);
+    } else if (replyEvent != null) {
+      note = await loadNoteWithNoteId(replyEvent);
+    }
+    if (note != null) {
+      note.replyEventIds ??= [];
+      note.replyEventIds!.add(event.id);
+      note.replyCount++;
+      note.replyCountByMe++;
+      DB.sharedInstance.insert<NoteDB>(note);
+    }
+
+    return await _sendPrivateMessage(pubkeys, event);
   }
 
-  Future<OKEvent> sendMessageEvent(List<String>? receivers, Event event) async {
+  Future<OKEvent> _sendPrivateMessage(
+      List<String>? receivers, Event event) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (receivers != null) {
       final receivePort = ReceivePort();
@@ -160,13 +176,20 @@ extension Send on Moment {
     if (note != null) {
       String? rootEventId = note.root;
       if (rootEventId == null || rootEventId.isEmpty) {
-        return await sendPublicNote(content,
-            rootEvent: replyNoteId, replyUsers: [note.author]);
+        return note.private
+            ? await _sendPrivateNote(content, [note.author, pubkey],
+                rootEvent: replyNoteId, replyUsers: [note.author])
+            : await sendPublicNote(content,
+                rootEvent: replyNoteId, replyUsers: [note.author]);
       } else {
         NoteDB? rootNote = await loadNoteWithNoteId(rootEventId);
-        return await sendPublicNote(content,
-            rootEvent: replyNoteId,
-            replyUsers: [rootNote?.author ?? '', note.author]);
+        return note.private
+            ? await _sendPrivateNote(content, [note.author, pubkey],
+                rootEvent: replyNoteId,
+                replyUsers: [rootNote?.author ?? '', note.author])
+            : await sendPublicNote(content,
+                rootEvent: replyNoteId,
+                replyUsers: [rootNote?.author ?? '', note.author]);
       }
     } else {
       return OKEvent(replyNoteId, false, 'reply note DB == null');
@@ -193,9 +216,15 @@ extension Send on Moment {
       DB.sharedInstance.insert<NoteDB>(note);
       notesCache[note.noteId] = note;
 
-      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
+      if (note.private) {
+        OKEvent ok = await _sendPrivateMessage([note.author, pubkey], event);
         if (!completer.isCompleted) completer.complete(ok);
-      });
+      } else {
+        Connect.sharedInstance.sendEvent(event,
+            sendCallBack: (ok, relay) async {
+          if (!completer.isCompleted) completer.complete(ok);
+        });
+      }
       return completer.future;
     } else {
       return OKEvent(reactedNoteId, false, 'reacted note DB == null');
@@ -210,8 +239,8 @@ extension Send on Moment {
     NoteDB? note = await loadNoteWithNoteId(repostNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
-      Event event = await Nip18.encodeReposts(
-          repostNoteId, repostNoteRelay, note.author, note.rawEvent, pubkey, privkey);
+      Event event = await Nip18.encodeReposts(repostNoteId, repostNoteRelay,
+          note.author, note.rawEvent, pubkey, privkey);
 
       NoteDB noteDB = NoteDB.noteDBFromReposts(Nip18.decodeReposts(event));
       await DB.sharedInstance.insert<NoteDB>(noteDB);
@@ -222,9 +251,17 @@ extension Send on Moment {
       note.repostCount++;
       note.repostCountByMe++;
       DB.sharedInstance.insert<NoteDB>(note);
-      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
+
+      if (note.private) {
+        OKEvent ok = await _sendPrivateMessage([note.author, pubkey], event);
         if (!completer.isCompleted) completer.complete(ok);
-      });
+      } else {
+        Connect.sharedInstance.sendEvent(event,
+            sendCallBack: (ok, relay) async {
+          if (!completer.isCompleted) completer.complete(ok);
+        });
+      }
+
       return completer.future;
     } else {
       return OKEvent(repostNoteId, false, 'repost note DB == null');
@@ -249,9 +286,17 @@ extension Send on Moment {
       note.quoteRepostCount++;
       note.quoteRepostCountByMe++;
       DB.sharedInstance.insert<NoteDB>(note);
-      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
+
+      if (note.private) {
+        OKEvent ok = await _sendPrivateMessage([note.author, pubkey], event);
         if (!completer.isCompleted) completer.complete(ok);
-      });
+      } else {
+        Connect.sharedInstance.sendEvent(event,
+            sendCallBack: (ok, relay) async {
+          if (!completer.isCompleted) completer.complete(ok);
+        });
+      }
+
       return completer.future;
     } else {
       return OKEvent(quoteRepostNoteId, false, 'quoteRepost note DB == null');
