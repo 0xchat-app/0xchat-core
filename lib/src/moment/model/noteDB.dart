@@ -170,24 +170,30 @@ class NoteDB extends DBObject {
   }
 
   static NoteDB noteDBFromReposts(Reposts reposts) {
+    List<String>? pTags = reposts.thread.ptags?.map((e) => e.pubkey).toList();
     return NoteDB(
         noteId: reposts.eventId,
         author: reposts.pubkey,
         createAt: reposts.createAt,
         content: reposts.content,
-        repostId: reposts.repostId);
+        repostId: reposts.repostId,
+        pTags: pTags);
   }
 
   static NoteDB noteDBFromQuoteReposts(QuoteReposts quoteReposts) {
+    List<String>? pTags =
+        quoteReposts.thread.ptags?.map((e) => e.pubkey).toList();
     return NoteDB(
         noteId: quoteReposts.eventId,
         author: quoteReposts.pubkey,
         createAt: quoteReposts.createAt,
         content: quoteReposts.content,
-        quoteRepostId: quoteReposts.quoteRepostsId);
+        quoteRepostId: quoteReposts.quoteRepostsId,
+        pTags: pTags);
   }
 
   static NoteDB noteDBFromReactions(Reactions reactions) {
+    List<String>? pTags = reactions.thread.ptags?.map((e) => e.pubkey).toList();
     return NoteDB(
         noteId: reactions.id,
         author: reactions.pubkey,
@@ -196,7 +202,8 @@ class NoteDB extends DBObject {
         reactedId: reactions.reactedEventId,
         reactedKind: reactions.reactedKind,
         emojiShortcode: reactions.emojiReaction?.shortcode,
-        emojiURL: reactions.emojiReaction?.url);
+        emojiURL: reactions.emojiReaction?.url,
+        pTags: pTags);
   }
 }
 
