@@ -178,9 +178,9 @@ extension Load on Moment {
   }
 
   Future<List<NoteDB>?> loadHashTagsFromRelay(List<String> hashTags,
-      {int limit = 50}) async {
+      {int limit = 50, int? until}) async {
     Completer<List<NoteDB>?> completer = Completer<List<NoteDB>?>();
-    Filter f = Filter(kinds: [1], t: hashTags);
+    Filter f = Filter(kinds: [1], t: hashTags, until: until);
     List<NoteDB> result = [];
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
