@@ -169,7 +169,8 @@ class NoteDB extends DBObject {
         replyRelay: replyRelay,
         mentions: mentions,
         pTags: pTags,
-        hashTags: note.hashTags);
+        hashTags: note.hashTags,
+        quoteRepostId: note.quoteRepostId);
   }
 
   static NoteDB noteDBFromReposts(Reposts reposts) {
