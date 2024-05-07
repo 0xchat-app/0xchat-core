@@ -73,7 +73,7 @@ extension Load on Moment {
   Future<NoteDB?> _loadNoteFromDB(String noteId) async {
     List<NoteDB>? result =
         await _loadNotesFromDB(where: 'noteId = ?', whereArgs: [noteId]);
-    return result[0];
+    return result.isEmpty ? null : result[0];
   }
 
   Future<NoteDB?> loadNoteWithNoteId(String noteId,
