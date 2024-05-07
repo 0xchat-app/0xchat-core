@@ -298,7 +298,7 @@ class Zaps {
     Zaps.sharedInstance.zapRecords[zapRecordsDB.bolt11] = zapRecordsDB;
     Zaps.sharedInstance.zapRecordsCallBack?.call(zapRecordsDB);
     //add to moment notifications
-    Moment.sharedInstance.handleZapNofitication(zapRecordsDB, event.id);
+    Moment.sharedInstance.handleZapNofitication(zapRecordsDB, event);
     return zapRecordsDB;
   }
 

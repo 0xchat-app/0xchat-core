@@ -188,8 +188,7 @@ extension Load on Moment {
       Event quoteRepostEvent, String noteId) async {
     NoteDB noteDB = await loadNoteWithNoteId(noteId);
     noteDB.quoteRepostEventIds ??= [];
-    if (noteDB.quoteRepostEventIds?.contains(quoteRepostEvent.id) == true)
-      return;
+    if (noteDB.quoteRepostEventIds?.contains(quoteRepostEvent.id) == true) return;
 
     QuoteReposts quoteReposts = Nip18.decodeQuoteReposts(quoteRepostEvent);
     NoteDB quoteRepostDB = NoteDB.noteDBFromQuoteReposts(quoteReposts);

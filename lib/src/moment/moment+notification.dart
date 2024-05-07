@@ -1,4 +1,4 @@
-import 'package:bolt11_decoder/bolt11_decoder.dart';
+import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
@@ -15,18 +15,11 @@ extension Notification on Moment {
   }
 
   Future<void> handleZapNofitication(
-      ZapRecordsDB zapRecordsDB, String noteId) async {
-    NoteDB? note = await loadNoteWithNoteId(noteId);
-    if (note != null) {
-      note.zapCount++;
-      Bolt11PaymentRequest requestInfo =
-          Zaps.getPaymentRequestInfo(zapRecordsDB.bolt11);
-      note.zapAmount += (requestInfo.amount.toDouble() * 100000000).toInt();
-      await saveNoteToDB(note);
-    }
+      ZapRecordsDB zapRecordsDB, Event zapEvent) async {
+    await addZapRecordToNote(zapEvent, zapRecordsDB.eventId);
 
     NotificationDB notificationDB =
-        NotificationDB.notificationDBFromZapRecordsDB(zapRecordsDB, noteId);
+        NotificationDB.notificationDBFromZapRecordsDB(zapRecordsDB, zapRecordsDB.eventId);
     await DB.sharedInstance.insert<NotificationDB>(notificationDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
     Moment.sharedInstance.newNotifications.add(notificationDB);
