@@ -76,11 +76,10 @@ extension Load on Moment {
     return result.isEmpty ? null : result[0];
   }
 
-  Future<NoteDB> loadNoteWithNoteId(String noteId,
+  Future<NoteDB?> loadNoteWithNoteId(String noteId,
       {bool private = false}) async {
     NoteDB? note = await _loadNoteFromDB(noteId);
     if (!private) note ??= await loadPublicNoteFromRelay(noteId);
-    note ??= NoteDB(noteId: noteId);
     return note;
   }
 
@@ -141,7 +140,8 @@ extension Load on Moment {
   }
 
   Future<void> addZapRecordToNote(Event zapEvent, String noteId) async {
-    NoteDB noteDB = await loadNoteWithNoteId(noteId);
+    NoteDB? noteDB = await loadNoteWithNoteId(noteId);
+    if(noteDB == null) return;
     noteDB.zapEventIds ??= [];
     ZapReceipt zapReceipt = await Nip57.getZapReceipt(
         zapEvent,
@@ -160,7 +160,8 @@ extension Load on Moment {
   }
 
   Future<void> addReplyToNote(Event replyEvent, String noteId) async {
-    NoteDB noteDB = await loadNoteWithNoteId(noteId);
+    NoteDB? noteDB = await loadNoteWithNoteId(noteId);
+    if(noteDB == null) return;
     noteDB.replyEventIds ??= [];
     if (noteDB.replyEventIds?.contains(replyEvent.id) == true) return;
 
@@ -175,7 +176,8 @@ extension Load on Moment {
   }
 
   Future<void> addRepostToNote(Event repostEvent, String noteId) async {
-    NoteDB noteDB = await loadNoteWithNoteId(noteId);
+    NoteDB? noteDB = await loadNoteWithNoteId(noteId);
+    if(noteDB == null) return;
     noteDB.repostEventIds ??= [];
     if (noteDB.repostEventIds?.contains(repostEvent.id) == true) return;
 
@@ -191,7 +193,8 @@ extension Load on Moment {
 
   Future<void> addQuoteRepostToNote(
       Event quoteRepostEvent, String noteId) async {
-    NoteDB noteDB = await loadNoteWithNoteId(noteId);
+    NoteDB? noteDB = await loadNoteWithNoteId(noteId);
+    if(noteDB == null) return;
     noteDB.quoteRepostEventIds ??= [];
     if (noteDB.quoteRepostEventIds?.contains(quoteRepostEvent.id) == true)
       return;
@@ -207,7 +210,8 @@ extension Load on Moment {
   }
 
   Future<void> addReactionToNote(Event reactionEvent, String noteId) async {
-    NoteDB noteDB = await loadNoteWithNoteId(noteId);
+    NoteDB? noteDB = await loadNoteWithNoteId(noteId);
+    if(noteDB == null) return;
     noteDB.reactionEventIds ??= [];
     if (noteDB.reactionEventIds?.contains(reactionEvent.id) == true) return;
 
@@ -305,20 +309,22 @@ extension Load on Moment {
       'reaction': [],
       'zap': []
     };
-    NoteDB noteDB = await loadNoteWithNoteId(noteId);
-    if (!noteDB.private) {
-      await loadPublicNoteActionsFromRelay(noteId);
+    NoteDB? noteDB = await loadNoteWithNoteId(noteId);
+    if(noteDB != null){
+      if (!noteDB.private) {
+        await loadPublicNoteActionsFromRelay(noteId);
+      }
+      result['reply'] =
+      await _loadNoteIdsToNoteDBs(noteDB.replyEventIds!, noteDB.private);
+      result['repost'] =
+      await _loadNoteIdsToNoteDBs(noteDB.repostEventIds!, noteDB.private);
+      result['quoteRepost'] = await _loadNoteIdsToNoteDBs(
+          noteDB.quoteRepostEventIds!, noteDB.private);
+      result['reaction'] =
+      await _loadNoteIdsToNoteDBs(noteDB.reactionEventIds!, noteDB.private);
+      result['zap'] =
+      await _loadInvoicesToZapRecords(noteDB.zapEventIds!, noteDB.private);
     }
-    result['reply'] =
-        await _loadNoteIdsToNoteDBs(noteDB.replyEventIds!, noteDB.private);
-    result['repost'] =
-        await _loadNoteIdsToNoteDBs(noteDB.repostEventIds!, noteDB.private);
-    result['quoteRepost'] = await _loadNoteIdsToNoteDBs(
-        noteDB.quoteRepostEventIds!, noteDB.private);
-    result['reaction'] =
-        await _loadNoteIdsToNoteDBs(noteDB.reactionEventIds!, noteDB.private);
-    result['zap'] =
-        await _loadInvoicesToZapRecords(noteDB.zapEventIds!, noteDB.private);
     return result;
   }
 
