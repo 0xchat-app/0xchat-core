@@ -315,15 +315,15 @@ extension Load on Moment {
         await loadPublicNoteActionsFromRelay(noteId);
       }
       result['reply'] =
-      await _loadNoteIdsToNoteDBs(noteDB.replyEventIds!, noteDB.private);
+      await _loadNoteIdsToNoteDBs(noteDB.replyEventIds ?? [], noteDB.private);
       result['repost'] =
-      await _loadNoteIdsToNoteDBs(noteDB.repostEventIds!, noteDB.private);
+      await _loadNoteIdsToNoteDBs(noteDB.repostEventIds ?? [], noteDB.private);
       result['quoteRepost'] = await _loadNoteIdsToNoteDBs(
           noteDB.quoteRepostEventIds!, noteDB.private);
       result['reaction'] =
-      await _loadNoteIdsToNoteDBs(noteDB.reactionEventIds!, noteDB.private);
+      await _loadNoteIdsToNoteDBs(noteDB.reactionEventIds ?? [], noteDB.private);
       result['zap'] =
-      await _loadInvoicesToZapRecords(noteDB.zapEventIds!, noteDB.private);
+      await _loadInvoicesToZapRecords(noteDB.zapEventIds ?? [], noteDB.private);
     }
     return result;
   }
