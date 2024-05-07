@@ -1,4 +1,5 @@
 import 'package:chatcore/chat-core.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension Notification on Moment {
   Future<List<NotificationDB>?> loadNotificationsFromDB(int until,
@@ -10,5 +11,22 @@ extension Notification on Moment {
             orderBy: 'createAt desc',
             limit: limit);
     return notifications;
+  }
+
+  Future<void> handleZapNofitication(
+      ZapRecordsDB zapRecordsDB, String noteId) async {
+    NoteDB? note = await loadNoteWithNoteId(noteId);
+    if(note != null){
+      note.zapCount++;
+      await saveNoteToDB(note);
+    }
+
+    NotificationDB notificationDB =
+        NotificationDB.notificationDBFromZapRecordsDB(zapRecordsDB, noteId);
+    await DB.sharedInstance.insert<NotificationDB>(notificationDB,
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    Moment.sharedInstance.newNotifications.add(notificationDB);
+    Moment.sharedInstance.newNotificationCallBack
+        ?.call(Moment.sharedInstance.newNotifications);
   }
 }

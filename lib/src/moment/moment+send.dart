@@ -241,8 +241,17 @@ extension Send on Moment {
     }
   }
 
-  Future<void> sendZapNote(List<String> relays, int sats, String lnurl,
-      String recipient, String eventId, bool private) async {}
+  Future<Map<String, dynamic>> getZapNoteInvoice(
+      List<String> relays,
+      int sats,
+      String lnurl,
+      String recipient,
+      String noteId,
+      String? content,
+      bool privateZap) async {
+    return Zaps.getInvoice(relays, sats, lnurl, recipient,
+        eventId: noteId, content: content, privateZap: privateZap);
+  }
 
   Future<OKEvent> sendRepost(
       String repostNoteId, String? repostNoteRelay) async {

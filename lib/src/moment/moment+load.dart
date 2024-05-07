@@ -84,6 +84,13 @@ extension Load on Moment {
     return note;
   }
 
+  Future<void> saveNoteToDB(NoteDB noteDB,
+      {ConflictAlgorithm? conflictAlgorithm}) async {
+    notesCache[noteDB.noteId] = noteDB;
+    await DB.sharedInstance
+        .insert<NoteDB>(noteDB, conflictAlgorithm: conflictAlgorithm);
+  }
+
   Future<NoteDB?> loadPublicNoteFromRelay(String noteId) async {
     Completer<NoteDB?> completer = Completer<NoteDB?>();
 
@@ -94,9 +101,7 @@ extension Load on Moment {
       Note note = Nip1.decodeNote(event);
       result = NoteDB.noteDBFromNote(note);
       if (!completer.isCompleted) completer.complete(result);
-      await DB.sharedInstance
-          .insert<NoteDB>(result!, conflictAlgorithm: ConflictAlgorithm.ignore);
-      notesCache[result!.noteId] = result!;
+      await saveNoteToDB(result!, conflictAlgorithm: ConflictAlgorithm.ignore);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty && !completer.isCompleted) completer.complete(null);
