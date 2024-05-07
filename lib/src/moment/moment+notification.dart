@@ -20,10 +20,12 @@ extension Notification on Moment {
 
     NotificationDB notificationDB =
         NotificationDB.notificationDBFromZapRecordsDB(zapRecordsDB, zapRecordsDB.eventId);
-    await DB.sharedInstance.insert<NotificationDB>(notificationDB,
+    int result = await DB.sharedInstance.insert<NotificationDB>(notificationDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
-    Moment.sharedInstance.newNotifications.add(notificationDB);
-    Moment.sharedInstance.newNotificationCallBack
-        ?.call(Moment.sharedInstance.newNotifications);
+    if(result > 0){
+      Moment.sharedInstance.newNotifications.add(notificationDB);
+      Moment.sharedInstance.newNotificationCallBack
+          ?.call(Moment.sharedInstance.newNotifications);
+    }
   }
 }

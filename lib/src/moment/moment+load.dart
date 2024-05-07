@@ -143,7 +143,12 @@ extension Load on Moment {
   Future<void> addZapRecordToNote(Event zapEvent, String noteId) async {
     NoteDB noteDB = await loadNoteWithNoteId(noteId);
     noteDB.zapEventIds ??= [];
-    ZapRecordsDB zapRecordsDB = await Zaps.handleZapRecordEvent(zapEvent);
+    ZapReceipt zapReceipt = await Nip57.getZapReceipt(
+        zapEvent,
+        Account.sharedInstance.currentPubkey,
+        Account.sharedInstance.currentPrivkey);
+    ZapRecordsDB zapRecordsDB =
+        ZapRecordsDB.zapReceiptToZapRecordsDB(zapReceipt);
     if (noteDB.zapEventIds?.contains(zapRecordsDB.bolt11) == true) return;
     await DB.sharedInstance.insert<ZapRecordsDB>(zapRecordsDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
@@ -188,7 +193,8 @@ extension Load on Moment {
       Event quoteRepostEvent, String noteId) async {
     NoteDB noteDB = await loadNoteWithNoteId(noteId);
     noteDB.quoteRepostEventIds ??= [];
-    if (noteDB.quoteRepostEventIds?.contains(quoteRepostEvent.id) == true) return;
+    if (noteDB.quoteRepostEventIds?.contains(quoteRepostEvent.id) == true)
+      return;
 
     QuoteReposts quoteReposts = Nip18.decodeQuoteReposts(quoteRepostEvent);
     NoteDB quoteRepostDB = NoteDB.noteDBFromQuoteReposts(quoteReposts);
