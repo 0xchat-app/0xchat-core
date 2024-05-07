@@ -76,11 +76,11 @@ extension Load on Moment {
     return result.isEmpty ? null : result[0];
   }
 
-  Future<NoteDB?> loadNoteWithNoteId(String noteId,
+  Future<NoteDB> loadNoteWithNoteId(String noteId,
       {bool private = false}) async {
-    NoteDB? note = notesCache[noteId];
-    note ??= await _loadNoteFromDB(noteId);
+    NoteDB? note = await _loadNoteFromDB(noteId);
     if (!private) note ??= await loadPublicNoteFromRelay(noteId);
+    note ??= NoteDB(noteId: noteId);
     return note;
   }
 
@@ -109,51 +109,111 @@ extension Load on Moment {
     return completer.future;
   }
 
-  Future<List<String>> loadPublicNoteActionsFromRelay(String noteId) async {
-    Completer<List<String>> completer = Completer<List<String>>();
-
-    Filter f = Filter(kinds: [1, 6, 7], e: [noteId]);
-    List<String> result = [];
+  Future<void> loadPublicNoteActionsFromRelay(String noteId) async {
+    List<Event> result = [];
+    Filter f = Filter(kinds: [1, 6, 7, 9735], e: [noteId]);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      if (!notesCache.containsKey(event.id)) {
-        NoteDB? noteDB = actionToNoteDB(event);
-        if (noteDB != null) {
-          result.add(noteDB.noteId);
-          notesCache[noteDB.noteId] = noteDB;
-          DB.sharedInstance.insert<NoteDB>(noteDB,
-              conflictAlgorithm: ConflictAlgorithm.ignore);
-        }
-      } else {
-        result.add(event.id);
-      }
+      result.add(event);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        if (!completer.isCompleted) completer.complete(result);
+        for (var event in result) {
+          switch (event.kind) {
+            case 1:
+              Nip18.hasQTag(event)
+                  ? await addQuoteRepostToNote(event, noteId)
+                  : await addReplyToNote(event, noteId);
+              break;
+            case 6:
+              await addRepostToNote(event, noteId);
+              break;
+            case 7:
+              await addReactionToNote(event, noteId);
+              break;
+            case 9735:
+              await addZapRecordToNote(event, noteId);
+              break;
+          }
+        }
       }
     });
-    return completer.future;
   }
 
-  NoteDB? actionToNoteDB(Event event) {
-    NoteDB? result;
-    if (event.kind == 1) {
-      if (Nip18.hasQTag(event)) {
-        QuoteReposts quoteReposts = Nip18.decodeQuoteReposts(event);
-        result = NoteDB.noteDBFromQuoteReposts(quoteReposts);
-      } else {
-        Note note = Nip1.decodeNote(event);
-        result = NoteDB.noteDBFromNote(note);
-      }
-    } else if (event.kind == 6) {
-      Reposts reposts = Nip18.decodeReposts(event);
-      result = NoteDB.noteDBFromReposts(reposts);
-    } else if (event.kind == 7) {
-      Reactions reactions = Nip25.decode(event);
-      result = NoteDB.noteDBFromReactions(reactions);
-    }
-    return result;
+  Future<void> addZapRecordToNote(Event zapEvent, String noteId) async {
+    NoteDB noteDB = await loadNoteWithNoteId(noteId);
+    noteDB.zapEventIds ??= [];
+    ZapRecordsDB zapRecordsDB = await Zaps.handleZapRecordEvent(zapEvent);
+    if (noteDB.zapEventIds?.contains(zapRecordsDB.bolt11) == true) return;
+    await DB.sharedInstance.insert<ZapRecordsDB>(zapRecordsDB,
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    noteDB.zapEventIds?.add(zapRecordsDB.bolt11);
+    noteDB.zapCount++;
+    noteDB.zapAmount += ZapRecordsDB.getZapAmount(zapRecordsDB.bolt11);
+    await DB.sharedInstance
+        .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> addReplyToNote(Event replyEvent, String noteId) async {
+    NoteDB noteDB = await loadNoteWithNoteId(noteId);
+    noteDB.replyEventIds ??= [];
+    if (noteDB.replyEventIds?.contains(replyEvent.id) == true) return;
+
+    Note replyNote = Nip1.decodeNote(replyEvent);
+    NoteDB replyNoteDB = NoteDB.noteDBFromNote(replyNote);
+    await DB.sharedInstance.insert<NoteDB>(replyNoteDB,
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    noteDB.replyEventIds?.add(replyNoteDB.noteId);
+    noteDB.replyCount++;
+    await DB.sharedInstance
+        .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> addRepostToNote(Event repostEvent, String noteId) async {
+    NoteDB noteDB = await loadNoteWithNoteId(noteId);
+    noteDB.repostEventIds ??= [];
+    if (noteDB.repostEventIds?.contains(repostEvent.id) == true) return;
+
+    Reposts reposts = Nip18.decodeReposts(repostEvent);
+    NoteDB repostDB = NoteDB.noteDBFromReposts(reposts);
+    await DB.sharedInstance
+        .insert<NoteDB>(repostDB, conflictAlgorithm: ConflictAlgorithm.ignore);
+    noteDB.repostEventIds?.add(repostDB.noteId);
+    noteDB.repostCount++;
+    await DB.sharedInstance
+        .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> addQuoteRepostToNote(
+      Event quoteRepostEvent, String noteId) async {
+    NoteDB noteDB = await loadNoteWithNoteId(noteId);
+    noteDB.quoteRepostEventIds ??= [];
+    if (noteDB.quoteRepostEventIds?.contains(quoteRepostEvent.id) == true)
+      return;
+
+    QuoteReposts quoteReposts = Nip18.decodeQuoteReposts(quoteRepostEvent);
+    NoteDB quoteRepostDB = NoteDB.noteDBFromQuoteReposts(quoteReposts);
+    await DB.sharedInstance.insert<NoteDB>(quoteRepostDB,
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    noteDB.quoteRepostEventIds?.add(quoteRepostDB.noteId);
+    noteDB.quoteRepostCount++;
+    await DB.sharedInstance
+        .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> addReactionToNote(Event reactionEvent, String noteId) async {
+    NoteDB noteDB = await loadNoteWithNoteId(noteId);
+    noteDB.reactionEventIds ??= [];
+    if (noteDB.reactionEventIds?.contains(reactionEvent.id) == true) return;
+
+    Reactions reactions = Nip25.decode(reactionEvent);
+    NoteDB reactionDB = NoteDB.noteDBFromReactions(reactions);
+    await DB.sharedInstance.insert<NoteDB>(reactionDB,
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    noteDB.reactionEventIds?.add(reactionDB.noteId);
+    noteDB.reactionCount++;
+    await DB.sharedInstance
+        .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<NoteDB>?> loadNewNotesFromRelay(
@@ -208,12 +268,11 @@ extension Load on Moment {
 
   Future<void> loadOldNotes() async {}
 
-  Future<List<NoteDB>?> _loadNoteIdToNoteDB(
+  Future<List<NoteDB>> _loadNoteIdsToNoteDBs(
       List<String> noteIds, bool private) async {
     List<NoteDB> result = [];
     for (var noteId in noteIds) {
-      NoteDB? noteDB = notesCache[noteId];
-      noteDB ??= await _loadNoteFromDB(noteId);
+      NoteDB? noteDB = await _loadNoteFromDB(noteId);
       if (!private) {
         noteDB ??= await loadPublicNoteFromRelay(noteId);
       }
@@ -222,16 +281,40 @@ extension Load on Moment {
     return result;
   }
 
-  Future<List<NoteDB>?> loadNoteActions(String noteId) async {
-    NoteDB? noteDB = await loadNoteWithNoteId(noteId);
-    if (noteDB != null && noteDB.private) {
-      return await _loadNoteIdToNoteDB(noteDB.replyEventIds!, true);
+  Future<List<ZapRecordsDB>> _loadInvoicesToZapRecords(
+      List<String> invoices, bool private) async {
+    List<ZapRecordsDB> result = [];
+    for (var invoice in invoices) {
+      List<ZapRecordsDB> zapRecords =
+          await Zaps.getZapReceipt('', invoice: invoice);
+      if (zapRecords.isNotEmpty) result.add(zapRecords.first);
     }
-    noteDB?.replyEventIds = await loadPublicNoteActionsFromRelay(noteId);
-    if (noteDB?.replyEventIds?.isNotEmpty == true) {
-      return await _loadNoteIdToNoteDB(noteDB!.replyEventIds!, false);
+    return result;
+  }
+
+  Future<Map<String, List<dynamic>>> loadNoteActions(String noteId) async {
+    Map<String, List<dynamic>> result = {
+      'reply': [],
+      'repost': [],
+      'quoteRepost': [],
+      'reaction': [],
+      'zap': []
+    };
+    NoteDB noteDB = await loadNoteWithNoteId(noteId);
+    if (!noteDB.private) {
+      await loadPublicNoteActionsFromRelay(noteId);
     }
-    return null;
+    result['reply'] =
+        await _loadNoteIdsToNoteDBs(noteDB.replyEventIds!, noteDB.private);
+    result['repost'] =
+        await _loadNoteIdsToNoteDBs(noteDB.repostEventIds!, noteDB.private);
+    result['quoteRepost'] = await _loadNoteIdsToNoteDBs(
+        noteDB.quoteRepostEventIds!, noteDB.private);
+    result['reaction'] =
+        await _loadNoteIdsToNoteDBs(noteDB.reactionEventIds!, noteDB.private);
+    result['zap'] =
+        await _loadInvoicesToZapRecords(noteDB.zapEventIds!, noteDB.private);
+    return result;
   }
 
   Future<List<NoteDB>> _loadNotesFromDB({

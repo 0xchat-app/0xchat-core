@@ -51,6 +51,11 @@ class ZapRecordsDB extends DBObject {
         eventId: zapReceipt.eventId ?? '',
         content: zapReceipt.content ?? '');
   }
+
+  static int getZapAmount(String bolt11) {
+    final requestInfo = Zaps.getPaymentRequestInfo(bolt11);
+    return (requestInfo.amount.toDouble() * 100000000).toInt();
+  }
 }
 
 ZapRecordsDB _zapRecordsDBInfoFromMap(Map<String, dynamic> map) {

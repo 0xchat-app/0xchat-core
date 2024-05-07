@@ -244,7 +244,7 @@ class Zaps {
       f = Filter(kinds: [9735], authors: [zapper], e: [eventId]);
     }
     if (invoice != null) {
-      f = Filter(kinds: [9735], authors: [zapper], bolt11: [invoice]);
+      f = Filter(kinds: [9735], bolt11: [invoice]);
     }
     List<Event> zapReceiptList = [];
     Connect.sharedInstance.addSubscription([f],
