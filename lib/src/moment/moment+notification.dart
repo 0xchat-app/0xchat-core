@@ -14,7 +14,7 @@ extension Notification on Moment {
     return notifications;
   }
 
-  Future<void> handleZapNofitication(
+  Future<void> handleZapNotification(
       ZapRecordsDB zapRecordsDB, Event zapEvent) async {
     await addZapRecordToNote(zapEvent, zapRecordsDB.eventId);
 
