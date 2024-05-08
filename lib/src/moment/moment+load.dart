@@ -96,15 +96,15 @@ extension Load on Moment {
   }
 
   Future<void> loadPublicNoteActionsFromRelay(String noteId) async {
-    List<Event> result = [];
+    Map<String, Event> result = {};
     Filter f = Filter(kinds: [1, 6, 7, 9735], e: [noteId]);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      result.add(event);
+      result[event.id] = event;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        for (var event in result) {
+        for (var event in result.values) {
           switch (event.kind) {
             case 1:
               Nip18.hasQTag(event)
@@ -253,7 +253,7 @@ extension Load on Moment {
     Map<String, Event> result = {};
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-          result[event.id] = event;
+      result[event.id] = event;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
