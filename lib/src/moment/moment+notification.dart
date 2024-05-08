@@ -19,7 +19,7 @@ extension Notification on Moment {
     await addZapRecordToNote(zapEvent, zapRecordsDB.eventId);
 
     NotificationDB notificationDB =
-        NotificationDB.notificationDBFromZapRecordsDB(zapRecordsDB, zapRecordsDB.eventId);
+        NotificationDB.notificationDBFromZapRecordsDB(zapRecordsDB, zapEvent.id);
     int result = await DB.sharedInstance.insert<NotificationDB>(notificationDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
     if(result > 0){
