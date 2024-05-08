@@ -219,15 +219,15 @@ extension Load on Moment {
     authors ??= Contacts.sharedInstance.allContacts.keys.toList();
     authors.add(pubkey);
     Filter f = Filter(kinds: [1], authors: authors, limit: limit, until: until);
-    List<Event> result = [];
+    Map<String, Event> result = {};
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      result.add(event);
+      result[event.id] = event;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         List<NoteDB> r = [];
-        for (Event event in result) {
+        for (Event event in result.values) {
           NoteDB? noteDB;
           if (EventCache.sharedInstance.isLoaded(event.id)) {
             noteDB = await loadNoteWithNoteId(event.id);
@@ -250,15 +250,15 @@ extension Load on Moment {
       {int limit = 50, int? until}) async {
     Completer<List<NoteDB>?> completer = Completer<List<NoteDB>?>();
     Filter f = Filter(kinds: [1], t: hashTags, until: until, limit: limit);
-    List<Event> result = [];
+    Map<String, Event> result = {};
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      result.add(event);
+          result[event.id] = event;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         List<NoteDB> r = [];
-        for (Event event in result) {
+        for (Event event in result.values) {
           NoteDB? noteDB;
           if (EventCache.sharedInstance.isLoaded(event.id)) {
             noteDB = await loadNoteWithNoteId(event.id);
