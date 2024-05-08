@@ -219,23 +219,28 @@ extension Load on Moment {
     authors ??= Contacts.sharedInstance.allContacts.keys.toList();
     authors.add(pubkey);
     Filter f = Filter(kinds: [1], authors: authors, limit: limit, until: until);
-    List<NoteDB> result = [];
+    List<Event> result = [];
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      if (EventCache.sharedInstance.isLoaded(event.id)) {
-        return;
-      } else {
-        EventCache.sharedInstance.addToLoaded(event.id);
-      }
-      Note note = Nip1.decodeNote(event);
-      NoteDB noteDB = NoteDB.noteDBFromNote(note);
-      result.add(noteDB);
-      DB.sharedInstance
-          .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
+      result.add(event);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        if (!completer.isCompleted) completer.complete(result);
+        List<NoteDB> r = [];
+        for (Event event in result) {
+          NoteDB? noteDB;
+          if (EventCache.sharedInstance.isLoaded(event.id)) {
+            noteDB = await loadNoteWithNoteId(event.id);
+          } else {
+            await EventCache.sharedInstance.addToLoaded(event.id);
+            Note note = Nip1.decodeNote(event);
+            noteDB = NoteDB.noteDBFromNote(note);
+            DB.sharedInstance.insert<NoteDB>(noteDB,
+                conflictAlgorithm: ConflictAlgorithm.ignore);
+          }
+          if (noteDB != null) r.add(noteDB);
+        }
+        if (!completer.isCompleted) completer.complete(r);
       }
     });
     return completer.future;
@@ -245,23 +250,28 @@ extension Load on Moment {
       {int limit = 50, int? until}) async {
     Completer<List<NoteDB>?> completer = Completer<List<NoteDB>?>();
     Filter f = Filter(kinds: [1], t: hashTags, until: until, limit: limit);
-    List<NoteDB> result = [];
+    List<Event> result = [];
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      if (EventCache.sharedInstance.isLoaded(event.id)) {
-        return;
-      } else {
-        EventCache.sharedInstance.addToLoaded(event.id);
-      }
-      Note note = Nip1.decodeNote(event);
-      NoteDB noteDB = NoteDB.noteDBFromNote(note);
-      result.add(noteDB);
-      DB.sharedInstance
-          .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
+      result.add(event);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        if (!completer.isCompleted) completer.complete(result);
+        List<NoteDB> r = [];
+        for (Event event in result) {
+          NoteDB? noteDB;
+          if (EventCache.sharedInstance.isLoaded(event.id)) {
+            noteDB = await loadNoteWithNoteId(event.id);
+          } else {
+            await EventCache.sharedInstance.addToLoaded(event.id);
+            Note note = Nip1.decodeNote(event);
+            noteDB = NoteDB.noteDBFromNote(note);
+            DB.sharedInstance.insert<NoteDB>(noteDB,
+                conflictAlgorithm: ConflictAlgorithm.ignore);
+          }
+          if (noteDB != null) r.add(noteDB);
+        }
+        if (!completer.isCompleted) completer.complete(r);
       }
     });
     return completer.future;
