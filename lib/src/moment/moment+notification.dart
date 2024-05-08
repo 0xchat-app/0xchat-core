@@ -30,6 +30,7 @@ extension Notification on Moment {
   }
 
   Future<void> deleteAllNotifications() async{
+    newNotifications.clear();
     await DB.sharedInstance.delete<NotificationDB>();
   }
 }
