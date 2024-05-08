@@ -28,4 +28,8 @@ extension Notification on Moment {
           ?.call(Moment.sharedInstance.newNotifications);
     }
   }
+
+  Future<void> deleteAllNotifications() async{
+    await DB.sharedInstance.delete<NotificationDB>();
+  }
 }
