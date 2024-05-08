@@ -13,7 +13,6 @@ class Moment {
   /// memory storage
   String pubkey = '';
   String privkey = '';
-  Map<String, NoteDB> notesCache = {};
   List<NoteDB> newNotes = [];
   List<NotificationDB> newNotifications = [];
   NewNotesCallBack? newNotesCallBack;

@@ -181,25 +181,32 @@ extension Send on Moment {
         hashTags: hashTags);
   }
 
-  Future<OKEvent> sendReply(String replyNoteId, String content) async {
+  Future<OKEvent> sendReply(String replyNoteId, String content,
+      {List<String>? hashTags}) async {
     NoteDB? note = await loadNoteWithNoteId(replyNoteId);
     if (note != null) {
       String? rootEventId = note.root;
       if (rootEventId == null || rootEventId.isEmpty) {
         return note.private
             ? await _sendPrivateNote(content, [note.author, pubkey],
-                rootEvent: replyNoteId, replyUsers: [note.author])
+                rootEvent: replyNoteId,
+                replyUsers: [note.author],
+                hashTags: hashTags)
             : await sendPublicNote(content,
-                rootEvent: replyNoteId, replyUsers: [note.author]);
+                rootEvent: replyNoteId,
+                replyUsers: [note.author],
+                hashTags: hashTags);
       } else {
         NoteDB? rootNote = await loadNoteWithNoteId(rootEventId);
         return note.private
             ? await _sendPrivateNote(content, [note.author, pubkey],
                 rootEvent: replyNoteId,
-                replyUsers: [rootNote?.author ?? '', note.author])
+                replyUsers: [rootNote?.author ?? '', note.author],
+                hashTags: hashTags)
             : await sendPublicNote(content,
                 rootEvent: replyNoteId,
-                replyUsers: [rootNote?.author ?? '', note.author]);
+                replyUsers: [rootNote?.author ?? '', note.author],
+                hashTags: hashTags);
       }
     } else {
       return OKEvent(replyNoteId, false, 'reply note DB == null');
@@ -217,14 +224,12 @@ extension Send on Moment {
 
       NoteDB noteDB = NoteDB.noteDBFromReactions(Nip25.decode(event));
       await DB.sharedInstance.insert<NoteDB>(noteDB);
-      notesCache[noteDB.noteId] = noteDB;
 
       note.reactionEventIds ??= [];
       note.reactionEventIds!.add(event.id);
       note.reactionCount++;
       note.reactionCountByMe++;
       DB.sharedInstance.insert<NoteDB>(note);
-      notesCache[note.noteId] = note;
 
       if (note.private) {
         OKEvent ok = await _sendPrivateMessage([note.author, pubkey], event);
@@ -263,7 +268,6 @@ extension Send on Moment {
 
       NoteDB noteDB = NoteDB.noteDBFromReposts(Nip18.decodeReposts(event));
       await DB.sharedInstance.insert<NoteDB>(noteDB);
-      notesCache[noteDB.noteId] = noteDB;
 
       note.repostEventIds ??= [];
       note.repostEventIds!.add(event.id);
@@ -287,18 +291,17 @@ extension Send on Moment {
     }
   }
 
-  Future<OKEvent> sendQuoteRepost(
-      String quoteRepostNoteId, String content) async {
+  Future<OKEvent> sendQuoteRepost(String quoteRepostNoteId, String content,
+      {List<String>? hashTags}) async {
     NoteDB? note = await loadNoteWithNoteId(quoteRepostNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       Event event = await Nip18.encodeQuoteReposts(
-          quoteRepostNoteId, note.author, content, pubkey, privkey);
+          quoteRepostNoteId, note.author, content, hashTags, pubkey, privkey);
 
       NoteDB noteDB =
           NoteDB.noteDBFromQuoteReposts(Nip18.decodeQuoteReposts(event));
       await DB.sharedInstance.insert<NoteDB>(noteDB);
-      notesCache[noteDB.noteId] = noteDB;
 
       note.quoteRepostEventIds ??= [];
       note.quoteRepostEventIds!.add(event.id);

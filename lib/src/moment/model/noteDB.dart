@@ -201,7 +201,8 @@ class NoteDB extends DBObject {
         createAt: quoteReposts.createAt,
         content: quoteReposts.content,
         quoteRepostId: quoteReposts.quoteRepostsId,
-        pTags: pTags);
+        pTags: pTags,
+        hashTags: quoteReposts.hashTags);
   }
 
   static NoteDB noteDBFromReactions(Reactions reactions) {

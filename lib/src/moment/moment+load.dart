@@ -12,9 +12,6 @@ extension Load on Moment {
         whereArgs: [until],
         orderBy: 'createAt desc',
         limit: limit);
-    for (var note in notes) {
-      notesCache[note.noteId] = note;
-    }
     return notes;
   }
 
@@ -30,9 +27,6 @@ extension Load on Moment {
         whereArgs: [userPubkey, until],
         orderBy: 'createAt desc',
         limit: limit);
-    for (var note in notes) {
-      notesCache[note.noteId] = note;
-    }
     return notes;
   }
 
@@ -47,9 +41,6 @@ extension Load on Moment {
     List<NoteDB>? result = notes
         .where((n) => Contacts.sharedInstance.allContacts.containsKey(n.author))
         .toList();
-    for (var note in result) {
-      notesCache[note.noteId] = note;
-    }
     return result;
   }
 
@@ -64,9 +55,6 @@ extension Load on Moment {
     List<NoteDB>? result = notes
         .where((n) => Contacts.sharedInstance.allContacts.containsKey(n.author))
         .toList();
-    for (var note in result) {
-      notesCache[note.noteId] = note;
-    }
     return result;
   }
 
@@ -85,7 +73,6 @@ extension Load on Moment {
 
   Future<void> saveNoteToDB(NoteDB noteDB,
       {ConflictAlgorithm? conflictAlgorithm}) async {
-    notesCache[noteDB.noteId] = noteDB;
     await DB.sharedInstance
         .insert<NoteDB>(noteDB, conflictAlgorithm: conflictAlgorithm);
   }
@@ -235,14 +222,16 @@ extension Load on Moment {
     List<NoteDB> result = [];
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      if (!notesCache.containsKey(event.id)) {
-        Note note = Nip1.decodeNote(event);
-        NoteDB noteDB = NoteDB.noteDBFromNote(note);
-        result.add(noteDB);
-        notesCache[noteDB.noteId] = noteDB;
-        DB.sharedInstance.insert<NoteDB>(noteDB,
-            conflictAlgorithm: ConflictAlgorithm.ignore);
+      if (EventCache.sharedInstance.isLoaded(event.id)) {
+        return;
+      } else {
+        EventCache.sharedInstance.addToLoaded(event.id);
       }
+      Note note = Nip1.decodeNote(event);
+      NoteDB noteDB = NoteDB.noteDBFromNote(note);
+      result.add(noteDB);
+      DB.sharedInstance
+          .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
@@ -259,14 +248,16 @@ extension Load on Moment {
     List<NoteDB> result = [];
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      if (!notesCache.containsKey(event.id)) {
-        Note note = Nip1.decodeNote(event);
-        NoteDB noteDB = NoteDB.noteDBFromNote(note);
-        result.add(noteDB);
-        notesCache[noteDB.noteId] = noteDB;
-        DB.sharedInstance.insert<NoteDB>(noteDB,
-            conflictAlgorithm: ConflictAlgorithm.ignore);
+      if (EventCache.sharedInstance.isLoaded(event.id)) {
+        return;
+      } else {
+        EventCache.sharedInstance.addToLoaded(event.id);
       }
+      Note note = Nip1.decodeNote(event);
+      NoteDB noteDB = NoteDB.noteDBFromNote(note);
+      result.add(noteDB);
+      DB.sharedInstance
+          .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
@@ -345,7 +336,6 @@ extension Load on Moment {
   }
 
   Future<void> handleNewNotes(NoteDB noteDB) async {
-    notesCache[noteDB.noteId] = noteDB;
     int result = await DB.sharedInstance
         .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
     if (result > 0) {
@@ -382,7 +372,6 @@ extension Load on Moment {
       NoteDB repostNoteDB = NoteDB.noteDBFromNote(repost.repostNote!);
       await DB.sharedInstance.insert<NoteDB>(repostNoteDB,
           conflictAlgorithm: ConflictAlgorithm.ignore);
-      notesCache[repostNoteDB.noteId] = repostNoteDB;
     }
 
     NoteDB noteDB = NoteDB.noteDBFromReposts(repost);
