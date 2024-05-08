@@ -103,10 +103,10 @@ class NoteDB extends DBObject {
   }
 
   int getNoteKind() {
-    if (repostId != null) return 6;
-    if (reactedId != null) return 7;
-    if (quoteRepostId != null) return 2;
-    if (root != null) return 1;
+    if (repostId != null && repostId!.isNotEmpty) return 6;
+    if (reactedId != null && reactedId!.isNotEmpty) return 7;
+    if (quoteRepostId != null && quoteRepostId!.isNotEmpty) return 2;
+    if (root != null && root!.isNotEmpty) return 1;
     return 0;
   }
 
