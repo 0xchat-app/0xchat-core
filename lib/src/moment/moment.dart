@@ -47,9 +47,15 @@ class Moment {
           int contactsNotesUntil =
               Relays.sharedInstance.getContactsNotesUntil(relayURL);
           Filter f1 = Filter(
-              authors: authors, kinds: [1, 6], since: contactsNotesUntil, limit: 1000);
-          Filter f2 =
-              Filter(p: [pubkey], kinds: [1, 6, 7], since: contactsNotesUntil, limit: 1000);
+              authors: authors,
+              kinds: [1, 6],
+              since: contactsNotesUntil,
+              limit: 1000);
+          Filter f2 = Filter(
+              p: [pubkey],
+              kinds: [1, 6, 7],
+              since: contactsNotesUntil,
+              limit: 1000);
           subscriptions[relayURL] = [f1, f2];
         }
       } else {
@@ -64,6 +70,11 @@ class Moment {
 
       notesSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
           eventCallBack: (event, relay) async {
+        if (EventCache.sharedInstance.isLoaded(event.id)) {
+          return;
+        } else {
+          EventCache.sharedInstance.addToLoaded(event.id);
+        }
         switch (event.kind) {
           case 1:
             handleNoteEvent(event, relay, false);
@@ -96,11 +107,11 @@ class Moment {
     Relays.sharedInstance.syncRelaysToDB();
   }
 
-  void clearNewNotes(){
+  void clearNewNotes() {
     newNotes.clear();
   }
 
-  void clearNewNotifications(){
+  void clearNewNotifications() {
     newNotifications.clear();
   }
 }

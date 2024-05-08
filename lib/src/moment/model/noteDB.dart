@@ -120,7 +120,7 @@ class NoteDB extends DBObject {
 
   //primaryKey
   static List<String?> primaryKey() {
-    return ['noteId', 'private', 'author'];
+    return ['noteId'];
   }
 
   static List<String>? decodeStringList(String? list) {
