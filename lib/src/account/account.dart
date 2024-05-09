@@ -194,7 +194,7 @@ class Account {
         db.name = db.shortEncodedPubkey;
       }
       users[key] = db;
-      if(db.lastUpdatedTime > 0) pQueue.remove(db.pubKey);
+      if (db.lastUpdatedTime > 0) pQueue.remove(db.pubKey);
     }
 
     Filter f = Filter(
@@ -310,6 +310,7 @@ class Account {
     if (maps.isNotEmpty) {
       db = maps.first as UserDB?;
     }
+
     /// insert a new account
     db ??= UserDB();
     db.pubKey = pubkey;
@@ -392,7 +393,69 @@ class Account {
     return db;
   }
 
-  Future<List<UserDB>> syncFollowListFromRelay(String pubkey) async {
+  List<Profile> toProfiles(List<String> pubkeys) {
+    List<Profile> result = [];
+    for (var p in pubkeys) {
+      result.add(Profile(p, '', ''));
+    }
+    return result;
+  }
+
+  Future<OKEvent> addFollows(List<String> pubkeys) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+
+    List<String> followingList = me?.followingList ?? [];
+    for (var p in pubkeys) {
+      if (!followingList.contains(p)) followingList.add(p);
+    }
+    Event event = await Nip2.encode(
+        toProfiles(followingList), currentPubkey, currentPrivkey);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+      if (!completer.isCompleted) {
+        completer.complete(ok);
+        if (ok.status) {
+          me?.followingList = followingList;
+          syncMe();
+        }
+      }
+    });
+    return completer.future;
+  }
+
+  Future<OKEvent> removeFollows(List<String> pubkeys) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+
+    List<String> followingList = me?.followingList ?? [];
+    for (var p in pubkeys) {
+      if (followingList.contains(p)) followingList.remove(p);
+    }
+    Event event = await Nip2.encode(
+        toProfiles(followingList), currentPubkey, currentPrivkey);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+      if (!completer.isCompleted) {
+        completer.complete(ok);
+        if (ok.status) {
+          me?.followingList = followingList;
+          syncMe();
+        }
+      }
+    });
+    return completer.future;
+  }
+
+  Future<List<UserDB>> syncFollowingListFromDB(String pubkey) async {
+    UserDB? user = await getUserInfo(pubkey);
+    List<UserDB> result = [];
+    for (var p in user?.followingList ?? []) {
+      UserDB? userDB = await getUserInfo(p.key);
+      if (userDB != null) {
+        result.add(userDB);
+      }
+    }
+    return result;
+  }
+
+  Future<List<UserDB>> syncFollowingListFromRelay(String pubkey) async {
     Completer<List<UserDB>> completer = Completer<List<UserDB>>();
     Filter f = Filter(kinds: [3], authors: [pubkey], limit: 1);
     List<Profile> profiles = [];
@@ -406,8 +469,13 @@ class Account {
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        List<UserDB> result = [];
+        UserDB? user = await getUserInfo(pubkey);
+        if (user != null) {
+          user.followingList = profiles.map((e) => e.key).toList();
+          await DB.sharedInstance.insert<UserDB>(user);
+        }
 
+        List<UserDB> result = [];
         for (var p in profiles) {
           UserDB? userDB = await getUserInfo(p.key);
           if (userDB != null) {
@@ -575,7 +643,7 @@ class Account {
   }
 
   static Future<Event?> loadEvent(String eventId) async {
-    if(Connect.sharedInstance.relays().isEmpty) return null;
+    if (Connect.sharedInstance.relays().isEmpty) return null;
     Completer<Event?> completer = Completer<Event?>();
     Filter f = Filter(ids: [eventId]);
     Connect.sharedInstance.addSubscription([f],

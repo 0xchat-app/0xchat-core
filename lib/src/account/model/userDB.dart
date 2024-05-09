@@ -42,6 +42,9 @@ class UserDB extends DBObject {
   List<String>? groupsList;
   List<String>? badgesList;
   List<String>? blockedList; // blocked users list
+  List<String>? followingList;
+  List<String>? followersList;
+  List<String>? relayList;
 
   /// list updated time
   int lastFriendsListUpdatedTime;
@@ -83,6 +86,9 @@ class UserDB extends DBObject {
     this.groupsList,
     this.badgesList,
     this.blockedList,
+    this.followersList,
+    this.followingList,
+    this.relayList,
     this.mute = false,
     this.lastUpdatedTime = 0,
     this.lastBadgesListUpdatedTime = 0,
@@ -120,7 +126,8 @@ class UserDB extends DBObject {
       "3":
           '''alter table userDB add lastBadgesListUpdatedTime INT; alter table userDB add lastBlockListUpdatedTime INT; alter table userDB add lastChannelsListUpdatedTime INT; alter table userDB add lastFriendsListUpdatedTime INT; alter table userDB add lastGroupsListUpdatedTime INT;''',
       "5": '''alter table userDB add nwcURI TEXT;''',
-      "6": '''alter table userDB add banner TEXT;'''
+      "6":
+          '''alter table userDB add banner TEXT; alter table userDB add followingList TEXT; alter table userDB add followersList TEXT; alter table userDB add relayList TEXT;'''
     };
   }
 
@@ -220,6 +227,9 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     groupsList: UserDB.decodeStringList(map['groupsList'].toString()),
     badgesList: UserDB.decodeStringList(map['badgesList'].toString()),
     blockedList: UserDB.decodeStringList(map['blockedList'].toString()),
+    followingList: UserDB.decodeStringList(map['followingList'].toString()),
+    followersList: UserDB.decodeStringList(map['followersList'].toString()),
+    relayList: UserDB.decodeStringList(map['relayList'].toString()),
     aliasPubkey: map['aliasPubkey'],
     mute: map['mute'] > 0 ? true : false,
     lastUpdatedTime: map['lastUpdatedTime'],
@@ -253,6 +263,9 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'groupsList': jsonEncode(instance.groupsList),
       'badgesList': jsonEncode(instance.badgesList),
       'blockedList': jsonEncode(instance.blockedList),
+      'followersList': jsonEncode(instance.followersList),
+      'followingList': jsonEncode(instance.followingList),
+      'relayList': jsonEncode(instance.relayList),
       'aliasPubkey': instance.aliasPubkey,
       'mute': instance.mute,
       'lastUpdatedTime': instance.lastUpdatedTime,
