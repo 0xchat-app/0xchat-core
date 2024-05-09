@@ -443,6 +443,10 @@ class Account {
     return completer.future;
   }
 
+  Future<bool> onFollowingList(String pubkey) async {
+    return me?.followingList?.contains(pubkey) == true;
+  }
+
   Future<List<UserDB>> syncFollowingListFromDB(String pubkey) async {
     UserDB? user = await getUserInfo(pubkey);
     List<UserDB> result = [];
