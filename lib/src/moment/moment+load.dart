@@ -370,6 +370,14 @@ extension Load on Moment {
     Note note = Nip1.decodeNote(event);
     NoteDB noteDB = NoteDB.noteDBFromNote(note);
     noteDB.private = private;
+    // reply
+    if (noteDB.getNoteKind() == 1) {
+      await addReplyToNote(event, noteDB.reply ?? noteDB.root!);
+    }
+    // quote repost
+    else if (noteDB.getNoteKind() == 2) {
+      await addQuoteRepostToNote(event, noteDB.quoteRepostId!);
+    }
     handleNewNotes(noteDB);
   }
 
@@ -386,6 +394,7 @@ extension Load on Moment {
 
     NoteDB noteDB = NoteDB.noteDBFromReposts(repost);
     noteDB.private = private;
+    await addRepostToNote(event, noteDB.repostId!);
     handleNewNotes(noteDB);
   }
 
@@ -395,6 +404,7 @@ extension Load on Moment {
     Reactions reactions = Nip25.decode(event);
     NoteDB reactionsNoteDB = NoteDB.noteDBFromReactions(reactions);
     reactionsNoteDB.private = private;
+    await addReactionToNote(event, reactionsNoteDB.reactedId!);
     handleNewNotes(reactionsNoteDB);
   }
 }
