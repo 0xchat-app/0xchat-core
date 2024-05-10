@@ -110,6 +110,12 @@ class NoteDB extends DBObject {
     return 0;
   }
 
+  int getReplyLevel(){
+    if (reply != null && reply!.isNotEmpty) return 2;
+    if (root != null && root!.isNotEmpty) return 1;
+    return 0;
+  }
+
   static NoteDB fromMap(Map<String, Object?> map) {
     return _noteInfoFromMap(map);
   }
