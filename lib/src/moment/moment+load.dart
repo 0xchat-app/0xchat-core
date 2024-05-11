@@ -150,14 +150,15 @@ extension Load on Moment {
         .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future<void> addReplyToNote(Event replyEvent, String noteId) async {
+  Future<void> addReplyToNote(Event replyEvent, String replyId) async {
+    Note replyNote = Nip1.decodeNote(replyEvent);
+    NoteDB replyNoteDB = NoteDB.noteDBFromNote(replyNote);
+    String noteId = replyNoteDB.reply ?? replyNoteDB.root ?? replyId;
     NoteDB? noteDB = await loadNoteWithNoteId(noteId);
     if (noteDB == null) return;
     noteDB.replyEventIds ??= [];
     if (noteDB.replyEventIds?.contains(replyEvent.id) == true) return;
 
-    Note replyNote = Nip1.decodeNote(replyEvent);
-    NoteDB replyNoteDB = NoteDB.noteDBFromNote(replyNote);
     await DB.sharedInstance.insert<NoteDB>(replyNoteDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
     noteDB.replyEventIds?.add(replyNoteDB.noteId);
