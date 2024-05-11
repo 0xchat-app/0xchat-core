@@ -96,6 +96,8 @@ extension Load on Moment {
   }
 
   Future<void> loadPublicNoteActionsFromRelay(String noteId) async {
+    Completer<void> completer = Completer<void>();
+
     Map<String, Event> result = {};
     Filter f = Filter(kinds: [1, 6, 7, 9735], e: [noteId]);
     Connect.sharedInstance.addSubscription([f],
@@ -122,8 +124,10 @@ extension Load on Moment {
               break;
           }
         }
+        if (!completer.isCompleted) completer.complete();
       }
     });
+    return completer.future;
   }
 
   Future<void> addZapRecordToNote(Event zapEvent, String noteId) async {
@@ -348,7 +352,7 @@ extension Load on Moment {
   Future<void> handleNewNotes(NoteDB noteDB) async {
     int result = await DB.sharedInstance
         .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
-    if (result > 0) {
+    if (result > 0 && noteDB.getReplyLevel() != 2) {
       newNotes.add(noteDB);
       newNotesCallBack?.call(newNotes);
     }
