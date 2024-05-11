@@ -23,7 +23,7 @@ class Moment {
   Future<void> init() async {
     privkey = Account.sharedInstance.currentPrivkey;
     pubkey = Account.sharedInstance.currentPubkey;
-
+    await EventCache.sharedInstance.loadAllEventIDFromDB();
     _updateSubscriptions();
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1) {
@@ -72,7 +72,7 @@ class Moment {
         if (EventCache.sharedInstance.isLoaded(event.id)) {
           return;
         } else {
-          EventCache.sharedInstance.addToLoaded(event.id);
+          await EventCache.sharedInstance.addToLoaded(event.id);
         }
         switch (event.kind) {
           case 1:

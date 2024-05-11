@@ -2,16 +2,14 @@ import 'package:chatcore/chat-core.dart';
 
 class EventCache {
   /// singleton
-  EventCache._internal() {
-    _loadAllEventIDFromDB();
-  }
+  EventCache._internal();
 
   factory EventCache() => sharedInstance;
   static final EventCache sharedInstance = EventCache._internal();
 
   List<String> eventCacheLoaded = [];
 
-  Future<void> _loadAllEventIDFromDB() async {
+  Future<void> loadAllEventIDFromDB() async {
     eventCacheLoaded.clear();
     List<EventCacheDB> eventCaches =
         await DB.sharedInstance.objects<EventCacheDB>();
