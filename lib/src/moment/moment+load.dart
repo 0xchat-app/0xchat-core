@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
@@ -78,8 +79,9 @@ extension Load on Moment {
   }
 
   Future<NoteDB?> loadPublicNoteFromRelay(String noteId) async {
-    Completer<NoteDB?> completer = Completer<NoteDB?>();
+    if(noteId.isEmpty) return null;
 
+    Completer<NoteDB?> completer = Completer<NoteDB?>();
     Filter f = Filter(ids: [noteId]);
     NoteDB? result;
     Connect.sharedInstance.addSubscription([f],
@@ -95,8 +97,8 @@ extension Load on Moment {
     return completer.future;
   }
 
-  Future<void> loadPublicNoteActionsFromRelay(String noteId) async {
-    Completer<void> completer = Completer<void>();
+  Future<NoteDB> loadPublicNoteActionsFromRelay(String noteId) async {
+    Completer<NoteDB> completer = Completer<NoteDB>();
 
     Map<String, Event> result = {};
     Filter f = Filter(kinds: [1, 6, 7, 9735], e: [noteId]);
@@ -124,7 +126,8 @@ extension Load on Moment {
               break;
           }
         }
-        if (!completer.isCompleted) completer.complete();
+        NoteDB? noteDB = await loadNoteWithNoteId(noteId);
+        if (!completer.isCompleted) completer.complete(noteDB);
       }
     });
     return completer.future;
@@ -153,7 +156,9 @@ extension Load on Moment {
   Future<void> addReplyToNote(Event replyEvent, String replyId) async {
     Note replyNote = Nip1.decodeNote(replyEvent);
     NoteDB replyNoteDB = NoteDB.noteDBFromNote(replyNote);
-    String noteId = replyNoteDB.reply ?? replyNoteDB.root ?? replyId;
+    String noteId = replyNoteDB.reply ?? '';
+    if(noteId.isEmpty) noteId = replyNoteDB.root ?? '';
+    if(noteId.isEmpty) noteId = replyId;
     NoteDB? noteDB = await loadNoteWithNoteId(noteId);
     if (noteDB == null) return;
     noteDB.replyEventIds ??= [];
@@ -222,6 +227,7 @@ extension Load on Moment {
       {int limit = 50, List<String>? authors, int? until}) async {
     Completer<List<NoteDB>?> completer = Completer<List<NoteDB>?>();
     authors ??= Contacts.sharedInstance.allContacts.keys.toList();
+    authors.addAll(Account.sharedInstance.me?.followingList ?? []);
     authors.add(pubkey);
     Filter f = Filter(kinds: [1], authors: authors, limit: limit, until: until);
     Map<String, Event> result = {};
@@ -319,7 +325,7 @@ extension Load on Moment {
     NoteDB? noteDB = await loadNoteWithNoteId(noteId);
     if (noteDB != null) {
       if (!noteDB.private) {
-        await loadPublicNoteActionsFromRelay(noteId);
+        noteDB = await loadPublicNoteActionsFromRelay(noteId);
       }
       result['reply'] = await _loadNoteIdsToNoteDBs(
           noteDB.replyEventIds ?? [], noteDB.private);
