@@ -66,9 +66,9 @@ extension Load on Moment {
   }
 
   Future<NoteDB?> loadNoteWithNoteId(String noteId,
-      {bool private = false}) async {
+      {bool private = false, bool reload = true}) async {
     NoteDB? note = await _loadNoteFromDB(noteId);
-    if (!private) note ??= await loadPublicNoteFromRelay(noteId);
+    if (!private && reload) note ??= await loadPublicNoteFromRelay(noteId);
     return note;
   }
 
@@ -79,20 +79,26 @@ extension Load on Moment {
   }
 
   Future<NoteDB?> loadPublicNoteFromRelay(String noteId) async {
-    if(noteId.isEmpty) return null;
+    if (noteId.isEmpty) return null;
 
     Completer<NoteDB?> completer = Completer<NoteDB?>();
     Filter f = Filter(ids: [noteId]);
-    NoteDB? result;
+    Event? result;
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      Note note = Nip1.decodeNote(event);
-      result = NoteDB.noteDBFromNote(note);
-      if (!completer.isCompleted) completer.complete(result);
-      await saveNoteToDB(result!, conflictAlgorithm: ConflictAlgorithm.ignore);
+      result = event;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unRelays.isEmpty && !completer.isCompleted) completer.complete(null);
+      if (unRelays.isEmpty) {
+        if (result != null) {
+          Note note = Nip1.decodeNote(result!);
+          NoteDB noteDB = NoteDB.noteDBFromNote(note);
+          if (!completer.isCompleted) completer.complete(noteDB);
+          saveNoteToDB(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
+        } else {
+          if (!completer.isCompleted) completer.complete(null);
+        }
+      }
     });
     return completer.future;
   }
@@ -157,8 +163,8 @@ extension Load on Moment {
     Note replyNote = Nip1.decodeNote(replyEvent);
     NoteDB replyNoteDB = NoteDB.noteDBFromNote(replyNote);
     String noteId = replyNoteDB.reply ?? '';
-    if(noteId.isEmpty) noteId = replyNoteDB.root ?? '';
-    if(noteId.isEmpty) noteId = replyId;
+    if (noteId.isEmpty) noteId = replyNoteDB.root ?? '';
+    if (noteId.isEmpty) noteId = replyId;
     NoteDB? noteDB = await loadNoteWithNoteId(noteId);
     if (noteDB == null) return;
     noteDB.replyEventIds ??= [];
@@ -314,7 +320,9 @@ extension Load on Moment {
     return result;
   }
 
-  Future<Map<String, List<dynamic>>> loadNoteActions(String noteId, {bool reload = true}) async {
+  Future<Map<String, List<dynamic>>> loadNoteActions(String noteId,
+      {bool reload = true}) async {
+
     Map<String, List<dynamic>> result = {
       'reply': [],
       'repost': [],
@@ -322,7 +330,7 @@ extension Load on Moment {
       'reaction': [],
       'zap': []
     };
-    NoteDB? noteDB = await loadNoteWithNoteId(noteId);
+    NoteDB? noteDB = await loadNoteWithNoteId(noteId, reload: reload);
     if (noteDB != null) {
       if (!noteDB.private && reload) {
         noteDB = await loadPublicNoteActionsFromRelay(noteId);
