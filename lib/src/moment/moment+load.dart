@@ -314,7 +314,7 @@ extension Load on Moment {
     return result;
   }
 
-  Future<Map<String, List<dynamic>>> loadNoteActions(String noteId) async {
+  Future<Map<String, List<dynamic>>> loadNoteActions(String noteId, {bool reload = true}) async {
     Map<String, List<dynamic>> result = {
       'reply': [],
       'repost': [],
@@ -324,7 +324,7 @@ extension Load on Moment {
     };
     NoteDB? noteDB = await loadNoteWithNoteId(noteId);
     if (noteDB != null) {
-      if (!noteDB.private) {
+      if (!noteDB.private && reload) {
         noteDB = await loadPublicNoteActionsFromRelay(noteId);
       }
       result['reply'] = await _loadNoteIdsToNoteDBs(
