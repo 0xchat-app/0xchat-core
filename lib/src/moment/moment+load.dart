@@ -18,7 +18,8 @@ extension Load on Moment {
     return notes;
   }
 
-  Future<List<NoteDB>?> loadMomentNotesFromDB({int limit = 50, int? until}) async {
+  Future<List<NoteDB>?> loadMomentNotesFromDB(
+      {int limit = 50, int? until}) async {
     List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
     authors.addAll(Account.sharedInstance.me?.followingList ?? []);
     authors.add(pubkey);
@@ -49,7 +50,6 @@ extension Load on Moment {
     }
     return notes;
   }
-
 
   Future<List<NoteDB>?> loadPrivateNotesFromDB(
       {int limit = 50, int? until, bool? read}) async {
@@ -147,12 +147,15 @@ extension Load on Moment {
           kinds: [1, 6, 7, 9735], e: [noteId], since: lastUpdatedTime + 1);
       subscriptions[relayURL] = [f];
     }
+    int start = currentUnixTimestampSeconds();
     Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
       result[event.id] = event;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
-      if(ok.status){
+      int end = currentUnixTimestampSeconds();
+      print('loadPublicNoteActionsFromRelay end111: ${end - start}, $relay');
+      if (ok.status) {
         NoteDB? noteDB = notesCache[noteId];
         noteDB?.lastUpdatedTime?[relay] = currentUnixTimestampSeconds();
       }
@@ -161,20 +164,22 @@ extension Load on Moment {
           switch (event.kind) {
             case 1:
               Nip18.hasQTag(event)
-                  ? await addQuoteRepostToNote(event, noteId)
-                  : await addReplyToNote(event, noteId);
+                  ? addQuoteRepostToNote(event, noteId)
+                  : addReplyToNote(event, noteId);
               break;
             case 6:
-              await addRepostToNote(event, noteId);
+              addRepostToNote(event, noteId);
               break;
             case 7:
-              await addReactionToNote(event, noteId);
+              addReactionToNote(event, noteId);
               break;
             case 9735:
-              await addZapRecordToNote(event, noteId);
+              addZapRecordToNote(event, noteId);
               break;
           }
         }
+        int end = currentUnixTimestampSeconds();
+        print('loadPublicNoteActionsFromRelay end222: ${end - start}');
         NoteDB? noteDB = await loadNoteWithNoteId(noteId);
         if (!completer.isCompleted) completer.complete(noteDB);
       }
@@ -193,7 +198,7 @@ extension Load on Moment {
     ZapRecordsDB zapRecordsDB =
         ZapRecordsDB.zapReceiptToZapRecordsDB(zapReceipt);
     if (noteDB.zapEventIds?.contains(zapRecordsDB.bolt11) == true) return;
-    await DB.sharedInstance.insert<ZapRecordsDB>(zapRecordsDB,
+    DB.sharedInstance.insert<ZapRecordsDB>(zapRecordsDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
     noteDB.zapEventIds?.add(zapRecordsDB.bolt11);
     noteDB.zapCount++;
