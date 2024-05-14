@@ -114,7 +114,7 @@ extension Load on Moment {
     if (noteId.isEmpty) return null;
 
     Completer<NoteDB?> completer = Completer<NoteDB?>();
-    Filter f = Filter(ids: [noteId]);
+    Filter f = Filter(ids: [noteId], kinds: [1]);
     Event? result;
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
