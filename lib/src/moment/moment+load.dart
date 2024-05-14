@@ -121,20 +121,25 @@ extension Load on Moment {
   }
 
   Future<NoteDB> loadPublicNoteActionsFromRelay(NoteDB noteDB) async {
-    int start = DateTime.now().microsecondsSinceEpoch;
     String noteId = noteDB.noteId;
     Completer<NoteDB> completer = Completer<NoteDB>();
 
     Map<String, Event> result = {};
-    Filter f = Filter(kinds: [1, 6, 7, 9735], e: [noteId]);
-    Connect.sharedInstance.addSubscription([f],
+    Map<String, List<Filter>> subscriptions = {};
+    for (String relayURL in Connect.sharedInstance.relays()) {
+      int lastUpdatedTime = noteDB.getLastUpdatedTime(relayURL);
+      Filter f = Filter(
+          kinds: [1, 6, 7, 9735], e: [noteId], since: lastUpdatedTime + 1);
+      subscriptions[relayURL] = [f];
+    }
+    Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
       result[event.id] = event;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
+      NoteDB? noteDB = notesCache[noteId];
+      noteDB?.lastUpdatedTime?[relay] = currentUnixTimestampSeconds();
       if (unRelays.isEmpty) {
-        int end = DateTime.now().microsecondsSinceEpoch;
-        print('loadPublicNoteActionsFromRelay end 111= ${end - start}');
         for (var event in result.values) {
           switch (event.kind) {
             case 1:
@@ -153,11 +158,7 @@ extension Load on Moment {
               break;
           }
         }
-        end = DateTime.now().microsecondsSinceEpoch;
-        print('loadPublicNoteActionsFromRelay end 222= ${end - start}');
         NoteDB? noteDB = await loadNoteWithNoteId(noteId);
-        end = DateTime.now().microsecondsSinceEpoch;
-        print('loadPublicNoteActionsFromRelay end 333= ${end - start}');
         if (!completer.isCompleted) completer.complete(noteDB);
       }
     });
