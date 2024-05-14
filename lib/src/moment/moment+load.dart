@@ -18,23 +18,38 @@ extension Load on Moment {
     return notes;
   }
 
-  Future<List<NoteDB>?> loadMyNotesFromDB({int limit = 50, int? until}) async {
-    return await loadUserNotesFromDB(pubkey, limit: limit, until: until);
+  Future<List<NoteDB>?> loadMomentNotesFromDB({int limit = 50, int? until}) async {
+    List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
+    authors.addAll(Account.sharedInstance.me?.followingList ?? []);
+    authors.add(pubkey);
+    return await loadUserNotesFromDB(authors, limit: limit, until: until);
   }
 
-  Future<List<NoteDB>?> loadUserNotesFromDB(String userPubkey,
+  Future<List<NoteDB>?> loadMyNotesFromDB({int limit = 50, int? until}) async {
+    return await loadUserNotesFromDB([pubkey], limit: limit, until: until);
+  }
+
+  Future<List<NoteDB>?> loadUserNotesFromDB(List<String> userPubkeys,
       {int limit = 50, int? until}) async {
     until ??= currentUnixTimestampSeconds() + 1;
+
+    String inClause = List.filled(userPubkeys.length, '?').join(',');
+
+    String whereClause = 'author IN ($inClause) AND createAt < ?';
+    List<dynamic> whereArgs = [...userPubkeys, until];
+
     List<NoteDB>? notes = await _loadNotesFromDB(
-        where: 'author = ? AND createAt < ?',
-        whereArgs: [userPubkey, until],
+        where: whereClause,
+        whereArgs: whereArgs,
         orderBy: 'createAt desc',
         limit: limit);
+
     for (var note in notes) {
       notesCache[note.noteId] = note;
     }
     return notes;
   }
+
 
   Future<List<NoteDB>?> loadPrivateNotesFromDB(
       {int limit = 50, int? until, bool? read}) async {
