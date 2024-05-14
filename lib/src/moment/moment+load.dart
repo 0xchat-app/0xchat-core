@@ -137,8 +137,10 @@ extension Load on Moment {
       result[event.id] = event;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
-      NoteDB? noteDB = notesCache[noteId];
-      noteDB?.lastUpdatedTime?[relay] = currentUnixTimestampSeconds();
+      if(ok.status){
+        NoteDB? noteDB = notesCache[noteId];
+        noteDB?.lastUpdatedTime?[relay] = currentUnixTimestampSeconds();
+      }
       if (unRelays.isEmpty) {
         for (var event in result.values) {
           switch (event.kind) {

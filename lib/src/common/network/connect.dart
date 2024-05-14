@@ -366,6 +366,7 @@ class Connect {
         relays.remove(relay);
         // all relays have EOSE
         String subscriptionId = requestsMapKey.replaceAll(relay, '');
+        print('error notice EOSE: $subscriptionId, $relay');
         EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
         OKEvent ok = OKEvent(subscriptionId, false, n);
         if (callBack != null) callBack(subscriptionId, ok, relay, relays);
