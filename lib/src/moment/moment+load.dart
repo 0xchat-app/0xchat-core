@@ -351,11 +351,11 @@ extension Load on Moment {
   Future<void> loadOldNotes() async {}
 
   Future<List<NoteDB>> _loadNoteIdsToNoteDBs(
-      List<String> noteIds, bool private) async {
+      List<String> noteIds, bool private, bool reload) async {
     List<NoteDB> result = [];
     for (var noteId in noteIds) {
       NoteDB? noteDB = await loadNoteWithNoteId(noteId);
-      if (!private) {
+      if (!private && reload) {
         noteDB ??= await loadPublicNoteFromRelay(noteId);
       }
       if (noteDB != null) result.add(noteDB);
@@ -389,13 +389,13 @@ extension Load on Moment {
         noteDB = await loadPublicNoteActionsFromRelay(noteDB);
       }
       result['reply'] = await _loadNoteIdsToNoteDBs(
-          noteDB.replyEventIds ?? [], noteDB.private);
+          noteDB.replyEventIds ?? [], noteDB.private, reload);
       result['repost'] = await _loadNoteIdsToNoteDBs(
-          noteDB.repostEventIds ?? [], noteDB.private);
+          noteDB.repostEventIds ?? [], noteDB.private, reload);
       result['quoteRepost'] = await _loadNoteIdsToNoteDBs(
-          noteDB.quoteRepostEventIds ?? [], noteDB.private);
+          noteDB.quoteRepostEventIds ?? [], noteDB.private, reload);
       result['reaction'] = await _loadNoteIdsToNoteDBs(
-          noteDB.reactionEventIds ?? [], noteDB.private);
+          noteDB.reactionEventIds ?? [], noteDB.private, reload);
       result['zap'] = await _loadInvoicesToZapRecords(
           noteDB.zapEventIds ?? [], noteDB.private);
     }
