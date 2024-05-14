@@ -114,10 +114,10 @@ class NoteDB extends DBObject {
   }
 
   int getReplyLevel(String? noteId) {
-    if (root != null && root!.isNotEmpty && (reply == null || reply!.isEmpty)) {
-      return 1;
-    }
-    if (root == noteId && reply != null && reply!.isNotEmpty) return 2;
+    root ??= '';
+    reply ??= '';
+    if (root!.isNotEmpty && reply!.isEmpty) return 1;
+    if (root == noteId && reply!.isNotEmpty) return 2;
     if (reply == noteId || root == noteId) return 1;
     return 0;
   }
