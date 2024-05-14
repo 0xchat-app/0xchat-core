@@ -114,7 +114,7 @@ extension Load on Moment {
     if (noteId.isEmpty) return null;
 
     Completer<NoteDB?> completer = Completer<NoteDB?>();
-    Filter f = Filter(ids: [noteId], kinds: [1]);
+    Filter f = Filter(ids: [noteId]);
     Event? result;
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
@@ -123,10 +123,28 @@ extension Load on Moment {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         if (result != null) {
-          Note note = Nip1.decodeNote(result!);
-          NoteDB noteDB = NoteDB.noteDBFromNote(note);
+          NoteDB? noteDB;
+          switch (result!.kind) {
+            case 1:
+              if (Nip18.hasQTag(result!)) {
+                QuoteReposts quoteReposts = Nip18.decodeQuoteReposts(result!);
+                noteDB = NoteDB.noteDBFromQuoteReposts(quoteReposts);
+              } else {
+                Note note = Nip1.decodeNote(result!);
+                noteDB = NoteDB.noteDBFromNote(note);
+              }
+              break;
+            case 6:
+              Reposts reposts = Nip18.decodeReposts(result!);
+              noteDB = NoteDB.noteDBFromReposts(reposts);
+              break;
+            case 7:
+              Reactions reactions = Nip25.decode(result!);
+              noteDB = NoteDB.noteDBFromReactions(reactions);
+              break;
+          }
           if (!completer.isCompleted) completer.complete(noteDB);
-          saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
+          if (noteDB != null) saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
         } else {
           if (!completer.isCompleted) completer.complete(null);
         }
