@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
@@ -13,6 +12,9 @@ extension Load on Moment {
         whereArgs: [until],
         orderBy: 'createAt desc',
         limit: limit);
+    for (var note in notes) {
+      notesCache[note.noteId] = note;
+    }
     return notes;
   }
 
@@ -28,6 +30,9 @@ extension Load on Moment {
         whereArgs: [userPubkey, until],
         orderBy: 'createAt desc',
         limit: limit);
+    for (var note in notes) {
+      notesCache[note.noteId] = note;
+    }
     return notes;
   }
 
@@ -39,6 +44,9 @@ extension Load on Moment {
         whereArgs: [true, until, read],
         orderBy: 'createAt desc',
         limit: limit);
+    for (var note in notes) {
+      notesCache[note.noteId] = note;
+    }
     List<NoteDB>? result = notes
         .where((n) => Contacts.sharedInstance.allContacts.containsKey(n.author))
         .toList();
@@ -53,6 +61,9 @@ extension Load on Moment {
         whereArgs: [false, until, read],
         orderBy: 'createAt desc',
         limit: limit);
+    for (var note in notes) {
+      notesCache[note.noteId] = note;
+    }
     List<NoteDB>? result = notes
         .where((n) => Contacts.sharedInstance.allContacts.containsKey(n.author))
         .toList();
@@ -67,15 +78,21 @@ extension Load on Moment {
 
   Future<NoteDB?> loadNoteWithNoteId(String noteId,
       {bool private = false, bool reload = true}) async {
+    if (notesCache.containsKey(noteId)) return notesCache[noteId];
     NoteDB? note = await _loadNoteFromDB(noteId);
     if (!private && reload) note ??= await loadPublicNoteFromRelay(noteId);
+    if (note != null) notesCache[noteId] = note;
     return note;
   }
 
-  Future<void> saveNoteToDB(NoteDB noteDB,
-      {ConflictAlgorithm? conflictAlgorithm}) async {
-    await DB.sharedInstance
+  Future<void> saveNoteToDB(
+      NoteDB noteDB, ConflictAlgorithm? conflictAlgorithm) async {
+    if (conflictAlgorithm == ConflictAlgorithm.replace) {
+      notesCache[noteDB.noteId] = noteDB;
+    }
+    int result = await DB.sharedInstance
         .insert<NoteDB>(noteDB, conflictAlgorithm: conflictAlgorithm);
+    if (result > 0) notesCache[noteDB.noteId] = noteDB;
   }
 
   Future<NoteDB?> loadPublicNoteFromRelay(String noteId) async {
@@ -94,7 +111,7 @@ extension Load on Moment {
           Note note = Nip1.decodeNote(result!);
           NoteDB noteDB = NoteDB.noteDBFromNote(note);
           if (!completer.isCompleted) completer.complete(noteDB);
-          saveNoteToDB(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
+          saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
         } else {
           if (!completer.isCompleted) completer.complete(null);
         }
@@ -103,7 +120,9 @@ extension Load on Moment {
     return completer.future;
   }
 
-  Future<NoteDB> loadPublicNoteActionsFromRelay(String noteId) async {
+  Future<NoteDB> loadPublicNoteActionsFromRelay(NoteDB noteDB) async {
+    int start = DateTime.now().microsecondsSinceEpoch;
+    String noteId = noteDB.noteId;
     Completer<NoteDB> completer = Completer<NoteDB>();
 
     Map<String, Event> result = {};
@@ -114,6 +133,8 @@ extension Load on Moment {
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
+        int end = DateTime.now().microsecondsSinceEpoch;
+        print('loadPublicNoteActionsFromRelay end 111= ${end - start}');
         for (var event in result.values) {
           switch (event.kind) {
             case 1:
@@ -132,7 +153,11 @@ extension Load on Moment {
               break;
           }
         }
+        end = DateTime.now().microsecondsSinceEpoch;
+        print('loadPublicNoteActionsFromRelay end 222= ${end - start}');
         NoteDB? noteDB = await loadNoteWithNoteId(noteId);
+        end = DateTime.now().microsecondsSinceEpoch;
+        print('loadPublicNoteActionsFromRelay end 333= ${end - start}');
         if (!completer.isCompleted) completer.complete(noteDB);
       }
     });
@@ -155,8 +180,7 @@ extension Load on Moment {
     noteDB.zapEventIds?.add(zapRecordsDB.bolt11);
     noteDB.zapCount++;
     noteDB.zapAmount += ZapRecordsDB.getZapAmount(zapRecordsDB.bolt11);
-    await DB.sharedInstance
-        .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.replace);
+    saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
 
   Future<void> addReplyToNote(Event replyEvent, String replyId) async {
@@ -169,13 +193,10 @@ extension Load on Moment {
     if (noteDB == null) return;
     noteDB.replyEventIds ??= [];
     if (noteDB.replyEventIds?.contains(replyEvent.id) == true) return;
-
-    await DB.sharedInstance.insert<NoteDB>(replyNoteDB,
-        conflictAlgorithm: ConflictAlgorithm.ignore);
+    saveNoteToDB(replyNoteDB, ConflictAlgorithm.ignore);
     noteDB.replyEventIds?.add(replyNoteDB.noteId);
-    noteDB.replyCount++;
-    await DB.sharedInstance
-        .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.replace);
+    if (replyNoteDB.getReplyLevel(noteDB.noteId) == 1) noteDB.replyCount++;
+    saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
 
   Future<void> addRepostToNote(Event repostEvent, String noteId) async {
@@ -186,12 +207,10 @@ extension Load on Moment {
 
     Reposts reposts = Nip18.decodeReposts(repostEvent);
     NoteDB repostDB = NoteDB.noteDBFromReposts(reposts);
-    await DB.sharedInstance
-        .insert<NoteDB>(repostDB, conflictAlgorithm: ConflictAlgorithm.ignore);
+    saveNoteToDB(repostDB, ConflictAlgorithm.ignore);
     noteDB.repostEventIds?.add(repostDB.noteId);
     noteDB.repostCount++;
-    await DB.sharedInstance
-        .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.replace);
+    saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
 
   Future<void> addQuoteRepostToNote(
@@ -205,12 +224,10 @@ extension Load on Moment {
 
     QuoteReposts quoteReposts = Nip18.decodeQuoteReposts(quoteRepostEvent);
     NoteDB quoteRepostDB = NoteDB.noteDBFromQuoteReposts(quoteReposts);
-    await DB.sharedInstance.insert<NoteDB>(quoteRepostDB,
-        conflictAlgorithm: ConflictAlgorithm.ignore);
+    saveNoteToDB(quoteRepostDB, ConflictAlgorithm.ignore);
     noteDB.quoteRepostEventIds?.add(quoteRepostDB.noteId);
     noteDB.quoteRepostCount++;
-    await DB.sharedInstance
-        .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.replace);
+    saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
 
   Future<void> addReactionToNote(Event reactionEvent, String noteId) async {
@@ -221,12 +238,10 @@ extension Load on Moment {
 
     Reactions reactions = Nip25.decode(reactionEvent);
     NoteDB reactionDB = NoteDB.noteDBFromReactions(reactions);
-    await DB.sharedInstance.insert<NoteDB>(reactionDB,
-        conflictAlgorithm: ConflictAlgorithm.ignore);
+    saveNoteToDB(reactionDB, ConflictAlgorithm.ignore);
     noteDB.reactionEventIds?.add(reactionDB.noteId);
     noteDB.reactionCount++;
-    await DB.sharedInstance
-        .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.replace);
+    saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
 
   Future<List<NoteDB>?> loadNewNotesFromRelay(
@@ -252,8 +267,7 @@ extension Load on Moment {
             await EventCache.sharedInstance.addToLoaded(event.id);
             Note note = Nip1.decodeNote(event);
             noteDB = NoteDB.noteDBFromNote(note);
-            DB.sharedInstance.insert<NoteDB>(noteDB,
-                conflictAlgorithm: ConflictAlgorithm.ignore);
+            saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
           }
           if (noteDB != null) r.add(noteDB);
         }
@@ -283,8 +297,7 @@ extension Load on Moment {
             await EventCache.sharedInstance.addToLoaded(event.id);
             Note note = Nip1.decodeNote(event);
             noteDB = NoteDB.noteDBFromNote(note);
-            DB.sharedInstance.insert<NoteDB>(noteDB,
-                conflictAlgorithm: ConflictAlgorithm.ignore);
+            saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
           }
           if (noteDB != null) r.add(noteDB);
         }
@@ -300,7 +313,7 @@ extension Load on Moment {
       List<String> noteIds, bool private) async {
     List<NoteDB> result = [];
     for (var noteId in noteIds) {
-      NoteDB? noteDB = await _loadNoteFromDB(noteId);
+      NoteDB? noteDB = await loadNoteWithNoteId(noteId);
       if (!private) {
         noteDB ??= await loadPublicNoteFromRelay(noteId);
       }
@@ -322,7 +335,6 @@ extension Load on Moment {
 
   Future<Map<String, List<dynamic>>> loadNoteActions(String noteId,
       {bool reload = true}) async {
-
     Map<String, List<dynamic>> result = {
       'reply': [],
       'repost': [],
@@ -333,7 +345,7 @@ extension Load on Moment {
     NoteDB? noteDB = await loadNoteWithNoteId(noteId, reload: reload);
     if (noteDB != null) {
       if (!noteDB.private && reload) {
-        noteDB = await loadPublicNoteActionsFromRelay(noteId);
+        noteDB = await loadPublicNoteActionsFromRelay(noteDB);
       }
       result['reply'] = await _loadNoteIdsToNoteDBs(
           noteDB.replyEventIds ?? [], noteDB.private);
@@ -367,7 +379,7 @@ extension Load on Moment {
   Future<void> handleNewNotes(NoteDB noteDB) async {
     int result = await DB.sharedInstance
         .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
-    if (result > 0 && noteDB.getReplyLevel() != 2) {
+    if (result > 0 && noteDB.getReplyLevel(null) != 2) {
       newNotes.add(noteDB);
       newNotesCallBack?.call(newNotes);
     }
@@ -407,8 +419,7 @@ extension Load on Moment {
     // save repost event to DB
     if (repost.repostNote != null) {
       NoteDB repostNoteDB = NoteDB.noteDBFromNote(repost.repostNote!);
-      await DB.sharedInstance.insert<NoteDB>(repostNoteDB,
-          conflictAlgorithm: ConflictAlgorithm.ignore);
+      saveNoteToDB(repostNoteDB, ConflictAlgorithm.ignore);
     }
 
     NoteDB noteDB = NoteDB.noteDBFromReposts(repost);

@@ -1,6 +1,5 @@
 import 'package:chatcore/chat-core.dart';
 import 'package:http/http.dart' as http;
-import 'package:nostr_core_dart/nostr.dart';
 
 class Relays {
   /// singleton

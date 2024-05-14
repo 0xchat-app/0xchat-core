@@ -56,6 +56,8 @@ class NoteDB extends DBObject {
   List<String>? reactionEventIds;
   List<String>? zapEventIds;
 
+  Map<String, int>? lastUpdatedTime;
+
   NoteDB({
     this.noteId = '',
     this.author = '',
@@ -95,6 +97,7 @@ class NoteDB extends DBObject {
     this.quoteRepostEventIds,
     this.reactionEventIds,
     this.zapEventIds,
+    this.lastUpdatedTime,
   });
 
   @override
@@ -110,9 +113,12 @@ class NoteDB extends DBObject {
     return 0;
   }
 
-  int getReplyLevel(){
-    if (reply != null && reply!.isNotEmpty) return 2;
-    if (root != null && root!.isNotEmpty) return 1;
+  int getReplyLevel(String? noteId) {
+    if (root != null && root!.isNotEmpty && (reply == null || reply!.isEmpty)) {
+      return 1;
+    }
+    if (root == noteId && reply != null && reply!.isNotEmpty) return 2;
+    if (reply == noteId || root == noteId) return 1;
     return 0;
   }
 
@@ -224,6 +230,14 @@ class NoteDB extends DBObject {
         emojiURL: reactions.emojiReaction?.url,
         pTags: pTags);
   }
+
+  int getLastUpdatedTime(String relay) {
+    lastUpdatedTime ??= {};
+    if (lastUpdatedTime!.containsKey(relay)) {
+      return lastUpdatedTime![relay]!;
+    }
+    return 0;
+  }
 }
 
 Map<String, dynamic> _noteInfoToMap(NoteDB instance) => <String, dynamic>{
@@ -265,6 +279,7 @@ Map<String, dynamic> _noteInfoToMap(NoteDB instance) => <String, dynamic>{
       'quoteRepostEventIds': jsonEncode(instance.quoteRepostEventIds),
       'reactionEventIds': jsonEncode(instance.reactionEventIds),
       'zapEventIds': jsonEncode(instance.zapEventIds),
+      'lastUpdatedTime': jsonEncode(instance.lastUpdatedTime),
     };
 
 NoteDB _noteInfoFromMap(Map<String, dynamic> map) {
@@ -309,5 +324,6 @@ NoteDB _noteInfoFromMap(Map<String, dynamic> map) {
     reactionEventIds:
         NoteDB.decodeStringList(map['reactionEventIds']?.toString()),
     zapEventIds: NoteDB.decodeStringList(map['zapEventIds']?.toString()),
+    lastUpdatedTime: RelayDB.decodeMap(map['lastUpdatedTime'].toString()),
   );
 }

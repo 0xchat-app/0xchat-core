@@ -35,7 +35,7 @@ extension Send on Moment {
       note.replyEventIds!.add(event.id);
       note.replyCount++;
       note.replyCountByMe++;
-      DB.sharedInstance.insert<NoteDB>(note);
+      saveNoteToDB(note, null);
     }
 
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
@@ -73,7 +73,7 @@ extension Send on Moment {
       note.replyEventIds!.add(event.id);
       note.replyCount++;
       note.replyCountByMe++;
-      DB.sharedInstance.insert<NoteDB>(note);
+      saveNoteToDB(note, null);
     }
 
     return await _sendPrivateMessage(pubkeys, event);
@@ -223,13 +223,13 @@ extension Send on Moment {
           emojiShotCode: emojiShotCode, emojiURL: emojiURL);
 
       NoteDB noteDB = NoteDB.noteDBFromReactions(Nip25.decode(event));
-      await DB.sharedInstance.insert<NoteDB>(noteDB);
+      saveNoteToDB(noteDB, null);
 
       note.reactionEventIds ??= [];
       note.reactionEventIds!.add(event.id);
       note.reactionCount++;
       note.reactionCountByMe++;
-      DB.sharedInstance.insert<NoteDB>(note);
+      saveNoteToDB(note, null);
 
       if (note.private) {
         OKEvent ok = await _sendPrivateMessage([note.author, pubkey], event);
@@ -267,13 +267,13 @@ extension Send on Moment {
           note.author, note.rawEvent, pubkey, privkey);
 
       NoteDB noteDB = NoteDB.noteDBFromReposts(Nip18.decodeReposts(event));
-      await DB.sharedInstance.insert<NoteDB>(noteDB);
+      await saveNoteToDB(noteDB, null);
 
       note.repostEventIds ??= [];
       note.repostEventIds!.add(event.id);
       note.repostCount++;
       note.repostCountByMe++;
-      DB.sharedInstance.insert<NoteDB>(note);
+      saveNoteToDB(note, null);
 
       if (note.private) {
         OKEvent ok = await _sendPrivateMessage([note.author, pubkey], event);
@@ -301,13 +301,13 @@ extension Send on Moment {
 
       NoteDB noteDB =
           NoteDB.noteDBFromQuoteReposts(Nip18.decodeQuoteReposts(event));
-      await DB.sharedInstance.insert<NoteDB>(noteDB);
+      await saveNoteToDB(noteDB, null);
 
       note.quoteRepostEventIds ??= [];
       note.quoteRepostEventIds!.add(event.id);
       note.quoteRepostCount++;
       note.quoteRepostCountByMe++;
-      DB.sharedInstance.insert<NoteDB>(note);
+      saveNoteToDB(note, null);
 
       if (note.private) {
         OKEvent ok = await _sendPrivateMessage([note.author, pubkey], event);
