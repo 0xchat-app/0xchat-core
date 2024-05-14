@@ -357,6 +357,21 @@ class Connect {
   void _handleNotice(String notice, String relay) {
     print('receive notice: $notice, $relay');
     String n = jsonDecode(notice)[0];
+
+    if (n.contains('error')) {
+      List<String> requestsMapKeys =
+          requestsMap.keys.where((element) => element.contains(relay)).toList();
+      for (var requestsMapKey in requestsMapKeys) {
+        var relays = requestsMap[requestsMapKey]!.relays;
+        relays.remove(relay);
+        // all relays have EOSE
+        String subscriptionId = requestsMapKey.replaceAll(relay, '');
+        EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
+        OKEvent ok = OKEvent(subscriptionId, false, n);
+        if (callBack != null) callBack(subscriptionId, ok, relay, relays);
+      }
+    }
+
     noticeCallBack?.call(n, relay);
   }
 
