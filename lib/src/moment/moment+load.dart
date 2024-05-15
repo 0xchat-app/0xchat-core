@@ -4,6 +4,9 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
+typedef NoteCallBack = void Function(NoteDB);
+typedef ActionsCallBack = void Function(Map<String, List<dynamic>>);
+
 extension Load on Moment {
   Future<List<NoteDB>?> loadAllNotesFromDB({int limit = 50, int? until}) async {
     until ??= currentUnixTimestampSeconds() + 1;
@@ -153,7 +156,8 @@ extension Load on Moment {
     return completer.future;
   }
 
-  Future<NoteDB> loadPublicNoteActionsFromRelay(NoteDB noteDB) async {
+  Future<NoteDB> loadPublicNoteActionsFromRelay(NoteDB noteDB,
+      {NoteCallBack? noteCallBack}) async {
     String noteId = noteDB.noteId;
     Completer<NoteDB> completer = Completer<NoteDB>();
 
@@ -168,7 +172,27 @@ extension Load on Moment {
     int start = currentUnixTimestampSeconds();
     Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
-      result[event.id] = event;
+      if (!result.containsKey(event.id)) {
+        result[event.id] = event;
+        switch (event.kind) {
+          case 1:
+            Nip18.hasQTag(event)
+                ? addQuoteRepostToNote(event, noteId)
+                : addReplyToNote(event, noteId);
+            break;
+          case 6:
+            addRepostToNote(event, noteId);
+            break;
+          case 7:
+            addReactionToNote(event, noteId);
+            break;
+          case 9735:
+            addZapRecordToNote(event, noteId);
+            break;
+        }
+        NoteDB? noteDB = await loadNoteWithNoteId(noteId);
+        noteCallBack?.call(noteDB!);
+      }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       int end = currentUnixTimestampSeconds();
@@ -178,24 +202,6 @@ extension Load on Moment {
         noteDB?.lastUpdatedTime?[relay] = currentUnixTimestampSeconds();
       }
       if (unRelays.isEmpty) {
-        for (var event in result.values) {
-          switch (event.kind) {
-            case 1:
-              Nip18.hasQTag(event)
-                  ? addQuoteRepostToNote(event, noteId)
-                  : addReplyToNote(event, noteId);
-              break;
-            case 6:
-              addRepostToNote(event, noteId);
-              break;
-            case 7:
-              addReactionToNote(event, noteId);
-              break;
-            case 9735:
-              addZapRecordToNote(event, noteId);
-              break;
-          }
-        }
         int end = currentUnixTimestampSeconds();
         print('loadPublicNoteActionsFromRelay end222: ${end - start}');
         NoteDB? noteDB = await loadNoteWithNoteId(noteId);
@@ -350,7 +356,7 @@ extension Load on Moment {
 
   Future<void> loadOldNotes() async {}
 
-  Future<List<NoteDB>> _loadNoteIdsToNoteDBs(
+  Future<List<NoteDB>> loadNoteIdsToNoteDBs(
       List<String> noteIds, bool private, bool reload) async {
     List<NoteDB> result = [];
     for (var noteId in noteIds) {
@@ -363,7 +369,7 @@ extension Load on Moment {
     return result;
   }
 
-  Future<List<ZapRecordsDB>> _loadInvoicesToZapRecords(
+  static Future<List<ZapRecordsDB>> loadInvoicesToZapRecords(
       List<String> invoices, bool private) async {
     List<ZapRecordsDB> result = [];
     for (var invoice in invoices) {
@@ -375,7 +381,7 @@ extension Load on Moment {
   }
 
   Future<Map<String, List<dynamic>>> loadNoteActions(String noteId,
-      {bool reload = true}) async {
+      {bool reload = true, ActionsCallBack? actionsCallBack}) async {
     Map<String, List<dynamic>> result = {
       'reply': [],
       'repost': [],
@@ -386,18 +392,23 @@ extension Load on Moment {
     NoteDB? noteDB = await loadNoteWithNoteId(noteId, reload: reload);
     if (noteDB != null) {
       if (!noteDB.private && reload) {
-        noteDB = await loadPublicNoteActionsFromRelay(noteDB);
+        await loadPublicNoteActionsFromRelay(noteDB,
+            noteCallBack: (noteDB) async {
+          print('loadPublicNoteActionsFromRelay callback ${noteDB.replyEventIds?.length}');
+          result['reply'] = await loadNoteIdsToNoteDBs(
+              noteDB.replyEventIds ?? [], noteDB.private, reload);
+          // result['repost'] = await _loadNoteIdsToNoteDBs(
+          //     noteDB.repostEventIds ?? [], noteDB.private, reload);
+          // result['quoteRepost'] = await _loadNoteIdsToNoteDBs(
+          //     noteDB.quoteRepostEventIds ?? [], noteDB.private, reload);
+          // result['reaction'] = await _loadNoteIdsToNoteDBs(
+          //     noteDB.reactionEventIds ?? [], noteDB.private, reload);
+          // result['zap'] = await loadInvoicesToZapRecords(
+          //     noteDB.zapEventIds ?? [], noteDB.private);
+          print('loadPublicNoteActionsFromRelay actionsCallBack $result');
+          actionsCallBack?.call(result);
+        });
       }
-      result['reply'] = await _loadNoteIdsToNoteDBs(
-          noteDB.replyEventIds ?? [], noteDB.private, reload);
-      result['repost'] = await _loadNoteIdsToNoteDBs(
-          noteDB.repostEventIds ?? [], noteDB.private, reload);
-      result['quoteRepost'] = await _loadNoteIdsToNoteDBs(
-          noteDB.quoteRepostEventIds ?? [], noteDB.private, reload);
-      result['reaction'] = await _loadNoteIdsToNoteDBs(
-          noteDB.reactionEventIds ?? [], noteDB.private, reload);
-      result['zap'] = await _loadInvoicesToZapRecords(
-          noteDB.zapEventIds ?? [], noteDB.private);
     }
     return result;
   }
