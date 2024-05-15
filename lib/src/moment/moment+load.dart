@@ -169,7 +169,6 @@ extension Load on Moment {
           kinds: [1, 6, 7, 9735], e: [noteId], since: lastUpdatedTime + 1);
       subscriptions[relayURL] = [f];
     }
-    int start = currentUnixTimestampSeconds();
     Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
       if (!result.containsKey(event.id)) {
@@ -195,15 +194,11 @@ extension Load on Moment {
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
-      int end = currentUnixTimestampSeconds();
-      print('loadPublicNoteActionsFromRelay end111: ${end - start}, $relay');
       if (ok.status) {
         NoteDB? noteDB = notesCache[noteId];
         noteDB?.lastUpdatedTime?[relay] = currentUnixTimestampSeconds();
       }
       if (unRelays.isEmpty) {
-        int end = currentUnixTimestampSeconds();
-        print('loadPublicNoteActionsFromRelay end222: ${end - start}');
         NoteDB? noteDB = await loadNoteWithNoteId(noteId);
         if (!completer.isCompleted) completer.complete(noteDB);
       }
@@ -394,7 +389,6 @@ extension Load on Moment {
       if (!noteDB.private && reload) {
         await loadPublicNoteActionsFromRelay(noteDB,
             noteCallBack: (noteDB) async {
-          print('loadPublicNoteActionsFromRelay callback ${noteDB.replyEventIds?.length}');
           result['reply'] = await loadNoteIdsToNoteDBs(
               noteDB.replyEventIds ?? [], noteDB.private, reload);
           // result['repost'] = await _loadNoteIdsToNoteDBs(
@@ -405,7 +399,6 @@ extension Load on Moment {
           //     noteDB.reactionEventIds ?? [], noteDB.private, reload);
           // result['zap'] = await loadInvoicesToZapRecords(
           //     noteDB.zapEventIds ?? [], noteDB.private);
-          print('loadPublicNoteActionsFromRelay actionsCallBack $result');
           actionsCallBack?.call(result);
         });
       }
