@@ -59,6 +59,7 @@ class Contacts {
   int lastFriendListUpdateTime = 0;
   List<String>? blockList;
   Map<String, CallMessage> callMessages = {};
+  int maxLimit = 2024;
 
   /// callbacks
   SecretChatRequestCallBack? secretChatRequestCallBack;
@@ -205,8 +206,7 @@ class Contacts {
       _syncContactsToRelay(okCallBack: (ok, relay) {
         if (!completer.isCompleted) completer.complete(ok);
       });
-    }
-    else if (!completer.isCompleted) {
+    } else if (!completer.isCompleted) {
       completer.complete(OKEvent(friendPubkey, false, ''));
     }
     return completer.future;
@@ -380,7 +380,7 @@ class Contacts {
 
   static Future<void> decodeNip24InIsolate(Map<String, dynamic> params) async {
     String privkey = params['privkey'] ?? '';
-    if(SignerHelper.needSigner(privkey)){
+    if (SignerHelper.needSigner(privkey)) {
       BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
     }
     Event event = Event.fromJson(params['event']);
@@ -424,23 +424,34 @@ class Contacts {
 
         /// all messages, contacts & unknown contacts
         Filter f1 = Filter(
-            kinds: [4, 44], p: [pubkey], since: (friendMessageUntil + 1));
+            kinds: [4, 44],
+            p: [pubkey],
+            since: (friendMessageUntil + 1),
+            limit: maxLimit);
         Filter f2 = Filter(
-            kinds: [4, 44], authors: [pubkey], since: (friendMessageUntil + 1));
+            kinds: [4, 44],
+            authors: [pubkey],
+            since: (friendMessageUntil + 1),
+            limit: maxLimit);
         Filter f3 = Filter(
             kinds: [1059],
             p: [pubkey],
             since: friendMessageUntil > timeOffset
                 ? (friendMessageUntil - timeOffset + 1)
-                : 1);
+                : 1,
+            limit: maxLimit);
         Filter f4 = Filter(
             kinds: [1059],
             authors: [pubkey],
             since: friendMessageUntil > timeOffset
                 ? (friendMessageUntil - timeOffset + 1)
-                : 1);
-        Filter f5 =
-            Filter(kinds: [9735], p: [pubkey], since: (friendMessageUntil + 1));
+                : 1,
+            limit: maxLimit);
+        Filter f5 = Filter(
+            kinds: [9735],
+            p: [pubkey],
+            since: (friendMessageUntil + 1),
+            limit: maxLimit);
         subscriptions[relayURL] = [f1, f2, f3, f4, f5];
       }
     } else {
@@ -448,24 +459,35 @@ class Contacts {
           Relays.sharedInstance.getFriendMessageUntil(relay);
 
       /// all messages, contacts & unknown contacts
-      Filter f1 =
-          Filter(kinds: [4, 44], p: [pubkey], since: (friendMessageUntil + 1));
+      Filter f1 = Filter(
+          kinds: [4, 44],
+          p: [pubkey],
+          since: (friendMessageUntil + 1),
+          limit: maxLimit);
       Filter f2 = Filter(
-          kinds: [4, 44], authors: [pubkey], since: (friendMessageUntil + 1));
+          kinds: [4, 44],
+          authors: [pubkey],
+          since: (friendMessageUntil + 1),
+          limit: maxLimit);
       Filter f3 = Filter(
           kinds: [1059],
           p: [pubkey],
           since: friendMessageUntil > timeOffset
               ? (friendMessageUntil - timeOffset + 1)
-              : 1);
+              : 1,
+          limit: maxLimit);
       Filter f4 = Filter(
           kinds: [1059],
           authors: [pubkey],
           since: friendMessageUntil > timeOffset
               ? (friendMessageUntil - timeOffset + 1)
-              : 1);
-      Filter f5 =
-          Filter(kinds: [9735], p: [pubkey], since: (friendMessageUntil + 1));
+              : 1,
+          limit: maxLimit);
+      Filter f5 = Filter(
+          kinds: [9735],
+          p: [pubkey],
+          since: (friendMessageUntil + 1),
+          limit: maxLimit);
       subscriptions[relay] = [f1, f2, f3, f4, f5];
     }
     friendMessageSubscription = Connect.sharedInstance
@@ -503,7 +525,8 @@ class Contacts {
               Moment.sharedInstance.handleRepostsEvent(innerEvent, relay, true);
               break;
             case 7:
-              Moment.sharedInstance.handleReactionEvent(innerEvent, relay, true);
+              Moment.sharedInstance
+                  .handleReactionEvent(innerEvent, relay, true);
               break;
             case 40:
             case 41:

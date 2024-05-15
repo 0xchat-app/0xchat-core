@@ -23,6 +23,7 @@ class Channels {
   String privkey = '';
   Map<String, ChannelDB> channels = {};
   Map<String, ChannelDB> myChannels = {};
+  int maxLimit = 1000;
 
   ChannelsUpdatedCallBack? myChannelsUpdatedCallBack;
   ChannelMessageCallBack? channelMessageCallBack;
@@ -53,7 +54,7 @@ class Channels {
         Filter f = Filter(
             e: myChannels.keys.toList(),
             kinds: [42],
-            limit: 1000,
+            limit: maxLimit,
             since: (channelMessageUntil + 1));
         subscriptions[relayURL] = [f];
       }
@@ -63,7 +64,7 @@ class Channels {
       Filter f = Filter(
           e: myChannels.keys.toList(),
           kinds: [42],
-          limit: 1000,
+          limit: maxLimit,
           since: (channelMessageUntil + 1));
       subscriptions[relay] = [f];
     }
