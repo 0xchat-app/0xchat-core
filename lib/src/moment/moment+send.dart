@@ -200,12 +200,14 @@ extension Send on Moment {
         NoteDB? rootNote = await loadNoteWithNoteId(rootEventId);
         return note.private
             ? await _sendPrivateNote(content, [note.author, pubkey],
-                rootEvent: replyNoteId,
+                rootEvent: rootEventId,
                 replyUsers: [rootNote?.author ?? '', note.author],
+                replyEvent: replyNoteId,
                 hashTags: hashTags)
             : await sendPublicNote(content,
-                rootEvent: replyNoteId,
+                rootEvent: rootEventId,
                 replyUsers: [rootNote?.author ?? '', note.author],
+                replyEvent: replyNoteId,
                 hashTags: hashTags);
       }
     } else {
