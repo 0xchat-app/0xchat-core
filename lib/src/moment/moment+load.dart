@@ -289,9 +289,7 @@ extension Load on Moment {
   Future<List<NoteDB>?> loadNewNotesFromRelay(
       {int limit = 50, List<String>? authors, int? until}) async {
     Completer<List<NoteDB>?> completer = Completer<List<NoteDB>?>();
-    authors ??= Contacts.sharedInstance.allContacts.keys.toList();
-    authors.addAll(Account.sharedInstance.me?.followingList ?? []);
-    authors.add(pubkey);
+    authors ??= [pubkey];
     Filter f = Filter(kinds: [1], authors: authors, limit: limit, until: until);
     Map<String, Event> result = {};
     Connect.sharedInstance.addSubscription([f],
