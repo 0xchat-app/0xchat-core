@@ -5,6 +5,9 @@ import 'package:chatcore/chat-core.dart';
 import 'package:flutter/services.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
+typedef SendMessageCallBack = void Function(String message);
+typedef SendMessageProgressCallBack = void Function(int progress);
+
 extension Send on Moment {
   Future<OKEvent> sendPublicNote(String content,
       {String? rootEvent,
@@ -52,7 +55,8 @@ extension Send on Moment {
       String? replyEventRelay,
       List<String>? replyUsers,
       List<String>? replyUserRelays,
-      List<String>? hashTags}) async {
+      List<String>? hashTags,
+      SendMessageProgressCallBack? sendMessageProgressCallBack}) async {
     Event event = await Nip1.encodeNote(content, pubkey, privkey,
         rootEvent: rootEvent,
         rootEventRelay: rootEventRelay,
@@ -76,15 +80,19 @@ extension Send on Moment {
       saveNoteToDB(note, null);
     }
 
-    return await _sendPrivateMessage(pubkeys, event);
+    int sendedMessagesCount = 0;
+    return await _sendPrivateMessage(pubkeys, event, sendMessageCallBack: (m) {
+      sendMessageProgressCallBack?.call(++sendedMessagesCount);
+    });
   }
 
-  Future<OKEvent> _sendPrivateMessage(
-      List<String>? receivers, Event event) async {
+  Future<OKEvent> _sendPrivateMessage(List<String>? receivers, Event event,
+      {SendMessageCallBack? sendMessageCallBack}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (receivers != null) {
       final receivePort = ReceivePort();
       receivePort.listen((message) {
+        sendMessageCallBack?.call(message);
         Connect.sharedInstance.sendEvent(Event.fromJson(message));
       });
       for (var receiver in receivers) {
@@ -131,7 +139,8 @@ extension Send on Moment {
       String? replyEventRelay,
       List<String>? replyUsers,
       List<String>? replyUserRelays,
-      List<String>? hashTags}) async {
+      List<String>? hashTags,
+      SendMessageProgressCallBack? sendMessageProgressCallBack}) async {
     List<String> toPubkeys = Contacts.sharedInstance.allContacts.keys.toList();
     toPubkeys.add(pubkey);
     return await _sendPrivateNote(content, toPubkeys,
@@ -141,7 +150,8 @@ extension Send on Moment {
         replyEventRelay: replyEventRelay,
         replyUsers: replyUsers,
         replyUserRelays: replyUserRelays,
-        hashTags: hashTags);
+        hashTags: hashTags,
+        sendMessageProgressCallBack: sendMessageProgressCallBack);
   }
 
   Future<OKEvent> sendNoteCloseFriends(List<String> toPubkeys, String content,
@@ -151,7 +161,8 @@ extension Send on Moment {
       String? replyEventRelay,
       List<String>? replyUsers,
       List<String>? replyUserRelays,
-      List<String>? hashTags}) async {
+      List<String>? hashTags,
+      SendMessageProgressCallBack? sendMessageProgressCallBack}) async {
     toPubkeys.add(pubkey);
     return await _sendPrivateNote(content, toPubkeys,
         rootEvent: rootEvent,
@@ -160,7 +171,8 @@ extension Send on Moment {
         replyEventRelay: replyEventRelay,
         replyUsers: replyUsers,
         replyUserRelays: replyUserRelays,
-        hashTags: hashTags);
+        hashTags: hashTags,
+        sendMessageProgressCallBack: sendMessageProgressCallBack);
   }
 
   Future<OKEvent> sendNoteJustMe(String content,
