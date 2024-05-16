@@ -5,7 +5,7 @@ import 'package:chatcore/chat-core.dart';
 import 'package:flutter/services.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
-typedef SendMessageCallBack = void Function(String message);
+typedef SendMessageCallBack = void Function();
 typedef SendMessageProgressCallBack = void Function(int progress);
 
 extension Send on Moment {
@@ -81,7 +81,7 @@ extension Send on Moment {
     }
 
     int sendedMessagesCount = 0;
-    return await _sendPrivateMessage(pubkeys, event, sendMessageCallBack: (m) {
+    return await _sendPrivateMessage(pubkeys, event, sendMessageCallBack: () {
       sendMessageProgressCallBack?.call(++sendedMessagesCount);
     });
   }
@@ -92,7 +92,7 @@ extension Send on Moment {
     if (receivers != null) {
       final receivePort = ReceivePort();
       receivePort.listen((message) {
-        sendMessageCallBack?.call(message);
+        sendMessageCallBack?.call();
         Connect.sharedInstance.sendEvent(Event.fromJson(message));
       });
       for (var receiver in receivers) {
