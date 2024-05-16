@@ -22,11 +22,12 @@ extension Load on Moment {
   }
 
   Future<List<NoteDB>?> loadMomentNotesFromDB(
-      {int limit = 50, int? until}) async {
+      {int limit = 50, int? until, bool? private}) async {
     List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
     authors.addAll(Account.sharedInstance.me?.followingList ?? []);
     authors.add(pubkey);
-    return await loadUserNotesFromDB(authors, limit: limit, until: until);
+    return await loadUserNotesFromDB(authors,
+        limit: limit, until: until, private: private);
   }
 
   Future<List<NoteDB>?> loadMyNotesFromDB({int limit = 50, int? until}) async {
@@ -34,13 +35,18 @@ extension Load on Moment {
   }
 
   Future<List<NoteDB>?> loadUserNotesFromDB(List<String> userPubkeys,
-      {int limit = 50, int? until}) async {
+      {int limit = 50, int? until, bool? private}) async {
     until ??= currentUnixTimestampSeconds() + 1;
 
     String inClause = List.filled(userPubkeys.length, '?').join(',');
 
     String whereClause = 'author IN ($inClause) AND createAt < ?';
     List<dynamic> whereArgs = [...userPubkeys, until];
+
+    if (private != null) {
+      whereClause += ' AND private = ?';
+      whereArgs.add(private ? 1 : 0);
+    }
 
     List<NoteDB>? notes = await _loadNotesFromDB(
         where: whereClause,
