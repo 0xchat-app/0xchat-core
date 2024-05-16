@@ -362,11 +362,12 @@ class MessageDB extends DBObject {
   }
 
   static String? getNostrScheme(String content) {
-    final regexNostr =
-        r'^(?:\s+)?(nostr:)?(npub|note|nprofile|nevent|nrelay|naddr)[0-9a-zA-Z]{8,}(?=\s*$)';
-    final urlRegexp = RegExp(regexNostr);
-    final match = urlRegexp.firstMatch(content);
-    return match?[0];
+    final regexNostr = RegExp(r'^(?:\s+)?(nostr:(npub|note|nprofile|nevent|nrelay|naddr)[0-9a-zA-Z]{8,})[\s!@#\$%\^&\*\(\)_+\-=\[\]\{\};:\"\\|,.<>\/\?]*$');
+    final match = regexNostr.firstMatch(content);
+    if (match != null) {
+      return match.group(1);
+    }
+    return null;
   }
 }
 
