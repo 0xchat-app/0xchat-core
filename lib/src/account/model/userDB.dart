@@ -52,6 +52,7 @@ class UserDB extends DBObject {
   int lastGroupsListUpdatedTime;
   int lastBadgesListUpdatedTime;
   int lastBlockListUpdatedTime;
+  int lastRelayListUpdatedTime;
 
   bool? mute;
 
@@ -96,6 +97,7 @@ class UserDB extends DBObject {
     this.lastChannelsListUpdatedTime = 0,
     this.lastFriendsListUpdatedTime = 0,
     this.lastGroupsListUpdatedTime = 0,
+    this.lastRelayListUpdatedTime = 0,
     this.otherField = '{}',
     this.nwcURI,
   });
@@ -127,7 +129,7 @@ class UserDB extends DBObject {
           '''alter table userDB add lastBadgesListUpdatedTime INT; alter table userDB add lastBlockListUpdatedTime INT; alter table userDB add lastChannelsListUpdatedTime INT; alter table userDB add lastFriendsListUpdatedTime INT; alter table userDB add lastGroupsListUpdatedTime INT;''',
       "5": '''alter table userDB add nwcURI TEXT;''',
       "6":
-          '''alter table userDB add banner TEXT; alter table userDB add followingList TEXT; alter table userDB add followersList TEXT; alter table userDB add relayList TEXT;'''
+          '''alter table userDB add banner TEXT; alter table userDB add followingList TEXT; alter table userDB add followersList TEXT; alter table userDB add relayList TEXT; alter table userDB add lastRelayListUpdatedTime INT;'''
     };
   }
 
@@ -238,6 +240,7 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     lastChannelsListUpdatedTime: map['lastChannelsListUpdatedTime'] ?? 0,
     lastFriendsListUpdatedTime: map['lastFriendsListUpdatedTime'] ?? 0,
     lastGroupsListUpdatedTime: map['lastGroupsListUpdatedTime'] ?? 0,
+    lastRelayListUpdatedTime: map['lastRelayListUpdatedTime'] ?? 0,
     otherField: map['otherField']?.toString(),
     nwcURI: map['nwcURI']?.toString(),
   );
@@ -274,6 +277,7 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'lastChannelsListUpdatedTime': instance.lastChannelsListUpdatedTime,
       'lastFriendsListUpdatedTime': instance.lastFriendsListUpdatedTime,
       'lastGroupsListUpdatedTime': instance.lastGroupsListUpdatedTime,
+      'lastRelayListUpdatedTime': instance.lastRelayListUpdatedTime,
       'otherField': instance.otherField,
       'nwcURI': instance.nwcURI
     };

@@ -494,7 +494,11 @@ class Account {
 
   Future<List<String>> syncRelaysMetadataFromKind3(String pubkey) async {
     Completer<List<String>> completer = Completer<List<String>>();
-    Filter f = Filter(kinds: [3], authors: [pubkey], limit: 1);
+    Filter f = Filter(
+        kinds: [3],
+        authors: [pubkey],
+        limit: 1,
+        since: me?.lastRelayListUpdatedTime);
     String content = '';
     int lastTimeStamp = 0;
     Connect.sharedInstance.addSubscription([f],
@@ -502,6 +506,7 @@ class Account {
       if (event.createdAt > lastTimeStamp) {
         content = event.content;
         lastTimeStamp = event.createdAt;
+        me?.lastRelayListUpdatedTime = lastTimeStamp;
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
@@ -521,8 +526,11 @@ class Account {
 
   Future<List<String>> syncRelaysMetadataFromRelay(String pubkey) async {
     Completer<List<String>> completer = Completer<List<String>>();
-
-    Filter f = Filter(kinds: [10002], authors: [pubkey], limit: 1);
+    Filter f = Filter(
+        kinds: [10002],
+        authors: [pubkey],
+        limit: 1,
+        since: me?.lastRelayListUpdatedTime);
     List<Relay> result = [];
     int lastEventTime = 0;
     Connect.sharedInstance.addSubscription([f],
@@ -530,6 +538,7 @@ class Account {
       if (lastEventTime < event.createdAt) {
         result = Nip65.decode(event);
         lastEventTime = event.createdAt;
+        me?.lastRelayListUpdatedTime = lastEventTime;
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
@@ -539,6 +548,7 @@ class Account {
           relayList = await syncRelaysMetadataFromKind3(pubkey);
         }
         if (!completer.isCompleted) completer.complete(relayList);
+        syncMe();
       }
     });
     return completer.future;
