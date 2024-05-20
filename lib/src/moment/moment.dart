@@ -39,6 +39,7 @@ class Moment {
     }
 
     List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
+    authors.addAll(Account.sharedInstance.me?.followingList ?? []);
     authors.add(pubkey); // add self
     if (authors.isNotEmpty) {
       Map<String, List<Filter>> subscriptions = {};
