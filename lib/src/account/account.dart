@@ -19,7 +19,9 @@ class Account {
   String currentPrivkey = '';
   Timer? timer;
 
-  Map<String, UserDB> userCache = {};
+  // Map<String, UserDB> userCache = {};
+  Map<String, ValueNotifier<UserDB>> userCache = {};
+
   List<String> pQueue = [];
 
   void startHeartBeat() {
@@ -34,7 +36,7 @@ class Account {
     List<UserDB?> maps = await DB.sharedInstance.objects<UserDB>();
     for (UserDB? user in maps) {
       if (user != null) {
-        userCache[user.pubKey] = user;
+        userCache[user.pubKey] = ValueNotifier<UserDB>(user);
       }
     }
   }
@@ -49,7 +51,7 @@ class Account {
   }
 
   FutureOr<UserDB?> getUserInfo(String pubkey) {
-    final user = userCache[pubkey];
+    UserDB? user = userCache[pubkey]?.value;
     if (user != null) {
       _tryAddToSyncProfiles(user);
       return user;
@@ -58,7 +60,7 @@ class Account {
     Completer<UserDB?> completer = Completer();
     _getUserFromDB(pubkey: pubkey).then((user) {
       if (user != null) {
-        userCache[pubkey] = user;
+        userCache[pubkey] = ValueNotifier<UserDB>(user);
         _tryAddToSyncProfiles(user);
       }
       completer.complete(user);
@@ -165,7 +167,7 @@ class Account {
         db?.lnurl ??= map['lud16'];
         db?.lnurl ??= map['lud06'];
       }
-      userCache[pubkey] = db!;
+      userCache[pubkey] = ValueNotifier<UserDB>(db!);
       if (pubkey == currentPubkey) me = db;
       DB.sharedInstance.update<UserDB>(db);
       if (!completer.isCompleted) completer.complete(db);
@@ -184,7 +186,7 @@ class Account {
     // init users from cache & DB
     List<String> pQueueTemp = List.from(pQueue);
     for (var key in pQueueTemp) {
-      UserDB? db = userCache[key];
+      UserDB? db = userCache[key]?.value;
       db ??= await _getUserFromDB(pubkey: key);
       if (db == null) {
         db = UserDB();
@@ -256,7 +258,7 @@ class Account {
       if (unRelays.isEmpty) {
         for (var db in users.values) {
           await DB.sharedInstance.insert<UserDB>(db);
-          userCache[db.pubKey] = db;
+          userCache[db.pubKey] = ValueNotifier<UserDB>(db);
           pQueue.remove(db.pubKey);
         }
         if (!completer.isCompleted) completer.complete();
@@ -271,7 +273,7 @@ class Account {
       me = userDB;
       currentPubkey = userDB.pubKey;
       currentPrivkey = '';
-      userCache[currentPubkey] = userDB;
+      userCache[currentPubkey] = ValueNotifier<UserDB>(userDB);
     }
     return userDB;
   }
@@ -294,7 +296,7 @@ class Account {
           me = db;
           currentPrivkey = bytesToHex(privkey);
           currentPubkey = db.pubKey;
-          userCache[currentPubkey] = db;
+          userCache[currentPubkey] = ValueNotifier<UserDB>(db);
           return db;
         }
       }
@@ -323,7 +325,7 @@ class Account {
     me = db;
     currentPrivkey = privkey;
     currentPubkey = db.pubKey;
-    userCache[currentPubkey] = db;
+    userCache[currentPubkey] = ValueNotifier<UserDB>(db);
     return db;
   }
 
