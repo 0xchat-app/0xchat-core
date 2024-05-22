@@ -5,6 +5,8 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
+typedef ActionsCallBack = void Function(MessageDB);
+
 class Messages {
   /// singleton
   Messages._internal();
@@ -16,6 +18,8 @@ class Messages {
   String pubkey = '';
   String privkey = '';
   String messageRequestsId = '';
+  String messagesActionsRequestsId = '';
+  ActionsCallBack? actionsCallBack;
 
   List<String> messagesLoaded = [];
 
@@ -82,6 +86,73 @@ class Messages {
             List<String> unCompletedRelays) {
       Relays.sharedInstance.syncRelaysToDB();
     });
+  }
+
+  void updateMessagesActionsSubscription(List<String> eventIds) {
+    if (messagesActionsRequestsId.isNotEmpty) {
+      Connect.sharedInstance.closeRequests(messagesActionsRequestsId);
+    }
+    Filter f = Filter(kinds: [7, 9735], ids: eventIds);
+    messageRequestsId = Connect.sharedInstance.addSubscription([f],
+        eventCallBack: (event, relay) {
+      switch (event.kind) {
+        case 7:
+          handleReactionEvent(event);
+          break;
+        case 9735:
+          handleZapRecordEvent(event);
+          break;
+        default:
+          print('unhandled message $event');
+          break;
+      }
+    },
+        eoseCallBack: (String requestId, OKEvent ok, String relay,
+            List<String> unCompletedRelays) {});
+  }
+
+  Future<MessageDB?> loadMessageDBFromDB(String messageId) async {
+    final result = await Messages.loadMessagesFromDB(
+        where: 'messageId = ?', whereArgs: [messageId]);
+    return result['messages']?.first;
+  }
+
+  Future<void> handleReactionEvent(Event event) async {
+    Reactions reactions = Nip25.decode(event);
+    NoteDB reactionsNoteDB = NoteDB.noteDBFromReactions(reactions);
+    await DB.sharedInstance.insert<NoteDB>(reactionsNoteDB,
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    final reactedMessageDB =
+        await loadMessageDBFromDB(reactions.reactedEventId);
+    if (reactedMessageDB == null) return;
+    reactedMessageDB.reactionEventIds ??= [];
+    if (!reactedMessageDB.reactionEventIds!
+        .contains(reactions.reactedEventId)) {
+      reactedMessageDB.reactionEventIds!.add(reactions.reactedEventId);
+      await DB.sharedInstance.insert<MessageDB>(reactedMessageDB);
+      actionsCallBack?.call(reactedMessageDB);
+    }
+  }
+
+  Future<void> handleZapRecordEvent(Event event) async {
+    ZapReceipt zapReceipt = await Nip57.getZapReceipt(
+        event,
+        Account.sharedInstance.currentPubkey,
+        Account.sharedInstance.currentPrivkey);
+    ZapRecordsDB zapRecordsDB =
+        ZapRecordsDB.zapReceiptToZapRecordsDB(zapReceipt);
+    //add to zap records
+    await DB.sharedInstance.insert<ZapRecordsDB>(zapRecordsDB,
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    Zaps.sharedInstance.zapRecords[zapRecordsDB.bolt11] = zapRecordsDB;
+
+    final reactedMessageDB = await loadMessageDBFromDB(zapRecordsDB.eventId);
+    if (reactedMessageDB == null) return;
+    if (!reactedMessageDB.zapEventIds!.contains(zapRecordsDB.eventId)) {
+      reactedMessageDB.zapEventIds!.add(zapRecordsDB.eventId);
+      await DB.sharedInstance.insert<MessageDB>(reactedMessageDB);
+      actionsCallBack?.call(reactedMessageDB);
+    }
   }
 
   Future<void> _handleDeleteEvent(Event event) async {

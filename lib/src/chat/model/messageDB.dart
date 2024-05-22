@@ -53,6 +53,10 @@ class MessageDB extends DBObject {
   /// add decryptSecret
   String? decryptSecret;
 
+  // actions
+  List<String>? reactionEventIds;
+  List<String>? zapEventIds;
+
   MessageDB({
     this.messageId = '',
     this.sender = '',
@@ -74,6 +78,8 @@ class MessageDB extends DBObject {
     this.previewData,
     this.expiration,
     this.decryptSecret,
+    this.reactionEventIds,
+    this.zapEventIds,
   });
 
   @override
@@ -110,7 +116,9 @@ class MessageDB extends DBObject {
       "4":
           '''alter table MessageDB add chatType INT; alter table MessageDB add subType TEXT;''',
       "5":
-          '''alter table MessageDB add previewData TEXT; alter table MessageDB add expiration INT; alter table MessageDB add decryptSecret TEXT;'''
+          '''alter table MessageDB add previewData TEXT; alter table MessageDB add expiration INT; alter table MessageDB add decryptSecret TEXT;''',
+      "6":
+          '''alter table MessageDB add reactionEventIds TEXT; alter table MessageDB add zapEventIds TEXT;'''
     };
   }
 
@@ -264,7 +272,7 @@ class MessageDB extends DBObject {
   }
 
   static String getContent(MessageType type, String content, String? source) {
-    if(source != null && source.isNotEmpty == true) return source;
+    if (source != null && source.isNotEmpty == true) return source;
     switch (type) {
       case MessageType.text:
       case MessageType.image:
@@ -274,7 +282,8 @@ class MessageDB extends DBObject {
       case MessageType.file:
         return '[You\'ve received a file via 0xChat!]';
       case MessageType.template:
-        if (Zaps.isLightningInvoice(content) || getNostrScheme(content) != null) {
+        if (Zaps.isLightningInvoice(content) ||
+            getNostrScheme(content) != null) {
           return content;
         }
         return '[You\'ve received a template via 0xChat!]';
@@ -362,7 +371,8 @@ class MessageDB extends DBObject {
   }
 
   static String? getNostrScheme(String content) {
-    final regexNostr = RegExp(r'\bnostr:(npub|note|nprofile|nevent|nrelay|naddr)[0-9a-zA-Z]{8,}\b');
+    final regexNostr = RegExp(
+        r'\bnostr:(npub|note|nprofile|nevent|nrelay|naddr)[0-9a-zA-Z]{8,}\b');
     final match = regexNostr.firstMatch(content);
     if (match != null) {
       return match.group(1);
@@ -392,6 +402,8 @@ Map<String, dynamic> _messageInfoToMap(MessageDB instance) => <String, dynamic>{
       'previewData': instance.previewData,
       'expiration': instance.expiration,
       'decryptSecret': instance.decryptSecret,
+      'reactionEventIds': jsonEncode(instance.reactionEventIds),
+      'zapEventIds': jsonEncode(instance.zapEventIds),
     };
 
 MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
@@ -416,5 +428,8 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     previewData: map['previewData']?.toString(),
     expiration: map['expiration'],
     decryptSecret: map['decryptSecret']?.toString(),
+    reactionEventIds:
+        UserDB.decodeStringList(map['reactionEventIds'].toString()),
+    zapEventIds: UserDB.decodeStringList(map['zapEventIds'].toString()),
   );
 }
