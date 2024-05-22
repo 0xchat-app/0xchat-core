@@ -5,6 +5,7 @@ import 'package:nostr_core_dart/nostr.dart';
 @reflector
 class NoteDB extends DBObject {
   String noteId; //event id
+  String groupId; // group/community note
   String author;
   int createAt;
   String content;
@@ -60,6 +61,7 @@ class NoteDB extends DBObject {
 
   NoteDB({
     this.noteId = '',
+    this.groupId = '',
     this.author = '',
     this.createAt = 0,
     this.content = '',
@@ -242,6 +244,7 @@ class NoteDB extends DBObject {
 
 Map<String, dynamic> _noteInfoToMap(NoteDB instance) => <String, dynamic>{
       'noteId': instance.noteId,
+      'groupId': instance.groupId,
       'author': instance.author,
       'createAt': instance.createAt,
       'content': instance.content,
@@ -285,6 +288,7 @@ Map<String, dynamic> _noteInfoToMap(NoteDB instance) => <String, dynamic>{
 NoteDB _noteInfoFromMap(Map<String, dynamic> map) {
   return NoteDB(
     noteId: map['noteId'].toString(),
+    groupId: map['groupId'].toString(),
     author: map['author'].toString(),
     createAt: map['createAt'],
     content: map['content'].toString(),
