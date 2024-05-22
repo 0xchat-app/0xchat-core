@@ -5,7 +5,7 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
-typedef ActionsCallBack = void Function(MessageDB);
+typedef MessageActionsCallBack = void Function(MessageDB);
 
 class Messages {
   /// singleton
@@ -19,7 +19,7 @@ class Messages {
   String privkey = '';
   String messageRequestsId = '';
   String messagesActionsRequestsId = '';
-  ActionsCallBack? actionsCallBack;
+  MessageActionsCallBack? actionsCallBack;
 
   List<String> messagesLoaded = [];
 
