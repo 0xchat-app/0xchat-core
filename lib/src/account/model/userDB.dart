@@ -40,6 +40,7 @@ class UserDB extends DBObject {
   String? friendsList;
   List<String>? channelsList;
   List<String>? groupsList;
+  List<String>? relayGroupsList;
   List<String>? badgesList;
   List<String>? blockedList; // blocked users list
   List<String>? followingList;
@@ -85,6 +86,7 @@ class UserDB extends DBObject {
     this.friendsList,
     this.channelsList,
     this.groupsList,
+    this.relayGroupsList,
     this.badgesList,
     this.blockedList,
     this.followersList,
@@ -129,7 +131,7 @@ class UserDB extends DBObject {
           '''alter table userDB add lastBadgesListUpdatedTime INT; alter table userDB add lastBlockListUpdatedTime INT; alter table userDB add lastChannelsListUpdatedTime INT; alter table userDB add lastFriendsListUpdatedTime INT; alter table userDB add lastGroupsListUpdatedTime INT;''',
       "5": '''alter table userDB add nwcURI TEXT;''',
       "6":
-          '''alter table userDB add banner TEXT; alter table userDB add followingList TEXT; alter table userDB add followersList TEXT; alter table userDB add relayList TEXT; alter table userDB add lastRelayListUpdatedTime INT;'''
+          '''alter table userDB add banner TEXT; alter table userDB add followingList TEXT; alter table userDB add followersList TEXT; alter table userDB add relayList TEXT; alter table userDB add relayGroupsList TEXT; alter table userDB add lastRelayListUpdatedTime INT;'''
     };
   }
 
@@ -227,6 +229,7 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     friendsList: map['friendsList'].toString(),
     channelsList: UserDB.decodeStringList(map['channelsList'].toString()),
     groupsList: UserDB.decodeStringList(map['groupsList'].toString()),
+    relayGroupsList: UserDB.decodeStringList(map['relayGroupsList'].toString()),
     badgesList: UserDB.decodeStringList(map['badgesList'].toString()),
     blockedList: UserDB.decodeStringList(map['blockedList'].toString()),
     followingList: UserDB.decodeStringList(map['followingList'].toString()),
@@ -264,6 +267,7 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'friendsList': instance.friendsList,
       'channelsList': jsonEncode(instance.channelsList),
       'groupsList': jsonEncode(instance.groupsList),
+      'relayGroupsList': jsonEncode(instance.relayGroupsList),
       'badgesList': jsonEncode(instance.badgesList),
       'blockedList': jsonEncode(instance.blockedList),
       'followersList': jsonEncode(instance.followersList),

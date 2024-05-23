@@ -1,13 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:isolate';
 import 'package:chatcore/chat-core.dart';
-import 'package:flutter/services.dart';
 import 'package:nostr_core_dart/nostr.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
-
-typedef GroupsUpdatedCallBack = void Function();
-typedef GroupMessageCallBack = void Function(MessageDB);
 
 class RelayGroup {
   /// singleton
@@ -15,15 +8,17 @@ class RelayGroup {
   factory RelayGroup() => sharedInstance;
   static final RelayGroup sharedInstance = RelayGroup._internal();
 
-  static final String identifier = 'Chat-Groups';
+  static final String identifier = 'Chat-Relay-Groups';
   // {relay1:subscriptionID1, relay2:subscriptionID2, ...}
   String groupMessageSubscription = '';
 
   // memory storage
   String pubkey = '';
   String privkey = '';
-  Map<String, GroupDB> groups = {};
-  Map<String, GroupDB> myGroups = {};
+  Map<String, RelayGroupDB> groups = {};
+  Map<String, RelayGroupDB> myGroups = {};
+  Map<String, bool> offlineGroupMessageFinish = {};
+  List<String> groupRelays = [];
 
   GroupsUpdatedCallBack? myGroupsUpdatedCallBack;
   GroupMessageCallBack? groupMessageCallBack;
@@ -33,13 +28,14 @@ class RelayGroup {
     pubkey = Account.sharedInstance.currentPubkey;
     myGroupsUpdatedCallBack = callBack;
     await _loadAllGroupsFromDB();
+    _updateGroupSubscription();
     _loadMyGroupsFromRelay();
-
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 &&
           Account.sharedInstance.me != null &&
-          Connect.sharedInstance.relays().contains(relay)) {
-        _loadMyGroupsFromRelay(relay: relay);
+          groupRelays.contains(relay)) {
+        await _loadMyGroupsFromRelay(relay: relay);
+        _updateGroupSubscription(relay: relay);
       }
     });
   }
@@ -49,8 +45,8 @@ class RelayGroup {
     return !checkInGroup(groupId)
         ? 0
         : !checkInMyGroupList(groupId)
-        ? 1
-        : 2;
+            ? 1
+            : 2;
   }
 
   bool checkInGroup(String groupId) {
@@ -61,129 +57,156 @@ class RelayGroup {
     return myGroups.containsKey(groupId);
   }
 
-  String _shortGroupId(String groupId) {
-    final String start = groupId.substring(0, 6);
-    final String end = groupId.substring(groupId.length - 6);
-    return '$start:$end';
-  }
-
   Future<void> _loadAllGroupsFromDB() async {
-    List<Object?> maps = await DB.sharedInstance.objects<GroupDB>();
+    List<Object?> maps = await DB.sharedInstance.objects<RelayGroupDB>();
     for (var e in maps) {
-      GroupDB groupDB = e as GroupDB;
-      if (groupDB.name.isEmpty) groupDB.name = _shortGroupId(groupDB.groupId);
-      groups[groupDB.groupId] = groupDB;
+      RelayGroupDB groupDB = e as RelayGroupDB;
+      if (groupDB.name.isEmpty) groupDB.name = groupDB.groupId;
+      groups[groupDB.id] = groupDB;
     }
     myGroups = _myGroups();
   }
 
-  Map<String, GroupDB> _myGroups() {
-    Map<String, GroupDB> result = {};
+  Map<String, RelayGroupDB> _myGroups() {
+    Map<String, RelayGroupDB> result = {};
     UserDB? me = Account.sharedInstance.me;
-    if (me != null && me.groupsList != null && me.groupsList!.isNotEmpty) {
-      List<String> groupList = me.groupsList!;
-      for (String groupId in groupList) {
-        if (!groups.containsKey(groupId)) {
-          groups[groupId] = GroupDB(groupId: groupId);
+    if (me != null &&
+        me.relayGroupsList != null &&
+        me.relayGroupsList!.isNotEmpty) {
+      List<String> groupList = me.relayGroupsList!;
+      groupRelays.clear();
+      for (String id in groupList) {
+        if (!groups.containsKey(id)) {
+          groups[id] = RelayGroupDB(groupId: id);
         }
-        result[groupId] = groups[groupId]!;
+        result[id] = groups[id]!;
+        groupRelays.add(groups[id]!.relay);
       }
+      connectToRelays(groupRelays);
     }
     return result;
   }
 
-  Future<void> _handleGroupCreation(Event event) async {
-    if (!groups.containsKey(event.id) ||
-        (groups.containsKey(event.id) &&
-            groups[event.id]?.owner != event.pubkey)) {
-      Channel group = Nip28.getChannelCreation(event);
-      GroupDB groupDB = _channelToGroupDB(group, event.createdAt);
-      await syncGroupToDB(groupDB);
+  void connectToRelays(List<String> groupRelays) {
+    for (var relay in groupRelays) {
+      Connect.sharedInstance.connect(relay, type: 1);
     }
   }
 
-  Future<void> _handleGroupMetadata(Event event) async {
-    Channel group = Nip28.getChannelMetadata(event);
-    if (groups.containsKey(group.channelId) &&
-        groups[group.channelId]?.owner.isNotEmpty == true &&
-        groups[group.channelId]?.owner != group.owner) {
-      return;
-    }
-    GroupDB groupDB = _channelToGroupDB(group, event.createdAt);
-    await syncGroupToDB(groupDB);
-  }
-
-  Future<void> _handleGroupMessage(Event event) async {
-    ChannelMessage groupMessage = Nip28.getChannelMessage(event);
-    String subType = groupMessage.actionsType != null
-        ? Nip28.actionToType(groupMessage.actionsType!)
-        : '';
-    GroupDB? groupDB = myGroups[groupMessage.channelId];
-    if (groupDB == null) return;
-    switch (subType) {
-      case 'invite':
-        break;
-      case 'request':
-        if (groupDB.owner != pubkey &&
-            groupDB.members?.contains(groupMessage.sender) == false) {
-          return;
-        }
-        break;
-      case 'add':
-      case 'remove':
-      case 'updateName':
-      case 'updatePinned':
-        if (groupDB.owner != groupMessage.sender) return;
-        break;
-      case 'join':
-      case 'leave':
-      default:
-        if (groupDB.members?.contains(groupMessage.sender) == false) return;
+  void _updateGroupSubscription({String? relay}) {
+    if (myGroups.isEmpty) return;
+    if (groupMessageSubscription.isNotEmpty) {
+      Connect.sharedInstance
+          .closeRequests(groupMessageSubscription, relay: relay);
     }
 
-    MessageDB messageDB = MessageDB(
-        messageId: event.id,
-        sender: groupMessage.sender,
-        receiver: '',
-        groupId: groupMessage.channelId,
-        kind: event.kind,
-        tags: jsonEncode(event.tags),
-        content: groupMessage.content,
-        replyId: groupMessage.thread.reply?.eventId ?? '',
-        createTime: event.createdAt,
-        plaintEvent: jsonEncode(event),
-        chatType: 1,
-        subType: subType);
-    var map = MessageDB.decodeContent(groupMessage.content);
-    messageDB.decryptContent = map['content'];
-    messageDB.type = map['contentType'];
-    messageDB.decryptSecret = map['decryptSecret'];
-    int status = await Messages.saveMessageToDB(messageDB);
-    if (status != 0) {
-      groupMessageCallBack?.call(messageDB);
-    }
-  }
+    Map<String, List<Filter>> subscriptions = {};
 
-  Future<void> receiveGroupEvents(
-      Event event, String relay, String giftWrappedEventId) async {
-    MessageDB messageDB = MessageDB(messageId: giftWrappedEventId);
-    int result = await DB.sharedInstance.insert<MessageDB>(messageDB,
-        conflictAlgorithm: ConflictAlgorithm.ignore);
-    if (result != 0) {
+    if (relay == null) {
+      for (String relayURL in groupRelays) {
+        int groupMessageUntil =
+            Relays.sharedInstance.getGroupMessageUntil(relayURL);
+        Filter f = Filter(
+            h: myGroups.keys.toList(),
+            kinds: [
+              9,
+              10,
+              11,
+              12,
+              9000,
+              9001,
+              9002,
+              9003,
+              9004,
+              9005,
+              9006,
+              9021
+            ],
+            limit: 1000,
+            since: (groupMessageUntil + 1));
+        subscriptions[relayURL] = [f];
+      }
+    } else {
+      int groupMessageUntil = Relays.sharedInstance.getGroupMessageUntil(relay);
+      Filter f = Filter(
+          h: myGroups.keys.toList(),
+          kinds: [
+            9,
+            10,
+            11,
+            12,
+            9000,
+            9001,
+            9002,
+            9003,
+            9004,
+            9005,
+            9006,
+            9021
+          ],
+          limit: 1000,
+          since: (groupMessageUntil + 1));
+      subscriptions[relay] = [f];
+    }
+
+    groupMessageSubscription = Connect.sharedInstance
+        .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       switch (event.kind) {
-        case 40:
-          _handleGroupCreation(event);
+        case 9:
+        case 10:
+          handleGroupMessage(event, relay);
           break;
-        case 41:
-          _handleGroupMetadata(event);
+        case 11:
+        case 12:
+          handleGroupNotes(event, relay);
           break;
-        case 42:
-          _handleGroupMessage(event);
+        case 9000:
+          handleAddUser(event, relay);
+          break;
+        case 9001:
+          handleRemoveUser(event, relay);
+          break;
+        case 9002:
+          handleEditMetadata(event, relay);
+          break;
+        case 9003:
+          handleAddPermission(event, relay);
+          break;
+        case 9004:
+          handleRemovePermission(event, relay);
+          break;
+        case 9005:
+          handleDeleteEvent(event, relay);
+          break;
+        case 9006:
+          handleEditGroupStatus(event, relay);
+          break;
+        case 9021:
+          handleJoinRequest(event, relay);
           break;
         default:
-          print('unknown event: ${event.kind}');
+          print('unhandled message $event');
           break;
       }
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+      offlineGroupMessageFinish[relay] = true;
+      _updateGroupMessageTime(currentUnixTimestampSeconds(), relay);
+      if (unCompletedRelays.isEmpty) {}
+    });
+  }
+
+  void _updateGroupMessageTime(int eventTime, String relay) {
+    if (Relays.sharedInstance.relays.containsKey(relay)) {
+      Relays.sharedInstance.setGroupMessageUntil(eventTime, relay);
+      Relays.sharedInstance.setGroupMessageSince(eventTime, relay);
+    } else {
+      Relays.sharedInstance.relays[relay] = RelayDB(
+          url: relay,
+          groupMessageUntil: {relay: eventTime},
+          groupMessageSince: {relay: eventTime});
+    }
+    if (offlineGroupMessageFinish[relay] == true) {
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
     }
   }
 
@@ -209,65 +232,41 @@ class RelayGroup {
     int lastEventTime = 0;
     Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
-          if (event.content.isNotEmpty && lastEventTime < event.createdAt) {
-            lastEventTime = event.createdAt;
-            lastEvent = event;
-          }
-        }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
-          Connect.sharedInstance.closeSubscription(requestId, relay);
-          if (unCompletedRelays.isEmpty) {
-            if (lastEvent != null) {
-              Lists result = await Nip51.getLists(lastEvent!, pubkey, privkey);
-              UserDB? me = Account.sharedInstance.me;
-              me!.lastGroupsListUpdatedTime = lastEvent!.createdAt;
-              me.groupsList = result.bookmarks;
-              await Account.sharedInstance.syncMe();
-              myGroups = _myGroups();
-            }
-            if (!completer.isCompleted) completer.complete();
-            myGroupsUpdatedCallBack?.call();
-          }
-        });
+      if (event.content.isNotEmpty && lastEventTime < event.createdAt) {
+        lastEventTime = event.createdAt;
+        lastEvent = event;
+      }
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+      if (unCompletedRelays.isEmpty) {
+        if (lastEvent != null) {
+          Lists result = await Nip51.getLists(lastEvent!, pubkey, privkey);
+          UserDB? me = Account.sharedInstance.me;
+          me!.lastGroupsListUpdatedTime = lastEvent!.createdAt;
+          me.relayGroupsList = result.bookmarks;
+          await Account.sharedInstance.syncMe();
+          myGroups = _myGroups();
+          _updateGroupSubscription();
+        }
+        if (!completer.isCompleted) completer.complete();
+        myGroupsUpdatedCallBack?.call();
+      }
+    });
     return completer.future;
   }
 
-  GroupDB _channelToGroupDB(Channel group, int updateTime) {
-    GroupDB? groupDB = groups[group.channelId];
-    if (groupDB != null && groupDB.updateTime < updateTime) {
-      groupDB.name = group.name;
-      groupDB.about = group.about;
-      groupDB.picture = group.picture;
-      groupDB.pinned = [group.pinned ?? ''];
-      groupDB.owner = group.owner;
-      groupDB.relay = group.relay;
-      groupDB.members = group.members;
-      groupDB.updateTime = updateTime;
+  Future<void> syncGroupToDB(RelayGroupDB groupDB) async {
+    groups[groupDB.id] = groupDB;
+    if (myGroups.containsKey(groupDB.id)) {
+      myGroups[groupDB.id] = groupDB;
     }
-    groupDB ??= GroupDB(
-        groupId: group.channelId,
-        owner: group.owner,
-        name: group.name,
-        members: group.members,
-        pinned: [group.pinned ?? ''],
-        about: group.about,
-        picture: group.picture,
-        relay: group.relay,
-        updateTime: updateTime);
-    return groupDB;
-  }
-
-  Future<void> syncGroupToDB(GroupDB groupDB) async {
-    groups[groupDB.groupId] = groupDB;
-    if (myGroups.containsKey(groupDB.groupId)) {
-      myGroups[groupDB.groupId] = groupDB;
-    }
-    await DB.sharedInstance.insert<GroupDB>(groupDB);
+    await DB.sharedInstance.insert<RelayGroupDB>(groupDB);
   }
 
   Future<void> _syncMyGroupListToDB() async {
     List<String> list = myGroups.keys.toList();
     UserDB? me = Account.sharedInstance.me;
-    me!.groupsList = list;
+    me!.relayGroupsList = list;
     await DB.sharedInstance.insert<UserDB>(me);
   }
 
@@ -286,14 +285,14 @@ class RelayGroup {
     return completer.future;
   }
 
-  List<GroupDB>? fuzzySearch(String keyword) {
+  List<RelayGroupDB>? fuzzySearch(String keyword) {
     if (keyword.isNotEmpty) {
       RegExp regex = RegExp(keyword, caseSensitive: false);
-      List<GroupDB> filteredFriends = myGroups.values
-          .where((channel) =>
-      regex.hasMatch(channel.name) || regex.hasMatch(channel.about!))
+      List<RelayGroupDB> groups = myGroups.values
+          .where((group) =>
+              regex.hasMatch(group.name) || regex.hasMatch(group.about))
           .toList();
-      return filteredFriends;
+      return groups;
     }
     return null;
   }
@@ -305,171 +304,10 @@ class RelayGroup {
         .toList();
   }
 
-  Future<Event?> getSendGroupMessageEvent(
-      String groupId, MessageType type, String content,
-      {String? source,
-        String? groupRelay,
-        String? replyMessage,
-        String? replyMessageRelay,
-        String? replyUser,
-        String? replyUserRelay,
-        String? actionsType,
-        String? decryptSecret}) async {
-    Event event = await Nip28.sendChannelMessage(
-        groupId, MessageDB.getContent(type, content, source), pubkey, privkey,
-        channelRelay: groupRelay,
-        replyMessage: replyMessage,
-        replyMessageRelay: replyMessageRelay,
-        replyUser: replyUser,
-        replyUserRelay: replyUserRelay,
-        subContent: MessageDB.getSubContent(type, content,
-            decryptSecret: decryptSecret),
-        actionsType: actionsType);
-    return event;
-  }
-
-  Future<OKEvent> sendGroupMessage(
-      String groupId, MessageType type, String content,
-      {String? source,
-        String? groupRelay,
-        String? replyMessage,
-        String? replyMessageRelay,
-        String? replyUser,
-        String? replyUserRelay,
-        Event? event,
-        String? actionsType,
-        bool local = false,
-        List<String>? inviteUsers,
-        String? decryptSecret}) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
-    event ??= await Nip28.sendChannelMessage(
-        groupId, MessageDB.getContent(type, content, source), pubkey, privkey,
-        channelRelay: groupRelay,
-        replyMessage: replyMessage,
-        replyMessageRelay: replyMessageRelay,
-        replyUser: replyUser,
-        replyUserRelay: replyUserRelay,
-        subContent: MessageDB.getSubContent(type, content,
-            decryptSecret: decryptSecret),
-        actionsType: actionsType);
-
-    MessageDB messageDB = MessageDB(
-        messageId: event.id,
-        sender: event.pubkey,
-        receiver: '',
-        groupId: groupId,
-        kind: event.kind,
-        tags: jsonEncode(event.tags),
-        replyId: replyMessage ?? '',
-        content: event.content,
-        decryptContent: content,
-        type: MessageDB.messageTypeToString(type),
-        createTime: event.createdAt,
-        status: 0,
-        plaintEvent: jsonEncode(event),
-        chatType: 1,
-        subType: actionsType ?? '',
-        decryptSecret: decryptSecret);
-    groupMessageCallBack?.call(messageDB);
-    await Messages.saveMessageToDB(messageDB);
-
-    if (local) {
-      if (!completer.isCompleted) {
-        completer.complete(OKEvent(event.id, true, ''));
-      }
-    } else {
-      OKEvent ok;
-      switch (actionsType) {
-        case 'invite':
-          ok = await sendMessageEvent(inviteUsers, event);
-          break;
-        case 'request':
-          ok = await sendToOwner(groupId, event);
-          break;
-        case 'join':
-        case 'add':
-        case 'leave':
-        case 'remove':
-        case 'updateName':
-        case 'updatePinned':
-        default:
-          ok = await sendToGroup(groupId, event);
-      }
-      messageDB.status = ok.status ? 1 : 2;
-      await Messages.saveMessageToDB(messageDB,
-          conflictAlgorithm: ConflictAlgorithm.replace);
-      if (!completer.isCompleted) completer.complete(ok);
-    }
-
-    return completer.future;
-  }
-
-  Future<OKEvent> sendToGroup(String groupId, Event event) async {
-    GroupDB? groupDB = groups[groupId];
-    if (groupDB != null) {
-      return await sendMessageEvent(groupDB.members, event);
-    } else {
-      return OKEvent(event.id, false, 'group not found');
-    }
-  }
-
-  Future<OKEvent> sendToOwner(String groupId, Event event) async {
-    GroupDB? groupDB = groups[groupId];
-    if (groupDB != null) {
-      return await sendMessageEvent([groupDB.owner], event);
-    } else {
-      return OKEvent(event.id, false, 'group not found');
-    }
-  }
-
-  Future<OKEvent> sendMessageEvent(List<String>? receivers, Event event) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
-    if (receivers != null) {
-      final receivePort = ReceivePort();
-      receivePort.listen((message) {
-        Connect.sharedInstance.sendEvent(Event.fromJson(message));
-      });
-      for (var receiver in receivers) {
-        if (receiver.isNotEmpty) {
-          var rootToken = RootIsolateToken.instance!;
-          Map<String, dynamic> map = {
-            'event': event.toJson(),
-            'receiver': receiver,
-            'privkey': privkey,
-            'pubkey': pubkey,
-            'sendPort': receivePort.sendPort,
-            'token': rootToken
-          };
-          Isolate.spawn(encodeNip17InIsolate, map);
-        }
-      }
-      if (!completer.isCompleted) {
-        completer.complete(OKEvent(event.id, true, ''));
-      }
-    } else {
-      if (!completer.isCompleted) {
-        completer.complete(OKEvent(event.id, false, 'no receivers'));
-      }
-    }
-    return completer.future;
-  }
-
-  static Future<void> encodeNip17InIsolate(Map<String, dynamic> params) async {
-    String privkey = params['privkey'] ?? '';
-    if (SignerHelper.needSigner(privkey)) {
-      BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
-    }
-    Event event = Event.fromJson(params['event']);
-    String receiver = params['receiver'] ?? '';
-    Event sealedEvent = await Nip17.encode(
-        event, receiver, params['pubkey'] ?? '', params['privkey'] ?? '');
-    params['sendPort'].send(sealedEvent.toJson());
-  }
-
   static String encodeGroup(
       String groupId, List<String>? relays, String? author) {
     String nevent =
-    Nip19.encodeShareableEntity('nevent', groupId, relays, author, null);
+        Nip19.encodeShareableEntity('nevent', groupId, relays, author, null);
     return Nip21.encode(nevent);
   }
 

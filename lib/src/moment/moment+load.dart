@@ -10,7 +10,7 @@ typedef ActionsCallBack = void Function(Map<String, List<dynamic>>);
 extension Load on Moment {
   Future<List<NoteDB>?> loadAllNotesFromDB({int limit = 50, int? until}) async {
     until ??= currentUnixTimestampSeconds() + 1;
-    List<NoteDB>? notes = await _loadNotesFromDB(
+    List<NoteDB>? notes = await loadNotesFromDB(
         where: 'createAt < ?',
         whereArgs: [until],
         orderBy: 'createAt desc',
@@ -48,7 +48,7 @@ extension Load on Moment {
       whereArgs.add(private ? 1 : 0);
     }
 
-    List<NoteDB>? notes = await _loadNotesFromDB(
+    List<NoteDB>? notes = await loadNotesFromDB(
         where: whereClause,
         whereArgs: whereArgs,
         orderBy: 'createAt desc',
@@ -63,7 +63,7 @@ extension Load on Moment {
   Future<List<NoteDB>?> loadPrivateNotesFromDB(
       {int limit = 50, int? until, bool? read}) async {
     until ??= currentUnixTimestampSeconds() + 1;
-    List<NoteDB>? notes = await _loadNotesFromDB(
+    List<NoteDB>? notes = await loadNotesFromDB(
         where: 'private = ? AND createAt < ? AND read = ?',
         whereArgs: [true, until, read],
         orderBy: 'createAt desc',
@@ -80,7 +80,7 @@ extension Load on Moment {
   Future<List<NoteDB>?> loadContactsNotesFromDB(
       {int limit = 50, int? until, bool? read}) async {
     until ??= currentUnixTimestampSeconds() + 1;
-    List<NoteDB>? notes = await _loadNotesFromDB(
+    List<NoteDB>? notes = await loadNotesFromDB(
         where: 'private = ? AND createAt < ? AND read = ?',
         whereArgs: [false, until, read],
         orderBy: 'createAt desc',
@@ -96,7 +96,7 @@ extension Load on Moment {
 
   Future<NoteDB?> _loadNoteFromDB(String noteId) async {
     List<NoteDB>? result =
-        await _loadNotesFromDB(where: 'noteId = ?', whereArgs: [noteId]);
+        await loadNotesFromDB(where: 'noteId = ?', whereArgs: [noteId]);
     return result.isEmpty ? null : result[0];
   }
 
@@ -417,7 +417,7 @@ extension Load on Moment {
     return result;
   }
 
-  Future<List<NoteDB>> _loadNotesFromDB({
+  Future<List<NoteDB>> loadNotesFromDB({
     String? where,
     List<Object?>? whereArgs,
     String? orderBy,

@@ -41,7 +41,7 @@ class MessageDB extends DBObject {
   String plaintEvent;
 
   /// add type
-  int? chatType; // 0 private chat 1 group chat 2 channel chat 3 secret chat
+  int? chatType; // 0 private chat 1 group chat 2 channel chat 3 secret chat 4 relay group chat
   String? subType; // subtype of template/system type
 
   /// add previewData
