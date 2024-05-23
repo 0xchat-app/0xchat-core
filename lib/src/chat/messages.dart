@@ -95,6 +95,8 @@ class Messages {
     Filter f = Filter(kinds: [7, 9735], ids: eventIds);
     messageRequestsId = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) {
+      if (EventCache.sharedInstance.isLoaded(event.id)) return;
+      EventCache.sharedInstance.addToLoaded(event.id);
       switch (event.kind) {
         case 7:
           handleReactionEvent(event);

@@ -1,4 +1,5 @@
 import 'package:chatcore/chat-core.dart';
+import 'package:sqflite_sqlcipher/sqflite.dart';
 
 class EventCache {
   /// singleton
@@ -24,10 +25,11 @@ class EventCache {
 
   Future<bool> addToLoaded(String eventId) async {
     if (isLoaded(eventId)) return false;
-    int result =
-        await DB.sharedInstance.insert<EventCacheDB>(EventCacheDB(id: eventId));
+    eventCacheLoaded.add(eventId);
+    int result = await DB.sharedInstance.insert<EventCacheDB>(
+        EventCacheDB(id: eventId),
+        conflictAlgorithm: ConflictAlgorithm.ignore);
     if (result > 0) {
-      eventCacheLoaded.add(eventId);
       return true;
     }
     return false;
