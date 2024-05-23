@@ -109,6 +109,7 @@ class RelayGroup {
         Filter f = Filter(
             h: myGroups.keys.toList(),
             kinds: [
+              7,
               9,
               10,
               11,
@@ -120,7 +121,8 @@ class RelayGroup {
               9004,
               9005,
               9006,
-              9021
+              9021,
+              9735
             ],
             limit: 1000,
             since: (groupMessageUntil + 1));
@@ -131,6 +133,7 @@ class RelayGroup {
       Filter f = Filter(
           h: myGroups.keys.toList(),
           kinds: [
+            7,
             9,
             10,
             11,
@@ -142,7 +145,8 @@ class RelayGroup {
             9004,
             9005,
             9006,
-            9021
+            9021,
+            9735
           ],
           limit: 1000,
           since: (groupMessageUntil + 1));
@@ -152,6 +156,9 @@ class RelayGroup {
     groupMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       switch (event.kind) {
+        case 7:
+          handleGroupReaction(event, relay);
+          break;
         case 9:
         case 10:
           handleGroupMessage(event, relay);
@@ -183,6 +190,9 @@ class RelayGroup {
           break;
         case 9021:
           handleJoinRequest(event, relay);
+          break;
+        case 9735:
+          handleGroupZaps(event, relay);
           break;
         default:
           print('unhandled message $event');

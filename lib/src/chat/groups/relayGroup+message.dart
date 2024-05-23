@@ -34,6 +34,9 @@ extension EMessage on RelayGroup {
     }
   }
 
+  Future<void> handleGroupReaction(Event event, String relay) async {}
+  Future<void> handleGroupZaps(Event event, String relay) async {}
+
   Future<Event?> getSendGroupMessageEvent(
       String id, MessageType type, String content, List<String> previous,
       {String? source,
