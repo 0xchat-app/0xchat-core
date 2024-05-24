@@ -4,10 +4,10 @@ import 'package:nostr_core_dart/nostr.dart';
 
 @reflector
 class RelayGroupDB extends DBObject {
+  String groupId;
   String id; //<relay>'<group-id>
   String relay;
   String relayPubkey;
-  String groupId;
   bool private;
   int lastUpdatedTime;
   bool mute;
@@ -21,10 +21,10 @@ class RelayGroupDB extends DBObject {
   int point; // group point
 
   RelayGroupDB(
-      {this.id = '',
+      {this.groupId = '',
+      this.id = '',
       this.relay = '',
       this.relayPubkey = '',
-      this.groupId = '',
       this.private = false,
       this.lastUpdatedTime = 0,
       this.mute = false,
@@ -52,7 +52,7 @@ class RelayGroupDB extends DBObject {
 
   //primaryKey
   static List<String?> primaryKey() {
-    return ['id'];
+    return ['groupId'];
   }
 
   static String groupAdminsToString(List<GroupAdmin> admins) {
@@ -71,10 +71,10 @@ class RelayGroupDB extends DBObject {
 
 Map<String, dynamic> _groupInfoToMap(RelayGroupDB instance) =>
     <String, dynamic>{
+      'groupId': instance.groupId,
       'id': instance.id,
       'relay': instance.relay,
       'relayPubkey': instance.relayPubkey,
-      'groupId': instance.groupId,
       'private': instance.private,
       'lastUpdatedTime': instance.lastUpdatedTime,
       'mute': instance.mute,
@@ -92,10 +92,10 @@ Map<String, dynamic> _groupInfoToMap(RelayGroupDB instance) =>
 
 RelayGroupDB _groupInfoFromMap(Map<String, dynamic> map) {
   return RelayGroupDB(
+    groupId: map['groupId'].toString(),
     id: map['id'].toString(),
     relay: map['relay'].toString(),
     relayPubkey: map['relayPubkey'].toString(),
-    groupId: map['groupId'].toString(),
     private: map['private'] > 0 ? true : false,
     lastUpdatedTime: map['lastUpdatedTime'],
     mute: map['mute'] > 0 ? true : false,

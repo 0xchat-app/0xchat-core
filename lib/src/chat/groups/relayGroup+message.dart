@@ -8,15 +8,14 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 extension EMessage on RelayGroup {
   Future<void> handleGroupMessage(Event event, String relay) async {
     GroupMessage groupMessage = Nip29.decodeGroupMessage(event);
-    String id = '$relay\'${groupMessage.groupId}';
-    RelayGroupDB? groupDB = myGroups[id];
+    RelayGroupDB? groupDB = myGroups[groupMessage.groupId];
     if (groupDB == null) return;
 
     MessageDB messageDB = MessageDB(
         messageId: event.id,
         sender: groupMessage.pubkey,
         receiver: '',
-        groupId: id,
+        groupId: groupMessage.groupId,
         kind: event.kind,
         tags: jsonEncode(event.tags),
         content: groupMessage.content,
@@ -57,7 +56,7 @@ extension EMessage on RelayGroup {
   }
 
   Future<OKEvent> sendGroupMessage(
-      String id, MessageType type, String content, List<String> previous,
+      String groupId, MessageType type, String content, List<String> previous,
       {String? source,
       String? rootEvent,
       String? replyEvent,
@@ -66,9 +65,9 @@ extension EMessage on RelayGroup {
       bool local = false,
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    RelayGroupDB? groupDB = groups[id];
-    if (groupDB == null) return OKEvent(id, false, 'group not exit');
-    event ??= await Nip29.encodeGroupMessageReply(id,
+    RelayGroupDB? groupDB = groups[groupId];
+    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
+    event ??= await Nip29.encodeGroupMessageReply(groupId,
         MessageDB.getContent(type, content, source), previous, pubkey, privkey,
         rootEvent: rootEvent,
         replyEvent: replyEvent,
@@ -80,7 +79,7 @@ extension EMessage on RelayGroup {
         messageId: event.id,
         sender: event.pubkey,
         receiver: '',
-        groupId: id,
+        groupId: groupId,
         kind: event.kind,
         tags: jsonEncode(event.tags),
         replyId: replyEvent ?? rootEvent ?? '',

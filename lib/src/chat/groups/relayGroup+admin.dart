@@ -4,7 +4,10 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension EAdmin on RelayGroup {
-  Future<void> handleJoinRequest(Event event, String relay) async {}
+  Future<void> handleJoinRequest(Event event, String relay) async {
+    GroupJoinRequest joinRequest = Nip29.decodeJoinRequest(event);
+    
+  }
 
   Future<void> addUser(Event event, String relay) async {}
 

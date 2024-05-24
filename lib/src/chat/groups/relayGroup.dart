@@ -62,7 +62,7 @@ class RelayGroup {
     for (var e in maps) {
       RelayGroupDB groupDB = e as RelayGroupDB;
       if (groupDB.name.isEmpty) groupDB.name = groupDB.groupId;
-      groups[groupDB.id] = groupDB;
+      groups[groupDB.groupId] = groupDB;
     }
     myGroups = _myGroups();
   }
@@ -266,9 +266,9 @@ class RelayGroup {
   }
 
   Future<void> syncGroupToDB(RelayGroupDB groupDB) async {
-    groups[groupDB.id] = groupDB;
-    if (myGroups.containsKey(groupDB.id)) {
-      myGroups[groupDB.id] = groupDB;
+    groups[groupDB.groupId] = groupDB;
+    if (myGroups.containsKey(groupDB.groupId)) {
+      myGroups[groupDB.groupId] = groupDB;
     }
     await DB.sharedInstance.insert<RelayGroupDB>(groupDB);
   }
