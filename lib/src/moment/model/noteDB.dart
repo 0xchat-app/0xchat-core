@@ -183,7 +183,7 @@ class NoteDB extends DBObject {
     return NoteDB(
         noteId: note.nodeId,
         author: note.pubkey,
-        createAt: note.createAt,
+        createAt: note.createdAt,
         content: note.content,
         root: root,
         rootRelay: rootRelay,

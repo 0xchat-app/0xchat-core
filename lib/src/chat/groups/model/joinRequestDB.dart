@@ -1,4 +1,5 @@
 import 'package:chatcore/chat-core.dart';
+import 'package:nostr_core_dart/nostr.dart';
 
 @reflector
 class JoinRequestDB extends DBObject {
@@ -32,6 +33,15 @@ class JoinRequestDB extends DBObject {
   //primaryKey
   static List<String?> primaryKey() {
     return ['requestId'];
+  }
+
+  static JoinRequestDB toJoinRequestDB(GroupJoinRequest joinRequest) {
+    return JoinRequestDB(
+        requestId: joinRequest.requestId,
+        groupId: joinRequest.groupId,
+        author: joinRequest.pubkey,
+        createdAt: joinRequest.createdAt,
+        content: joinRequest.content);
   }
 }
 
