@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
+typedef GroupsJoinRequestCallBack = void Function(JoinRequestDB);
+
 class RelayGroup {
   /// singleton
   RelayGroup._internal();
@@ -22,6 +24,7 @@ class RelayGroup {
 
   GroupsUpdatedCallBack? myGroupsUpdatedCallBack;
   GroupMessageCallBack? groupMessageCallBack;
+  GroupsJoinRequestCallBack? joinRequestCallBack;
 
   Future<void> init({GroupsUpdatedCallBack? callBack}) async {
     privkey = Account.sharedInstance.currentPrivkey;
@@ -305,6 +308,19 @@ class RelayGroup {
       return groups;
     }
     return null;
+  }
+
+  Future<List<String>> getPrevious(String groupId) async {
+    List<String> previous = [];
+    List<MessageDB> messages = await DB.sharedInstance.objects<MessageDB>(
+        where: 'groupId = ?',
+        whereArgs: [groupId],
+        orderBy: 'createTime desc',
+        limit: 3);
+    for (var message in messages) {
+      previous.add(message.messageId.substring(0, 8));
+    }
+    return previous;
   }
 
   List<String> getAllUnMuteGroups() {

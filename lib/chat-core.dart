@@ -30,6 +30,8 @@ export 'src/chat/groups/relayGroup+member.dart';
 export 'src/chat/groups/relayGroup+message.dart';
 export 'src/chat/groups/relayGroup+note.dart';
 export 'src/chat/groups/model/relayGroupDB.dart';
+export 'src/chat/groups/model/joinRequestDB.dart';
+export 'src/chat/groups/model/moderationDB.dart';
 export 'src/chat/contacts+calling.dart';
 export 'src/chat/contacts+blocklist.dart';
 export 'src/chat/contacts+secretchat.dart';
