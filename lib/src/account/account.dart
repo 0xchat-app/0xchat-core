@@ -264,8 +264,8 @@ class Account {
       if (unRelays.isEmpty) {
         for (var db in users.values) {
           await DB.sharedInstance.insert<UserDB>(db);
-          UserDB user = UserDB.fromMap(db.toMap());
-          userCache[db.pubKey]?.value = user;
+          UserDB? user = await _getUserFromDB(pubkey: db.pubKey);
+          userCache[db.pubKey]?.value = user!;
           pQueue.remove(db.pubKey);
         }
         if (!completer.isCompleted) completer.complete();
