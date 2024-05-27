@@ -77,6 +77,12 @@ class Account {
     return result;
   }
 
+  ValueNotifier<UserDB> getUserNotifier(String pubkey) {
+    if(userCache.containsKey(pubkey)) return userCache[pubkey]!;
+    userCache[pubkey] = ValueNotifier(UserDB(pubKey: pubkey));
+    return userCache[pubkey]!;
+  }
+
   void _tryAddToSyncProfiles(UserDB user) {
     if (user.lastUpdatedTime != 0) return;
     final pubkey = user.pubKey;
@@ -258,7 +264,8 @@ class Account {
       if (unRelays.isEmpty) {
         for (var db in users.values) {
           await DB.sharedInstance.insert<UserDB>(db);
-          userCache[db.pubKey] = ValueNotifier<UserDB>(db);
+          UserDB? user = await _getUserFromDB(pubkey: db.pubKey);
+          userCache[db.pubKey]?.value = user!;
           pQueue.remove(db.pubKey);
         }
         if (!completer.isCompleted) completer.complete();
