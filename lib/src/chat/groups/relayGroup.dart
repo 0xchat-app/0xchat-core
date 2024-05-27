@@ -3,6 +3,7 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 typedef GroupsJoinRequestCallBack = void Function(JoinRequestDB);
+typedef GroupsModerationCallBack = void Function(ModerationDB);
 
 class RelayGroup {
   /// singleton
@@ -25,6 +26,7 @@ class RelayGroup {
   GroupsUpdatedCallBack? myGroupsUpdatedCallBack;
   GroupMessageCallBack? groupMessageCallBack;
   GroupsJoinRequestCallBack? joinRequestCallBack;
+  GroupsModerationCallBack? moderationCallBack;
 
   Future<void> init({GroupsUpdatedCallBack? callBack}) async {
     privkey = Account.sharedInstance.currentPrivkey;
@@ -171,25 +173,13 @@ class RelayGroup {
           handleGroupNotes(event, relay);
           break;
         case 9000:
-          handleAddUser(event, relay);
-          break;
         case 9001:
-          handleRemoveUser(event, relay);
-          break;
         case 9002:
-          handleEditMetadata(event, relay);
-          break;
         case 9003:
-          handleAddPermission(event, relay);
-          break;
         case 9004:
-          handleRemovePermission(event, relay);
-          break;
         case 9005:
-          handleDeleteEvent(event, relay);
-          break;
         case 9006:
-          handleEditGroupStatus(event, relay);
+          handleModeration(event, relay);
           break;
         case 9021:
           handleJoinRequest(event, relay);
