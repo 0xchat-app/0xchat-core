@@ -4,6 +4,7 @@ import 'package:nostr_core_dart/nostr.dart';
 
 typedef GroupsJoinRequestCallBack = void Function(JoinRequestDB);
 typedef GroupsModerationCallBack = void Function(ModerationDB);
+typedef GroupsNoteCallBack = void Function(NoteDB);
 
 class RelayGroup {
   /// singleton
@@ -27,6 +28,7 @@ class RelayGroup {
   GroupMessageCallBack? groupMessageCallBack;
   GroupsJoinRequestCallBack? joinRequestCallBack;
   GroupsModerationCallBack? moderationCallBack;
+  GroupsNoteCallBack? noteCallBack;
 
   Future<void> init({GroupsUpdatedCallBack? callBack}) async {
     privkey = Account.sharedInstance.currentPrivkey;
