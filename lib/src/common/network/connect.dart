@@ -299,8 +299,8 @@ class Connect {
     }
   }
 
-  void _handleMessage(String message, String relay) {
-    var m = Message.deserialize(message);
+  Future<void> _handleMessage(String message, String relay) async {
+    var m = await Message.deserialize(message);
     switch (m.type) {
       case "EVENT":
         _handleEvent(m.message, relay);
@@ -374,9 +374,9 @@ class Connect {
     noticeCallBack?.call(n, relay);
   }
 
-  void _handleOk(String message, String relay) {
+  Future<void> _handleOk(String message, String relay) async {
     print('receive ok: $message, $relay');
-    OKEvent? ok = Nip20.getOk(message);
+    OKEvent? ok = await Nip20.getOk(message);
     if (ok != null && sendsMap.containsKey(ok.eventId)) {
       if (sendsMap[ok.eventId]!.okCallBack != null) {
         var relays = sendsMap[ok.eventId]!.relays;
@@ -406,8 +406,8 @@ class Connect {
   }
 
   void _listenEvent(WebSocket socket, String relay) {
-    socket.listen((message) {
-      _handleMessage(message, relay);
+    socket.listen((message) async {
+      await _handleMessage(message, relay);
     }, onDone: () async {
       print("connect aborted");
       _setConnectStatus(relay, 3); // closed
