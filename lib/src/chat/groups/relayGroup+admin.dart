@@ -26,12 +26,23 @@ extension EAdmin on RelayGroup {
     }
   }
 
-  Future<OKEvent> sendModeration(GroupModeration moderation, String relay) async {
+  Future<OKEvent> sendModeration(GroupModeration moderation) async {
+    String groupId = moderation.groupId;
+    RelayGroupDB? groupDB = groups[groupId];
+    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
+    if (groupDB.admins == null) {
+      return OKEvent(groupId, false, 'group admins not exit');
+    }
+    if (!hasPermissions(groupDB.admins!, pubkey, [moderation.actionKind])) {
+      return OKEvent(groupId, false, 'permission not met');
+    }
+
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<String> previous = await getPrevious(moderation.groupId);
     moderation.previous = previous;
-    Event event = await Nip29.encodeGroupModeration(moderation, pubkey, privkey);
-    Connect.sharedInstance.sendEvent(event, relay: relay,
+    Event event =
+        await Nip29.encodeGroupModeration(moderation, pubkey, privkey);
+    Connect.sharedInstance.sendEvent(event, relay: groupDB.relay,
         sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
       if (ok.status == true) {
@@ -44,63 +55,50 @@ extension EAdmin on RelayGroup {
   }
 
   Future<OKEvent> addUser(String groupId, String addUser, String reason) async {
-    RelayGroupDB? groupDB = groups[groupId];
-    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
-    if (groupDB.admins == null) {
-      return OKEvent(groupId, false, 'group admins not exit');
-    }
-    if (!hasPermissions(groupDB.admins!, pubkey, [GroupActionKind.addUser])) {
-      return OKEvent(groupId, false, 'permission not met');
-    }
-    // GroupModeration moderation = GroupModeration();
-    //
-    // return sendModeration(
-    //     groupId, groupDB.relay, GroupActionKind.addUser, reason, previous);
-    return OKEvent(groupId, false, '');
+    GroupModeration moderation =
+        GroupModeration.addUser(groupId, addUser, reason);
+    return sendModeration(moderation);
   }
 
-  Future<void> removeUser(String groupId, String removeUser) async {
-    RelayGroupDB? groupDB = groups[groupId];
-    if (groupDB == null || groupDB.admins == null) return;
-    if (hasPermissions(
-        groupDB.admins!, pubkey, [GroupActionKind.removeUser])) {}
+  Future<OKEvent> removeUser(
+      String groupId, String removeUser, String reason) async {
+    GroupModeration moderation =
+        GroupModeration.removeUser(groupId, removeUser, reason);
+    return sendModeration(moderation);
   }
 
-  Future<void> editMetadata(
-      String groupId, String name, String about, String picture) async {
-    RelayGroupDB? groupDB = groups[groupId];
-    if (groupDB == null || groupDB.admins == null) return;
-    if (hasPermissions(
-        groupDB.admins!, pubkey, [GroupActionKind.editMetadata])) {}
+  Future<OKEvent> editMetadata(String groupId, String name, String about,
+      String picture, String reason) async {
+    GroupModeration moderation =
+        GroupModeration.editMetadata(groupId, name, about, picture, reason);
+    return sendModeration(moderation);
   }
 
-  Future<void> addPermission(
-      Event groupId, String user, GroupActionKind permission) async {
-    RelayGroupDB? groupDB = groups[groupId];
-    if (groupDB == null || groupDB.admins == null) return;
-    if (hasPermissions(
-        groupDB.admins!, pubkey, [GroupActionKind.addPermission])) {}
+  Future<OKEvent> addPermission(
+      String groupId, String user, String permission, String reason) async {
+    GroupModeration moderation =
+        GroupModeration.addPermission(groupId, user, permission, reason);
+    return sendModeration(moderation);
   }
 
-  Future<void> removePermission(
-      Event groupId, String user, GroupActionKind permission) async {
-    RelayGroupDB? groupDB = groups[groupId];
-    if (groupDB == null || groupDB.admins == null) return;
-    if (hasPermissions(
-        groupDB.admins!, pubkey, [GroupActionKind.removePermission])) {}
+  Future<OKEvent> removePermission(
+      String groupId, String user, String permission, String reason) async {
+    GroupModeration moderation =
+        GroupModeration.removePermission(groupId, user, permission, reason);
+    return sendModeration(moderation);
   }
 
-  Future<void> deleteEvent(Event groupId, String eventId) async {
-    RelayGroupDB? groupDB = groups[groupId];
-    if (groupDB == null || groupDB.admins == null) return;
-    if (hasPermissions(
-        groupDB.admins!, pubkey, [GroupActionKind.deleteEvent])) {}
+  Future<OKEvent> deleteEvent(
+      String groupId, String eventId, String reason) async {
+    GroupModeration moderation =
+        GroupModeration.deleteEvent(groupId, eventId, reason);
+    return sendModeration(moderation);
   }
 
-  Future<void> editGroupStatus(Event groupId, bool private) async {
-    RelayGroupDB? groupDB = groups[groupId];
-    if (groupDB == null || groupDB.admins == null) return;
-    if (hasPermissions(
-        groupDB.admins!, pubkey, [GroupActionKind.editGroupStatus])) {}
+  Future<OKEvent> editGroupStatus(
+      String groupId, bool private, String reason) async {
+    GroupModeration moderation =
+        GroupModeration.editGroupStatus(groupId, private, reason);
+    return sendModeration(moderation);
   }
 }
