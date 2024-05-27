@@ -58,7 +58,22 @@ class ModerationDB extends DBObject {
   }
 
   static ModerationDB toModerationDB(GroupModeration moderation) {
-    return ModerationDB();
+    return ModerationDB(
+        moderationId: moderation.moderationId,
+        groupId: moderation.groupId,
+        author: moderation.pubkey,
+        createdAt: moderation.createdAt,
+        content: moderation.content,
+        previous: moderation.previous,
+        actionKind: moderation.actionKind.kind,
+        user: moderation.user,
+        permission: moderation.permission,
+        eventId: moderation.eventId,
+        private: moderation.private,
+        name: moderation.name,
+        about: moderation.about,
+        picture: moderation.picture,
+        pinned: moderation.pinned);
   }
 }
 
