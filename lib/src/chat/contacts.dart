@@ -383,7 +383,7 @@ class Contacts {
     if (SignerHelper.needSigner(privkey)) {
       BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
     }
-    Event event = Event.fromJson(params['event']);
+    Event event = await Event.fromJson(params['event']);
     Event? innerEvent = await Nip17.decode(
         event, params['pubkey'] ?? '', params['privkey'] ?? '');
     params['sendPort'].send(innerEvent?.toJson());

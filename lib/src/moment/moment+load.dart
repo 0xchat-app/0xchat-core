@@ -144,7 +144,7 @@ extension Load on Moment {
               }
               break;
             case 6:
-              Reposts reposts = Nip18.decodeReposts(result!);
+              Reposts reposts = await Nip18.decodeReposts(result!);
               noteDB = NoteDB.noteDBFromReposts(reposts);
               break;
             case 7:
@@ -253,7 +253,7 @@ extension Load on Moment {
     noteDB.repostEventIds ??= [];
     if (noteDB.repostEventIds?.contains(repostEvent.id) == true) return;
 
-    Reposts reposts = Nip18.decodeReposts(repostEvent);
+    Reposts reposts = await Nip18.decodeReposts(repostEvent);
     NoteDB repostDB = NoteDB.noteDBFromReposts(reposts);
     saveNoteToDB(repostDB, ConflictAlgorithm.ignore);
     noteDB.repostEventIds?.add(repostDB.noteId);
@@ -471,7 +471,7 @@ extension Load on Moment {
   Future<void> handleRepostsEvent(
       Event event, String relay, bool private) async {
     updateContactsNotesTime(event.createdAt, relay);
-    Reposts repost = Nip18.decodeReposts(event);
+    Reposts repost = await Nip18.decodeReposts(event);
     // save repost event to DB
     if (repost.repostNote != null) {
       NoteDB repostNoteDB = NoteDB.noteDBFromNote(repost.repostNote!);

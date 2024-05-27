@@ -87,9 +87,9 @@ class MessageDB extends DBObject {
     return _messageInfoToMap(this);
   }
 
-  Event? get originEvent {
+  Future<Event?> get originEvent async {
     try {
-      return Event.fromJson(jsonDecode(plaintEvent));
+      return await Event.fromJson(jsonDecode(plaintEvent));
     } catch (_) {
       return null;
     }

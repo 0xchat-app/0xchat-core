@@ -695,7 +695,7 @@ class Account {
     return null;
   }
 
-  Map<String, dynamic> signEvent(Map<String, dynamic> json) {
+  Future<Map<String, dynamic>> signEvent(Map<String, dynamic> json) async {
     if (json['pubkey'] == null) json['pubkey'] = currentPubkey;
     if (json['id'] == null) {
       var tags = (json['tags'] as List<dynamic>)
@@ -704,10 +704,10 @@ class Account {
       json['id'] = Event.processEventId(json['pubkey'], json['created_at'],
           json['kind'], tags, json['content']);
     }
-    Event event = Event.fromJson(json, verify: false);
+    Event event = await Event.fromJson(json, verify: false);
     //todo: sign from signer
     event.sig = event.getSignature(currentPrivkey);
-    assert(event.isValid() == true);
+    assert(await event.isValid() == true);
     return event.toJson();
   }
 

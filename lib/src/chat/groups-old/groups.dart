@@ -426,8 +426,9 @@ class Groups {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (receivers != null) {
       final receivePort = ReceivePort();
-      receivePort.listen((message) {
-        Connect.sharedInstance.sendEvent(Event.fromJson(message));
+      receivePort.listen((message) async {
+        Event e = await Event.fromJson(message);
+        Connect.sharedInstance.sendEvent(e);
       });
       for (var receiver in receivers) {
         if (receiver.isNotEmpty) {
@@ -459,7 +460,7 @@ class Groups {
     if (SignerHelper.needSigner(privkey)) {
       BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
     }
-    Event event = Event.fromJson(params['event']);
+    Event event = await Event.fromJson(params['event']);
     String receiver = params['receiver'] ?? '';
     Event sealedEvent = await Nip17.encode(
         event, receiver, params['pubkey'] ?? '', params['privkey'] ?? '');

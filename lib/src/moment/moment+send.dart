@@ -91,9 +91,10 @@ extension Send on Moment {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (receivers != null) {
       final receivePort = ReceivePort();
-      receivePort.listen((message) {
+      receivePort.listen((message) async {
         sendMessageCallBack?.call();
-        Connect.sharedInstance.sendEvent(Event.fromJson(message));
+        Event e = await Event.fromJson(message);
+        Connect.sharedInstance.sendEvent(e);
       });
       for (var receiver in receivers) {
         if (receiver.isNotEmpty) {
@@ -125,7 +126,7 @@ extension Send on Moment {
     if (SignerHelper.needSigner(privkey)) {
       BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
     }
-    Event event = Event.fromJson(params['event']);
+    Event event = await Event.fromJson(params['event']);
     String receiver = params['receiver'] ?? '';
     Event sealedEvent = await Nip17.encode(
         event, receiver, params['pubkey'] ?? '', params['privkey'] ?? '');
@@ -279,8 +280,8 @@ extension Send on Moment {
       Completer<OKEvent> completer = Completer<OKEvent>();
       Event event = await Nip18.encodeReposts(repostNoteId, repostNoteRelay,
           note.author, note.rawEvent, pubkey, privkey);
-
-      NoteDB noteDB = NoteDB.noteDBFromReposts(Nip18.decodeReposts(event));
+      Reposts r = await Nip18.decodeReposts(event);
+      NoteDB noteDB = NoteDB.noteDBFromReposts(r);
       await saveNoteToDB(noteDB, null);
 
       note.repostEventIds ??= [];
