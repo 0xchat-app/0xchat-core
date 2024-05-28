@@ -228,6 +228,10 @@ extension Load on Moment {
     noteDB.zapEventIds?.add(zapRecordsDB.bolt11);
     noteDB.zapCount++;
     noteDB.zapAmount += ZapRecordsDB.getZapAmount(zapRecordsDB.bolt11);
+    if (zapRecordsDB.sender == pubkey) {
+      noteDB.zapCountByMe++;
+      noteDB.zapAmountByMe += ZapRecordsDB.getZapAmount(zapRecordsDB.bolt11);
+    }
     saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
 
