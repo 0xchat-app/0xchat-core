@@ -38,11 +38,11 @@ class RelayGroup {
     _updateGroupSubscription();
     _loadMyGroupsFromRelay();
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
-      if (status == 1 &&
-          Account.sharedInstance.me != null &&
-          groupRelays.contains(relay)) {
+      if (status == 1 && Account.sharedInstance.me != null) {
         await _loadMyGroupsFromRelay(relay: relay);
-        _updateGroupSubscription(relay: relay);
+        if (groupRelays.contains(relay)) {
+          _updateGroupSubscription(relay: relay);
+        }
       }
     });
   }
