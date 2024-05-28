@@ -157,6 +157,38 @@ class Messages {
     }
   }
 
+  Future<OKEvent> sendMessageReaction(String messageId,
+      {bool like = true, String? emojiShotCode, String? emojiURL}) async {
+    MessageDB? messageDB = await loadMessageDBFromDB(messageId);
+    if (messageDB != null) {
+      Completer<OKEvent> completer = Completer<OKEvent>();
+      Event event = await Nip25.encode(
+          messageId, messageDB.sender, '1', like, pubkey, privkey,
+          emojiShotCode: emojiShotCode, emojiURL: emojiURL);
+
+      NoteDB noteDB = NoteDB.noteDBFromReactions(Nip25.decode(event));
+      Moment.sharedInstance.saveNoteToDB(noteDB, null);
+
+      messageDB.reactionEventIds ??= [];
+      messageDB.reactionEventIds!.add(event.id);
+      saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
+
+      if (messageDB.chatType == 0 || messageDB.chatType == 3) {
+        OKEvent ok = await Moment.sharedInstance
+            .sendPrivateMessage([messageDB.sender, pubkey], event);
+        if (!completer.isCompleted) completer.complete(ok);
+      } else {
+        Connect.sharedInstance.sendEvent(event,
+            sendCallBack: (ok, relay) async {
+          if (!completer.isCompleted) completer.complete(ok);
+        });
+      }
+      return completer.future;
+    } else {
+      return OKEvent(messageId, false, 'reacted message DB == null');
+    }
+  }
+
   Future<void> _handleDeleteEvent(Event event) async {
     DeleteEvent? deleteEvent = Nip9.decode(event);
     if (deleteEvent != null) {

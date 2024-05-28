@@ -81,12 +81,12 @@ extension Send on Moment {
     }
 
     int sendedMessagesCount = 0;
-    return await _sendPrivateMessage(pubkeys, event, sendMessageCallBack: () {
+    return await sendPrivateMessage(pubkeys, event, sendMessageCallBack: () {
       sendMessageProgressCallBack?.call(++sendedMessagesCount);
     });
   }
 
-  Future<OKEvent> _sendPrivateMessage(List<String>? receivers, Event event,
+  Future<OKEvent> sendPrivateMessage(List<String>? receivers, Event event,
       {SendMessageCallBack? sendMessageCallBack}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (receivers != null) {
@@ -247,7 +247,7 @@ extension Send on Moment {
       saveNoteToDB(note, null);
 
       if (note.private) {
-        OKEvent ok = await _sendPrivateMessage([note.author, pubkey], event);
+        OKEvent ok = await sendPrivateMessage([note.author, pubkey], event);
         if (!completer.isCompleted) completer.complete(ok);
       } else {
         Connect.sharedInstance.sendEvent(event,
@@ -291,7 +291,7 @@ extension Send on Moment {
       saveNoteToDB(note, null);
 
       if (note.private) {
-        OKEvent ok = await _sendPrivateMessage([note.author, pubkey], event);
+        OKEvent ok = await sendPrivateMessage([note.author, pubkey], event);
         if (!completer.isCompleted) completer.complete(ok);
       } else {
         Connect.sharedInstance.sendEvent(event,
@@ -325,7 +325,7 @@ extension Send on Moment {
       saveNoteToDB(note, null);
 
       if (note.private) {
-        OKEvent ok = await _sendPrivateMessage([note.author, pubkey], event);
+        OKEvent ok = await sendPrivateMessage([note.author, pubkey], event);
         if (!completer.isCompleted) completer.complete(ok);
       } else {
         Connect.sharedInstance.sendEvent(event,

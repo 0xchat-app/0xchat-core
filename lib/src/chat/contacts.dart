@@ -454,7 +454,7 @@ class Contacts {
             limit: maxLimit);
         Filter f6 = Filter(
             kinds: [9735],
-            authors: [pubkey],
+            P: [pubkey],
             since: (friendMessageUntil + 1),
             limit: maxLimit);
         subscriptions[relayURL] = [f1, f2, f3, f4, f5, f6];
@@ -495,7 +495,7 @@ class Contacts {
           limit: maxLimit);
       Filter f6 = Filter(
           kinds: [9735],
-          authors: [pubkey],
+          P: [pubkey],
           since: (friendMessageUntil + 1),
           limit: maxLimit);
       subscriptions[relay] = [f1, f2, f3, f4, f5, f6];
