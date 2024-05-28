@@ -157,14 +157,14 @@ class Messages {
     }
   }
 
-  Future<OKEvent> sendMessageReaction(String messageId,
-      {bool like = true, String? emojiShotCode, String? emojiURL}) async {
+  Future<OKEvent> sendMessageReaction(String messageId, String content,
+      {String? emojiShotCode, String? emojiURL}) async {
     MessageDB? messageDB = await loadMessageDBFromDB(messageId);
     if (messageDB != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
-      Event event = await Nip25.encode(
-          messageId, messageDB.sender, '1', like, pubkey, privkey,
-          emojiShotCode: emojiShotCode, emojiURL: emojiURL);
+      Event event = await Nip25.encode(messageId, messageDB.sender,
+          messageDB.kind.toString(), true, pubkey, privkey,
+          content: content, emojiShotCode: emojiShotCode, emojiURL: emojiURL);
 
       NoteDB noteDB = NoteDB.noteDBFromReactions(Nip25.decode(event));
       Moment.sharedInstance.saveNoteToDB(noteDB, null);
