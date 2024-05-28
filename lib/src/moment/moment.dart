@@ -18,6 +18,7 @@ class Moment {
   List<NotificationDB> newNotifications = [];
   NewNotesCallBack? newNotesCallBack;
   NewNotificationCallBack? newNotificationCallBack;
+  NewNotificationCallBack? myZapNotificationCallBack;
 
   String notesSubscription = '';
 

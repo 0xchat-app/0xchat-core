@@ -452,7 +452,12 @@ class Contacts {
             p: [pubkey],
             since: (friendMessageUntil + 1),
             limit: maxLimit);
-        subscriptions[relayURL] = [f1, f2, f3, f4, f5];
+        Filter f6 = Filter(
+            kinds: [9735],
+            authors: [pubkey],
+            since: (friendMessageUntil + 1),
+            limit: maxLimit);
+        subscriptions[relayURL] = [f1, f2, f3, f4, f5, f6];
       }
     } else {
       int friendMessageUntil =
@@ -488,7 +493,12 @@ class Contacts {
           p: [pubkey],
           since: (friendMessageUntil + 1),
           limit: maxLimit);
-      subscriptions[relay] = [f1, f2, f3, f4, f5];
+      Filter f6 = Filter(
+          kinds: [9735],
+          authors: [pubkey],
+          since: (friendMessageUntil + 1),
+          limit: maxLimit);
+      subscriptions[relay] = [f1, f2, f3, f4, f5, f6];
     }
     friendMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {

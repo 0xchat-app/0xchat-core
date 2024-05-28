@@ -19,17 +19,22 @@ extension Notification on Moment {
     await addZapRecordToNote(zapEvent, zapRecordsDB.eventId);
 
     NotificationDB notificationDB =
-        NotificationDB.notificationDBFromZapRecordsDB(zapRecordsDB, zapEvent.id);
+        NotificationDB.notificationDBFromZapRecordsDB(
+            zapRecordsDB, zapEvent.id);
     int result = await DB.sharedInstance.insert<NotificationDB>(notificationDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
-    if(result > 0){
-      Moment.sharedInstance.newNotifications.add(notificationDB);
-      Moment.sharedInstance.newNotificationCallBack
-          ?.call(Moment.sharedInstance.newNotifications);
+    if (result > 0) {
+      if (notificationDB.author != pubkey) {
+        Moment.sharedInstance.newNotifications.add(notificationDB);
+        Moment.sharedInstance.newNotificationCallBack
+            ?.call(Moment.sharedInstance.newNotifications);
+      } else {
+        Moment.sharedInstance.myZapNotificationCallBack?.call([notificationDB]);
+      }
     }
   }
 
-  Future<void> deleteAllNotifications() async{
+  Future<void> deleteAllNotifications() async {
     newNotifications.clear();
     await DB.sharedInstance.delete<NotificationDB>();
   }
