@@ -303,7 +303,8 @@ extension Load on Moment {
       {int limit = 50, List<String>? authors, int? until, int? since}) async {
     Completer<List<NoteDB>?> completer = Completer<List<NoteDB>?>();
     authors ??= [pubkey];
-    Filter f = Filter(kinds: [1], authors: authors, limit: limit, until: until, since: since);
+    Filter f = Filter(
+        kinds: [1], authors: authors, limit: limit, until: until, since: since);
     Map<String, Event> result = {};
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
@@ -365,7 +366,8 @@ extension Load on Moment {
   Future<List<NoteDB>> loadNoteIdsToNoteDBs(
       List<String> noteIds, bool private, bool reload) async {
     List<NoteDB> result = [];
-    for (var noteId in noteIds) {
+    List<String> copiedNoteIds = List.from(noteIds);
+    for (var noteId in copiedNoteIds) {
       NoteDB? noteDB = await loadNoteWithNoteId(noteId);
       if (!private && reload) {
         noteDB ??= await loadPublicNoteFromRelay(noteId);
