@@ -173,13 +173,13 @@ class NoteDB extends DBObject {
   }
 
   static NoteDB noteDBFromNote(Note note) {
-    Thread thread = note.thread;
-    String root = thread.root.eventId;
-    String rootRelay = thread.root.relayURL;
-    String? reply = thread.reply?.eventId;
-    String? replyRelay = thread.reply?.relayURL;
-    List<String>? mentions = thread.mentions?.map((e) => e.eventId).toList();
-    List<String>? pTags = thread.ptags?.map((e) => e.pubkey).toList();
+    Thread? thread = note.thread;
+    String root = thread?.root.eventId ?? '';
+    String rootRelay = thread?.root.relayURL ?? '';
+    String? reply = thread?.reply?.eventId;
+    String? replyRelay = thread?.reply?.relayURL;
+    List<String>? mentions = thread?.mentions?.map((e) => e.eventId).toList();
+    List<String>? pTags = thread?.ptags?.map((e) => e.pubkey).toList();
     return NoteDB(
         noteId: note.nodeId,
         author: note.pubkey,
