@@ -296,15 +296,15 @@ extension Load on Moment {
     saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
 
-  Future<List<NoteDB>?> loadPublicNewNotesFromRelay({int? since}) async {
+  Future<List<NoteDB>?> loadPublicNewNotesFromRelay({int? until, int? since, int? limit}) async {
     List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
     authors.addAll(Account.sharedInstance.me?.followingList ?? []);
     authors.add(pubkey);
-    return await loadNewNotesFromRelay(authors: authors, since: since);
+    return await loadNewNotesFromRelay(limit: limit, authors: authors, until: until, since: since);
   }
 
   Future<List<NoteDB>?> loadNewNotesFromRelay(
-      {int limit = 50, List<String>? authors, int? until, int? since}) async {
+      {int? limit = 50, List<String>? authors, int? until, int? since}) async {
     Completer<List<NoteDB>?> completer = Completer<List<NoteDB>?>();
     authors ??= [pubkey];
     Filter f = Filter(
