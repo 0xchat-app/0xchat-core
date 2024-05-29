@@ -359,13 +359,12 @@ class Connect {
     String n = jsonDecode(notice)[0];
 
     List<String> requestsMapKeys =
-    requestsMap.keys.where((element) => element.contains(relay)).toList();
+        requestsMap.keys.where((element) => element.contains(relay)).toList();
     for (var requestsMapKey in requestsMapKeys) {
       var relays = requestsMap[requestsMapKey]!.relays;
       relays.remove(relay);
       // all relays have EOSE
       String subscriptionId = requestsMapKey.replaceAll(relay, '');
-      print('error notice EOSE: $subscriptionId, $relay');
       EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
       OKEvent ok = OKEvent(subscriptionId, false, n);
       if (callBack != null) callBack(subscriptionId, ok, relay, relays);
@@ -384,6 +383,21 @@ class Connect {
         if (ok.status || relays.isEmpty) {
           sendsMap[ok.eventId]!.okCallBack!(ok, relay);
           sendsMap.remove(ok.eventId);
+        } else if (!ok.status && ok.eventId.isEmpty) {
+          List<String> requestsMapKeys = requestsMap.keys
+              .where((element) => element.contains(relay))
+              .toList();
+          for (var requestsMapKey in requestsMapKeys) {
+            var relays = requestsMap[requestsMapKey]!.relays;
+            relays.remove(relay);
+            // all relays have EOSE
+            String subscriptionId = requestsMapKey.replaceAll(relay, '');
+            EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
+            if (callBack != null) {
+              OKEvent okEvent = OKEvent(subscriptionId, false, ok.message);
+              callBack(subscriptionId, okEvent, relay, relays);
+            }
+          }
         }
       }
     }
