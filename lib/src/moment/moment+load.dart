@@ -94,7 +94,7 @@ extension Load on Moment {
     return result;
   }
 
-  Future<NoteDB?> _loadNoteFromDB(String noteId) async {
+  Future<NoteDB?> loadNoteFromDBWithNoteId(String noteId) async {
     List<NoteDB>? result =
         await loadNotesFromDB(where: 'noteId = ?', whereArgs: [noteId]);
     return result.isEmpty ? null : result[0];
@@ -103,7 +103,7 @@ extension Load on Moment {
   Future<NoteDB?> loadNoteWithNoteId(String noteId,
       {bool private = false, bool reload = true}) async {
     if (notesCache.containsKey(noteId)) return notesCache[noteId];
-    NoteDB? note = await _loadNoteFromDB(noteId);
+    NoteDB? note = await loadNoteFromDBWithNoteId(noteId);
     if (!private && reload) note ??= await loadPublicNoteFromRelay(noteId);
     if (note != null) notesCache[noteId] = note;
     return note;
