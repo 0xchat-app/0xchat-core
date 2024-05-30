@@ -393,7 +393,7 @@ class Contacts {
     Completer<Event?> completer = Completer<Event?>();
     final receivePort = ReceivePort();
     receivePort.listen((message) {
-      if (!completer.isCompleted) {
+      if (!completer.isCompleted && message != null) {
         completer.complete(Event.fromJson(message, verify: false));
       }
     });
