@@ -308,6 +308,10 @@ class Connect {
       case "EOSE":
         _handleEOSE(m.message, relay);
         break;
+      case "CLOSE":
+      case "CLOSED":
+      _handleCLOSE(m.message, relay);
+      break;
       case "NOTICE":
         _handleNotice(m.message, relay);
         break;
@@ -343,6 +347,20 @@ class Connect {
   void _handleEOSE(String eose, String relay) {
     print('receive EOSE: $eose, $relay');
     String subscriptionId = jsonDecode(eose)[0];
+    String requestsMapKey = subscriptionId + relay;
+    if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
+      var relays = requestsMap[requestsMapKey]!.relays;
+      relays.remove(relay);
+      // all relays have EOSE
+      EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
+      OKEvent ok = OKEvent(subscriptionId, true, '');
+      if (callBack != null) callBack(subscriptionId, ok, relay, relays);
+    }
+  }
+
+  void _handleCLOSE(Close close, String relay) {
+    print('receive close: ${close.serialize()}, $relay');
+    String subscriptionId = close.subscriptionId;
     String requestsMapKey = subscriptionId + relay;
     if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
       var relays = requestsMap[requestsMapKey]!.relays;

@@ -459,7 +459,6 @@ extension Load on Moment {
   }
 
   Future<void> handleNoteEvent(Event event, String relay, bool private) async {
-    updateContactsNotesTime(event.createdAt, relay);
     Note note = Nip1.decodeNote(event);
     NoteDB noteDB = NoteDB.noteDBFromNote(note);
     noteDB.private = private;
@@ -476,7 +475,6 @@ extension Load on Moment {
 
   Future<void> handleRepostsEvent(
       Event event, String relay, bool private) async {
-    updateContactsNotesTime(event.createdAt, relay);
     Reposts repost = await Nip18.decodeReposts(event);
     // save repost event to DB
     if (repost.repostNote != null) {
@@ -492,7 +490,6 @@ extension Load on Moment {
 
   Future<void> handleReactionEvent(
       Event event, String relay, bool private) async {
-    updateContactsNotesTime(event.createdAt, relay);
     Reactions reactions = Nip25.decode(event);
     NoteDB reactionsNoteDB = NoteDB.noteDBFromReactions(reactions);
     reactionsNoteDB.private = private;

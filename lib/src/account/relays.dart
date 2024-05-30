@@ -22,10 +22,9 @@ class Relays {
   }
 
   Future<void> syncRelaysToDB({String? r}) async {
-    if(r != null && relays[r] != null){
+    if (r != null && relays[r] != null) {
       await DB.sharedInstance.insert(relays[r]!);
-    }
-    else{
+    } else {
       await Future.forEach(relays.values, (relay) async {
         await DB.sharedInstance.insert(relay);
       });
@@ -85,6 +84,18 @@ class Relays {
         : 0;
   }
 
+  int getMomentSince(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.getMomentSince(relayURL)
+        : 0;
+  }
+
+  int getMomentUntil(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.getMomentUntil(relayURL)
+        : 0;
+  }
+
   int getCommonMessageUntil(String relayURL) {
     return relays.containsKey(relayURL)
         ? relays[relayURL]!.commonMessagesUntil
@@ -132,6 +143,13 @@ class Relays {
         updateTime > until ? updateTime : until;
   }
 
+  void setMomentUntil(int updateTime, String relay) {
+    int until = Relays.sharedInstance.getMomentUntil(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
+    Relays.sharedInstance.relays[relay]!.momentUntil![relay] =
+        updateTime > until ? updateTime : until;
+  }
+
   void setGroupMessageUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.getGroupMessageUntil(relay);
     if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
@@ -171,6 +189,13 @@ class Relays {
     int since = Relays.sharedInstance.getContactsNotesSince(relay);
     if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
     Relays.sharedInstance.relays[relay]!.contactsNotesSince![relay] =
+        updateTime < since ? updateTime : since;
+  }
+
+  void setMomentSince(int updateTime, String relay) {
+    int since = Relays.sharedInstance.getMomentSince(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
+    Relays.sharedInstance.relays[relay]!.momentSince![relay] =
         updateTime < since ? updateTime : since;
   }
 

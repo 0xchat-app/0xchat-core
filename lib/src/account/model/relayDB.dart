@@ -40,6 +40,9 @@ class RelayDB extends DBObject {
   Map<String, int>? groupMessageSince;
   Map<String, int>? groupMessageUntil;
 
+  Map<String, int>? momentSince;
+  Map<String, int>? momentUntil;
+
   RelayDB(
       {this.url = '',
       this.pubkey = '',
@@ -64,7 +67,9 @@ class RelayDB extends DBObject {
       this.groupMessageSince,
       this.groupMessageUntil,
       this.contactsNotesUntil,
-      this.contactsNotesSince});
+      this.contactsNotesSince,
+      this.momentSince,
+      this.momentUntil});
 
   @override
   //Map
@@ -136,6 +141,22 @@ class RelayDB extends DBObject {
     return 0;
   }
 
+  int getMomentSince(String relay) {
+    momentSince ??= {};
+    if (momentSince!.containsKey(relay)) {
+      return momentSince![relay]!;
+    }
+    return 0;
+  }
+
+  int getMomentUntil(String relay) {
+    momentUntil ??= {};
+    if (momentUntil!.containsKey(relay)) {
+      return momentUntil![relay]!;
+    }
+    return 0;
+  }
+
   static RelayDB fromMap(Map<String, Object?> map) {
     return _relayDBInfoFromMap(map);
   }
@@ -149,7 +170,9 @@ class RelayDB extends DBObject {
   static Map<String, String?> updateTable() {
     return {
       "4":
-          '''alter table RelayDB add contactsNotesUntil TEXT; alter table RelayDB add contactsNotesSince TEXT;'''
+          '''alter table RelayDB add contactsNotesUntil TEXT; alter table RelayDB add contactsNotesSince TEXT;''',
+      "7":
+          '''alter table RelayDB add momentUntil TEXT; alter table RelayDB add momentSince TEXT;''',
     };
   }
 
@@ -219,6 +242,8 @@ RelayDB _relayDBInfoFromMap(Map<String, dynamic> map) {
     groupMessageUntil: RelayDB.decodeMap(map['groupMessageUntil'].toString()),
     contactsNotesUntil: RelayDB.decodeMap(map['contactsNotesUntil'].toString()),
     contactsNotesSince: RelayDB.decodeMap(map['contactsNotesSince'].toString()),
+    momentUntil: RelayDB.decodeMap(map['momentUntil'].toString()),
+    momentSince: RelayDB.decodeMap(map['momentSince'].toString()),
   );
 }
 
@@ -247,4 +272,6 @@ Map<String, dynamic> _relayDBInfoToMap(RelayDB instance) => <String, dynamic>{
       'groupMessageUntil': jsonEncode(instance.groupMessageUntil),
       'contactsNotesSince': jsonEncode(instance.contactsNotesSince),
       'contactsNotesUntil': jsonEncode(instance.contactsNotesUntil),
+      'momentSince': jsonEncode(instance.momentSince),
+      'momentUntil': jsonEncode(instance.momentUntil),
     };

@@ -21,6 +21,7 @@ class Moment {
   NewNotificationCallBack? myZapNotificationCallBack;
 
   String notesSubscription = '';
+  Map<String, bool> offlineMomentFinish = {};
 
   Future<void> init() async {
     privkey = Account.sharedInstance.currentPrivkey;
@@ -46,32 +47,23 @@ class Moment {
       Map<String, List<Filter>> subscriptions = {};
       if (relay == null) {
         for (String relayURL in Connect.sharedInstance.relays()) {
-          int contactsNotesUntil =
-              Relays.sharedInstance.getContactsNotesUntil(relayURL);
+          int momentUntil = Relays.sharedInstance.getMomentUntil(relayURL);
           Filter f1 = Filter(
-              authors: authors,
-              kinds: [1, 6],
-              since: contactsNotesUntil,
-              limit: 1000);
+              authors: authors, kinds: [1, 6], since: momentUntil, limit: 100);
           Filter f2 = Filter(
-              p: [pubkey],
-              kinds: [1, 6, 7],
-              since: contactsNotesUntil,
-              limit: 1000);
+              p: [pubkey], kinds: [1, 6, 7], since: momentUntil, limit: 100);
           subscriptions[relayURL] = [f1, f2];
         }
       } else {
-        int contactsNotesUntil =
-            Relays.sharedInstance.getContactsNotesUntil(relay);
-        Filter f1 =
-            Filter(authors: authors, kinds: [1, 6], since: contactsNotesUntil);
-        Filter f2 =
-            Filter(p: [pubkey], kinds: [1, 6, 7], since: contactsNotesUntil);
+        int momentUntil = Relays.sharedInstance.getMomentUntil(relay);
+        Filter f1 = Filter(authors: authors, kinds: [1, 6], since: momentUntil);
+        Filter f2 = Filter(p: [pubkey], kinds: [1, 6, 7], since: momentUntil);
         subscriptions[relay] = [f1, f2];
       }
 
       notesSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
           eventCallBack: (event, relay) async {
+        updateMomentTime(event.createdAt, relay);
         if (EventCache.sharedInstance.isLoaded(event.id)) {
           return;
         } else {
@@ -91,22 +83,28 @@ class Moment {
             print('unhandled message $event');
             break;
         }
+      }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+        offlineMomentFinish[relay] = true;
+        Relays.sharedInstance.syncRelaysToDB(r: relay);
       });
     }
   }
 
-  void updateContactsNotesTime(int eventTime, String relay) {
-    /// set setContactsNotesSince setContactsNotesUntil
+  void updateMomentTime(int eventTime, String relay) {
+    /// set setMomentSince setMomentUntil
     if (Relays.sharedInstance.relays.containsKey(relay)) {
-      Relays.sharedInstance.setContactsNotesSince(eventTime, relay);
-      Relays.sharedInstance.setContactsNotesUntil(eventTime, relay);
+      Relays.sharedInstance.setMomentSince(eventTime, relay);
+      Relays.sharedInstance.setMomentUntil(eventTime, relay);
     } else {
       Relays.sharedInstance.relays[relay] = RelayDB(
           url: relay,
-          contactsNotesSince: {relay: eventTime},
-          contactsNotesUntil: {relay: eventTime});
+          momentSince: {relay: eventTime},
+          momentUntil: {relay: eventTime});
     }
-    Relays.sharedInstance.syncRelaysToDB();
+    if (offlineMomentFinish[relay] == true &&
+        offlineMomentFinish[relay] == true) {
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
+    }
   }
 
   void clearNewNotes() {
