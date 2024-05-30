@@ -148,7 +148,7 @@ class RelayDB extends DBObject {
   //'ALTER TABLE Company ADD description TEXT'
   static Map<String, String?> updateTable() {
     return {
-      "4":
+      "6":
           '''alter table RelayDB add contactsNotesUntil TEXT; alter table RelayDB add contactsNotesSince TEXT;'''
     };
   }
