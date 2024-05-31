@@ -411,6 +411,7 @@ class Account {
   }
 
   Future<OKEvent> _syncFollowListToRelay(List<String> pubkeys) async {
+    if(pubkeys.isEmpty) return OKEvent('', false, 'invalid following list!');
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event =
         await Nip2.encode(toProfiles(pubkeys), currentPubkey, currentPrivkey);
