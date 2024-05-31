@@ -483,7 +483,7 @@ class Account {
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        UserDB? user = await getUserInfo(pubkey);
+        UserDB? user = (pubkey == currentPubkey) ? me : await getUserInfo(pubkey);
         if (user != null && profiles.isNotEmpty) {
           user.followingList = profiles.map((e) => e.key).toList();
           await DB.sharedInstance.insert<UserDB>(user);
