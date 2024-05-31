@@ -27,15 +27,9 @@ class Moment {
     privkey = Account.sharedInstance.currentPrivkey;
     pubkey = Account.sharedInstance.currentPubkey;
     await EventCache.sharedInstance.loadAllEventIDFromDB();
-    _updateSubscriptions();
-    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
-      if (status == 1) {
-        _updateSubscriptions(relay: relay);
-      }
-    });
   }
 
-  Future<void> _updateSubscriptions({String? relay}) async {
+  Future<void> updateSubscriptions({String? relay}) async {
     if (notesSubscription.isNotEmpty) {
       Connect.sharedInstance.closeRequests(notesSubscription, relay: relay);
     }
@@ -67,7 +61,7 @@ class Moment {
         if (EventCache.sharedInstance.isLoaded(event.id)) {
           return;
         } else {
-          await EventCache.sharedInstance.addToLoaded(event.id);
+          EventCache.sharedInstance.addToLoaded(event.id);
         }
         switch (event.kind) {
           case 1:

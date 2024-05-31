@@ -103,7 +103,9 @@ class Contacts {
     if (relay == null || Connect.sharedInstance.relays().contains(relay)) {
       await syncBlockListFromRelay(relay: relay);
       await _syncContactsFromRelay(relay: relay);
+      await _syncFollowingListFromRelay(relay: relay);
       _subscriptMessages(relay: relay);
+      _subscriptMoment(relay: relay);
     }
     subscriptSecretChat(relay: relay);
   }
@@ -179,6 +181,7 @@ class Contacts {
     });
     _preloadKind4Messages(pubkeys, currentUnixTimestampSeconds());
     _subscriptMessages();
+    _subscriptMoment();
     return completer.future;
   }
 
@@ -191,6 +194,7 @@ class Contacts {
         if (!completer.isCompleted) completer.complete(ok);
       });
       _subscriptMessages();
+      _subscriptMoment();
     }
     return completer.future;
   }
@@ -354,6 +358,11 @@ class Contacts {
     return completer.future;
   }
 
+  Future<void> _syncFollowingListFromRelay({String? relay}) async {
+    await Account.sharedInstance
+        .syncFollowingListFromRelay(pubkey, relay: relay);
+  }
+
   Future<void> _preloadKind4Messages(List<String> pubkeys, int until) async {
     Filter f1 = Filter(
         kinds: [4, 44],
@@ -409,7 +418,11 @@ class Contacts {
     return completer.future;
   }
 
-  Future<void> _subscriptMessages({String? relay}) async {
+  Future<void> _subscriptMoment({String? relay}) async {
+    await Moment.sharedInstance.updateSubscriptions(relay: relay);
+  }
+
+    Future<void> _subscriptMessages({String? relay}) async {
     if (friendMessageSubscription.isNotEmpty) {
       await Connect.sharedInstance
           .closeRequests(friendMessageSubscription, relay: relay);

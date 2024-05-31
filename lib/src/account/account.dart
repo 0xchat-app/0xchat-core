@@ -78,7 +78,7 @@ class Account {
   }
 
   ValueNotifier<UserDB> getUserNotifier(String pubkey) {
-    if(userCache.containsKey(pubkey)) return userCache[pubkey]!;
+    if (userCache.containsKey(pubkey)) return userCache[pubkey]!;
     userCache[pubkey] = ValueNotifier(UserDB(pubKey: pubkey));
     return userCache[pubkey]!;
   }
@@ -425,6 +425,7 @@ class Account {
         if (ok.status) {
           me?.followingList = followingList;
           syncMe();
+          Moment.sharedInstance.updateSubscriptions();
         }
       }
     });
@@ -446,6 +447,7 @@ class Account {
         if (ok.status) {
           me?.followingList = followingList;
           syncMe();
+          Moment.sharedInstance.updateSubscriptions();
         }
       }
     });
@@ -468,12 +470,21 @@ class Account {
     return result;
   }
 
-  Future<List<UserDB>> syncFollowingListFromRelay(String pubkey) async {
+  Future<List<UserDB>> syncFollowingListFromRelay(String pubkey,
+      {String? relay}) async {
     Completer<List<UserDB>> completer = Completer<List<UserDB>>();
     Filter f = Filter(kinds: [3], authors: [pubkey], limit: 1);
     List<Profile> profiles = [];
     int lastTimeStamp = 0;
-    Connect.sharedInstance.addSubscription([f],
+    Map<String, List<Filter>> subscriptions = {};
+    if (relay == null) {
+      for (var r in Connect.sharedInstance.relays()) {
+        subscriptions[r] = [f];
+      }
+    } else {
+      subscriptions[relay] = [f];
+    }
+    Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
       if (event.createdAt > lastTimeStamp) {
         profiles = Nip2.decode(event);
