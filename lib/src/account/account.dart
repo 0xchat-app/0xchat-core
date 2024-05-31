@@ -430,7 +430,7 @@ class Account {
     me?.followingList = followingList;
     syncMe();
     Moment.sharedInstance.updateSubscriptions();
-    return OKEvent('', true, '');
+    return await _syncFollowListToRelay(followingList);
   }
 
   Future<OKEvent> removeFollows(List<String> pubkeys) async {
@@ -441,7 +441,7 @@ class Account {
     me?.followingList = followingList;
     syncMe();
     Moment.sharedInstance.updateSubscriptions();
-    return OKEvent('', true, '');
+    return await _syncFollowListToRelay(followingList);
   }
 
   Future<bool> onFollowingList(String pubkey) async {
