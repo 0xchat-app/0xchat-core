@@ -322,7 +322,7 @@ extension Load on Moment {
           if (EventCache.sharedInstance.isLoaded(event.id)) {
             noteDB = await loadNoteWithNoteId(event.id);
           } else {
-            await EventCache.sharedInstance.addToLoaded(event.id);
+            EventCache.sharedInstance.addToLoaded(event.id);
             Note note = Nip1.decodeNote(event);
             noteDB = NoteDB.noteDBFromNote(note);
             await saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
