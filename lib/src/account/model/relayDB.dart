@@ -240,8 +240,8 @@ RelayDB _relayDBInfoFromMap(Map<String, dynamic> map) {
     commonMessagesUntil: map['commonMessagesUntil'],
     groupMessageSince: RelayDB.decodeMap(map['groupMessageSince'].toString()),
     groupMessageUntil: RelayDB.decodeMap(map['groupMessageUntil'].toString()),
-    contactsNotesUntil: RelayDB.decodeMap(map['contactsNotesUntil'].toString()),
-    contactsNotesSince: RelayDB.decodeMap(map['contactsNotesSince'].toString()),
+    // contactsNotesUntil: RelayDB.decodeMap(map['contactsNotesUntil'].toString()),
+    // contactsNotesSince: RelayDB.decodeMap(map['contactsNotesSince'].toString()),
     momentUntil: RelayDB.decodeMap(map['momentUntil'].toString()),
     momentSince: RelayDB.decodeMap(map['momentSince'].toString()),
   );
@@ -270,8 +270,8 @@ Map<String, dynamic> _relayDBInfoToMap(RelayDB instance) => <String, dynamic>{
       'commonMessagesUntil': instance.commonMessagesUntil,
       'groupMessageSince': jsonEncode(instance.groupMessageSince),
       'groupMessageUntil': jsonEncode(instance.groupMessageUntil),
-      'contactsNotesSince': jsonEncode(instance.contactsNotesSince),
-      'contactsNotesUntil': jsonEncode(instance.contactsNotesUntil),
+      // 'contactsNotesSince': jsonEncode(instance.contactsNotesSince),
+      // 'contactsNotesUntil': jsonEncode(instance.contactsNotesUntil),
       'momentSince': jsonEncode(instance.momentSince),
       'momentUntil': jsonEncode(instance.momentUntil),
     };
