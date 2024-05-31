@@ -484,7 +484,7 @@ class Account {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         UserDB? user = await getUserInfo(pubkey);
-        if (user != null) {
+        if (user != null && profiles.isNotEmpty) {
           user.followingList = profiles.map((e) => e.key).toList();
           await DB.sharedInstance.insert<UserDB>(user);
         }
