@@ -410,48 +410,38 @@ class Account {
     return result;
   }
 
-  Future<OKEvent> addFollows(List<String> pubkeys) async {
+  Future<OKEvent> _syncFollowListToRelay(List<String> pubkeys) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-
-    List<String> followingList = me?.followingList ?? [];
-    for (var p in pubkeys) {
-      if (!followingList.contains(p)) followingList.add(p);
-    }
-    Event event = await Nip2.encode(
-        toProfiles(followingList), currentPubkey, currentPrivkey);
+    Event event =
+        await Nip2.encode(toProfiles(pubkeys), currentPubkey, currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
         completer.complete(ok);
-        if (ok.status) {
-          me?.followingList = followingList;
-          syncMe();
-          Moment.sharedInstance.updateSubscriptions();
-        }
       }
     });
     return completer.future;
   }
 
-  Future<OKEvent> removeFollows(List<String> pubkeys) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
+  Future<OKEvent> addFollows(List<String> pubkeys) async {
+    List<String> followingList = me?.followingList ?? [];
+    for (var p in pubkeys) {
+      if (!followingList.contains(p)) followingList.add(p);
+    }
+    me?.followingList = followingList;
+    syncMe();
+    Moment.sharedInstance.updateSubscriptions();
+    return OKEvent('', true, '');
+  }
 
+  Future<OKEvent> removeFollows(List<String> pubkeys) async {
     List<String> followingList = me?.followingList ?? [];
     for (var p in pubkeys) {
       if (followingList.contains(p)) followingList.remove(p);
     }
-    Event event = await Nip2.encode(
-        toProfiles(followingList), currentPubkey, currentPrivkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
-      if (!completer.isCompleted) {
-        completer.complete(ok);
-        if (ok.status) {
-          me?.followingList = followingList;
-          syncMe();
-          Moment.sharedInstance.updateSubscriptions();
-        }
-      }
-    });
-    return completer.future;
+    me?.followingList = followingList;
+    syncMe();
+    Moment.sharedInstance.updateSubscriptions();
+    return OKEvent('', true, '');
   }
 
   Future<bool> onFollowingList(String pubkey) async {
@@ -462,7 +452,7 @@ class Account {
     UserDB? user = await getUserInfo(pubkey);
     List<UserDB> result = [];
     for (var p in user?.followingList ?? []) {
-      UserDB? userDB = await getUserInfo(p.key);
+      UserDB? userDB = await getUserInfo(p);
       if (userDB != null) {
         result.add(userDB);
       }
@@ -470,9 +460,9 @@ class Account {
     return result;
   }
 
-  Future<List<UserDB>> syncFollowingListFromRelay(String pubkey,
+  Future<void> syncFollowingListFromRelay(String pubkey,
       {String? relay}) async {
-    Completer<List<UserDB>> completer = Completer<List<UserDB>>();
+    Completer<void> completer = Completer<void>();
     Filter f = Filter(kinds: [3], authors: [pubkey], limit: 1);
     List<Profile> profiles = [];
     int lastTimeStamp = 0;
@@ -498,15 +488,7 @@ class Account {
           user.followingList = profiles.map((e) => e.key).toList();
           await DB.sharedInstance.insert<UserDB>(user);
         }
-
-        List<UserDB> result = [];
-        for (var p in profiles) {
-          UserDB? userDB = await getUserInfo(p.key);
-          if (userDB != null) {
-            result.add(userDB);
-          }
-        }
-        if (!completer.isCompleted) completer.complete(result);
+        if (!completer.isCompleted) completer.complete();
       }
     });
     return completer.future;
