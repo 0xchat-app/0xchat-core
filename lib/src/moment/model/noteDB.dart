@@ -119,6 +119,7 @@ class NoteDB extends DBObject {
     root ??= '';
     reply ??= '';
     if (root!.isNotEmpty && reply!.isEmpty) return 1;
+    if (root == noteId && reply == noteId) return 1;
     if (root == noteId && reply!.isNotEmpty) return 2;
     if (reply == noteId || root == noteId) return 1;
     return 0;
