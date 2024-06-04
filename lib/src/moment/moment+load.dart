@@ -56,6 +56,8 @@ extension Load on Moment {
 
     for (var note in notes) {
       notesCache[note.noteId] = note;
+      latestNoteTime =
+          note.createAt > latestNoteTime ? note.createAt : latestNoteTime;
     }
     return notes;
   }
@@ -296,11 +298,13 @@ extension Load on Moment {
     saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
 
-  Future<List<NoteDB>?> loadPublicNewNotesFromRelay({int? until, int? since, int? limit}) async {
+  Future<List<NoteDB>?> loadPublicNewNotesFromRelay(
+      {int? until, int? since, int? limit}) async {
     List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
     authors.addAll(Account.sharedInstance.me?.followingList ?? []);
     authors.add(pubkey);
-    return await loadNewNotesFromRelay(limit: limit, authors: authors, until: until, since: since);
+    return await loadNewNotesFromRelay(
+        limit: limit, authors: authors, until: until, since: since);
   }
 
   Future<List<NoteDB>?> loadNewNotesFromRelay(
@@ -441,7 +445,9 @@ extension Load on Moment {
   Future<void> handleNewNotes(NoteDB noteDB) async {
     int result = await DB.sharedInstance
         .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
-    if (result > 0 && noteDB.getReplyLevel(null) != 2) {
+    if (result > 0 &&
+        noteDB.getReplyLevel(null) != 2 &&
+        noteDB.createAt > latestNoteTime) {
       newNotes.add(noteDB);
       newNotesCallBack?.call(newNotes);
     }
@@ -493,7 +499,13 @@ extension Load on Moment {
     Reactions reactions = Nip25.decode(event);
     NoteDB reactionsNoteDB = NoteDB.noteDBFromReactions(reactions);
     reactionsNoteDB.private = private;
-    await addReactionToNote(event, reactionsNoteDB.reactedId!);
-    handleNewNotes(reactionsNoteDB);
+    final reactedMessageDB = await Messages.sharedInstance
+        .loadMessageDBFromDB(reactions.reactedEventId);
+    if (reactedMessageDB != null) {
+      await Messages.sharedInstance.handleReactionEvent(event);
+    } else {
+      await addReactionToNote(event, reactionsNoteDB.reactedId!);
+      handleNewNotes(reactionsNoteDB);
+    }
   }
 }

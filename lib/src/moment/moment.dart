@@ -23,6 +23,8 @@ class Moment {
   String notesSubscription = '';
   Map<String, bool> offlineMomentFinish = {};
 
+  int latestNoteTime = 0;
+
   Future<void> init() async {
     privkey = Account.sharedInstance.currentPrivkey;
     pubkey = Account.sharedInstance.currentPubkey;

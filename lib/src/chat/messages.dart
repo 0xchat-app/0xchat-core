@@ -88,7 +88,7 @@ class Messages {
     });
   }
 
-  void updateMessagesActionsSubscription(List<String> eventIds) {
+  void loadMessagesReactions(List<String> eventIds) {
     if (messagesActionsRequestsId.isNotEmpty) {
       Connect.sharedInstance.closeRequests(messagesActionsRequestsId);
     }

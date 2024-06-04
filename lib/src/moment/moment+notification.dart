@@ -24,7 +24,11 @@ extension Notification on Moment {
     int result = await DB.sharedInstance.insert<NotificationDB>(notificationDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
     if (result > 0) {
-      if (notificationDB.author != pubkey) {
+      final reactedMessageDB = await Messages.sharedInstance
+          .loadMessageDBFromDB(notificationDB.associatedNoteId);
+      if (reactedMessageDB != null) {
+        await Messages.sharedInstance.handleZapRecordEvent(zapEvent);
+      } else if (notificationDB.author != pubkey) {
         Moment.sharedInstance.newNotifications.add(notificationDB);
         Moment.sharedInstance.newNotificationCallBack
             ?.call(Moment.sharedInstance.newNotifications);
