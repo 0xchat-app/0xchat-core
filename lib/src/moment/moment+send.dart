@@ -311,9 +311,10 @@ extension Send on Moment {
     NoteDB? note = await loadNoteWithNoteId(quoteRepostNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
+      String nostrNote = Nip21.encode(Nip19.encodeNote(quoteRepostNoteId));
+      content = '$content\n$nostrNote';
       Event event = await Nip18.encodeQuoteReposts(
           quoteRepostNoteId, note.author, content, hashTags, pubkey, privkey);
-
       NoteDB noteDB =
           NoteDB.noteDBFromQuoteReposts(Nip18.decodeQuoteReposts(event));
       await saveNoteToDB(noteDB, null);
