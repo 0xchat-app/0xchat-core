@@ -116,7 +116,8 @@ class Messages {
   Future<MessageDB?> loadMessageDBFromDB(String messageId) async {
     final result = await Messages.loadMessagesFromDB(
         where: 'messageId = ?', whereArgs: [messageId]);
-    return result['messages']?.first;
+    List<MessageDB> messages = result['messages'];
+    return (messages.isNotEmpty ? messages.first : null);
   }
 
   Future<void> handleReactionEvent(Event event) async {
