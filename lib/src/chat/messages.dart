@@ -163,7 +163,7 @@ class Messages {
     MessageDB? messageDB = await loadMessageDBFromDB(messageId);
     if (messageDB != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
-      Event event = await Nip25.encode(messageId, messageDB.sender,
+      Event event = await Nip25.encode(messageId, [messageDB.sender],
           messageDB.kind.toString(), true, pubkey, privkey,
           content: content, emojiShotCode: emojiShotCode, emojiURL: emojiURL);
 

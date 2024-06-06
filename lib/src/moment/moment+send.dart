@@ -199,27 +199,34 @@ extension Send on Moment {
     NoteDB? note = await loadNoteWithNoteId(replyNoteId);
     if (note != null) {
       String? rootEventId = note.root;
+      note.pTags ??= [];
       if (rootEventId == null || rootEventId.isEmpty) {
+        if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
         return note.private
             ? await _sendPrivateNote(content, [note.author, pubkey],
                 rootEvent: replyNoteId,
-                replyUsers: [note.author],
+                replyUsers: note.pTags,
                 hashTags: hashTags)
             : await sendPublicNote(content,
                 rootEvent: replyNoteId,
-                replyUsers: [note.author],
+                replyUsers: note.pTags,
                 hashTags: hashTags);
       } else {
         NoteDB? rootNote = await loadNoteWithNoteId(rootEventId);
+        if (rootNote?.author.isNotEmpty == true &&
+            !note.pTags!.contains(rootNote?.author)) {
+          note.pTags!.add(rootNote!.author);
+        }
+        if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
         return note.private
             ? await _sendPrivateNote(content, [note.author, pubkey],
                 rootEvent: rootEventId,
-                replyUsers: [rootNote?.author ?? '', note.author],
+                replyUsers: note.pTags,
                 replyEvent: replyNoteId,
                 hashTags: hashTags)
             : await sendPublicNote(content,
                 rootEvent: rootEventId,
-                replyUsers: [rootNote?.author ?? '', note.author],
+                replyUsers: note.pTags,
                 replyEvent: replyNoteId,
                 hashTags: hashTags);
       }
@@ -233,8 +240,9 @@ extension Send on Moment {
     NoteDB? note = await loadNoteWithNoteId(reactedNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
+      if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
       Event event = await Nip25.encode(
-          reactedNoteId, note.author, '1', like, pubkey, privkey,
+          reactedNoteId, note.pTags ?? [], '1', like, pubkey, privkey,
           emojiShotCode: emojiShotCode, emojiURL: emojiURL);
 
       NoteDB noteDB = NoteDB.noteDBFromReactions(Nip25.decode(event));
@@ -278,8 +286,9 @@ extension Send on Moment {
     NoteDB? note = await loadNoteWithNoteId(repostNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
+      if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
       Event event = await Nip18.encodeReposts(repostNoteId, repostNoteRelay,
-          note.author, note.rawEvent, pubkey, privkey);
+          note.pTags ?? [], note.rawEvent, pubkey, privkey);
       Reposts r = await Nip18.decodeReposts(event);
       NoteDB noteDB = NoteDB.noteDBFromReposts(r);
       await saveNoteToDB(noteDB, null);
@@ -311,10 +320,11 @@ extension Send on Moment {
     NoteDB? note = await loadNoteWithNoteId(quoteRepostNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
+      if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
       String nostrNote = Nip21.encode(Nip19.encodeNote(quoteRepostNoteId));
       content = '$content\n$nostrNote';
       Event event = await Nip18.encodeQuoteReposts(
-          quoteRepostNoteId, note.author, content, hashTags, pubkey, privkey);
+          quoteRepostNoteId, note.pTags ?? [], content, hashTags, pubkey, privkey);
       NoteDB noteDB =
           NoteDB.noteDBFromQuoteReposts(Nip18.decodeQuoteReposts(event));
       await saveNoteToDB(noteDB, null);
