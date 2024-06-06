@@ -411,7 +411,7 @@ class Account {
   }
 
   Future<OKEvent> _syncFollowListToRelay(List<String> pubkeys) async {
-    if(pubkeys.isEmpty) return OKEvent('', false, 'invalid following list!');
+    if (pubkeys.isEmpty) return OKEvent('', false, 'invalid following list!');
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event =
         await Nip2.encode(toProfiles(pubkeys), currentPubkey, currentPrivkey);
@@ -450,7 +450,7 @@ class Account {
   }
 
   Future<List<UserDB>> syncFollowingListFromDB(String pubkey) async {
-    UserDB? user = await getUserInfo(pubkey);
+    UserDB? user = pubkey == currentPubkey ? me : await getUserInfo(pubkey);
     List<UserDB> result = [];
     for (var p in user?.followingList ?? []) {
       UserDB? userDB = await getUserInfo(p);
@@ -484,7 +484,8 @@ class Account {
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        UserDB? user = (pubkey == currentPubkey) ? me : await getUserInfo(pubkey);
+        UserDB? user =
+            (pubkey == currentPubkey) ? me : await getUserInfo(pubkey);
         if (user != null && profiles.isNotEmpty) {
           user.followingList = profiles.map((e) => e.key).toList();
           await DB.sharedInstance.insert<UserDB>(user);
