@@ -195,13 +195,18 @@ extension Send on Moment {
   }
 
   Future<OKEvent> sendReply(String replyNoteId, String content,
-      {List<String>? hashTags}) async {
+      {List<String>? hashTags, List<String>? mentions}) async {
     NoteDB? note = await loadNoteWithNoteId(replyNoteId);
     if (note != null) {
       String? rootEventId = note.root;
       note.pTags ??= [];
       if (rootEventId == null || rootEventId.isEmpty) {
         if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
+        for (var mention in mentions ?? []) {
+          if (!note.pTags!.contains(mention)) {
+            note.pTags!.add(mention);
+          }
+        }
         return note.private
             ? await _sendPrivateNote(content, [note.author, pubkey],
                 rootEvent: replyNoteId,
@@ -316,15 +321,20 @@ extension Send on Moment {
   }
 
   Future<OKEvent> sendQuoteRepost(String quoteRepostNoteId, String content,
-      {List<String>? hashTags}) async {
+      {List<String>? hashTags, List<String>? mentions}) async {
     NoteDB? note = await loadNoteWithNoteId(quoteRepostNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
       String nostrNote = Nip21.encode(Nip19.encodeNote(quoteRepostNoteId));
       content = '$content\n$nostrNote';
-      Event event = await Nip18.encodeQuoteReposts(
-          quoteRepostNoteId, note.pTags ?? [], content, hashTags, pubkey, privkey);
+      Event event = await Nip18.encodeQuoteReposts(quoteRepostNoteId,
+          note.pTags ?? [], content, hashTags, pubkey, privkey);
+      for (var mention in mentions ?? []) {
+        if (!note.pTags!.contains(mention)) {
+          note.pTags!.add(mention);
+        }
+      }
       NoteDB noteDB =
           NoteDB.noteDBFromQuoteReposts(Nip18.decodeQuoteReposts(event));
       await saveNoteToDB(noteDB, null);
