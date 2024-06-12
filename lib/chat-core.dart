@@ -6,6 +6,7 @@ export 'src/account/account.dart';
 export 'src/account/badges.dart';
 export 'src/account/zaps.dart';
 export 'src/account/relays.dart';
+export 'src/account/npub-cash.dart';
 export 'src/account/notification.dart';
 export 'src/account/model/userDB.dart';
 export 'src/account/model/relayDB.dart';
