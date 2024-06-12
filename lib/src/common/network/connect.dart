@@ -82,6 +82,8 @@ class Connect {
   List<ConnectStatusCallBack> connectStatusListeners = [];
   // for timeout
   Timer? timer;
+  // relay AUTH
+  Map<String, String> auths = {};
 
   void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
@@ -308,15 +310,14 @@ class Connect {
       case "EOSE":
         _handleEOSE(m.message, relay);
         break;
-      case "CLOSE":
       case "CLOSED":
-      _handleCLOSE(m.message, relay);
-      break;
+        _handleCLOSED(m.message, relay);
+        break;
       case "NOTICE":
         _handleNotice(m.message, relay);
         break;
       case "OK":
-        _handleOk(message, relay);
+        _handleOk(m.message, relay);
         break;
       case "AUTH":
         _handleAuth(m.message, relay);
@@ -358,9 +359,9 @@ class Connect {
     }
   }
 
-  void _handleCLOSE(Close close, String relay) {
-    print('receive close: ${close.serialize()}, $relay');
-    String subscriptionId = close.subscriptionId;
+  void _handleCLOSED(Closed closed, String relay) {
+    print('receive closed: ${closed.serialize()}, $relay');
+    String subscriptionId = closed.subscriptionId;
     String requestsMapKey = subscriptionId + relay;
     if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
       var relays = requestsMap[requestsMapKey]!.relays;
@@ -370,6 +371,8 @@ class Connect {
       OKEvent ok = OKEvent(subscriptionId, true, '');
       if (callBack != null) callBack(subscriptionId, ok, relay, relays);
     }
+    // check auth
+    if (Nip42.authRequired(closed.message)) _sendAuth(relay);
   }
 
   void _handleNotice(String notice, String relay) {
@@ -391,10 +394,9 @@ class Connect {
     noticeCallBack?.call(n, relay);
   }
 
-  Future<void> _handleOk(String message, String relay) async {
-    print('receive ok: $message, $relay');
-    OKEvent? ok = await Nip20.getOk(message);
-    if (ok != null && sendsMap.containsKey(ok.eventId)) {
+  Future<void> _handleOk(OKEvent ok, String relay) async {
+    print('receive ok: ${ok.serialize()}, $relay');
+    if (sendsMap.containsKey(ok.eventId)) {
       if (sendsMap[ok.eventId]!.okCallBack != null) {
         var relays = sendsMap[ok.eventId]!.relays;
         relays.remove(relay);
@@ -419,14 +421,28 @@ class Connect {
         }
       }
     }
+    if (!ok.status) {
+      // check auth
+      if (Nip42.authRequired(ok.message)) _sendAuth(relay);
+      if (Nip42.restricted(ok.message)) print('receive ok fail: ${ok.message}');
+    }
   }
 
-  Future<void> _handleAuth(Auth auth, String relay) async {
+  void _handleAuth(Auth auth, String relay) {
+    print('receive auth: ${auth.challenge}');
+    auths[relay] = auth.challenge;
+  }
+
+  Future<void> _sendAuth(String relay) async {
+    String? challenge = auths[relay];
+    if (challenge == null) return;
+    auths.remove(relay);
     String data = await Nip42.encode(
-        auth.challenge,
+        challenge,
         relay,
         Account.sharedInstance.currentPubkey,
         Account.sharedInstance.currentPrivkey);
+    print('send auth: $data');
     _send(data, relay: relay);
   }
 
