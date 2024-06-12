@@ -25,9 +25,10 @@ class Sends {
   int sendsTime;
   String eventId;
   OKCallBack? okCallBack;
+  String eventString;
 
-  Sends(
-      this.sendsId, this.relays, this.sendsTime, this.eventId, this.okCallBack);
+  Sends(this.sendsId, this.relays, this.sendsTime, this.eventId,
+      this.okCallBack, this.eventString);
 }
 
 class Requests {
@@ -37,9 +38,10 @@ class Requests {
   Map<String, String> subscriptions;
   EventCallBack? eventCallBack;
   EOSECallBack? eoseCallBack;
+  String subscriptionString;
 
   Requests(this.requestId, this.relays, this.requestTime, this.subscriptions,
-      this.eventCallBack, this.eoseCallBack);
+      this.eventCallBack, this.eoseCallBack, this.subscriptionString);
 }
 
 class ISocket {
@@ -52,7 +54,7 @@ class ISocket {
   int connectStatus;
 
   /// 0: normal
-  /// 1: secret chat
+  /// 1: custom
   int type;
 
   ISocket(this.socket, this.connectStatus, this.type);
@@ -83,7 +85,9 @@ class Connect {
   // for timeout
   Timer? timer;
   // relay AUTH
-  Map<String, String> auths = {};
+  Map<String, Map<String, String>> auths = {};
+  // auth re-send event/subscription
+  Map<String, List<String>> authResendData = {};
 
   void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
@@ -219,14 +223,20 @@ class Connect {
       {EventCallBack? eventCallBack, EOSECallBack? eoseCallBack}) {
     /// Create a subscription message request with one or many filters
     String requestsId = generate64RandomHexChars();
-    Requests requests = Requests(requestsId, filters.keys.toList(),
-        DateTime.now().millisecondsSinceEpoch, {}, eventCallBack, eoseCallBack);
     for (String relay in filters.keys) {
       Request requestWithFilter =
           Request(generate64RandomHexChars(), filters[relay]!);
       String subscriptionString = requestWithFilter.serialize();
 
       /// add request to request map
+      Requests requests = Requests(
+          requestsId,
+          filters.keys.toList(),
+          DateTime.now().millisecondsSinceEpoch,
+          {},
+          eventCallBack,
+          eoseCallBack,
+          subscriptionString);
       requests.subscriptions[relay] = requestWithFilter.subscriptionId;
       requestsMap[requestWithFilter.subscriptionId + relay] = requests;
 
@@ -273,15 +283,17 @@ class Connect {
 
   /// send an event to relay/relays
   void sendEvent(Event event, {OKCallBack? sendCallBack, String? relay}) {
-    print(event.serialize());
+    String eventString = event.serialize();
+    print('send event: $eventString');
     Sends sends = Sends(
         generate64RandomHexChars(),
         (relay == null || relay.isEmpty) ? relays() : [relay],
         DateTime.now().millisecondsSinceEpoch,
         event.id,
-        sendCallBack);
+        sendCallBack,
+        eventString);
     sendsMap[event.id] = sends;
-    _send(event.serialize(), relay: relay);
+    _send(eventString, relay: relay);
   }
 
   void _send(String data, {String? relay}) {
@@ -364,6 +376,16 @@ class Connect {
     String subscriptionId = closed.subscriptionId;
     String requestsMapKey = subscriptionId + relay;
     if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
+      // check auth
+      if (Nip42.authRequired(closed.message)) {
+        List<String> datas = authResendData[relay] ?? [];
+        String subscriptionString =
+            requestsMap[requestsMapKey]!.subscriptionString;
+        if (!datas.contains(subscriptionString)) datas.add(subscriptionString);
+        authResendData[relay] = datas;
+        _sendAuth(relay);
+        return;
+      }
       var relays = requestsMap[requestsMapKey]!.relays;
       relays.remove(relay);
       // all relays have EOSE
@@ -371,8 +393,6 @@ class Connect {
       OKEvent ok = OKEvent(subscriptionId, true, '');
       if (callBack != null) callBack(subscriptionId, ok, relay, relays);
     }
-    // check auth
-    if (Nip42.authRequired(closed.message)) _sendAuth(relay);
   }
 
   void _handleNotice(String notice, String relay) {
@@ -396,7 +416,27 @@ class Connect {
 
   Future<void> _handleOk(OKEvent ok, String relay) async {
     print('receive ok: ${ok.serialize()}, $relay');
+    // check auth response
+    if (ok.status && auths[relay]?['id'] == ok.eventId) {
+      print('_handleOk ${authResendData[relay]?.length}');
+      for (var data in authResendData[relay] ?? []) {
+        print('re-send: $data');
+        _send(data, relay: relay);
+      }
+      authResendData.remove(relay);
+      auths.remove(relay);
+      return;
+    }
     if (sendsMap.containsKey(ok.eventId)) {
+      // check need auth
+      if (!ok.status && Nip42.authRequired(ok.message)) {
+        List<String> datas = authResendData[relay] ?? [];
+        String eventString = sendsMap[ok.eventId]!.eventString;
+        if (!datas.contains(eventString)) datas.add(eventString);
+        authResendData[relay] = datas;
+        _sendAuth(relay);
+        return;
+      }
       if (sendsMap[ok.eventId]!.okCallBack != null) {
         var relays = sendsMap[ok.eventId]!.relays;
         relays.remove(relay);
@@ -421,29 +461,30 @@ class Connect {
         }
       }
     }
-    if (!ok.status) {
-      // check auth
-      if (Nip42.authRequired(ok.message)) _sendAuth(relay);
-      if (Nip42.restricted(ok.message)) print('receive ok fail: ${ok.message}');
-    }
   }
 
   void _handleAuth(Auth auth, String relay) {
     print('receive auth: ${auth.challenge}');
-    auths[relay] = auth.challenge;
+    Map<String, String> authData = auths[relay] ?? {};
+    authData['challenge'] = auth.challenge;
+    auths[relay] = authData;
   }
 
   Future<void> _sendAuth(String relay) async {
-    String? challenge = auths[relay];
+    String? challenge = auths[relay]?['challenge'];
     if (challenge == null) return;
     auths.remove(relay);
-    String data = await Nip42.encode(
+    Event event = await Nip42.encode(
         challenge,
         relay,
         Account.sharedInstance.currentPubkey,
         Account.sharedInstance.currentPrivkey);
-    print('send auth: $data');
-    _send(data, relay: relay);
+    var authJson = Nip42.authString(event);
+    Map<String, String> authData = auths[relay] ?? {};
+    authData['id'] = event.id;
+    auths[relay] = authData;
+    print('send auth: $authJson}');
+    _send(authJson, relay: relay);
   }
 
   Future<void> _connectToRelay(String relay) async {
