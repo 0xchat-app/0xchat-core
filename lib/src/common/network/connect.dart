@@ -44,6 +44,14 @@ class Requests {
       this.eventCallBack, this.eoseCallBack, this.subscriptionString);
 }
 
+class AuthData {
+  String challenge;
+  String eventId;
+  List<String> resendDatas;
+
+  AuthData(this.challenge, this.eventId, this.resendDatas);
+}
+
 class ISocket {
   WebSocket? socket;
 
@@ -85,9 +93,7 @@ class Connect {
   // for timeout
   Timer? timer;
   // relay AUTH
-  Map<String, Map<String, String>> auths = {};
-  // auth re-send event/subscription
-  Map<String, List<String>> authResendData = {};
+  Map<String, AuthData> auths = {};
 
   void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
@@ -97,11 +103,11 @@ class Connect {
     }
   }
 
-  void _stopCheckTimeOut() {
-    if (timer != null && timer!.isActive) {
-      timer!.cancel();
-    }
-  }
+  // void _stopCheckTimeOut() {
+  //   if (timer != null && timer!.isActive) {
+  //     timer!.cancel();
+  //   }
+  // }
 
   void _checkTimeout() {
     var now = DateTime.now().millisecondsSinceEpoch;
@@ -378,11 +384,11 @@ class Connect {
     if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
       // check auth
       if (Nip42.authRequired(closed.message)) {
-        List<String> datas = authResendData[relay] ?? [];
         String subscriptionString =
             requestsMap[requestsMapKey]!.subscriptionString;
-        if (!datas.contains(subscriptionString)) datas.add(subscriptionString);
-        authResendData[relay] = datas;
+        if (auths[relay]?.resendDatas.contains(subscriptionString) == false) {
+          auths[relay]?.resendDatas.add(subscriptionString);
+        }
         _sendAuth(relay);
         return;
       }
@@ -417,23 +423,21 @@ class Connect {
   Future<void> _handleOk(OKEvent ok, String relay) async {
     print('receive ok: ${ok.serialize()}, $relay');
     // check auth response
-    if (ok.status && auths[relay]?['id'] == ok.eventId) {
-      print('_handleOk ${authResendData[relay]?.length}');
-      for (var data in authResendData[relay] ?? []) {
+    if (ok.status && auths[relay]?.eventId == ok.eventId) {
+      for (var data in auths[relay]?.resendDatas ?? []) {
         print('re-send: $data');
         _send(data, relay: relay);
       }
-      authResendData.remove(relay);
       auths.remove(relay);
       return;
     }
     if (sendsMap.containsKey(ok.eventId)) {
       // check need auth
       if (!ok.status && Nip42.authRequired(ok.message)) {
-        List<String> datas = authResendData[relay] ?? [];
         String eventString = sendsMap[ok.eventId]!.eventString;
-        if (!datas.contains(eventString)) datas.add(eventString);
-        authResendData[relay] = datas;
+        if (auths[relay]?.resendDatas.contains(eventString) == false) {
+          auths[relay]?.resendDatas.add(eventString);
+        }
         _sendAuth(relay);
         return;
       }
@@ -465,24 +469,21 @@ class Connect {
 
   void _handleAuth(Auth auth, String relay) {
     print('receive auth: ${auth.challenge}');
-    Map<String, String> authData = auths[relay] ?? {};
-    authData['challenge'] = auth.challenge;
-    auths[relay] = authData;
+    if (!auths.containsKey(relay)) {
+      auths[relay] = AuthData(auth.challenge, '', []);
+    }
   }
 
   Future<void> _sendAuth(String relay) async {
-    String? challenge = auths[relay]?['challenge'];
+    String? challenge = auths[relay]?.challenge;
     if (challenge == null) return;
-    auths.remove(relay);
     Event event = await Nip42.encode(
         challenge,
         relay,
         Account.sharedInstance.currentPubkey,
         Account.sharedInstance.currentPrivkey);
     var authJson = Nip42.authString(event);
-    Map<String, String> authData = auths[relay] ?? {};
-    authData['id'] = event.id;
-    auths[relay] = authData;
+    auths[relay]!.eventId = event.id;
     print('send auth: $authJson}');
     _send(authJson, relay: relay);
   }
