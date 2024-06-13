@@ -171,6 +171,10 @@ class UserDB extends DBObject {
     return '$start:$end';
   }
 
+  String get lnAddress {
+    return lnurl?.isNotEmpty == true ? lnurl! : NpubCash.address();
+  }
+
   NostrWalletConnection? get nwc {
     return NostrWalletConnection.fromURI(nwcURI);
   }

@@ -4,6 +4,8 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:pointycastle/export.dart';
+import 'package:convert/convert.dart';
 
 class Account {
   /// singleton
@@ -721,5 +723,16 @@ class Account {
   Future<String> decryptNip04(String content, String peer) async {
     return await Nip4.decryptContent(
         content, peer, currentPubkey, currentPrivkey);
+  }
+
+  static Future<String> getSignatureWithSecret(String secret, [String? privkey]) async {
+    privkey ??= Account.sharedInstance.currentPrivkey;
+    if (SignerHelper.needSigner(privkey)) {
+      final pubkey = Account.sharedInstance.currentPubkey;
+      return await SignerHelper.signMessage(secret, pubkey) ?? '';
+    }
+    final hexMessage = hex.encode(SHA256Digest()
+        .process(Uint8List.fromList(utf8.encode(secret))));
+    return Keychain(privkey).sign(hexMessage);
   }
 }
