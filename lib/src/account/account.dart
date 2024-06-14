@@ -710,7 +710,12 @@ class Account {
     }
     Event event = await Event.fromJson(json, verify: false);
     //todo: sign from signer
-    event.sig = event.getSignature(currentPrivkey);
+    if (SignerHelper.needSigner(currentPrivkey)) {
+      final pubkey = Account.sharedInstance.currentPubkey;
+      event.sig = await SignerHelper.signMessage(event.id, pubkey) ?? '';
+    } else {
+      event.sig = event.getSignature(currentPrivkey);
+    }
     assert(await event.isValid() == true);
     return event.toJson();
   }
@@ -725,14 +730,15 @@ class Account {
         content, peer, currentPubkey, currentPrivkey);
   }
 
-  static Future<String> getSignatureWithSecret(String secret, [String? privkey]) async {
+  static Future<String> getSignatureWithSecret(String secret,
+      [String? privkey]) async {
     privkey ??= Account.sharedInstance.currentPrivkey;
     if (SignerHelper.needSigner(privkey)) {
       final pubkey = Account.sharedInstance.currentPubkey;
       return await SignerHelper.signMessage(secret, pubkey) ?? '';
     }
-    final hexMessage = hex.encode(SHA256Digest()
-        .process(Uint8List.fromList(utf8.encode(secret))));
+    final hexMessage = hex.encode(
+        SHA256Digest().process(Uint8List.fromList(utf8.encode(secret))));
     return Keychain(privkey).sign(hexMessage);
   }
 }
