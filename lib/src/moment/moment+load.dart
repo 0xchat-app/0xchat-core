@@ -107,6 +107,7 @@ extension Load on Moment {
     if (notesCache.containsKey(noteId)) return notesCache[noteId];
     NoteDB? note = await loadNoteFromDBWithNoteId(noteId);
     if (!private && reload) note ??= await loadPublicNoteFromRelay(noteId);
+    print('loadNoteWithNoteId: ${note?.content}');
     if (note != null) notesCache[noteId] = note;
     return note;
   }
@@ -125,11 +126,8 @@ extension Load on Moment {
     if (noteId.isEmpty) return null;
     Completer<NoteDB?> completer = Completer<NoteDB?>();
     Filter f = Filter(ids: [noteId]);
-    bool result = false;
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      if(!result) return;
-      result = true;
       NoteDB? noteDB;
       switch (event.kind) {
         case 1:
