@@ -363,13 +363,24 @@ class Connect {
     }
   }
 
+  void _removeRequestsMapRelay(String subscriptionId, String removeRelay) {
+    var requestsMapKey = subscriptionId + removeRelay;
+    var request = requestsMap[requestsMapKey];
+    if (request == null) return;
+    for (var r in requestsMap.values) {
+      if (r.requestId == request.requestId) {
+        r.relays.remove(removeRelay);
+      }
+    }
+  }
+
   void _handleEOSE(String eose, String relay) {
     print('receive EOSE: $eose, $relay');
     String subscriptionId = jsonDecode(eose)[0];
     String requestsMapKey = subscriptionId + relay;
     if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
+      _removeRequestsMapRelay(subscriptionId, relay);
       var relays = requestsMap[requestsMapKey]!.relays;
-      relays.remove(relay);
       // all relays have EOSE
       EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
       OKEvent ok = OKEvent(subscriptionId, true, '');
@@ -392,8 +403,8 @@ class Connect {
         _sendAuth(relay);
         return;
       }
+      _removeRequestsMapRelay(subscriptionId, relay);
       var relays = requestsMap[requestsMapKey]!.relays;
-      relays.remove(relay);
       // all relays have EOSE
       EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
       OKEvent ok = OKEvent(subscriptionId, true, '');
@@ -408,8 +419,8 @@ class Connect {
     List<String> requestsMapKeys =
         requestsMap.keys.where((element) => element.contains(relay)).toList();
     for (var requestsMapKey in requestsMapKeys) {
+      _removeRequestsMapRelay(requestsMapKey.replaceAll(relay, ''), relay);
       var relays = requestsMap[requestsMapKey]!.relays;
-      relays.remove(relay);
       // all relays have EOSE
       String subscriptionId = requestsMapKey.replaceAll(relay, '');
       EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
@@ -452,8 +463,9 @@ class Connect {
               .where((element) => element.contains(relay))
               .toList();
           for (var requestsMapKey in requestsMapKeys) {
+            _removeRequestsMapRelay(
+                requestsMapKey.replaceAll(relay, ''), relay);
             var relays = requestsMap[requestsMapKey]!.relays;
-            relays.remove(relay);
             // all relays have EOSE
             String subscriptionId = requestsMapKey.replaceAll(relay, '');
             EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;

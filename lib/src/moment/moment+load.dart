@@ -123,42 +123,39 @@ extension Load on Moment {
 
   Future<NoteDB?> loadPublicNoteFromRelay(String noteId) async {
     if (noteId.isEmpty) return null;
-
     Completer<NoteDB?> completer = Completer<NoteDB?>();
     Filter f = Filter(ids: [noteId]);
-    Event? result;
+    bool result = false;
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      result = event;
+      if(!result) return;
+      result = true;
+      NoteDB? noteDB;
+      switch (event.kind) {
+        case 1:
+          if (Nip18.hasQTag(event)) {
+            QuoteReposts quoteReposts = Nip18.decodeQuoteReposts(event);
+            noteDB = NoteDB.noteDBFromQuoteReposts(quoteReposts);
+          } else {
+            Note note = Nip1.decodeNote(event);
+            noteDB = NoteDB.noteDBFromNote(note);
+          }
+          break;
+        case 6:
+          Reposts reposts = await Nip18.decodeReposts(event);
+          noteDB = NoteDB.noteDBFromReposts(reposts);
+          break;
+        case 7:
+          Reactions reactions = Nip25.decode(event);
+          noteDB = NoteDB.noteDBFromReactions(reactions);
+          break;
+      }
+      if (!completer.isCompleted) completer.complete(noteDB);
+      if (noteDB != null) saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        if (result != null) {
-          NoteDB? noteDB;
-          switch (result!.kind) {
-            case 1:
-              if (Nip18.hasQTag(result!)) {
-                QuoteReposts quoteReposts = Nip18.decodeQuoteReposts(result!);
-                noteDB = NoteDB.noteDBFromQuoteReposts(quoteReposts);
-              } else {
-                Note note = Nip1.decodeNote(result!);
-                noteDB = NoteDB.noteDBFromNote(note);
-              }
-              break;
-            case 6:
-              Reposts reposts = await Nip18.decodeReposts(result!);
-              noteDB = NoteDB.noteDBFromReposts(reposts);
-              break;
-            case 7:
-              Reactions reactions = Nip25.decode(result!);
-              noteDB = NoteDB.noteDBFromReactions(reactions);
-              break;
-          }
-          if (!completer.isCompleted) completer.complete(noteDB);
-          if (noteDB != null) saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
-        } else {
-          if (!completer.isCompleted) completer.complete(null);
-        }
+        if (!completer.isCompleted) completer.complete(null);
       }
     });
     return completer.future;
