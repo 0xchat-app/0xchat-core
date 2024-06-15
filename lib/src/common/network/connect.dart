@@ -349,7 +349,6 @@ class Connect {
   }
 
   Future<void> _handleEvent(Event event, String relay) async {
-    print('Received event: ${event.serialize()}, $relay');
     if(eventCache.contains(event.id)) return;
     // add to cache
     eventCache.add(event.id);
@@ -357,6 +356,7 @@ class Connect {
     if(await event.isValid() == false) return;
     // ignore the expired event
     if (Nip40.expired(event)) return;
+    print('Received event: ${event.serialize()}, $relay');
 
     String? subscriptionId = event.subscriptionId;
     if (subscriptionId != null) {
