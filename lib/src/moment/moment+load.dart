@@ -322,7 +322,7 @@ extension Load on Moment {
         List<NoteDB> r = [];
         for (Event event in result.values) {
           NoteDB? noteDB;
-          if (Messages.sharedInstance.messagesLoaded.contains(event.id)) {
+          if (Messages.isLoaded(event.id)) {
             noteDB = await loadNoteWithNoteId(event.id);
           } else {
             Messages.addToLoaded(event.id);
@@ -352,7 +352,7 @@ extension Load on Moment {
         List<NoteDB> r = [];
         for (Event event in result.values) {
           NoteDB? noteDB;
-          if (Messages.sharedInstance.messagesLoaded.contains(event.id)) {
+          if (Messages.isLoaded(event.id)) {
             noteDB = await loadNoteWithNoteId(event.id);
           } else {
             Messages.addToLoaded(event.id);

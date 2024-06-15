@@ -505,7 +505,7 @@ class Contacts {
     }
     friendMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
-      if (Messages.sharedInstance.messagesLoaded.contains(event.id)) return;
+      if (Messages.isLoaded(event.id)) return;
       if (event.kind == 4) {
         updateFriendMessageTime(event.createdAt, relay);
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);

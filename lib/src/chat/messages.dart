@@ -95,7 +95,7 @@ class Messages {
     Filter f = Filter(kinds: [7, 9735], ids: eventIds);
     messageRequestsId = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) {
-          if (Messages.sharedInstance.messagesLoaded.contains(event.id)) return;
+          if (Messages.isLoaded(event.id)) return;
           Messages.addToLoaded(event.id);
       switch (event.kind) {
         case 7:
@@ -306,8 +306,12 @@ class Messages {
     }
   }
 
+  static bool isLoaded(String messageId){
+    return Messages.sharedInstance.messagesLoaded.contains(messageId);
+  }
+
   static bool addToLoaded(String messageId) {
-    if (!Messages.sharedInstance.messagesLoaded.contains(messageId)) {
+    if (!isLoaded(messageId)) {
       Messages.sharedInstance.messagesLoaded.add(messageId);
       return true;
     }

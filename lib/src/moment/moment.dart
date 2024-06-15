@@ -59,7 +59,7 @@ class Moment {
       notesSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
           eventCallBack: (event, relay) async {
         updateMomentTime(event.createdAt, relay);
-        if (Messages.sharedInstance.messagesLoaded.contains(event.id)) return;
+        if (Messages.isLoaded(event.id)) return;
         Messages.addToLoaded(event.id);
         switch (event.kind) {
           case 1:
