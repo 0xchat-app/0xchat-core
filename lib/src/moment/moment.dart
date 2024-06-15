@@ -24,6 +24,7 @@ class Moment {
   Map<String, bool> offlineMomentFinish = {};
 
   int latestNoteTime = 0;
+  int limit = 50;
 
   Future<void> init() async {
     privkey = Account.sharedInstance.currentPrivkey;
@@ -44,15 +45,15 @@ class Moment {
         for (String relayURL in Connect.sharedInstance.relays()) {
           int momentUntil = Relays.sharedInstance.getMomentUntil(relayURL);
           Filter f1 = Filter(
-              authors: authors, kinds: [1, 6], since: momentUntil, limit: 100);
+              authors: authors, kinds: [1, 6], since: momentUntil, limit: limit);
           Filter f2 = Filter(
-              p: [pubkey], kinds: [1, 6, 7], since: momentUntil, limit: 100);
+              p: [pubkey], kinds: [1, 6, 7], since: momentUntil, limit: limit);
           subscriptions[relayURL] = [f1, f2];
         }
       } else {
         int momentUntil = Relays.sharedInstance.getMomentUntil(relay);
-        Filter f1 = Filter(authors: authors, kinds: [1, 6], since: momentUntil);
-        Filter f2 = Filter(p: [pubkey], kinds: [1, 6, 7], since: momentUntil);
+        Filter f1 = Filter(authors: authors, kinds: [1, 6], since: momentUntil, limit: limit);
+        Filter f2 = Filter(p: [pubkey], kinds: [1, 6, 7], since: momentUntil, limit: limit);
         subscriptions[relay] = [f1, f2];
       }
 
