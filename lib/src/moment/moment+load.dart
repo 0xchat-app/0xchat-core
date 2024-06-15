@@ -17,6 +17,7 @@ extension Load on Moment {
         limit: limit);
     for (var note in notes) {
       notesCache[note.noteId] = note;
+      Messages.addToLoaded(note.noteId);
     }
     return notes;
   }
@@ -58,6 +59,7 @@ extension Load on Moment {
       notesCache[note.noteId] = note;
       latestNoteTime =
           note.createAt > latestNoteTime ? note.createAt : latestNoteTime;
+      Messages.addToLoaded(note.noteId);
     }
     return notes;
   }
@@ -72,6 +74,7 @@ extension Load on Moment {
         limit: limit);
     for (var note in notes) {
       notesCache[note.noteId] = note;
+      Messages.addToLoaded(note.noteId);
     }
     List<NoteDB>? result = notes
         .where((n) => Contacts.sharedInstance.allContacts.containsKey(n.author))
@@ -89,6 +92,7 @@ extension Load on Moment {
         limit: limit);
     for (var note in notes) {
       notesCache[note.noteId] = note;
+      Messages.addToLoaded(note.noteId);
     }
     List<NoteDB>? result = notes
         .where((n) => Contacts.sharedInstance.allContacts.containsKey(n.author))
@@ -318,10 +322,10 @@ extension Load on Moment {
         List<NoteDB> r = [];
         for (Event event in result.values) {
           NoteDB? noteDB;
-          if (EventCache.sharedInstance.isLoaded(event.id)) {
+          if (Messages.sharedInstance.messagesLoaded.contains(event.id)) {
             noteDB = await loadNoteWithNoteId(event.id);
           } else {
-            EventCache.sharedInstance.addToLoaded(event.id);
+            Messages.addToLoaded(event.id);
             Note note = Nip1.decodeNote(event);
             noteDB = NoteDB.noteDBFromNote(note);
             await saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
@@ -348,10 +352,10 @@ extension Load on Moment {
         List<NoteDB> r = [];
         for (Event event in result.values) {
           NoteDB? noteDB;
-          if (EventCache.sharedInstance.isLoaded(event.id)) {
+          if (Messages.sharedInstance.messagesLoaded.contains(event.id)) {
             noteDB = await loadNoteWithNoteId(event.id);
           } else {
-            await EventCache.sharedInstance.addToLoaded(event.id);
+            Messages.addToLoaded(event.id);
             Note note = Nip1.decodeNote(event);
             noteDB = NoteDB.noteDBFromNote(note);
             saveNoteToDB(noteDB, ConflictAlgorithm.ignore);

@@ -95,6 +95,8 @@ class Connect {
   // relay AUTH
   Map<String, AuthData> auths = {};
 
+  List<String> eventCache = [];
+
   void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
       timer = Timer.periodic(Duration(seconds: 5), (Timer t) {
@@ -346,10 +348,14 @@ class Connect {
     }
   }
 
-  void _handleEvent(Event event, String relay) {
+  Future<void> _handleEvent(Event event, String relay) async {
     print('Received event: ${event.serialize()}, $relay');
-
-    /// ignore the expired event
+    if(eventCache.contains(event.id)) return;
+    // add to cache
+    eventCache.add(event.id);
+    // check sign
+    if(await event.isValid() == false) return;
+    // ignore the expired event
     if (Nip40.expired(event)) return;
 
     String? subscriptionId = event.subscriptionId;

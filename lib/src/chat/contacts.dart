@@ -59,7 +59,8 @@ class Contacts {
   int lastFriendListUpdateTime = 0;
   List<String>? blockList;
   Map<String, CallMessage> callMessages = {};
-  int maxLimit = 2024;
+  int maxLimit = 1024;
+  int offset = 24 * 60 * 60 * 2;
 
   /// callbacks
   SecretChatRequestCallBack? secretChatRequestCallBack;
@@ -254,7 +255,7 @@ class Contacts {
               decryptSecret: decryptSecret),
           expiration: expiration);
     } else {
-      var intValue = Random().nextInt(24 * 60 * 60 * 7);
+      var intValue = Random().nextInt(offset);
       int createAt = currentUnixTimestampSeconds() - intValue;
       event ??= await Nip17.encodeSealedGossipDM(
           friendPubkey,
@@ -422,14 +423,13 @@ class Contacts {
     await Moment.sharedInstance.updateSubscriptions(relay: relay);
   }
 
-    Future<void> _subscriptMessages({String? relay}) async {
+  Future<void> _subscriptMessages({String? relay}) async {
     if (friendMessageSubscription.isNotEmpty) {
       await Connect.sharedInstance
           .closeRequests(friendMessageSubscription, relay: relay);
     }
 
     Map<String, List<Filter>> subscriptions = {};
-    int timeOffset = 24 * 60 * 60 * 7; // 7 days
     if (relay == null) {
       for (String relayURL in Connect.sharedInstance.relays()) {
         int friendMessageUntil =
@@ -437,40 +437,35 @@ class Contacts {
 
         /// all messages, contacts & unknown contacts
         Filter f1 = Filter(
-            kinds: [4, 44],
+            kinds: [4, 9735],
             p: [pubkey],
             since: (friendMessageUntil + 1),
             limit: maxLimit);
         Filter f2 = Filter(
-            kinds: [4, 44],
+            kinds: [4],
             authors: [pubkey],
             since: (friendMessageUntil + 1),
             limit: maxLimit);
         Filter f3 = Filter(
             kinds: [1059],
             p: [pubkey],
-            since: friendMessageUntil > timeOffset
-                ? (friendMessageUntil - timeOffset + 1)
+            since: friendMessageUntil > offset
+                ? (friendMessageUntil - offset + 1)
                 : 1,
             limit: maxLimit);
         Filter f4 = Filter(
             kinds: [1059],
             authors: [pubkey],
-            since: friendMessageUntil > timeOffset
-                ? (friendMessageUntil - timeOffset + 1)
+            since: friendMessageUntil > offset
+                ? (friendMessageUntil - offset + 1)
                 : 1,
             limit: maxLimit);
         Filter f5 = Filter(
             kinds: [9735],
-            p: [pubkey],
-            since: (friendMessageUntil + 1),
-            limit: maxLimit);
-        Filter f6 = Filter(
-            kinds: [9735],
             P: [pubkey],
             since: (friendMessageUntil + 1),
             limit: maxLimit);
-        subscriptions[relayURL] = [f1, f2, f3, f4, f5, f6];
+        subscriptions[relayURL] = [f1, f2, f3, f4, f5];
       }
     } else {
       int friendMessageUntil =
@@ -478,45 +473,40 @@ class Contacts {
 
       /// all messages, contacts & unknown contacts
       Filter f1 = Filter(
-          kinds: [4, 44],
+          kinds: [4, 9735],
           p: [pubkey],
           since: (friendMessageUntil + 1),
           limit: maxLimit);
       Filter f2 = Filter(
-          kinds: [4, 44],
+          kinds: [4],
           authors: [pubkey],
           since: (friendMessageUntil + 1),
           limit: maxLimit);
       Filter f3 = Filter(
           kinds: [1059],
           p: [pubkey],
-          since: friendMessageUntil > timeOffset
-              ? (friendMessageUntil - timeOffset + 1)
+          since: friendMessageUntil > offset
+              ? (friendMessageUntil - offset + 1)
               : 1,
           limit: maxLimit);
       Filter f4 = Filter(
           kinds: [1059],
           authors: [pubkey],
-          since: friendMessageUntil > timeOffset
-              ? (friendMessageUntil - timeOffset + 1)
+          since: friendMessageUntil > offset
+              ? (friendMessageUntil - offset + 1)
               : 1,
           limit: maxLimit);
       Filter f5 = Filter(
           kinds: [9735],
-          p: [pubkey],
-          since: (friendMessageUntil + 1),
-          limit: maxLimit);
-      Filter f6 = Filter(
-          kinds: [9735],
           P: [pubkey],
           since: (friendMessageUntil + 1),
           limit: maxLimit);
-      subscriptions[relay] = [f1, f2, f3, f4, f5, f6];
+      subscriptions[relay] = [f1, f2, f3, f4, f5];
     }
     friendMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       if (Messages.sharedInstance.messagesLoaded.contains(event.id)) return;
-      if (event.kind == 4 || event.kind == 44) {
+      if (event.kind == 4) {
         updateFriendMessageTime(event.createdAt, relay);
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       } else if (event.kind == 9735) {
@@ -662,7 +652,7 @@ class Contacts {
       Event? innerEvent}) async {
     if (innerEvent == null) return OKEvent('', false, 'innerEvent == null');
     Completer<OKEvent> completer = Completer<OKEvent>();
-    var intValue = Random().nextInt(24 * 60 * 60 * 7);
+    var intValue = Random().nextInt(offset);
     int createAt = currentUnixTimestampSeconds() - intValue;
     event ??= await Nip17.encodeSealedGossipDM(toPubkey,
         MessageDB.getContent(type, content, source), replyId, pubkey, privkey,

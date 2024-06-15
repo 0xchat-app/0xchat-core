@@ -28,7 +28,6 @@ class Moment {
   Future<void> init() async {
     privkey = Account.sharedInstance.currentPrivkey;
     pubkey = Account.sharedInstance.currentPubkey;
-    await EventCache.sharedInstance.loadAllEventIDFromDB();
   }
 
   Future<void> updateSubscriptions({String? relay}) async {
@@ -60,11 +59,8 @@ class Moment {
       notesSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
           eventCallBack: (event, relay) async {
         updateMomentTime(event.createdAt, relay);
-        if (EventCache.sharedInstance.isLoaded(event.id)) {
-          return;
-        } else {
-          EventCache.sharedInstance.addToLoaded(event.id);
-        }
+        if (Messages.sharedInstance.messagesLoaded.contains(event.id)) return;
+        Messages.addToLoaded(event.id);
         switch (event.kind) {
           case 1:
             handleNoteEvent(event, relay, false);
