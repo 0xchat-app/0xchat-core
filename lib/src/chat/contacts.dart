@@ -242,33 +242,15 @@ class Contacts {
     expiration = expiration != null
         ? (expiration + currentUnixTimestampSeconds())
         : null;
-    if (kind == 4) {
-      event ??= await Nip4.encode(pubkey, friendPubkey,
-          MessageDB.getContent(type, content, source), replayId, privkey,
-          subContent: MessageDB.getSubContent(type, content,
-              decryptSecret: decryptSecret),
-          expiration: expiration);
-    } else if (kind == 44) {
-      event ??= await Nip44.encode(pubkey, friendPubkey,
-          MessageDB.getContent(type, content, source), replayId, privkey,
-          subContent: MessageDB.getSubContent(type, content,
-              decryptSecret: decryptSecret),
-          expiration: expiration);
-    } else {
-      var intValue = Random().nextInt(offset);
-      int createAt = currentUnixTimestampSeconds() - intValue;
-      event ??= await Nip17.encodeSealedGossipDM(
-          friendPubkey,
-          MessageDB.getContent(type, content, source),
-          replayId,
-          pubkey,
-          privkey,
-          sealedReceiver: sealedReceiver,
-          createAt: createAt,
-          subContent: MessageDB.getSubContent(type, content,
-              decryptSecret: decryptSecret),
-          expiration: expiration);
-    }
+    var intValue = Random().nextInt(offset);
+    int createAt = currentUnixTimestampSeconds() - intValue;
+    event ??= await Nip17.encodeSealedGossipDM(friendPubkey,
+        MessageDB.getContent(type, content, source), replayId, pubkey, privkey,
+        sealedReceiver: sealedReceiver,
+        createAt: createAt,
+        subContent: MessageDB.getSubContent(type, content,
+            decryptSecret: decryptSecret),
+        expiration: expiration);
     return event;
   }
 
