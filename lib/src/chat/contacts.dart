@@ -61,6 +61,7 @@ class Contacts {
   Map<String, CallMessage> callMessages = {};
   int maxLimit = 1024;
   int offset = 24 * 60 * 60 * 2;
+  int offset2 = 24 * 60 * 60 * 7;
 
   /// callbacks
   SecretChatRequestCallBack? secretChatRequestCallBack;
@@ -431,15 +432,15 @@ class Contacts {
         Filter f3 = Filter(
             kinds: [1059],
             p: [pubkey],
-            since: friendMessageUntil > offset
-                ? (friendMessageUntil - offset + 1)
+            since: friendMessageUntil > offset2
+                ? (friendMessageUntil - offset2 + 1)
                 : 1,
             limit: maxLimit);
         Filter f4 = Filter(
             kinds: [1059],
             authors: [pubkey],
-            since: friendMessageUntil > offset
-                ? (friendMessageUntil - offset + 1)
+            since: friendMessageUntil > offset2
+                ? (friendMessageUntil - offset2 + 1)
                 : 1,
             limit: maxLimit);
         Filter f5 = Filter(
@@ -467,15 +468,15 @@ class Contacts {
       Filter f3 = Filter(
           kinds: [1059],
           p: [pubkey],
-          since: friendMessageUntil > offset
-              ? (friendMessageUntil - offset + 1)
+          since: friendMessageUntil > offset2
+              ? (friendMessageUntil - offset2 + 1)
               : 1,
           limit: maxLimit);
       Filter f4 = Filter(
           kinds: [1059],
           authors: [pubkey],
-          since: friendMessageUntil > offset
-              ? (friendMessageUntil - offset + 1)
+          since: friendMessageUntil > offset2
+              ? (friendMessageUntil - offset2 + 1)
               : 1,
           limit: maxLimit);
       Filter f5 = Filter(
