@@ -350,27 +350,26 @@ class Connect {
 
   Future<void> _handleEvent(Event event, String relay) async {
     print('Received event: ${event.serialize()}, $relay');
-    if(eventCache.contains(event.id)){
-      print('eventCache exit: ${event.id}');
-      return;
-    }
+    if(eventCache.contains(event.id)) return;
     // add to cache
     eventCache.add(event.id);
-    // check sign
-    if(await event.isValid() == false){
-      print('event invalid: ${event.id}');
-      return;
-    }
     // ignore the expired event
     if (Nip40.expired(event)) return;
 
     String? subscriptionId = event.subscriptionId;
     if (subscriptionId != null) {
       String requestsMapKey = subscriptionId + relay;
+
       if (subscriptionId.isNotEmpty &&
           requestsMap.containsKey(requestsMapKey)) {
         EventCallBack? callBack = requestsMap[requestsMapKey]!.eventCallBack;
-        if (callBack != null) callBack(event, relay);
+        if (callBack != null){
+          // check sign
+          if(await event.isValid() == false){
+            return;
+          }
+          callBack(event, relay);
+        }
       }
     }
   }

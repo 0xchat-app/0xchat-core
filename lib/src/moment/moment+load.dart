@@ -154,7 +154,6 @@ extension Load on Moment {
           noteDB = NoteDB.noteDBFromReactions(reactions);
           break;
       }
-      print('loadPublicNoteFromRelay: $noteId, ${event.content}');
       if (!completer.isCompleted) completer.complete(noteDB);
       if (noteDB != null) saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
@@ -162,7 +161,6 @@ extension Load on Moment {
       if (unRelays.isEmpty) {
         if (!completer.isCompleted) {
           NoteDB? note = await loadNoteWithNoteId(noteId, reload: false);
-          print('loadPublicNoteFromRelay: $noteId, ${note?.content}');
           completer.complete(note);
         }
       }
