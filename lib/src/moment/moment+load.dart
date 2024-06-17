@@ -118,7 +118,8 @@ extension Load on Moment {
 
   Future<void> saveNoteToDB(
       NoteDB noteDB, ConflictAlgorithm? conflictAlgorithm) async {
-    if (conflictAlgorithm == ConflictAlgorithm.replace) {
+    if (!notesCache.containsKey(noteDB.noteId) ||
+        conflictAlgorithm == ConflictAlgorithm.replace) {
       notesCache[noteDB.noteId] = noteDB;
     }
     int result = await DB.sharedInstance
@@ -153,12 +154,17 @@ extension Load on Moment {
           noteDB = NoteDB.noteDBFromReactions(reactions);
           break;
       }
+      print('loadPublicNoteFromRelay: $noteId, ${event.content}');
       if (!completer.isCompleted) completer.complete(noteDB);
       if (noteDB != null) saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        if (!completer.isCompleted) completer.complete(null);
+        if (!completer.isCompleted) {
+          NoteDB? note = await loadNoteWithNoteId(noteId, reload: false);
+          print('loadPublicNoteFromRelay: $noteId, ${note?.content}');
+          completer.complete(note);
+        }
       }
     });
     return completer.future;

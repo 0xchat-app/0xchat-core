@@ -349,14 +349,20 @@ class Connect {
   }
 
   Future<void> _handleEvent(Event event, String relay) async {
-    if(eventCache.contains(event.id)) return;
+    print('Received event: ${event.serialize()}, $relay');
+    if(eventCache.contains(event.id)){
+      print('eventCache exit: ${event.id}');
+      return;
+    }
     // add to cache
     eventCache.add(event.id);
     // check sign
-    if(await event.isValid() == false) return;
+    if(await event.isValid() == false){
+      print('event invalid: ${event.id}');
+      return;
+    }
     // ignore the expired event
     if (Nip40.expired(event)) return;
-    print('Received event: ${event.serialize()}, $relay');
 
     String? subscriptionId = event.subscriptionId;
     if (subscriptionId != null) {
@@ -490,11 +496,17 @@ class Connect {
     if (!auths.containsKey(relay)) {
       auths[relay] = AuthData(auth.challenge, '', []);
     }
+    else if(auths[relay]?.challenge != auth.challenge){
+      auths[relay]?.challenge = auth.challenge;
+      auths[relay]?.eventId = '';
+    }
   }
 
   Future<void> _sendAuth(String relay) async {
     String? challenge = auths[relay]?.challenge;
-    if (challenge == null) return;
+    if (challenge == null || challenge.isEmpty) return;
+    String? eventId = auths[relay]?.eventId;
+    if(eventId?.isNotEmpty == true) return;
     Event event = await Nip42.encode(
         challenge,
         relay,
@@ -502,7 +514,7 @@ class Connect {
         Account.sharedInstance.currentPrivkey);
     var authJson = Nip42.authString(event);
     auths[relay]!.eventId = event.id;
-    print('send auth: $authJson}');
+    print('send auth: $authJson');
     _send(authJson, relay: relay);
   }
 
