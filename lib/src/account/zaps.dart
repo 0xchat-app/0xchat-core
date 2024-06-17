@@ -22,7 +22,7 @@ class Zaps {
   String nwcSubscription = '';
   String currentPubkey = '';
 
-  void _connectToRelay(List<String> relays) {
+  void _connectToRelays(List<String> relays) {
     for (var relay in relays) {
       if (relay.isNotEmpty &&
           !Connect.sharedInstance.relays(type: 1).contains(relay)) {
@@ -55,7 +55,7 @@ class Zaps {
     }
     nwc = Account.sharedInstance.me?.nwc;
     if (nwc != null) {
-      _connectToRelay(nwc!.relays);
+      _connectToRelays(nwc!.relays);
     }
     updateNWCSubscription();
     return nwc;
@@ -66,9 +66,9 @@ class Zaps {
     if (nwc == null) {
       completer.complete(OKEvent(invoice, false, 'nwc not exit'));
     }
-    Event event =
-        await Nip47.request(invoice, nwc!.server, nwc!.secret);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+    Event event = await Nip47.request(invoice, nwc!.server, nwc!.secret);
+    Connect.sharedInstance.sendEvent(event, relay: nwc!.relays.first,
+        sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
