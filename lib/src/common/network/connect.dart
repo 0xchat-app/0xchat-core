@@ -506,6 +506,7 @@ class Connect {
     if (challenge == null || challenge.isEmpty) return;
     String? eventId = auths[relay]?.eventId;
     if(eventId?.isNotEmpty == true) return;
+    auths[relay]!.eventId = 'sending...';
     Event event = await Nip42.encode(
         challenge,
         relay,
