@@ -129,7 +129,6 @@ extension Load on Moment {
 
   Future<NoteDB?> loadPublicNoteFromRelay(String noteId) async {
     if (noteId.isEmpty) return null;
-    Connect.sharedInstance.eventCache.remove(noteId);
     Completer<NoteDB?> completer = Completer<NoteDB?>();
     Filter f = Filter(ids: [noteId]);
     Connect.sharedInstance.addSubscription([f],
