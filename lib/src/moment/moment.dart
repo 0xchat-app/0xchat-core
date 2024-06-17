@@ -31,10 +31,14 @@ class Moment {
     pubkey = Account.sharedInstance.currentPubkey;
   }
 
-  Future<void> updateSubscriptions({String? relay}) async {
+  void closeSubscriptions({String? relay}) {
     if (notesSubscription.isNotEmpty) {
       Connect.sharedInstance.closeRequests(notesSubscription, relay: relay);
     }
+  }
+
+  Future<void> updateSubscriptions({String? relay}) async {
+    closeSubscriptions(relay: relay);
 
     List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
     authors.addAll(Account.sharedInstance.me?.followingList ?? []);

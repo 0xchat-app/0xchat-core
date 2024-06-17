@@ -349,17 +349,17 @@ class Contacts {
 
   Future<void> _preloadKind4Messages(List<String> pubkeys, int until) async {
     Filter f1 = Filter(
-        kinds: [4, 44],
+        kinds: [4],
         authors: [pubkey],
         p: pubkeys,
         until: until,
-        limit: pubkeys.length * 100);
+        limit: pubkeys.length * 20);
     Filter f2 = Filter(
-        kinds: [4, 44],
+        kinds: [4],
         authors: pubkeys,
         p: [pubkey],
         until: until,
-        limit: pubkeys.length * 100);
+        limit: pubkeys.length * 20);
     Connect.sharedInstance.addSubscription([f1, f2],
         eventCallBack: (event, relay) async {
       if (event.kind == 4 || event.kind == 44) {
