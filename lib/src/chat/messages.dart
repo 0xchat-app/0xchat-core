@@ -95,8 +95,8 @@ class Messages {
     Filter f = Filter(kinds: [7, 9735], ids: eventIds);
     messageRequestsId = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) {
-          if (Messages.isLoaded(event.id)) return;
-          Messages.addToLoaded(event.id);
+      if (Messages.isLoaded(event.id)) return;
+      Messages.addToLoaded(event.id);
       switch (event.kind) {
         case 7:
           handleReactionEvent(event);
@@ -306,7 +306,7 @@ class Messages {
     }
   }
 
-  static bool isLoaded(String messageId){
+  static bool isLoaded(String messageId) {
     return Messages.sharedInstance.messagesLoaded.contains(messageId);
   }
 
@@ -334,6 +334,9 @@ class Messages {
         message.type = map['contentType'];
       }
       Messages.addToLoaded(message.messageId);
+      if (!Connect.sharedInstance.eventCache.contains(message.messageId)) {
+        Connect.sharedInstance.eventCache.add(message.messageId);
+      }
     }
     return {'theLastTime': theLastTime, 'messages': messages};
   }

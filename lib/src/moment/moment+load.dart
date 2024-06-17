@@ -60,6 +60,9 @@ extension Load on Moment {
       latestNoteTime =
           note.createAt > latestNoteTime ? note.createAt : latestNoteTime;
       Messages.addToLoaded(note.noteId);
+      if (!Connect.sharedInstance.eventCache.contains(note.noteId)) {
+        Connect.sharedInstance.eventCache.add(note.noteId);
+      }
     }
     return notes;
   }
