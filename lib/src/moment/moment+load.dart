@@ -111,7 +111,6 @@ extension Load on Moment {
     if (notesCache.containsKey(noteId)) return notesCache[noteId];
     NoteDB? note = await loadNoteFromDBWithNoteId(noteId);
     if (!private && reload) note ??= await loadPublicNoteFromRelay(noteId);
-    print('loadNoteWithNoteId: $noteId, ${note?.content}');
     if (note != null) notesCache[noteId] = note;
     return note;
   }
