@@ -24,6 +24,7 @@ export 'src/chat/messages.dart';
 export 'src/chat/private-groups/groups.dart';
 export 'src/chat/private-groups/groups+admin.dart';
 export 'src/chat/private-groups/groups+member.dart';
+export 'src/chat/private-groups/groups+private.dart';
 export 'src/chat/groups/relayGroup.dart';
 export 'src/chat/groups/relayGroup+admin.dart';
 export 'src/chat/groups/relayGroup+info.dart';

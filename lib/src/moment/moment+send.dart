@@ -123,9 +123,7 @@ extension Send on Moment {
 
   static Future<void> encodeNip17InIsolate(Map<String, dynamic> params) async {
     String privkey = params['privkey'] ?? '';
-    if (SignerHelper.needSigner(privkey)) {
-      BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
-    }
+    BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
     Event event = await Event.fromJson(params['event'], verify: false);
     String receiver = params['receiver'] ?? '';
     Event sealedEvent = await Nip17.encode(

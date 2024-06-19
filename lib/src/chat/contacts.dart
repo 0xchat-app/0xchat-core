@@ -369,12 +369,10 @@ class Contacts {
 
   static Future<void> decodeNip24InIsolate(Map<String, dynamic> params) async {
     String privkey = params['privkey'] ?? '';
-    if (SignerHelper.needSigner(privkey)) {
-      BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
-    }
+    BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
     Event event = await Event.fromJson(params['event'], verify: false);
-    Event? innerEvent = await Nip17.decode(
-        event, params['pubkey'] ?? '', params['privkey'] ?? '');
+    Event? innerEvent =
+        await Nip17.decode(event, params['pubkey'] ?? '', privkey);
     params['sendPort'].send(innerEvent?.toJson());
   }
 
@@ -382,11 +380,18 @@ class Contacts {
     Completer<Event?> completer = Completer<Event?>();
     final receivePort = ReceivePort();
     receivePort.listen((message) {
-      if (!completer.isCompleted && message != null) {
-        completer.complete(Event.fromJson(message, verify: false));
+      if (!completer.isCompleted) {
+        if (message != null) {
+          completer.complete(Event.fromJson(message, verify: false));
+        } else {
+          completer.complete(null);
+        }
       }
+      receivePort.close(); // Close the receive port to avoid memory leaks
     });
+
     var rootToken = RootIsolateToken.instance!;
+    print('roottoken: $rootToken');
     Map<String, dynamic> map = {
       'event': event.toJson(),
       'privkey': privkey,
@@ -394,7 +399,8 @@ class Contacts {
       'sendPort': receivePort.sendPort,
       'token': rootToken
     };
-    Isolate.spawn(decodeNip24InIsolate, map);
+
+    await Isolate.spawn(decodeNip24InIsolate, map);
     return completer.future;
   }
 
@@ -493,6 +499,7 @@ class Contacts {
         Zaps.handleZapRecordEvent(event);
       } else if (event.kind == 1059) {
         Event? innerEvent = await decodeNip24Event(event);
+        print('receive 1059 event innerevent: ${innerEvent?.id}');
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
@@ -549,11 +556,10 @@ class Contacts {
         if (giftWrappedId != null) messageDB.giftWrappedId = giftWrappedId;
         int status = await Messages.saveMessageToDB(messageDB);
         if (status != 0) {
-          if(messageDB.groupId.isNotEmpty){
+          if (messageDB.groupId.isNotEmpty) {
             // private group
             Groups.sharedInstance.groupMessageCallBack?.call(messageDB);
-          }
-          else{
+          } else {
             // private chat
             privateChatMessageCallBack?.call(messageDB);
           }
@@ -603,14 +609,17 @@ class Contacts {
 
     if (local) {
       if (!completer.isCompleted) {
-        completer.complete(OKEvent(event.id, true, ''));
+        completer.complete(OKEvent(event.innerEvent?.id ?? event.id, true, ''));
       }
     } else {
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
         await Messages.saveMessageToDB(messageDB,
             conflictAlgorithm: ConflictAlgorithm.replace);
-        if (!completer.isCompleted) completer.complete(ok);
+        if (!completer.isCompleted) {
+          completer.complete(OKEvent(
+              event!.innerEvent?.id ?? event.id, ok.status, ok.message));
+        }
         if (kind != 4 && kind != 44) {
           await sendPrivateMessageToSelf(toPubkey, replyId, type, content,
               kind: kind,
@@ -650,7 +659,7 @@ class Contacts {
         : null;
     if (local) {
       if (!completer.isCompleted) {
-        completer.complete(OKEvent(event.id, true, ''));
+        completer.complete(OKEvent(innerEvent.id, true, ''));
       }
     } else {
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
