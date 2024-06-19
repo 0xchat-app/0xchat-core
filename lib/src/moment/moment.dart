@@ -49,15 +49,20 @@ class Moment {
         for (String relayURL in Connect.sharedInstance.relays()) {
           int momentUntil = Relays.sharedInstance.getMomentUntil(relayURL);
           Filter f1 = Filter(
-              authors: authors, kinds: [1, 6], since: momentUntil, limit: limit);
+              authors: authors,
+              kinds: [1, 6],
+              since: momentUntil,
+              limit: limit);
           Filter f2 = Filter(
               p: [pubkey], kinds: [1, 6, 7], since: momentUntil, limit: limit);
           subscriptions[relayURL] = [f1, f2];
         }
       } else {
         int momentUntil = Relays.sharedInstance.getMomentUntil(relay);
-        Filter f1 = Filter(authors: authors, kinds: [1, 6], since: momentUntil, limit: limit);
-        Filter f2 = Filter(p: [pubkey], kinds: [1, 6, 7], since: momentUntil, limit: limit);
+        Filter f1 = Filter(
+            authors: authors, kinds: [1, 6], since: momentUntil, limit: limit);
+        Filter f2 = Filter(
+            p: [pubkey], kinds: [1, 6, 7], since: momentUntil, limit: limit);
         subscriptions[relay] = [f1, f2];
       }
 
@@ -66,6 +71,7 @@ class Moment {
         updateMomentTime(event.createdAt, relay);
         if (Messages.isLoaded(event.id)) return;
         Messages.addToLoaded(event.id);
+        if (Contacts.sharedInstance.inBlockList(event.pubkey)) return;
         switch (event.kind) {
           case 1:
             handleNoteEvent(event, relay, false);

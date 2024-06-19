@@ -37,8 +37,11 @@ extension Load on Moment {
 
   Future<List<NoteDB>?> loadUserNotesFromDB(List<String> userPubkeys,
       {int limit = 50, int? until, bool? private}) async {
+    // remove blocklist pubkeys
+    userPubkeys = userPubkeys
+        .where((pubkey) => !Contacts.sharedInstance.inBlockList(pubkey))
+        .toList();
     until ??= currentUnixTimestampSeconds() + 1;
-
     String inClause = List.filled(userPubkeys.length, '?').join(',');
 
     String whereClause = 'author IN ($inClause) AND createAt < ?';
