@@ -88,10 +88,14 @@ class Messages {
     });
   }
 
-  void loadMessagesReactions(List<String> eventIds) {
+  void closeMessagesActionsRequests() {
     if (messagesActionsRequestsId.isNotEmpty) {
       Connect.sharedInstance.closeRequests(messagesActionsRequestsId);
     }
+  }
+
+  void loadMessagesReactions(List<String> eventIds) {
+    closeMessagesActionsRequests();
     Filter f = Filter(kinds: [7, 9735], ids: eventIds);
     messageRequestsId = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) {
