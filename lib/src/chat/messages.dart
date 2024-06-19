@@ -337,6 +337,10 @@ class Messages {
       if (!Connect.sharedInstance.eventCache.contains(message.messageId)) {
         Connect.sharedInstance.eventCache.add(message.messageId);
       }
+      if (message.giftWrappedId.isNotEmpty &&
+          !Connect.sharedInstance.eventCache.contains(message.giftWrappedId)) {
+        Connect.sharedInstance.eventCache.add(message.giftWrappedId);
+      }
     }
     return {'theLastTime': theLastTime, 'messages': messages};
   }

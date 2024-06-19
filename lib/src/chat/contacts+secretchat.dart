@@ -367,7 +367,7 @@ extension SecretChat on Contacts {
           chatType: 3);
       if (messageDB != null) {
         messageDB.sessionId = sessionId;
-        messageDB.messageId = giftWrapEventId;
+        messageDB.giftWrappedId = giftWrapEventId;
         int status = await Messages.saveMessageToDB(messageDB);
         if (status != 0) {
           secretChatMessageCallBack?.call(messageDB);
@@ -421,12 +421,12 @@ extension SecretChat on Contacts {
           ? (expiration + currentUnixTimestampSeconds())
           : null;
       MessageDB messageDB = MessageDB(
-          messageId: event!.id,
+          messageId: event?.innerEvent?.id ?? event!.id,
           sender: pubkey,
           receiver: toPubkey,
           groupId: '',
           sessionId: sessionId,
-          kind: event.kind,
+          kind: event!.kind,
           tags: jsonEncode(event.tags),
           content: event.content,
           createTime: currentUnixTimestampSeconds(),
@@ -436,7 +436,8 @@ extension SecretChat on Contacts {
           plaintEvent: jsonEncode(event),
           chatType: 3,
           expiration: expiration,
-          decryptSecret: decryptSecret);
+          decryptSecret: decryptSecret,
+          giftWrappedId: event.id);
       secretChatMessageCallBack?.call(messageDB);
       await Messages.saveMessageToDB(messageDB);
 

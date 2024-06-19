@@ -264,7 +264,7 @@ class Groups {
     await DB.sharedInstance.insert<GroupDB>(groupDB);
   }
 
-  Future<void> _syncMyGroupListToDB() async {
+  Future<void> syncMyGroupListToDB() async {
     List<String> list = myGroups.keys.toList();
     UserDB? me = Account.sharedInstance.me;
     me!.groupsList = list;
@@ -279,7 +279,7 @@ class Groups {
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (ok.status) {
         Account.sharedInstance.me!.lastGroupsListUpdatedTime = event.createdAt;
-        _syncMyGroupListToDB();
+        syncMyGroupListToDB();
       }
       if (!completer.isCompleted) completer.complete(ok);
     });

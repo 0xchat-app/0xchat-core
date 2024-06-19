@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
@@ -16,6 +15,7 @@ class NotificationHelper {
   String privkey = '';
   String serverPubkey = '';
   Timer? timer;
+  String oxchatRelay = 'wss://relay.0xchat.com';
 
   // key: private key
   // serverkey: server pubkey
@@ -58,13 +58,13 @@ class NotificationHelper {
   Future<void> _heartBeat(String serverPubkey, String privkey) async {
     Map map = {'online': 1};
     Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event, relay: 'wss://relay.0xchat.com');
+    Connect.sharedInstance.sendEvent(event, relay: oxchatRelay);
   }
 
   Future<void> setOffline() async {
     Map map = {'online': 0};
     Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event, relay: 'wss://relay.0xchat.com');
+    Connect.sharedInstance.sendEvent(event, relay: oxchatRelay);
 
     _stopHeartBeat();
   }
@@ -77,7 +77,7 @@ class NotificationHelper {
   Future<void> logout() async {
     Map map = {'online': 0, 'deviceId': ''};
     Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event, relay: 'wss://relay.0xchat.com');
+    Connect.sharedInstance.sendEvent(event, relay: oxchatRelay);
 
     _stopHeartBeat();
   }
@@ -112,7 +112,7 @@ class NotificationHelper {
     Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
-    }, relay: 'wss://relay.0xchat.com');
+    }, relay: oxchatRelay);
     return completer.future;
   }
 }

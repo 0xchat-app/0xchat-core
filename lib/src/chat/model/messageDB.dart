@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/chat/private-groups/groups+private.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 enum MessageType {
@@ -41,7 +42,8 @@ class MessageDB extends DBObject {
   String plaintEvent;
 
   /// add type
-  int? chatType; // 0 private chat 1 group chat 2 channel chat 3 secret chat 4 relay group chat
+  int?
+      chatType; // 0 private chat 1 group chat 2 channel chat 3 secret chat 4 relay group chat
   String? subType; // subtype of template/system type
 
   /// add previewData
@@ -56,6 +58,9 @@ class MessageDB extends DBObject {
   // actions
   List<String>? reactionEventIds;
   List<String>? zapEventIds;
+
+  // innerEvent Id
+  String giftWrappedId;
 
   MessageDB({
     this.messageId = '',
@@ -80,6 +85,7 @@ class MessageDB extends DBObject {
     this.decryptSecret,
     this.reactionEventIds,
     this.zapEventIds,
+    this.giftWrappedId = '',
   });
 
   @override
@@ -118,7 +124,8 @@ class MessageDB extends DBObject {
       "5":
           '''alter table MessageDB add previewData TEXT; alter table MessageDB add expiration INT; alter table MessageDB add decryptSecret TEXT;''',
       "6":
-          '''alter table MessageDB add reactionEventIds TEXT; alter table MessageDB add zapEventIds TEXT;'''
+          '''alter table MessageDB add reactionEventIds TEXT; alter table MessageDB add zapEventIds TEXT;''',
+      "8": '''alter table MessageDB add giftWrappedId TEXT;'''
     };
   }
 
@@ -340,13 +347,17 @@ class MessageDB extends DBObject {
       message = await Nip44.decode(event, receiver, privkey);
     } else if (event.kind == 14) {
       message = await Nip17.decodeSealedGossipDM(event, receiver);
+      if (message?.groupId?.isNotEmpty == true) {
+        Groups.sharedInstance.createPrivateGroup(message!.sender,
+            message.groupId!, message.subject, message.members);
+      }
     }
     if (message == null) return null;
     MessageDB messageDB = MessageDB(
         messageId: event.id,
         sender: message.sender,
         receiver: message.receiver,
-        groupId: '',
+        groupId: message.groupId ?? '',
         kind: event.kind,
         tags: jsonEncode(event.tags),
         content: message.content,
@@ -404,6 +415,7 @@ Map<String, dynamic> _messageInfoToMap(MessageDB instance) => <String, dynamic>{
       'decryptSecret': instance.decryptSecret,
       'reactionEventIds': jsonEncode(instance.reactionEventIds),
       'zapEventIds': jsonEncode(instance.zapEventIds),
+      'giftWrappedId': instance.giftWrappedId,
     };
 
 MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
@@ -431,5 +443,6 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     reactionEventIds:
         UserDB.decodeStringList(map['reactionEventIds'].toString()),
     zapEventIds: UserDB.decodeStringList(map['zapEventIds'].toString()),
+    giftWrappedId: map['giftWrappedId'].toString(),
   );
 }

@@ -326,7 +326,8 @@ extension Load on Moment {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         List<NoteDB> r = [];
-        for (Event event in result.values) {
+        List<Event> values = List.from(result.values);
+        for (Event event in values) {
           NoteDB? noteDB;
           if (Messages.isLoaded(event.id)) {
             noteDB = await loadNoteWithNoteId(event.id);

@@ -60,7 +60,6 @@ class Contacts {
   List<String>? blockList;
   Map<String, CallMessage> callMessages = {};
   int maxLimit = 1024;
-  int offset = 24 * 60 * 60 * 2;
   int offset2 = 24 * 60 * 60 * 7;
 
   /// callbacks
@@ -243,12 +242,9 @@ class Contacts {
     expiration = expiration != null
         ? (expiration + currentUnixTimestampSeconds())
         : null;
-    var intValue = Random().nextInt(offset);
-    int createAt = currentUnixTimestampSeconds() - intValue;
     event ??= await Nip17.encodeSealedGossipDM(friendPubkey,
         MessageDB.getContent(type, content, source), replayId, pubkey, privkey,
         sealedReceiver: sealedReceiver,
-        createAt: createAt,
         subContent: MessageDB.getSubContent(type, content,
             decryptSecret: decryptSecret),
         expiration: expiration);
@@ -501,8 +497,7 @@ class Contacts {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
             case 14:
-              _handlePrivateMessage(innerEvent, relay,
-                  giftWrapEventId: event.id);
+              _handlePrivateMessage(innerEvent, relay, giftWrappedId: event.id);
               break;
             case 10100:
             case 10101:
@@ -546,15 +541,22 @@ class Contacts {
   }
 
   Future<void> _handlePrivateMessage(Event event, String relay,
-      {String? giftWrapEventId}) async {
+      {String? giftWrappedId}) async {
     if (Messages.addToLoaded(event.id)) {
       MessageDB? messageDB =
           await MessageDB.fromPrivateMessage(event, pubkey, privkey);
       if (messageDB != null) {
-        if (giftWrapEventId != null) messageDB.messageId = giftWrapEventId;
+        if (giftWrappedId != null) messageDB.giftWrappedId = giftWrappedId;
         int status = await Messages.saveMessageToDB(messageDB);
         if (status != 0) {
-          privateChatMessageCallBack?.call(messageDB);
+          if(messageDB.groupId.isNotEmpty){
+            // private group
+            Groups.sharedInstance.groupMessageCallBack?.call(messageDB);
+          }
+          else{
+            // private chat
+            privateChatMessageCallBack?.call(messageDB);
+          }
         }
       }
     }
@@ -579,11 +581,11 @@ class Contacts {
         ? (expiration + currentUnixTimestampSeconds())
         : null;
     MessageDB messageDB = MessageDB(
-        messageId: event!.id,
+        messageId: event?.innerEvent?.id ?? event!.id,
         sender: pubkey,
         receiver: toPubkey,
         groupId: '',
-        kind: event.kind,
+        kind: event!.kind,
         tags: jsonEncode(event.tags),
         content: event.content,
         replyId: replyId,
@@ -594,7 +596,8 @@ class Contacts {
         plaintEvent: jsonEncode(event),
         chatType: 0,
         expiration: expiration,
-        decryptSecret: decryptSecret);
+        decryptSecret: decryptSecret,
+        giftWrappedId: event.id);
     privateChatMessageCallBack?.call(messageDB);
     await Messages.saveMessageToDB(messageDB);
 
@@ -635,12 +638,9 @@ class Contacts {
       Event? innerEvent}) async {
     if (innerEvent == null) return OKEvent('', false, 'innerEvent == null');
     Completer<OKEvent> completer = Completer<OKEvent>();
-    var intValue = Random().nextInt(offset);
-    int createAt = currentUnixTimestampSeconds() - intValue;
     event ??= await Nip17.encodeSealedGossipDM(toPubkey,
         MessageDB.getContent(type, content, source), replyId, pubkey, privkey,
         sealedReceiver: pubkey,
-        createAt: createAt,
         subContent: MessageDB.getSubContent(type, content,
             decryptSecret: decryptSecret),
         expiration: expiration,
@@ -648,12 +648,6 @@ class Contacts {
     expiration = expiration != null
         ? (expiration + currentUnixTimestampSeconds())
         : null;
-    if (Messages.addToLoaded(innerEvent.id)) {
-      MessageDB messageDB =
-          MessageDB(messageId: innerEvent.id, expiration: expiration);
-      await Messages.saveMessageToDB(messageDB);
-    }
-
     if (local) {
       if (!completer.isCompleted) {
         completer.complete(OKEvent(event.id, true, ''));
