@@ -350,6 +350,7 @@ class MessageDB extends DBObject {
       if (message?.groupId?.isNotEmpty == true) {
         Groups.sharedInstance.createPrivateGroup(message!.sender,
             message.groupId!, message.subject, message.members);
+        chatType = 1;
       }
     }
     if (message == null) return null;

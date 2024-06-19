@@ -10,8 +10,10 @@ extension PrivateGroups on Groups {
       String? name, List<String>? members) async {
     if (members == null || members.isEmpty) return null;
     members = members.toSet().toList();
+    if (groupId.isEmpty) groupId = ChatRoom.generateChatRoomID(members);
     if (myGroups.containsKey(groupId)) {
-      if (name != myGroups[groupId]?.name) {
+      myGroups[groupId]?.members = members;
+      if (name != null && name.isNotEmpty && name != myGroups[groupId]?.name) {
         updatePrivateGroupName(sender, groupId, name ?? '');
       }
     } else {
@@ -21,8 +23,10 @@ extension PrivateGroups on Groups {
           updateTime: currentUnixTimestampSeconds(),
           name: name ?? '',
           members: members);
+      groups[groupId] = groupDB;
       myGroups[groupId] = groupDB;
       // update my group list
+      await syncGroupToDB(groupDB);
       await syncMyGroupListToDB();
     }
     myGroupsUpdatedCallBack?.call();
@@ -60,7 +64,8 @@ extension PrivateGroups on Groups {
         privkey,
         subContent: MessageDB.getSubContent(type, content,
             decryptSecret: decryptSecret),
-        members: members);
+        members: members,
+        subject: groupDB.name);
     return event;
   }
 

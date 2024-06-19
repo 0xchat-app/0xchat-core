@@ -391,7 +391,6 @@ class Contacts {
     });
 
     var rootToken = RootIsolateToken.instance!;
-    print('roottoken: $rootToken');
     Map<String, dynamic> map = {
       'event': event.toJson(),
       'privkey': privkey,
