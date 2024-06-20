@@ -211,9 +211,15 @@ class Connect {
     }
   }
 
+  Future closeConnects(List<String> relays) async {
+    for(var relay in relays){
+      closeConnect(relay);
+    }
+  }
+
   Future closeConnect(String relay) async {
     print('closeConnect ${webSockets[relay]?.socket}');
-    webSockets[relay]?.socket?.close();
+    await webSockets[relay]?.socket?.close();
     webSockets.remove(relay);
   }
 

@@ -126,62 +126,11 @@ class Account {
     Filter f = Filter(kinds: [0, 10050], authors: [pubkey]);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      if (event.kind == 10050) {
-        _handleKind10050Event(db, event);
-        return;
-      }
-      Map map = jsonDecode(event.content);
-      if (db != null && db.lastUpdatedTime < event.createdAt) {
-        db.name = map['name']?.toString();
-        db.gender = map['gender']?.toString();
-        db.area = map['area']?.toString();
-        db.about = map['about']?.toString();
-        db.picture = map['picture']?.toString();
-        db.banner = map['banner']?.toString();
-        db.dns = map['nip05']?.toString();
-        db.lnurl = map['lnurl']?.toString();
-        if (db.lnurl == null || db.lnurl == 'null' || db.lnurl!.isEmpty) {
-          db.lnurl = null;
-        }
-        db.lnurl ??= map['lud06']?.toString();
-        db.lnurl ??= map['lud16']?.toString();
-        db.lastUpdatedTime = event.createdAt;
-        if (db.name == null || db.name!.isEmpty) {
-          db.name = map['display_name']?.toString();
-        }
-        if (db.name == null || db.name!.isEmpty) {
-          db.name = map['username']?.toString();
-        }
-        if (db.name == null || db.name!.isEmpty) {
-          db.name = db.shortEncodedPubkey;
-        }
-        var keysToRemove = {
-          'name',
-          'display_name',
-          'username',
-          'gender',
-          'area',
-          'about',
-          'picture',
-          'banner',
-          'nip05',
-          'lnurl',
-          'lud16',
-          'lud06'
-        };
-        Map filteredMap = Map.from(map)
-          ..removeWhere((key, value) => keysToRemove.contains(key));
-        db.otherField = jsonEncode(filteredMap);
-      } else {
-        if (db?.lnurl == null || db?.lnurl == 'null' || db!.lnurl!.isEmpty) {
-          db?.lnurl = null;
-        }
-        db?.lnurl ??= map['lud16'];
-        db?.lnurl ??= map['lud06'];
-      }
+      if (event.kind == 10050) db = _handleKind10050Event(db, event);
+      if (event.kind == 0) db = _handleKind0Event(db, event);
       userCache[pubkey] = ValueNotifier<UserDB>(db!);
       if (pubkey == currentPubkey) me = db;
-      DB.sharedInstance.update<UserDB>(db);
+      DB.sharedInstance.update<UserDB>(db!);
       if (!completer.isCompleted) completer.complete(db);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
@@ -218,8 +167,12 @@ class Account {
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       UserDB? db = users[event.pubkey];
-      if (event.kind == 10050) _handleKind10050Event(db, event);
-      if(event.kind == 0) _handleKind0Event(db, event);
+      if (event.kind == 10050) {
+        users[event.pubkey] = _handleKind10050Event(db, event)!;
+      }
+      if (event.kind == 0) {
+        users[event.pubkey] = _handleKind0Event(db, event)!;
+      }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
@@ -235,7 +188,7 @@ class Account {
     return completer.future;
   }
 
-  void _handleKind0Event(UserDB? db, Event event){
+  UserDB? _handleKind0Event(UserDB? db, Event event) {
     Map map = jsonDecode(event.content);
     if (db != null && db.lastUpdatedTime < event.createdAt) {
       db.name = map['name']?.toString();
@@ -279,15 +232,19 @@ class Account {
         ..removeWhere((key, value) => keysToRemove.contains(key));
       db.otherField = jsonEncode(filteredMap);
     } else {
-      if (db?.lnurl == null || db?.lnurl == 'null') db?.lnurl = null;
+      if (db?.lnurl == null || db?.lnurl == 'null' || db!.lnurl!.isEmpty) {
+        db?.lnurl = null;
+      }
       db?.lnurl ??= map['lud16'];
       db?.lnurl ??= map['lud06'];
     }
+    return db;
   }
 
-  void _handleKind10050Event(UserDB? userDB, Event event) {
+  UserDB? _handleKind10050Event(UserDB? db, Event event) {
     List<String> relayList = Nip17.decodeDMRelays(event);
-    userDB?.relayList = relayList;
+    db?.relayList = relayList;
+    return db;
   }
 
   Future<List<String>> getDMRelayList(String pubkey) async {
@@ -296,6 +253,18 @@ class Account {
       return userDB.relayList ?? [];
     }
     return [];
+  }
+
+  Future<OKEvent> setDMRelayListToRelay(List<String> relays) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    Event event =
+        await Nip17.encodeDMRelays(relays, currentPubkey, currentPrivkey);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+      if (!completer.isCompleted) {
+        completer.complete(ok);
+      }
+    });
+    return completer.future;
   }
 
   Future<UserDB?> loginWithPubKey(String pubkey) async {
