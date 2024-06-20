@@ -446,7 +446,7 @@ extension SecretChat on Contacts {
           completer.complete(OKEvent(event.id, true, ''));
         }
       } else {
-        Connect.sharedInstance.sendEvent(event, relay: sessionDB.relay,
+        Connect.sharedInstance.sendEvent(event, toRelays: [sessionDB.relay ?? ''],
             sendCallBack: (ok, relay) async {
           messageDB.status = ok.status ? 1 : 2;
           await Messages.saveMessageToDB(messageDB,

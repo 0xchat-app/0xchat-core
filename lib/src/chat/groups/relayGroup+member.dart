@@ -11,7 +11,7 @@ extension EMember on RelayGroup {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event =
         await Nip29.encodeJoinRequest(groupId, content, pubkey, privkey);
-    Connect.sharedInstance.sendEvent(event, relay: groupDB.relay,
+    Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
         sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
     });

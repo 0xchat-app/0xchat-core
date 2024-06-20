@@ -205,14 +205,14 @@ class Connect {
     }
   }
 
-  Future connectRelays(List<String> relays) async {
+  Future connectRelays(List<String> relays, {int type = 0}) async {
     for (String relay in relays) {
-      connect(relay);
+      connect(relay, type: type);
     }
   }
 
   Future closeConnects(List<String> relays) async {
-    for(var relay in relays){
+    for (var relay in relays) {
       closeConnect(relay);
     }
   }
@@ -255,7 +255,7 @@ class Connect {
       requestsMap[requestWithFilter.subscriptionId + relay] = requests;
 
       /// Send a request message to the WebSocket server
-      _send(subscriptionString, relay: relay);
+      _send(subscriptionString, toRelays: [relay]);
 
       print('$subscriptionString, $relay');
     }
@@ -265,7 +265,7 @@ class Connect {
   Future closeSubscription(String subscriptionId, String relay) async {
     print(Close(subscriptionId).serialize());
     if (subscriptionId.isNotEmpty) {
-      _send(Close(subscriptionId).serialize(), relay: relay);
+      _send(Close(subscriptionId).serialize(), toRelays: [relay]);
 
       /// remove the mapping
       requestsMap.remove(subscriptionId + relay);
@@ -296,32 +296,35 @@ class Connect {
   }
 
   /// send an event to relay/relays
-  void sendEvent(Event event, {OKCallBack? sendCallBack, String? relay}) {
+  void sendEvent(Event event,
+      {OKCallBack? sendCallBack, List<String>? toRelays}) {
     String eventString = event.serialize();
     print('send event: $eventString');
     Sends sends = Sends(
         generate64RandomHexChars(),
-        (relay == null || relay.isEmpty) ? relays() : [relay],
+        (toRelays == null || toRelays.isEmpty) ? relays() : toRelays,
         DateTime.now().millisecondsSinceEpoch,
         event.id,
         sendCallBack,
         eventString);
     sendsMap[event.id] = sends;
-    _send(eventString, relay: relay);
+    _send(eventString, toRelays: toRelays);
   }
 
-  void _send(String data, {String? relay}) {
-    if (relay != null) {
-      if (webSockets.containsKey(relay)) {
-        var socket = webSockets[relay]?.socket;
-        if (webSockets[relay]?.connectStatus == 1 && socket != null) {
-          socket.add(data);
+  void _send(String data, {List<String>? toRelays}) {
+    if (toRelays != null && toRelays.isNotEmpty) {
+      for (var relay in toRelays) {
+        if (webSockets.containsKey(relay)) {
+          var socket = webSockets[relay]?.socket;
+          if (webSockets[relay]?.connectStatus == 1 && socket != null) {
+            socket.add(data);
+          }
         }
       }
     } else {
-      webSockets.forEach((url, iSocket) {
-        if (webSockets[url]?.connectStatus == 1 && iSocket.socket != null) {
-          iSocket.socket?.add(data);
+      webSockets.forEach((url, socket) {
+        if (webSockets[url]?.connectStatus == 1 && socket.socket != null) {
+          socket.socket?.add(data);
         }
       });
     }
@@ -356,7 +359,7 @@ class Connect {
 
   Future<void> _handleEvent(Event event, String relay) async {
     print('Received event: ${event.serialize()}, $relay');
-    if(eventCache.contains(event.id)) return;
+    if (eventCache.contains(event.id)) return;
     // add to cache
     eventCache.add(event.id);
     // ignore the expired event
@@ -369,9 +372,9 @@ class Connect {
       if (subscriptionId.isNotEmpty &&
           requestsMap.containsKey(requestsMapKey)) {
         EventCallBack? callBack = requestsMap[requestsMapKey]!.eventCallBack;
-        if (callBack != null){
+        if (callBack != null) {
           // check sign
-          if(event.isValid() == false){
+          if (event.isValid() == false) {
             return;
           }
           callBack(event, relay);
@@ -443,7 +446,7 @@ class Connect {
     if (ok.status && auths[relay]?.eventId == ok.eventId) {
       for (var data in auths[relay]?.resendDatas ?? []) {
         print('re-send: $data');
-        _send(data, relay: relay);
+        _send(data, toRelays: [relay]);
       }
       auths.remove(relay);
       return;
@@ -489,8 +492,7 @@ class Connect {
     print('receive auth: ${auth.challenge}');
     if (!auths.containsKey(relay)) {
       auths[relay] = AuthData(auth.challenge, '', []);
-    }
-    else if(auths[relay]?.challenge != auth.challenge){
+    } else if (auths[relay]?.challenge != auth.challenge) {
       auths[relay]?.challenge = auth.challenge;
       auths[relay]?.eventId = '';
     }
@@ -511,7 +513,7 @@ class Connect {
     String? challenge = auths[relay]?.challenge;
     if (challenge == null || challenge.isEmpty) return;
     String? eventId = auths[relay]?.eventId;
-    if(eventId?.isNotEmpty == true) return;
+    if (eventId?.isNotEmpty == true) return;
     auths[relay]!.eventId = 'sending...';
     Event event = await Nip42.encode(
         challenge,
@@ -521,7 +523,7 @@ class Connect {
     var authJson = Nip42.authString(event);
     auths[relay]!.eventId = event.id;
     print('send auth: $authJson');
-    _send(authJson, relay: relay);
+    _send(authJson, toRelays: [relay]);
   }
 
   Future<void> _connectToRelay(String relay) async {

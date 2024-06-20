@@ -610,7 +610,10 @@ class Contacts {
         completer.complete(OKEvent(event.innerEvent?.id ?? event.id, true, ''));
       }
     } else {
-      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
+      UserDB? toUser = await Account.sharedInstance.getUserInfo(toPubkey);
+      List<String>? dmRelays = toUser?.relayList;
+      Connect.sharedInstance.sendEvent(event, toRelays: dmRelays,
+          sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
         await Messages.saveMessageToDB(messageDB,
             conflictAlgorithm: ConflictAlgorithm.replace);
@@ -660,11 +663,32 @@ class Contacts {
         completer.complete(OKEvent(innerEvent.id, true, ''));
       }
     } else {
-      Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
+      UserDB? toUser = await Account.sharedInstance.getUserInfo(pubkey);
+      List<String>? dmRelays = toUser?.relayList;
+      Connect.sharedInstance.sendEvent(event, toRelays: dmRelays,
+          sendCallBack: (ok, relay) async {
         if (!completer.isCompleted) completer.complete(ok);
       });
     }
     return completer.future;
+  }
+
+  Future<void> connectUserDMRelays(String pubkey) async {
+    print('connectUserDMRelays');
+    UserDB? toUser = await Account.sharedInstance.getUserInfo(pubkey);
+    List<String>? relays = toUser?.relayList;
+    if (relays?.isNotEmpty == true) {
+      await Connect.sharedInstance.connectRelays(relays!);
+    }
+  }
+
+  Future<void> closeUserDMRelays(String pubkey) async {
+    print('closeUserDMRelays');
+    UserDB? toUser = await Account.sharedInstance.getUserInfo(pubkey);
+    List<String>? relays = toUser?.relayList;
+    if (relays?.isNotEmpty == true) {
+      await Connect.sharedInstance.closeConnects(relays!);
+    }
   }
 
   void updateFriendMessageTime(int eventTime, String relay) {

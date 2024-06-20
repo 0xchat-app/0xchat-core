@@ -99,7 +99,7 @@ extension EMessage on RelayGroup {
         completer.complete(OKEvent(event.id, true, ''));
       }
     } else {
-      Connect.sharedInstance.sendEvent(event, relay: groupDB.relay,
+      Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
           sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
         await Messages.saveMessageToDB(messageDB,

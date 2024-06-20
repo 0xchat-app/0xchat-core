@@ -42,7 +42,7 @@ extension EAdmin on RelayGroup {
     moderation.previous = previous;
     Event event =
         await Nip29.encodeGroupModeration(moderation, pubkey, privkey);
-    Connect.sharedInstance.sendEvent(event, relay: groupDB.relay,
+    Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
         sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
       if (ok.status == true) {

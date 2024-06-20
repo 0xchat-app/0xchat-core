@@ -58,13 +58,13 @@ class NotificationHelper {
   Future<void> _heartBeat(String serverPubkey, String privkey) async {
     Map map = {'online': 1};
     Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event, relay: oxchatRelay);
+    Connect.sharedInstance.sendEvent(event, toRelays: [oxchatRelay]);
   }
 
   Future<void> setOffline() async {
     Map map = {'online': 0};
     Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event, relay: oxchatRelay);
+    Connect.sharedInstance.sendEvent(event, toRelays: [oxchatRelay]);
 
     _stopHeartBeat();
   }
@@ -77,7 +77,7 @@ class NotificationHelper {
   Future<void> logout() async {
     Map map = {'online': 0, 'deviceId': ''};
     Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event, relay: oxchatRelay);
+    Connect.sharedInstance.sendEvent(event, toRelays: [oxchatRelay]);
 
     _stopHeartBeat();
   }
@@ -112,7 +112,7 @@ class NotificationHelper {
     Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
-    }, relay: oxchatRelay);
+    }, toRelays: [oxchatRelay]);
     return completer.future;
   }
 }
