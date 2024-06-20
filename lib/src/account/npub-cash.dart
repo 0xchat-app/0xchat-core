@@ -4,8 +4,8 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
 class NpubCash {
-  static String address() {
-    return '${Nip19.encodePubkey(Account.sharedInstance.currentPubkey)}@npub.cash';
+  static String address(String pubkey) {
+    return '${Nip19.encodePubkey(pubkey)}@npub.cash';
   }
 
   static Future<String?> claim() async {

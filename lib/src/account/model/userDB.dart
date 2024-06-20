@@ -172,7 +172,7 @@ class UserDB extends DBObject {
   }
 
   String get lnAddress {
-    return lnurl?.isNotEmpty == true ? lnurl! : NpubCash.address();
+    return lnurl?.isNotEmpty == true ? lnurl! : NpubCash.address(pubKey);
   }
 
   NostrWalletConnection? get nwc {

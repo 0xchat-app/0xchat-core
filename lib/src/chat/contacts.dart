@@ -498,7 +498,6 @@ class Contacts {
         Zaps.handleZapRecordEvent(event);
       } else if (event.kind == 1059) {
         Event? innerEvent = await decodeNip24Event(event);
-        print('receive 1059 event innerevent: ${innerEvent?.id}');
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
