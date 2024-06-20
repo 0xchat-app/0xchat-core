@@ -365,22 +365,11 @@ class Connect {
         EventCallBack? callBack = requestsMap[requestsMapKey]!.eventCallBack;
         if (callBack != null){
           // check sign
-          if(await event.isValid() == false){
+          if(event.isValid() == false){
             return;
           }
           callBack(event, relay);
         }
-      }
-    }
-  }
-
-  void _removeRequestsMapRelay(String subscriptionId, String removeRelay) {
-    var requestsMapKey = subscriptionId + removeRelay;
-    var request = requestsMap[requestsMapKey];
-    if (request == null) return;
-    for (var r in requestsMap.values) {
-      if (r.requestId == request.requestId) {
-        r.relays.remove(removeRelay);
       }
     }
   }
@@ -498,6 +487,17 @@ class Connect {
     else if(auths[relay]?.challenge != auth.challenge){
       auths[relay]?.challenge = auth.challenge;
       auths[relay]?.eventId = '';
+    }
+  }
+
+  void _removeRequestsMapRelay(String subscriptionId, String removeRelay) {
+    var requestsMapKey = subscriptionId + removeRelay;
+    var request = requestsMap[requestsMapKey];
+    if (request == null) return;
+    for (var r in requestsMap.values) {
+      if (r.requestId == request.requestId) {
+        r.relays.remove(removeRelay);
+      }
     }
   }
 
