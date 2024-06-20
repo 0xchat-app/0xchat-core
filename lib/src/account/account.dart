@@ -123,9 +123,13 @@ class Account {
     if (!isValidPubKey(pubkey)) return UserDB(pubKey: pubkey);
     Completer<UserDB> completer = Completer<UserDB>();
     UserDB? db = await getUserInfo(pubkey);
-    Filter f = Filter(kinds: [0], authors: [pubkey]);
+    Filter f = Filter(kinds: [0, 10050], authors: [pubkey]);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
+      if (event.kind == 10050) {
+        _handleKind10050Event(db, event);
+        return;
+      }
       Map map = jsonDecode(event.content);
       if (db != null && db.lastUpdatedTime < event.createdAt) {
         db.name = map['name']?.toString();
@@ -208,59 +212,14 @@ class Account {
     }
 
     Filter f = Filter(
-      kinds: [0],
+      kinds: [0, 10050],
       authors: pQueue,
     );
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      Map map = jsonDecode(event.content);
       UserDB? db = users[event.pubkey];
-      if (db != null && db.lastUpdatedTime < event.createdAt) {
-        db.name = map['name']?.toString();
-        db.gender = map['gender']?.toString();
-        db.area = map['area']?.toString();
-        db.about = map['about']?.toString();
-        db.picture = map['picture']?.toString();
-        db.banner = map['banner']?.toString();
-        db.dns = map['nip05']?.toString();
-        db.lnurl = map['lnurl']?.toString();
-        if (db.lnurl == null || db.lnurl == 'null' || db.lnurl!.isEmpty) {
-          db.lnurl = null;
-        }
-        db.lnurl ??= map['lud06']?.toString();
-        db.lnurl ??= map['lud16']?.toString();
-        db.lastUpdatedTime = event.createdAt;
-        if (db.name == null || db.name!.isEmpty) {
-          db.name = map['display_name']?.toString();
-        }
-        if (db.name == null || db.name!.isEmpty) {
-          db.name = map['username']?.toString();
-        }
-        if (db.name == null || db.name!.isEmpty) {
-          db.name = db.shortEncodedPubkey;
-        }
-        var keysToRemove = {
-          'name',
-          'display_name',
-          'username',
-          'gender',
-          'area',
-          'about',
-          'picture',
-          'banner',
-          'nip05',
-          'lnurl',
-          'lud16',
-          'lud06'
-        };
-        Map filteredMap = Map.from(map)
-          ..removeWhere((key, value) => keysToRemove.contains(key));
-        db.otherField = jsonEncode(filteredMap);
-      } else {
-        if (db?.lnurl == null || db?.lnurl == 'null') db?.lnurl = null;
-        db?.lnurl ??= map['lud16'];
-        db?.lnurl ??= map['lud06'];
-      }
+      if (event.kind == 10050) _handleKind10050Event(db, event);
+      if(event.kind == 0) _handleKind0Event(db, event);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
@@ -274,6 +233,69 @@ class Account {
       }
     });
     return completer.future;
+  }
+
+  void _handleKind0Event(UserDB? db, Event event){
+    Map map = jsonDecode(event.content);
+    if (db != null && db.lastUpdatedTime < event.createdAt) {
+      db.name = map['name']?.toString();
+      db.gender = map['gender']?.toString();
+      db.area = map['area']?.toString();
+      db.about = map['about']?.toString();
+      db.picture = map['picture']?.toString();
+      db.banner = map['banner']?.toString();
+      db.dns = map['nip05']?.toString();
+      db.lnurl = map['lnurl']?.toString();
+      if (db.lnurl == null || db.lnurl == 'null' || db.lnurl!.isEmpty) {
+        db.lnurl = null;
+      }
+      db.lnurl ??= map['lud06']?.toString();
+      db.lnurl ??= map['lud16']?.toString();
+      db.lastUpdatedTime = event.createdAt;
+      if (db.name == null || db.name!.isEmpty) {
+        db.name = map['display_name']?.toString();
+      }
+      if (db.name == null || db.name!.isEmpty) {
+        db.name = map['username']?.toString();
+      }
+      if (db.name == null || db.name!.isEmpty) {
+        db.name = db.shortEncodedPubkey;
+      }
+      var keysToRemove = {
+        'name',
+        'display_name',
+        'username',
+        'gender',
+        'area',
+        'about',
+        'picture',
+        'banner',
+        'nip05',
+        'lnurl',
+        'lud16',
+        'lud06'
+      };
+      Map filteredMap = Map.from(map)
+        ..removeWhere((key, value) => keysToRemove.contains(key));
+      db.otherField = jsonEncode(filteredMap);
+    } else {
+      if (db?.lnurl == null || db?.lnurl == 'null') db?.lnurl = null;
+      db?.lnurl ??= map['lud16'];
+      db?.lnurl ??= map['lud06'];
+    }
+  }
+
+  void _handleKind10050Event(UserDB? userDB, Event event) {
+    List<String> relayList = Nip17.decodeDMRelays(event);
+    userDB?.relayList = relayList;
+  }
+
+  Future<List<String>> getDMRelayList(String pubkey) async {
+    UserDB? userDB = await getUserInfo(pubkey);
+    if (userDB != null) {
+      return userDB.relayList ?? [];
+    }
+    return [];
   }
 
   Future<UserDB?> loginWithPubKey(String pubkey) async {

@@ -31,5 +31,6 @@ class NpubCash {
     } else {
       print('Request failed with status: ${response.statusCode}');
     }
+    return null;
   }
 }

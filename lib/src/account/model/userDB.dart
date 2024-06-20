@@ -45,7 +45,7 @@ class UserDB extends DBObject {
   List<String>? blockedList; // blocked users list
   List<String>? followingList;
   List<String>? followersList;
-  List<String>? relayList;
+  List<String>? relayList; // dm relay list
 
   /// list updated time
   int lastFriendsListUpdatedTime;
