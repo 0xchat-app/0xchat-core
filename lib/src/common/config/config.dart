@@ -24,7 +24,7 @@ class Config {
   ];
   // host config
   Map<String, String> hostConfig = {
-    "wss://relay.0xchat.com": "ws://54.179.158.105:6969",
+    "wss://relay.0xchat.com": "wss://54.179.158.105",
     "www.0xchat.com": "54.179.158.105:9602",
     "mint.0xchat.com": "13.38.85.175:3338",
   };
@@ -113,7 +113,7 @@ class Config {
       Map map = jsonDecode(json);
 
       String? wssdns = map['wssdns'];
-      hostConfig[wssHost] = 'ws://${wssdns ?? '54.179.158.105:6969'}';
+      hostConfig[wssHost] = 'wss://${wssdns ?? '54.179.158.105'}';
 
       String? httpsdns = map['httpsdnsnew'];
       hostConfig[httpHost] = httpsdns ?? '54.179.158.105:9602';
