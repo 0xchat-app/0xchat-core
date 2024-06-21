@@ -674,7 +674,6 @@ class Contacts {
   }
 
   Future<void> connectUserDMRelays(String pubkey) async {
-    print('connectUserDMRelays');
     UserDB? toUser = await Account.sharedInstance.getUserInfo(pubkey);
     List<String>? relays = toUser?.relayList;
     if (relays?.isNotEmpty == true) {
@@ -683,7 +682,6 @@ class Contacts {
   }
 
   Future<void> closeUserDMRelays(String pubkey) async {
-    print('closeUserDMRelays');
     UserDB? toUser = await Account.sharedInstance.getUserInfo(pubkey);
     List<String>? relays = toUser?.relayList;
     if (relays?.isNotEmpty == true) {

@@ -25,7 +25,7 @@ class Config {
   // host config
   Map<String, String> hostConfig = {
     "wss://relay.0xchat.com": "ws://54.179.158.105:6969",
-    "www.0xchat.com": "54.179.158.105:9601",
+    "www.0xchat.com": "54.179.158.105:9602",
     "mint.0xchat.com": "13.38.85.175:3338",
   };
   final String _serverPubkey =
@@ -115,8 +115,8 @@ class Config {
       String? wssdns = map['wssdns'];
       hostConfig[wssHost] = 'ws://${wssdns ?? '54.179.158.105:6969'}';
 
-      String? httpsdns = map['httpsdns'];
-      hostConfig[httpHost] = httpsdns ?? '54.179.158.105:9601';
+      String? httpsdns = map['httpsdnsnew'];
+      hostConfig[httpHost] = httpsdns ?? '54.179.158.105:9602';
 
       List<String>? channels = (map['recommendChannels'] as List<dynamic>?)
           ?.map((item) => item.toString())
