@@ -257,6 +257,9 @@ extension Load on Moment {
     saveNoteToDB(replyNoteDB, ConflictAlgorithm.ignore);
     noteDB.replyEventIds?.add(replyNoteDB.noteId);
     if (replyNoteDB.getReplyLevel(noteDB.noteId) == 1) noteDB.replyCount++;
+    if (replyEvent.pubkey == pubkey) {
+      noteDB.replyCountByMe++;
+    }
     saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
 
@@ -271,6 +274,9 @@ extension Load on Moment {
     saveNoteToDB(repostDB, ConflictAlgorithm.ignore);
     noteDB.repostEventIds?.add(repostDB.noteId);
     noteDB.repostCount++;
+    if (reposts.pubkey == pubkey) {
+      noteDB.repostCountByMe++;
+    }
     saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
 
@@ -288,6 +294,9 @@ extension Load on Moment {
     saveNoteToDB(quoteRepostDB, ConflictAlgorithm.ignore);
     noteDB.quoteRepostEventIds?.add(quoteRepostDB.noteId);
     noteDB.quoteRepostCount++;
+    if (quoteReposts.pubkey == pubkey) {
+      noteDB.quoteRepostCountByMe++;
+    }
     saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
 
@@ -302,6 +311,9 @@ extension Load on Moment {
     saveNoteToDB(reactionDB, ConflictAlgorithm.ignore);
     noteDB.reactionEventIds?.add(reactionDB.noteId);
     noteDB.reactionCount++;
+    if (reactions.pubkey == pubkey) {
+      noteDB.reactionCountByMe++;
+    }
     saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
 
