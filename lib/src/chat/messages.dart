@@ -88,16 +88,16 @@ class Messages {
     });
   }
 
-  void closeMessagesActionsRequests() {
+  Future<void> closeMessagesActionsRequests() async {
     if (messagesActionsRequestsId.isNotEmpty) {
-      Connect.sharedInstance.closeRequests(messagesActionsRequestsId);
+      await Connect.sharedInstance.closeRequests(messagesActionsRequestsId);
     }
   }
 
-  void loadMessagesReactions(List<String> eventIds) {
-    closeMessagesActionsRequests();
-    Filter f = Filter(kinds: [7, 9735], ids: eventIds);
-    messageRequestsId = Connect.sharedInstance.addSubscription([f],
+  Future<void> loadMessagesReactions(List<String> eventIds) async {
+    await closeMessagesActionsRequests();
+    Filter f = Filter(kinds: [7, 9735], e: eventIds);
+    messagesActionsRequestsId = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) {
       if (Messages.isLoaded(event.id)) return;
       Messages.addToLoaded(event.id);
@@ -134,8 +134,8 @@ class Messages {
     if (reactedMessageDB == null) return;
     reactedMessageDB.reactionEventIds ??= [];
     if (!reactedMessageDB.reactionEventIds!
-        .contains(reactions.reactedEventId)) {
-      reactedMessageDB.reactionEventIds!.add(reactions.reactedEventId);
+        .contains(reactions.id)) {
+      reactedMessageDB.reactionEventIds!.add(reactions.id);
       await DB.sharedInstance.insert<MessageDB>(reactedMessageDB);
       actionsCallBack?.call(reactedMessageDB);
     }
@@ -174,9 +174,9 @@ class Messages {
       NoteDB noteDB = NoteDB.noteDBFromReactions(Nip25.decode(event));
       Moment.sharedInstance.saveNoteToDB(noteDB, null);
 
-      messageDB.reactionEventIds ??= [];
-      messageDB.reactionEventIds!.add(event.id);
-      saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
+      // messageDB.reactionEventIds ??= [];
+      // messageDB.reactionEventIds!.add(event.id);
+      // saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
 
       if (messageDB.chatType == 0 || messageDB.chatType == 3) {
         OKEvent ok = await Moment.sharedInstance
