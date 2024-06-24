@@ -115,9 +115,9 @@ extension Load on Moment {
       {bool private = false, bool reload = true, List<String>? relays}) async {
     if (notesCache.containsKey(noteId)) return notesCache[noteId];
     NoteDB? note = await loadNoteFromDBWithNoteId(noteId);
-    if (!private && reload) {
+    if (note == null && !private && reload ) {
       await Connect.sharedInstance.connectRelays(relays ?? [], type: 1);
-      note ??= await loadPublicNoteFromRelay(noteId, relays: relays);
+      note = await loadPublicNoteFromRelay(noteId, relays: relays);
       await Connect.sharedInstance.closeConnects(relays ?? []);
     }
     if (note != null) notesCache[noteId] = note;
