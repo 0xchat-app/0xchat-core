@@ -97,6 +97,8 @@ class Connect {
 
   List<String> eventCache = [];
 
+  Map<String, List<Future<bool>>> eventCheckerFutures = {};
+
   void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
       timer = Timer.periodic(Duration(seconds: 5), (Timer t) {
@@ -357,14 +359,7 @@ class Connect {
     }
   }
 
-  Future<void> _handleEvent(Event event, String relay) async {
-    print('Received event: ${event.serialize()}, $relay');
-    if (eventCache.contains(event.id)) return;
-    // add to cache
-    eventCache.add(event.id);
-    // ignore the expired event
-    if (Nip40.expired(event)) return;
-
+  Future<bool> _checkValidEvent(Event event, String relay) async {
     String? subscriptionId = event.subscriptionId;
     if (subscriptionId != null) {
       String requestsMapKey = subscriptionId + relay;
@@ -374,20 +369,41 @@ class Connect {
         EventCallBack? callBack = requestsMap[requestsMapKey]!.eventCallBack;
         if (callBack != null) {
           // check sign
-          if (event.isValid() == false) {
-            return;
+          if (await event.isValid() == false) {
+            return false;
           }
           callBack(event, relay);
+          return true;
         }
       }
     }
+    return false;
   }
 
-  void _handleEOSE(String eose, String relay) {
+  Future<void> _handleEvent(Event event, String relay) async {
+    print('Received event: ${event.serialize()}, $relay');
+    if (eventCache.contains(event.id)) return;
+    // add to cache
+    eventCache.add(event.id);
+    // ignore the expired event
+    if (Nip40.expired(event)) return;
+
+    Future<bool> future = _checkValidEvent(event, relay);
+    if (event.subscriptionId != null && event.subscriptionId!.isNotEmpty) {
+      eventCheckerFutures[event.subscriptionId!] ??= [];
+      eventCheckerFutures[event.subscriptionId!]?.add(future);
+    }
+  }
+
+  Future<void> _handleEOSE(String eose, String relay) async {
     print('receive EOSE: $eose, $relay');
     String subscriptionId = jsonDecode(eose)[0];
     String requestsMapKey = subscriptionId + relay;
     if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
+      if (eventCheckerFutures.containsKey(subscriptionId)) {
+        await Future.wait(eventCheckerFutures[subscriptionId]!);
+        eventCheckerFutures.remove(subscriptionId);
+      }
       _removeRequestsMapRelay(subscriptionId, relay);
       var relays = requestsMap[requestsMapKey]!.relays;
       // all relays have EOSE
