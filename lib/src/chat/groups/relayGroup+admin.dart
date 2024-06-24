@@ -26,6 +26,23 @@ extension EAdmin on RelayGroup {
     }
   }
 
+  Future<OKEvent> acceptJoinRequest(JoinRequestDB joinRequest) async {
+    RelayGroupDB? groupDB = groups[joinRequest.groupId];
+    if (groupDB == null || !groupDB.private || groupDB.admins == null) {
+      return OKEvent(joinRequest.groupId, false, 'group not exit');
+    }
+    if (hasPermissions(groupDB.admins!, pubkey, [GroupActionKind.addUser])) {
+      return await addUser(groupDB.groupId, joinRequest.author, '');
+    } else {
+      return OKEvent(joinRequest.groupId, false, 'no permissions');
+    }
+  }
+
+  Future<int> ignoreJoinRequest(JoinRequestDB joinRequest) async {
+    return await DB.sharedInstance.delete<JoinRequestDB>(
+        where: 'requestId = ?', whereArgs: [joinRequest.requestId]);
+  }
+
   Future<OKEvent> sendModeration(GroupModeration moderation) async {
     String groupId = moderation.groupId;
     RelayGroupDB? groupDB = groups[groupId];
