@@ -221,8 +221,9 @@ class Connect {
 
   Future closeConnect(String relay) async {
     print('closeConnect ${webSockets[relay]?.socket}');
-    await webSockets[relay]?.socket?.close();
+    final socket = webSockets[relay]?.socket;
     webSockets.remove(relay);
+    await socket?.close();
   }
 
   String addSubscription(List<Filter> filters,
