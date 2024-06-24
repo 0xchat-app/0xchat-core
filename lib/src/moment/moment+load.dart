@@ -116,7 +116,9 @@ extension Load on Moment {
     if (notesCache.containsKey(noteId)) return notesCache[noteId];
     NoteDB? note = await loadNoteFromDBWithNoteId(noteId);
     if (!private && reload) {
+      await Connect.sharedInstance.connectRelays(relays ?? [], type: 1);
       note ??= await loadPublicNoteFromRelay(noteId, relays: relays);
+      await Connect.sharedInstance.closeConnects(relays ?? []);
     }
     if (note != null) notesCache[noteId] = note;
     return note;
@@ -154,9 +156,6 @@ extension Load on Moment {
     if (noteId.isEmpty) return null;
     Completer<NoteDB?> completer = Completer<NoteDB?>();
     Filter f = Filter(ids: [noteId]);
-    if (relays != null && relays.isNotEmpty) {
-      await Connect.sharedInstance.connectRelays(relays, type: 1);
-    }
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) async {
       NoteDB? noteDB;
@@ -184,9 +183,6 @@ extension Load on Moment {
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        if (relays != null && relays.isNotEmpty) {
-          await Connect.sharedInstance.closeConnects(relays);
-        }
         if (!completer.isCompleted) {
           NoteDB? note = await loadNoteWithNoteId(noteId, reload: false);
           completer.complete(note);
