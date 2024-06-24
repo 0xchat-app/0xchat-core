@@ -112,12 +112,30 @@ extension Load on Moment {
   }
 
   Future<NoteDB?> loadNoteWithNoteId(String noteId,
-      {bool private = false, bool reload = true}) async {
+      {bool private = false, bool reload = true, List<String>? relays}) async {
     if (notesCache.containsKey(noteId)) return notesCache[noteId];
     NoteDB? note = await loadNoteFromDBWithNoteId(noteId);
-    if (!private && reload) note ??= await loadPublicNoteFromRelay(noteId);
+    if (!private && reload) {
+      note ??= await loadPublicNoteFromRelay(noteId, relays: relays);
+    }
     if (note != null) notesCache[noteId] = note;
     return note;
+  }
+
+  Future<NoteDB?> loadNoteWithNevent(String nevent,
+      {bool private = false, bool reload = true}) async {
+    String? noteId;
+    List<String>? relays;
+    Map result = Nip19.decodeShareableEntity(nevent);
+    if (result['prefix'] == 'nevent' && result['kind'] == 0) {
+      noteId = result['special'];
+      relays = result['relays'];
+      if (noteId != null) {
+        return loadNoteWithNoteId(noteId,
+            private: private, reload: reload, relays: relays);
+      }
+    }
+    return null;
   }
 
   Future<void> saveNoteToDB(
@@ -131,11 +149,15 @@ extension Load on Moment {
     if (result > 0) notesCache[noteDB.noteId] = noteDB;
   }
 
-  Future<NoteDB?> loadPublicNoteFromRelay(String noteId) async {
+  Future<NoteDB?> loadPublicNoteFromRelay(String noteId,
+      {List<String>? relays}) async {
     if (noteId.isEmpty) return null;
     Completer<NoteDB?> completer = Completer<NoteDB?>();
     Filter f = Filter(ids: [noteId]);
-    Connect.sharedInstance.addSubscription([f],
+    if (relays != null && relays.isNotEmpty) {
+      await Connect.sharedInstance.connectRelays(relays, type: 1);
+    }
+    Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) async {
       NoteDB? noteDB;
       switch (event.kind) {
@@ -162,6 +184,9 @@ extension Load on Moment {
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
+        if (relays != null && relays.isNotEmpty) {
+          await Connect.sharedInstance.closeConnects(relays);
+        }
         if (!completer.isCompleted) {
           NoteDB? note = await loadNoteWithNoteId(noteId, reload: false);
           completer.complete(note);

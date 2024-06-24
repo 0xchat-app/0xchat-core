@@ -180,7 +180,7 @@ class Connect {
     return result;
   }
 
-  Future connect(String relay, {int type = 0}) async {
+  Future<void> connect(String relay, {int type = 0}) async {
     if (webSockets[relay]?.type == 0) type = 0;
     // connecting or open
     if (webSockets[relay]?.connectStatus == 0 ||
@@ -207,10 +207,14 @@ class Connect {
     }
   }
 
-  Future connectRelays(List<String> relays, {int type = 0}) async {
+  Future<void> connectRelays(List<String> relays, {int type = 0}) async {
+    final completer = Completer<void>();
     for (String relay in relays) {
-      connect(relay, type: type);
+      connect(relay, type: type).then((value) {
+        if (!completer.isCompleted) completer.complete();
+      });
     }
+    return completer.future;
   }
 
   Future closeConnects(List<String> relays) async {
@@ -227,9 +231,12 @@ class Connect {
   }
 
   String addSubscription(List<Filter> filters,
-      {EventCallBack? eventCallBack, EOSECallBack? eoseCallBack}) {
+      {EventCallBack? eventCallBack,
+      EOSECallBack? eoseCallBack,
+      List<String>? relays}) {
     Map<String, List<Filter>> result = {};
-    for (var relay in Connect.sharedInstance.relays()) {
+    List<String> subscriptionRelays = relays ?? Connect.sharedInstance.relays();
+    for (var relay in subscriptionRelays) {
       result[relay] = filters;
     }
     return addSubscriptions(result,
