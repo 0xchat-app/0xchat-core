@@ -129,7 +129,7 @@ extension Load on Moment {
     String? noteId;
     List<String>? relays;
     Map result = Nip19.decodeShareableEntity(nevent);
-    if (result['prefix'] == 'nevent' && result['kind'] == 0) {
+    if (result['prefix'] == 'nevent' && result['kind'] == 1) {
       noteId = result['special'];
       relays = result['relays'];
       if (noteId != null) {
@@ -380,7 +380,7 @@ extension Load on Moment {
   }
 
   Future<List<NoteDB>?> loadHashTagsFromRelay(List<String> hashTags,
-      {int limit = 50, int? until}) async {
+      {int limit = 30, int? until}) async {
     Completer<List<NoteDB>?> completer = Completer<List<NoteDB>?>();
     Filter f = Filter(kinds: [1], t: hashTags, until: until, limit: limit);
     Map<String, Event> result = {};
