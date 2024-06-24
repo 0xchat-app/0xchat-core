@@ -9,7 +9,7 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 extension EMember on RelayGroup {
   Future<RelayGroupDB?> createGroup(String host, String name) async {
     Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
-    final url = Uri.parse('https://$host/create');
+    final url = Uri.parse('$host/create');
     final body = {
       'pubkey': pubkey,
       'name': name,
@@ -28,7 +28,13 @@ extension EMember on RelayGroup {
           String author = naddr['author'];
           String id = '$relay\'$groupId';
           RelayGroupDB relayGroupDB = RelayGroupDB(
-              groupId: groupId, relay: relay, members: [author], id: id);
+              groupId: groupId,
+              relay: relay,
+              author: author,
+              members: [author],
+              id: id);
+          myGroups[groupId] = relayGroupDB;
+          syncMyGroupListToRelay();
           if (!completer.isCompleted) completer.complete(relayGroupDB);
         } else {
           if (!completer.isCompleted) completer.complete(null);

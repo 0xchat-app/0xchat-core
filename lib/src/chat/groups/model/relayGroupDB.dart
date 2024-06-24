@@ -6,6 +6,7 @@ import 'package:nostr_core_dart/nostr.dart';
 class RelayGroupDB extends DBObject {
   String groupId;
   String id; //<relay>'<group-id>
+  String author; // group creator
   String relay;
   String relayPubkey;
   bool private;
@@ -23,6 +24,7 @@ class RelayGroupDB extends DBObject {
   RelayGroupDB(
       {this.groupId = '',
       this.id = '',
+      this.author = '',
       this.relay = '',
       this.relayPubkey = '',
       this.private = false,
@@ -73,6 +75,7 @@ Map<String, dynamic> _groupInfoToMap(RelayGroupDB instance) =>
     <String, dynamic>{
       'groupId': instance.groupId,
       'id': instance.id,
+      'author': instance.author,
       'relay': instance.relay,
       'relayPubkey': instance.relayPubkey,
       'private': instance.private,
@@ -94,6 +97,7 @@ RelayGroupDB _groupInfoFromMap(Map<String, dynamic> map) {
   return RelayGroupDB(
     groupId: map['groupId'].toString(),
     id: map['id'].toString(),
+    author: map['author'].toString(),
     relay: map['relay'].toString(),
     relayPubkey: map['relayPubkey'].toString(),
     private: map['private'] > 0 ? true : false,
