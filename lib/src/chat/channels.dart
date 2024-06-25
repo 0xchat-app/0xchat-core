@@ -23,7 +23,7 @@ class Channels {
   String privkey = '';
   Map<String, ChannelDB> channels = {};
   Map<String, ChannelDB> myChannels = {};
-  int maxLimit = 1000;
+  int maxLimit = 500;
 
   ChannelsUpdatedCallBack? myChannelsUpdatedCallBack;
   ChannelMessageCallBack? channelMessageCallBack;

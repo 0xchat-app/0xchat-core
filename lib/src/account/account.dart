@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:nostr_core_dart/nostr.dart';
-import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:pointycastle/export.dart';
 import 'package:convert/convert.dart';
+
+import 'package:nostr_core_dart/nostr.dart';
+import 'package:chatcore/chat-core.dart';
 
 class Account {
   /// singleton
@@ -29,7 +30,7 @@ class Account {
   void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
       timer = Timer.periodic(Duration(seconds: 5), (Timer t) async {
-        await _syncProfilesFromRelay();
+        await syncProfilesFromRelay();
       });
     }
   }
@@ -55,15 +56,15 @@ class Account {
   FutureOr<UserDB?> getUserInfo(String pubkey) {
     UserDB? user = userCache[pubkey]?.value;
     if (user != null) {
-      _tryAddToSyncProfiles(user);
+      _addToPQueue(user);
       return user;
     }
 
     Completer<UserDB?> completer = Completer();
-    _getUserFromDB(pubkey: pubkey).then((user) {
+    getUserFromDB(pubkey: pubkey).then((user) {
       if (user != null) {
         userCache[pubkey] = ValueNotifier<UserDB>(user);
-        _tryAddToSyncProfiles(user);
+        _addToPQueue(user);
       }
       completer.complete(user);
     });
@@ -85,7 +86,7 @@ class Account {
     return userCache[pubkey]!;
   }
 
-  void _tryAddToSyncProfiles(UserDB user) {
+  void _addToPQueue(UserDB user) {
     if (user.lastUpdatedTime != 0) return;
     final pubkey = user.pubKey;
     if (pubkey.isNotEmpty &&
@@ -95,7 +96,7 @@ class Account {
     }
   }
 
-  Future<UserDB?> _getUserFromDB(
+  Future<UserDB?> getUserFromDB(
       {String pubkey = '', String privkey = ''}) async {
     if (privkey.isNotEmpty) {
       pubkey = Keychain.getPublicKey(privkey);
@@ -119,156 +120,8 @@ class Account {
     return null;
   }
 
-  Future<UserDB> reloadProfileFromRelay(String pubkey) async {
-    if (!isValidPubKey(pubkey)) return UserDB(pubKey: pubkey);
-    Completer<UserDB> completer = Completer<UserDB>();
-    UserDB? db = await getUserInfo(pubkey);
-    Filter f = Filter(kinds: [0, 10050], authors: [pubkey]);
-    Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event, relay) async {
-      if (event.kind == 10050) db = _handleKind10050Event(db, event);
-      if (event.kind == 0) db = _handleKind0Event(db, event);
-      userCache[pubkey] = ValueNotifier<UserDB>(db!);
-      if (pubkey == currentPubkey) me = db;
-      DB.sharedInstance.update<UserDB>(db!);
-      if (!completer.isCompleted) completer.complete(db);
-    }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
-    });
-    return completer.future;
-  }
-
-  /// sync profile from relays
-  Future<void> _syncProfilesFromRelay() async {
-    if (pQueue.isEmpty) return;
-    Completer<void> completer = Completer<void>();
-
-    Map<String, UserDB> users = {};
-    // init users from cache & DB
-    List<String> pQueueTemp = List.from(pQueue);
-    for (var key in pQueueTemp) {
-      UserDB? db = userCache[key]?.value;
-      db ??= await _getUserFromDB(pubkey: key);
-      if (db == null) {
-        db = UserDB();
-        db.pubKey = key;
-      }
-      if (db.name == null || db.name!.isEmpty) {
-        db.name = db.shortEncodedPubkey;
-      }
-      users[key] = db;
-      if (db.lastUpdatedTime > 0) pQueue.remove(db.pubKey);
-    }
-
-    Filter f = Filter(
-      kinds: [0, 10050],
-      authors: pQueue,
-    );
-    Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event, relay) async {
-      UserDB? db = users[event.pubkey];
-      if (event.kind == 10050) {
-        users[event.pubkey] = _handleKind10050Event(db, event)!;
-      }
-      if (event.kind == 0) {
-        users[event.pubkey] = _handleKind0Event(db, event)!;
-      }
-    }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unRelays.isEmpty) {
-        for (var db in users.values) {
-          await DB.sharedInstance.insert<UserDB>(db);
-          UserDB? user = await _getUserFromDB(pubkey: db.pubKey);
-          userCache[db.pubKey]?.value = user!;
-          pQueue.remove(db.pubKey);
-        }
-        if (!completer.isCompleted) completer.complete();
-      }
-    });
-    return completer.future;
-  }
-
-  UserDB? _handleKind0Event(UserDB? db, Event event) {
-    Map map = jsonDecode(event.content);
-    if (db != null && db.lastUpdatedTime < event.createdAt) {
-      db.name = map['name']?.toString();
-      db.gender = map['gender']?.toString();
-      db.area = map['area']?.toString();
-      db.about = map['about']?.toString();
-      db.picture = map['picture']?.toString();
-      db.banner = map['banner']?.toString();
-      db.dns = map['nip05']?.toString();
-      db.lnurl = map['lnurl']?.toString();
-      if (db.lnurl == null || db.lnurl == 'null' || db.lnurl!.isEmpty) {
-        db.lnurl = null;
-      }
-      db.lnurl ??= map['lud06']?.toString();
-      db.lnurl ??= map['lud16']?.toString();
-      db.lastUpdatedTime = event.createdAt;
-      if (db.name == null || db.name!.isEmpty) {
-        db.name = map['display_name']?.toString();
-      }
-      if (db.name == null || db.name!.isEmpty) {
-        db.name = map['username']?.toString();
-      }
-      if (db.name == null || db.name!.isEmpty) {
-        db.name = db.shortEncodedPubkey;
-      }
-      var keysToRemove = {
-        'name',
-        'display_name',
-        'username',
-        'gender',
-        'area',
-        'about',
-        'picture',
-        'banner',
-        'nip05',
-        'lnurl',
-        'lud16',
-        'lud06'
-      };
-      Map filteredMap = Map.from(map)
-        ..removeWhere((key, value) => keysToRemove.contains(key));
-      db.otherField = jsonEncode(filteredMap);
-    } else {
-      if (db?.lnurl == null || db?.lnurl == 'null' || db!.lnurl!.isEmpty) {
-        db?.lnurl = null;
-      }
-      db?.lnurl ??= map['lud16'];
-      db?.lnurl ??= map['lud06'];
-    }
-    return db;
-  }
-
-  UserDB? _handleKind10050Event(UserDB? db, Event event) {
-    List<String> relayList = Nip17.decodeDMRelays(event);
-    db?.relayList = relayList;
-    return db;
-  }
-
-  Future<List<String>> getDMRelayList(String pubkey) async {
-    UserDB? userDB = await getUserInfo(pubkey);
-    if (userDB != null) {
-      return userDB.relayList ?? [];
-    }
-    return [];
-  }
-
-  Future<OKEvent> setDMRelayListToRelay(List<String> relays) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
-    Event event =
-        await Nip17.encodeDMRelays(relays, currentPubkey, currentPrivkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
-      if (!completer.isCompleted) {
-        completer.complete(ok);
-      }
-    });
-    return completer.future;
-  }
-
   Future<UserDB?> loginWithPubKey(String pubkey) async {
-    UserDB? userDB = await _getUserFromDB(pubkey: pubkey);
+    UserDB? userDB = await getUserFromDB(pubkey: pubkey);
     if (userDB != null) {
       me = userDB;
       currentPubkey = userDB.pubKey;
@@ -403,209 +256,8 @@ class Account {
     return result;
   }
 
-  Future<OKEvent> _syncFollowListToRelay(List<String> pubkeys) async {
-    if (pubkeys.isEmpty) return OKEvent('', false, 'invalid following list!');
-    Completer<OKEvent> completer = Completer<OKEvent>();
-    Event event =
-        await Nip2.encode(toProfiles(pubkeys), currentPubkey, currentPrivkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
-      if (!completer.isCompleted) {
-        completer.complete(ok);
-      }
-    });
-    return completer.future;
-  }
-
-  Future<OKEvent> addFollows(List<String> pubkeys) async {
-    List<String> followingList = me?.followingList ?? [];
-    for (var p in pubkeys) {
-      if (!followingList.contains(p)) followingList.add(p);
-    }
-    me?.followingList = followingList;
-    syncMe();
-    Moment.sharedInstance.updateSubscriptions();
-    return await _syncFollowListToRelay(followingList);
-  }
-
-  Future<OKEvent> removeFollows(List<String> pubkeys) async {
-    List<String> followingList = me?.followingList ?? [];
-    for (var p in pubkeys) {
-      if (followingList.contains(p)) followingList.remove(p);
-    }
-    me?.followingList = followingList;
-    syncMe();
-    Moment.sharedInstance.updateSubscriptions();
-    return await _syncFollowListToRelay(followingList);
-  }
-
-  Future<bool> onFollowingList(String pubkey) async {
-    return me?.followingList?.contains(pubkey) == true;
-  }
-
-  Future<List<UserDB>> syncFollowingListFromDB(String pubkey) async {
-    UserDB? user = pubkey == currentPubkey ? me : await getUserInfo(pubkey);
-    List<UserDB> result = [];
-    for (var p in user?.followingList ?? []) {
-      UserDB? userDB = await getUserInfo(p);
-      if (userDB != null) {
-        result.add(userDB);
-      }
-    }
-    return result;
-  }
-
-  Future<void> syncFollowingListFromRelay(String pubkey,
-      {String? relay}) async {
-    Completer<void> completer = Completer<void>();
-    Filter f = Filter(kinds: [3], authors: [pubkey], limit: 1);
-    List<Profile> profiles = [];
-    int lastTimeStamp = 0;
-    Map<String, List<Filter>> subscriptions = {};
-    if (relay == null) {
-      for (var r in Connect.sharedInstance.relays()) {
-        subscriptions[r] = [f];
-      }
-    } else {
-      subscriptions[relay] = [f];
-    }
-    Connect.sharedInstance.addSubscriptions(subscriptions,
-        eventCallBack: (event, relay) async {
-      if (event.createdAt > lastTimeStamp) {
-        profiles = Nip2.decode(event);
-        lastTimeStamp = event.createdAt;
-      }
-    }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unRelays.isEmpty) {
-        UserDB? user =
-            (pubkey == currentPubkey) ? me : await getUserInfo(pubkey);
-        if (user != null && profiles.isNotEmpty) {
-          user.followingList = profiles.map((e) => e.key).toList();
-          await DB.sharedInstance.insert<UserDB>(user);
-        }
-        if (!completer.isCompleted) completer.complete();
-      }
-    });
-    return completer.future;
-  }
-
-  Future<List<String>> syncRelaysMetadataFromKind3(String pubkey) async {
-    Completer<List<String>> completer = Completer<List<String>>();
-    Filter f = Filter(
-        kinds: [3],
-        authors: [pubkey],
-        limit: 1,
-        since: me?.lastRelayListUpdatedTime);
-    String content = '';
-    int lastTimeStamp = 0;
-    Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event, relay) async {
-      if (event.createdAt > lastTimeStamp) {
-        content = event.content;
-        lastTimeStamp = event.createdAt;
-        me?.lastRelayListUpdatedTime = lastTimeStamp;
-      }
-    }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unRelays.isEmpty) {
-        List<String> result = [];
-        try {
-          Map map = jsonDecode(content);
-          List<String> result = map.keys.map((e) => e.toString()).toList();
-          if (!completer.isCompleted) completer.complete(result);
-        } catch (e) {
-          if (!completer.isCompleted) completer.complete(result);
-        }
-      }
-    });
-    return completer.future;
-  }
-
-  Future<List<String>> syncRelaysMetadataFromRelay(String pubkey) async {
-    Completer<List<String>> completer = Completer<List<String>>();
-    Filter f = Filter(
-        kinds: [10002],
-        authors: [pubkey],
-        limit: 1,
-        since: me?.lastRelayListUpdatedTime);
-    List<Relay> result = [];
-    int lastEventTime = 0;
-    Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event, relay) async {
-      if (lastEventTime < event.createdAt) {
-        result = Nip65.decode(event);
-        lastEventTime = event.createdAt;
-        me?.lastRelayListUpdatedTime = lastEventTime;
-      }
-    }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unRelays.isEmpty) {
-        List<String> relayList = result.map((e) => e.url).toList();
-        if (relayList.isEmpty) {
-          relayList = await syncRelaysMetadataFromKind3(pubkey);
-        }
-        if (!completer.isCompleted) completer.complete(relayList);
-        syncMe();
-      }
-    });
-    return completer.future;
-  }
-
-  Future<UserDB?> updateProfile(UserDB updateDB) async {
-    Completer<UserDB?> completer = Completer<UserDB?>();
-
-    UserDB db = await _getUserFromDB(pubkey: currentPubkey) ?? UserDB();
-    db.name = updateDB.name;
-    db.gender = updateDB.gender;
-    db.area = updateDB.area;
-    db.about = updateDB.about;
-    db.picture = updateDB.picture;
-    db.banner = updateDB.banner;
-    db.dns = updateDB.dns;
-    db.lnurl = updateDB.lnurl;
-    db.mute = updateDB.mute;
-    await DB.sharedInstance.update<UserDB>(db);
-
-    /// send metadata event
-    Map map = {
-      'name': updateDB.name ?? '',
-      'about': updateDB.about ?? '',
-      'gender': updateDB.gender ?? '',
-      'area': updateDB.area ?? '',
-      'picture': updateDB.picture ?? '',
-      'banner': updateDB.banner ?? '',
-      'nip05': updateDB.dns ?? '',
-      'lud16': updateDB.lnurl ?? ''
-    };
-    Map additionMap = jsonDecode(db.otherField ?? '{}');
-    map.addAll(additionMap);
-    Event event =
-        await Nip1.setMetadata(jsonEncode(map), currentPubkey, currentPrivkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
-      if (ok.status) {
-        completer.complete(db);
-      } else {
-        completer.complete(null);
-      }
-    });
-    return completer.future;
-  }
-
-  Future<OKEvent> updateRelaysMetadata(List<String> relays) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
-    List<Relay> list = [];
-    for (var relay in relays) {
-      list.add(Relay(relay, null));
-    }
-    Event event = await Nip65.encode(list, currentPubkey, currentPrivkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
-      if (!completer.isCompleted) completer.complete(ok);
-    });
-    return completer.future;
-  }
-
   Future<UserDB?> updatePassword(String password) async {
-    UserDB? db = await _getUserFromDB(privkey: currentPrivkey);
+    UserDB? db = await getUserFromDB(privkey: currentPrivkey);
     if (db != null) {
       Uint8List enPrivkey =
           encryptPrivateKey(hexToBytes(currentPrivkey), password);

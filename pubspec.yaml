@@ -14,6 +14,8 @@ dependencies:
   flutter:
     sdk: flutter
   sqflite_sqlcipher: ^2.2.1
+  convert: ^3.1.1
+  pointycastle: ^3.3.0
   reflectable: ^4.0.5
   built_value_generator: any
   json_annotation: ^4.8.0
