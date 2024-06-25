@@ -25,6 +25,8 @@ class Groups {
   Map<String, GroupDB> groups = {};
   Map<String, GroupDB> myGroups = {};
 
+  Map<String, List<String>> currentGroupRelays = {};
+
   GroupsUpdatedCallBack? myGroupsUpdatedCallBack;
   GroupMessageCallBack? groupMessageCallBack;
 
@@ -427,8 +429,10 @@ class Groups {
     if (receivers != null) {
       final receivePort = ReceivePort();
       receivePort.listen((message) async {
-        Event e = await Event.fromJson(message);
-        Connect.sharedInstance.sendEvent(e);
+        String receiver = message['receiver'];
+        Event e = await Event.fromJson(message['event']);
+        UserDB? user = await Account.sharedInstance.getUserInfo(receiver);
+        Connect.sharedInstance.sendEvent(e, toRelays: user?.relayList);
       });
       for (var receiver in receivers) {
         if (receiver.isNotEmpty) {
@@ -456,13 +460,13 @@ class Groups {
   }
 
   static Future<void> encodeNip17InIsolate(Map<String, dynamic> params) async {
-    String privkey = params['privkey'] ?? '';
     BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
     Event event = await Event.fromJson(params['event']);
     String receiver = params['receiver'] ?? '';
     Event sealedEvent = await Nip17.encode(
         event, receiver, params['pubkey'] ?? '', params['privkey'] ?? '');
-    params['sendPort'].send(sealedEvent.toJson());
+    params['sendPort']
+        .send({'receiver': receiver, 'event': sealedEvent.toJson()});
   }
 
   static String encodeGroup(
