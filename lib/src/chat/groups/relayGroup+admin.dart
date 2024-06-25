@@ -26,6 +26,12 @@ extension EAdmin on RelayGroup {
     }
   }
 
+  Future<List<JoinRequestDB>> getRequestList(String groupId) async {
+    List<Object?> maps = await DB.sharedInstance
+        .objects<JoinRequestDB>(whereArgs: [groupId], where: 'groupId = ?');
+    return maps.map((e) => e as JoinRequestDB).toList();
+  }
+
   Future<OKEvent> acceptJoinRequest(JoinRequestDB joinRequest) async {
     RelayGroupDB? groupDB = groups[joinRequest.groupId];
     if (groupDB == null || !groupDB.private || groupDB.admins == null) {
