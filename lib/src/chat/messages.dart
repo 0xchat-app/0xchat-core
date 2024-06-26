@@ -95,6 +95,7 @@ class Messages {
   }
 
   Future<void> loadMessagesReactions(List<String> eventIds) async {
+    if(eventIds.isEmpty) return;
     await closeMessagesActionsRequests();
     Filter f = Filter(kinds: [7, 9735], e: eventIds);
     messagesActionsRequestsId = Connect.sharedInstance.addSubscription([f],
@@ -155,8 +156,8 @@ class Messages {
 
     final reactedMessageDB = await loadMessageDBFromDB(zapRecordsDB.eventId);
     if (reactedMessageDB == null) return;
-    if (!reactedMessageDB.zapEventIds!.contains(zapRecordsDB.eventId)) {
-      reactedMessageDB.zapEventIds!.add(zapRecordsDB.eventId);
+    if (!reactedMessageDB.zapEventIds!.contains(zapRecordsDB.bolt11)) {
+      reactedMessageDB.zapEventIds!.add(zapRecordsDB.bolt11);
       await DB.sharedInstance.insert<MessageDB>(reactedMessageDB);
       actionsCallBack?.call(reactedMessageDB);
     }
