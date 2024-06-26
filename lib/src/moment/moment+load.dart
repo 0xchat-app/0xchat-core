@@ -243,7 +243,7 @@ extension Load on Moment {
   }
 
   Future<void> addZapRecordToNote(Event zapEvent, String noteId) async {
-    NoteDB? noteDB = await loadNoteWithNoteId(noteId);
+    NoteDB? noteDB = await loadNoteWithNoteId(noteId, reload: false);
     if (noteDB == null) return;
     noteDB.zapEventIds ??= [];
     ZapReceipt zapReceipt = await Nip57.getZapReceipt(
