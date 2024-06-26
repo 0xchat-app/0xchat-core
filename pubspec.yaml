@@ -19,7 +19,7 @@ dependencies:
   reflectable: ^4.0.5
   built_value_generator: any
   json_annotation: ^4.8.0
-  http: ^0.13.3
+  http: ^1.0.0
   bolt11_decoder: ^1.0.2
   nostr_core_dart:
     path: ../nostr-dart
