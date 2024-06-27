@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/chat/private-groups/groups+private.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 enum MessageType {
