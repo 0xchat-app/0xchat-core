@@ -91,7 +91,7 @@ class Contacts {
     await syncSecretSessionFromDB();
     Account.sharedInstance.contactListUpdateCallback = () async {
       await _syncContactsFromDB();
-      updateContactSubscriptions();
+      _updateContactSubscriptions();
     };
 
     _updateSubscriptions();
@@ -105,9 +105,7 @@ class Contacts {
   }
 
   Future<void> _updateSubscriptions({String? relay}) async {
-    if (relay == null || Connect.sharedInstance.relays().contains(relay)) {
-      updateContactSubscriptions(relay: relay);
-    }
+    _subscriptMessages(relay: relay);
     subscriptSecretChat(relay: relay);
   }
 
@@ -169,8 +167,7 @@ class Contacts {
     });
   }
 
-  void updateContactSubscriptions({String? relay}){
-    _subscriptMessages(relay: relay);
+  void _updateContactSubscriptions({String? relay}){
     _subscriptMoment(relay: relay);
   }
 
@@ -186,7 +183,7 @@ class Contacts {
       if (!completer.isCompleted) completer.complete(ok);
     });
     _preloadKind4Messages(pubkeys, currentUnixTimestampSeconds());
-    updateContactSubscriptions();
+    _updateContactSubscriptions();
     contactUpdatedCallBack?.call();
     return completer.future;
   }
@@ -199,7 +196,7 @@ class Contacts {
       _syncContactsToRelay(okCallBack: (OKEvent ok, String relay) {
         if (!completer.isCompleted) completer.complete(ok);
       });
-      updateContactSubscriptions();
+      _updateContactSubscriptions();
       contactUpdatedCallBack?.call();
     }
     return completer.future;
