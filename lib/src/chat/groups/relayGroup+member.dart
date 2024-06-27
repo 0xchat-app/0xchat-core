@@ -13,6 +13,7 @@ extension EMember on RelayGroup {
     final body = {
       'pubkey': pubkey,
       'name': name,
+      'createdAt': currentUnixTimestampSeconds()
     };
     final sig = await Account.getSignatureWithSecret(jsonEncode(body));
     body['sig'] = sig;
