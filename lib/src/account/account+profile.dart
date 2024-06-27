@@ -308,7 +308,7 @@ extension AccountProfile on Account {
     if (db != null && db.lastRelayGroupsListUpdatedTime < event.createdAt) {
       db.lastRelayGroupsListUpdatedTime = event.createdAt;
       Lists result = await Nip51.getLists(event, currentPubkey, currentPrivkey);
-      db.relayGroupsList = result.bookmarks;
+      db.relayGroupsList = result.groups.map((e) => e.groupId).toList();
       relayGroupListUpdateCallback?.call();
     }
     return db;
