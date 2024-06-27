@@ -9,7 +9,7 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 extension EMember on RelayGroup {
   Future<RelayGroupDB?> createGroup(String host, String name) async {
     Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
-    final url = Uri.parse('$host/create');
+    final url = Uri.parse('https://$host/create');
     final body = {
       'pubkey': pubkey,
       'name': name,
