@@ -4,6 +4,7 @@ import 'package:chatcore/chat-core.dart';
 class ChannelDB extends DBObject {
   String channelId; //event id
   int createTime;
+  int updateTime;
   String creator; // pubkey
   String? name;
   String? about;
@@ -15,6 +16,7 @@ class ChannelDB extends DBObject {
   ChannelDB({
     this.channelId = '',
     this.createTime = 0,
+    this.updateTime = 0,
     this.creator = '',
     this.name = '',
     this.about = '',
@@ -41,11 +43,19 @@ class ChannelDB extends DBObject {
   static List<String?> primaryKey() {
     return ['channelId'];
   }
+
+  //'ALTER TABLE Company ADD description TEXT'
+  static Map<String, String?> updateTable() {
+    return {
+      "8": '''alter table ChannelDB add updateTime INT;''',
+    };
+  }
 }
 
 Map<String, dynamic> _channelInfoToMap(ChannelDB instance) => <String, dynamic>{
       'channelId': instance.channelId,
       'createTime': instance.createTime,
+      'updateTime': instance.updateTime,
       'creator': instance.creator,
       'name': instance.name,
       'about': instance.about,
@@ -59,6 +69,7 @@ ChannelDB _channelInfoFromMap(Map<String, dynamic> map) {
   return ChannelDB(
     channelId: map['channelId'].toString(),
     createTime: map['createTime'],
+    updateTime: map['updateTime'] ?? 0,
     creator: map['creator'].toString(),
     name: map['name'].toString(),
     about: map['about'],

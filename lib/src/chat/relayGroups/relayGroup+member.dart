@@ -31,6 +31,7 @@ extension EMember on RelayGroup {
           RelayGroupDB relayGroupDB = RelayGroupDB(
               groupId: groupId,
               relay: relay,
+              name: name,
               author: author,
               members: [author],
               id: id);
