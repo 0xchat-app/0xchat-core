@@ -21,13 +21,13 @@ class BadgesHelper {
 
   Future<void> init() async {
     await _loadChatBadges();
-    _updateSubscriptions();
-    // subscript friend requests
-    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
-      if (status == 1 && Account.sharedInstance.me != null) {
-        _updateSubscriptions(relay: relay);
-      }
-    });
+    // _updateSubscriptions();
+    // // subscript friend requests
+    // Connect.sharedInstance.addConnectStatusListener((relay, status) async {
+    //   if (status == 1 && Account.sharedInstance.me != null) {
+    //     _updateSubscriptions(relay: relay);
+    //   }
+    // });
   }
 
   void _updateSubscriptions({String? relay}) {

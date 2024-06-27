@@ -89,9 +89,9 @@ class Contacts {
     await syncBlockListFromDB();
     await _syncContactsFromDB();
     await syncSecretSessionFromDB();
-    Account.sharedInstance.contactListUpdateCallback = (){
+    Account.sharedInstance.contactListUpdateCallback = () async {
+      await _syncContactsFromDB();
       updateContactSubscriptions();
-      contactUpdatedCallBack?.call();
     };
 
     _updateSubscriptions();
