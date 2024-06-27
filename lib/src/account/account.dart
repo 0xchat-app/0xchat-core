@@ -8,6 +8,8 @@ import 'package:convert/convert.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
+typedef AccountUpdateCallback = void Function();
+
 class Account {
   /// singleton
   Account._internal() {
@@ -26,6 +28,13 @@ class Account {
   Map<String, ValueNotifier<UserDB>> userCache = {};
 
   List<String> pQueue = [];
+
+  AccountUpdateCallback? relayListUpdateCallback;
+  AccountUpdateCallback? dmRelayListUpdateCallback;
+  AccountUpdateCallback? contactListUpdateCallback;
+  AccountUpdateCallback? channelListUpdateCallback;
+  AccountUpdateCallback? groupListUpdateCallback;
+  AccountUpdateCallback? relayGroupListUpdateCallback;
 
   void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
@@ -127,6 +136,7 @@ class Account {
       currentPubkey = userDB.pubKey;
       currentPrivkey = '';
       userCache[currentPubkey] = ValueNotifier<UserDB>(userDB);
+      loginSuccess();
     }
     return userDB;
   }
@@ -150,6 +160,7 @@ class Account {
           currentPrivkey = bytesToHex(privkey);
           currentPubkey = db.pubKey;
           userCache[currentPubkey] = ValueNotifier<UserDB>(db);
+          loginSuccess();
           return db;
         }
       }
@@ -179,6 +190,7 @@ class Account {
     currentPrivkey = privkey;
     currentPubkey = db.pubKey;
     userCache[currentPubkey] = ValueNotifier<UserDB>(db);
+    loginSuccess();
     return db;
   }
 
@@ -352,7 +364,6 @@ class Account {
           json['kind'], tags, json['content']);
     }
     Event event = await Event.fromJson(json, verify: false);
-    //todo: sign from signer
     if (SignerHelper.needSigner(currentPrivkey)) {
       final pubkey = Account.sharedInstance.currentPubkey;
       event.sig = await SignerHelper.signMessage(event.id, pubkey) ?? '';

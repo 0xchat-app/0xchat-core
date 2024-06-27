@@ -181,6 +181,7 @@ class Connect {
   }
 
   Future<void> connect(String relay, {int type = 0}) async {
+    if (relay.isEmpty) return;
     if (webSockets[relay]?.type == 0) type = 0;
     // connecting or open
     if (webSockets[relay]?.connectStatus == 0 ||
@@ -235,7 +236,8 @@ class Connect {
       EOSECallBack? eoseCallBack,
       List<String>? relays}) {
     Map<String, List<Filter>> result = {};
-    List<String> subscriptionRelays = relays ?? Connect.sharedInstance.relays();
+    List<String> subscriptionRelays =
+        relays?.isNotEmpty == true ? relays! : Connect.sharedInstance.relays();
     for (var relay in subscriptionRelays) {
       result[relay] = filters;
     }
@@ -580,7 +582,7 @@ class Connect {
       }
       return await WebSocket.connect(relay);
     } catch (e) {
-      print("Error! can not connect WS connectWs $e");
+      print("Error! can not connect WS connectWs $e relay:$relay");
       _setConnectStatus(relay, 3); // closed
       if (webSockets.containsKey(relay)) {
         await Future.delayed(Duration(milliseconds: 3000));

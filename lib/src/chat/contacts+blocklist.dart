@@ -18,50 +18,6 @@ extension BlockList on Contacts {
     await Account.sharedInstance.syncMe();
   }
 
-  Future<void> syncBlockListFromRelay({String? relay}) async {
-    Completer<void> completer = Completer<void>();
-    Filter f = Filter(
-        kinds: [30000],
-        d: [Contacts.blockListidentifier],
-        authors: [pubkey],
-        limit: 1,
-        since: Account.sharedInstance.me!.lastBlockListUpdatedTime + 1);
-
-    Map<String, List<Filter>> subscriptions = {};
-    if (relay == null) {
-      for (var r in Connect.sharedInstance.relays()) {
-        subscriptions[r] = [f];
-      }
-    } else {
-      subscriptions[relay] = [f];
-    }
-
-    Event? lastEvent;
-    int lastEventTime = 0;
-    Connect.sharedInstance.addSubscriptions(subscriptions,
-        eventCallBack: (event, relay) async {
-      if (event.content.isNotEmpty && lastEventTime < event.createdAt) {
-        lastEventTime = event.createdAt;
-        lastEvent = event;
-      }
-    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unCompletedRelays.isEmpty) {
-        if (lastEvent != null) {
-          Account.sharedInstance.me!.lastBlockListUpdatedTime =
-              lastEvent!.createdAt;
-          await Account.sharedInstance.syncMe();
-          Lists result = await Nip51.getLists(lastEvent!, pubkey, privkey);
-          blockList = result.people.map((p) => p.pubkey).toList();
-          await _syncBlockListToDB();
-        }
-        contactUpdatedCallBack?.call();
-        if (!completer.isCompleted) completer.complete();
-      }
-    });
-    return completer.future;
-  }
-
   Future<void> _syncBlockListToRelay({OKCallBack? okCallBack}) async {
     if (blockList != null) {
       List<People> list = [];
@@ -69,11 +25,14 @@ extension BlockList on Contacts {
         People p = People(pubkey, '', '', '');
         list.add(p);
       }
-      Event event = await Nip51.createCategorizedPeople(
-          Contacts.blockListidentifier, [], list, privkey, pubkey);
+      Event event = await Nip51.createMutePeople([], list,privkey, pubkey);
       if (event.content.isNotEmpty) {
         Connect.sharedInstance.sendEvent(event,
             sendCallBack: (OKEvent ok, String relay) {
+          if(ok.status){
+            Account.sharedInstance.me!.lastBlockListUpdatedTime =
+                event.createdAt;
+          }
           okCallBack?.call(ok, relay);
         });
       } else {

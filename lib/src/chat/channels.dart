@@ -30,6 +30,33 @@ class Channels {
   OfflineChannelMessageFinishCallBack? offlineChannelMessageFinishCallBack;
   Map<String, bool> offlineChannelMessageFinish = {};
 
+  Future<void> init({ChannelsUpdatedCallBack? callBack}) async {
+    if (channelMessageSubscription.isNotEmpty) {
+      Connect.sharedInstance.closeRequests(channelMessageSubscription);
+    }
+
+    privkey = Account.sharedInstance.currentPrivkey;
+    pubkey = Account.sharedInstance.currentPubkey;
+    myChannelsUpdatedCallBack = callBack;
+
+    Account.sharedInstance.channelListUpdateCallback = () async {
+      await syncChannelsFromRelay(Account.sharedInstance.me!.channelsList ?? []);
+      myChannels = _myChannels();
+      _updateChannelSubscription();
+      myChannelsUpdatedCallBack?.call();
+    };
+
+    await _loadAllChannelsFromDB();
+
+    _updateSubscriptions();
+    // subscript friend requests
+    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
+      if (status == 1 && Account.sharedInstance.me != null) {
+        _updateSubscriptions(relay: relay);
+      }
+    });
+  }
+
   Future<void> _loadAllChannelsFromDB() async {
     List<Object?> maps = await DB.sharedInstance.objects<ChannelDB>();
     channels = {
@@ -104,25 +131,6 @@ class Channels {
     if (!Messages.addToLoaded(event.id)) return;
     ChannelMessage channelMessage = Nip28.getChannelMessage(event);
     if (await _checkBlockedList(channelMessage.sender)) return;
-    ChannelDB? channel = channels[channelMessage.channelId];
-    if (channel != null &&
-        channel.badges != null &&
-        channel.badges!.length > 10) {
-      /// check badge request
-      String badgeId = '';
-      try {
-        badgeId = List<String>.from(jsonDecode(channel.badges ?? '')).first;
-      } catch (_) {}
-      UserDB? sender =
-          await Account.sharedInstance.getUserInfo(channelMessage.sender);
-      if (sender != null &&
-          sender.badgesList != null &&
-          sender.badgesList!.contains(badgeId)) {
-        /// meet the request
-      } else {
-        return;
-      }
-    }
     MessageDB messageDB = MessageDB(
         messageId: event.id,
         sender: channelMessage.sender,
@@ -161,54 +169,6 @@ class Channels {
     if (offlineChannelMessageFinish[relay] == true) {
       Relays.sharedInstance.syncRelaysToDB(r: relay);
     }
-  }
-
-  Future<void> _loadMyChannelsFromRelay({String? relay}) async {
-    Completer<void> completer = Completer<void>();
-    Filter f = Filter(
-        kinds: [30001],
-        d: [identifier],
-        authors: [pubkey],
-        limit: 1,
-        since: Account.sharedInstance.me!.lastChannelsListUpdatedTime + 1);
-
-    Map<String, List<Filter>> subscriptions = {};
-    if (relay == null) {
-      for (var r in Connect.sharedInstance.relays()) {
-        subscriptions[r] = [f];
-      }
-    } else {
-      subscriptions[relay] = [f];
-    }
-
-    Event? lastEvent;
-    int lastEventTime = 0;
-    Connect.sharedInstance.addSubscriptions(subscriptions,
-        eventCallBack: (event, relay) async {
-      if (event.content.isNotEmpty && lastEventTime < event.createdAt) {
-        lastEventTime = event.createdAt;
-        lastEvent = event;
-      }
-    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unCompletedRelays.isEmpty) {
-        if (lastEvent != null &&
-            lastEvent!.createdAt >
-                Account.sharedInstance.me!.lastChannelsListUpdatedTime) {
-          Lists result = await Nip51.getLists(lastEvent!, pubkey, privkey);
-          UserDB? me = Account.sharedInstance.me;
-          me!.lastChannelsListUpdatedTime = lastEvent!.createdAt;
-          me.channelsList = result.bookmarks;
-          await Account.sharedInstance.syncMe();
-          await syncChannelsFromRelay(result.bookmarks);
-          myChannels = _myChannels();
-          _updateChannelSubscription();
-        }
-        if (!completer.isCompleted) completer.complete();
-        myChannelsUpdatedCallBack?.call();
-      }
-    });
-    return completer.future;
   }
 
   Map<String, ChannelDB> _myChannels() {
@@ -303,8 +263,7 @@ class Channels {
 
   Future<void> _syncMyChannelListToRelay({OKCallBack? callBack}) async {
     List<String> list = myChannels.keys.toList();
-    Event event = await Nip51.createCategorizedBookmarks(
-        identifier, list, [], privkey, pubkey);
+    Event event = await Nip51.createPublicChatList([], list, privkey, pubkey);
     Connect.sharedInstance.sendEvent(event,
         sendCallBack: (OKEvent ok, String relay) {
       if (ok.status) {
@@ -337,30 +296,11 @@ class Channels {
     });
   }
 
-  Future<void> init({ChannelsUpdatedCallBack? callBack}) async {
-    if (channelMessageSubscription.isNotEmpty) {
-      Connect.sharedInstance.closeRequests(channelMessageSubscription);
-    }
-
-    privkey = Account.sharedInstance.currentPrivkey;
-    pubkey = Account.sharedInstance.currentPubkey;
-    myChannelsUpdatedCallBack = callBack;
-
-    await _loadAllChannelsFromDB();
-    _updateSubscriptions();
-    // subscript friend requests
-    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
-      if (status == 1 && Account.sharedInstance.me != null) {
-        _updateSubscriptions(relay: relay);
-      }
-    });
-  }
 
   Future<void> _updateSubscriptions({String? relay}) async {
     if (relay != null && !Connect.sharedInstance.relays().contains(relay)) {
       return;
     }
-    await _loadMyChannelsFromRelay(relay: relay);
     _updateChannelSubscription(relay: relay);
   }
 

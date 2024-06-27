@@ -370,7 +370,7 @@ class BadgesHelper {
     return completer.future;
   }
 
-  static Future<List<BadgeDB?>?> getProfileBadgesFromRelay(
+  static Future<List<BadgeDB?>?> getAllProfileBadgesFromRelay(
       String userPubkey) async {
     Completer<List<BadgeDB?>?> completer = Completer<List<BadgeDB?>?>();
     List<BadgeDB?> result = [];

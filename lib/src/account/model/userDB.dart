@@ -39,21 +39,25 @@ class UserDB extends DBObject {
   /// lists for me
   String? friendsList;
   List<String>? channelsList;
-  List<String>? groupsList;
+  List<String>? groupsList; // private group list
   List<String>? relayGroupsList;
   List<String>? badgesList;
   List<String>? blockedList; // blocked users list
   List<String>? followingList;
   List<String>? followersList;
-  List<String>? relayList; // dm relay list
+  List<String>? relayList; // relay list
+  List<String>? dmRelayList; // relay list
 
   /// list updated time
   int lastFriendsListUpdatedTime;
   int lastChannelsListUpdatedTime;
   int lastGroupsListUpdatedTime;
+  int lastRelayGroupsListUpdatedTime;
   int lastBadgesListUpdatedTime;
   int lastBlockListUpdatedTime;
   int lastRelayListUpdatedTime;
+  int lastFollowingListUpdatedTime;
+  int lastDMRelayListUpdatedTime;
 
   bool? mute;
 
@@ -92,6 +96,7 @@ class UserDB extends DBObject {
     this.followersList,
     this.followingList,
     this.relayList,
+    this.dmRelayList,
     this.mute = false,
     this.lastUpdatedTime = 0,
     this.lastBadgesListUpdatedTime = 0,
@@ -99,7 +104,10 @@ class UserDB extends DBObject {
     this.lastChannelsListUpdatedTime = 0,
     this.lastFriendsListUpdatedTime = 0,
     this.lastGroupsListUpdatedTime = 0,
+    this.lastRelayGroupsListUpdatedTime = 0,
     this.lastRelayListUpdatedTime = 0,
+    this.lastFollowingListUpdatedTime = 0,
+    this.lastDMRelayListUpdatedTime = 0,
     this.otherField = '{}',
     this.nwcURI,
   });
@@ -131,7 +139,9 @@ class UserDB extends DBObject {
           '''alter table userDB add lastBadgesListUpdatedTime INT; alter table userDB add lastBlockListUpdatedTime INT; alter table userDB add lastChannelsListUpdatedTime INT; alter table userDB add lastFriendsListUpdatedTime INT; alter table userDB add lastGroupsListUpdatedTime INT;''',
       "5": '''alter table userDB add nwcURI TEXT;''',
       "6":
-          '''alter table userDB add banner TEXT; alter table userDB add followingList TEXT; alter table userDB add followersList TEXT; alter table userDB add relayList TEXT; alter table userDB add relayGroupsList TEXT; alter table userDB add lastRelayListUpdatedTime INT;'''
+          '''alter table userDB add banner TEXT; alter table userDB add followingList TEXT; alter table userDB add followersList TEXT; alter table userDB add relayList TEXT; alter table userDB add relayGroupsList TEXT; alter table userDB add lastRelayListUpdatedTime INT;''',
+      "8":
+          '''alter table userDB add lastFollowingListUpdatedTime INT; alter table userDB add dmRelayList TEXT; alter table userDB add lastDMRelayListUpdatedTime INT; alter table userDB add lastRelayGroupsListUpdatedTime INT;''',
     };
   }
 
@@ -239,6 +249,7 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     followingList: UserDB.decodeStringList(map['followingList'].toString()),
     followersList: UserDB.decodeStringList(map['followersList'].toString()),
     relayList: UserDB.decodeStringList(map['relayList'].toString()),
+    dmRelayList: UserDB.decodeStringList(map['dmRelayList'].toString()),
     aliasPubkey: map['aliasPubkey'],
     mute: map['mute'] > 0 ? true : false,
     lastUpdatedTime: map['lastUpdatedTime'],
@@ -247,7 +258,10 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     lastChannelsListUpdatedTime: map['lastChannelsListUpdatedTime'] ?? 0,
     lastFriendsListUpdatedTime: map['lastFriendsListUpdatedTime'] ?? 0,
     lastGroupsListUpdatedTime: map['lastGroupsListUpdatedTime'] ?? 0,
+    lastRelayGroupsListUpdatedTime: map['lastRelayGroupsListUpdatedTime'] ?? 0,
     lastRelayListUpdatedTime: map['lastRelayListUpdatedTime'] ?? 0,
+    lastFollowingListUpdatedTime: map['lastRelayListUpdatedTime'] ?? 0,
+    lastDMRelayListUpdatedTime: map['lastDMRelayListUpdatedTime'] ?? 0,
     otherField: map['otherField']?.toString(),
     nwcURI: map['nwcURI']?.toString(),
   );
@@ -277,6 +291,7 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'followersList': jsonEncode(instance.followersList),
       'followingList': jsonEncode(instance.followingList),
       'relayList': jsonEncode(instance.relayList),
+      'dmRelayList': jsonEncode(instance.dmRelayList),
       'aliasPubkey': instance.aliasPubkey,
       'mute': instance.mute,
       'lastUpdatedTime': instance.lastUpdatedTime,
@@ -285,7 +300,10 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'lastChannelsListUpdatedTime': instance.lastChannelsListUpdatedTime,
       'lastFriendsListUpdatedTime': instance.lastFriendsListUpdatedTime,
       'lastGroupsListUpdatedTime': instance.lastGroupsListUpdatedTime,
+      'lastRelayGroupsListUpdatedTime': instance.lastRelayGroupsListUpdatedTime,
       'lastRelayListUpdatedTime': instance.lastRelayListUpdatedTime,
+      'lastFollowingListUpdatedTime': instance.lastFollowingListUpdatedTime,
+      'lastDMRelayListUpdatedTime': instance.lastDMRelayListUpdatedTime,
       'otherField': instance.otherField,
       'nwcURI': instance.nwcURI
     };

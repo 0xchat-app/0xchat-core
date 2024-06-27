@@ -35,14 +35,15 @@ class Groups {
     pubkey = Account.sharedInstance.currentPubkey;
     myGroupsUpdatedCallBack = callBack;
     await _loadAllGroupsFromDB();
-    _loadMyGroupsFromRelay();
+    Account.sharedInstance.groupListUpdateCallback = () async {
+      myGroups = _myGroups();
+      myGroupsUpdatedCallBack?.call();
+    };
 
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 &&
           Account.sharedInstance.me != null &&
-          Connect.sharedInstance.relays().contains(relay)) {
-        _loadMyGroupsFromRelay(relay: relay);
-      }
+          Connect.sharedInstance.relays().contains(relay)) {}
     });
   }
 
@@ -187,50 +188,6 @@ class Groups {
           break;
       }
     }
-  }
-
-  Future<void> _loadMyGroupsFromRelay({String? relay}) async {
-    Completer<void> completer = Completer<void>();
-    Filter f = Filter(
-        kinds: [30001],
-        d: [identifier],
-        authors: [pubkey],
-        limit: 1,
-        since: Account.sharedInstance.me!.lastGroupsListUpdatedTime + 1);
-
-    Map<String, List<Filter>> subscriptions = {};
-    if (relay == null) {
-      for (var r in Connect.sharedInstance.relays()) {
-        subscriptions[r] = [f];
-      }
-    } else {
-      subscriptions[relay] = [f];
-    }
-
-    Event? lastEvent;
-    int lastEventTime = 0;
-    Connect.sharedInstance.addSubscriptions(subscriptions,
-        eventCallBack: (event, relay) async {
-      if (event.content.isNotEmpty && lastEventTime < event.createdAt) {
-        lastEventTime = event.createdAt;
-        lastEvent = event;
-      }
-    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unCompletedRelays.isEmpty) {
-        if (lastEvent != null) {
-          Lists result = await Nip51.getLists(lastEvent!, pubkey, privkey);
-          UserDB? me = Account.sharedInstance.me;
-          me!.lastGroupsListUpdatedTime = lastEvent!.createdAt;
-          me.groupsList = result.bookmarks;
-          await Account.sharedInstance.syncMe();
-          myGroups = _myGroups();
-        }
-        if (!completer.isCompleted) completer.complete();
-        myGroupsUpdatedCallBack?.call();
-      }
-    });
-    return completer.future;
   }
 
   GroupDB _channelToGroupDB(Channel group, int updateTime) {

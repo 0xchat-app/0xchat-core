@@ -36,10 +36,15 @@ class RelayGroup {
     myGroupsUpdatedCallBack = callBack;
     await _loadAllGroupsFromDB();
     _updateGroupSubscription();
-    _loadMyGroupsFromRelay();
+
+    Account.sharedInstance.relayGroupListUpdateCallback = () {
+      myGroups = _myGroups();
+      _updateGroupSubscription();
+      myGroupsUpdatedCallBack?.call();
+    };
+
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 && Account.sharedInstance.me != null) {
-        await _loadMyGroupsFromRelay(relay: relay);
         if (groupRelays.contains(relay)) {
           _updateGroupSubscription(relay: relay);
         }
@@ -215,51 +220,6 @@ class RelayGroup {
     }
   }
 
-  Future<void> _loadMyGroupsFromRelay({String? relay}) async {
-    Completer<void> completer = Completer<void>();
-    Filter f = Filter(
-        kinds: [30001],
-        d: [identifier],
-        authors: [pubkey],
-        limit: 1,
-        since: Account.sharedInstance.me!.lastGroupsListUpdatedTime + 1);
-
-    Map<String, List<Filter>> subscriptions = {};
-    if (relay == null) {
-      for (var r in Connect.sharedInstance.relays()) {
-        subscriptions[r] = [f];
-      }
-    } else {
-      subscriptions[relay] = [f];
-    }
-
-    Event? lastEvent;
-    int lastEventTime = 0;
-    Connect.sharedInstance.addSubscriptions(subscriptions,
-        eventCallBack: (event, relay) async {
-      if (event.content.isNotEmpty && lastEventTime < event.createdAt) {
-        lastEventTime = event.createdAt;
-        lastEvent = event;
-      }
-    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unCompletedRelays.isEmpty) {
-        if (lastEvent != null) {
-          Lists result = await Nip51.getLists(lastEvent!, pubkey, privkey);
-          UserDB? me = Account.sharedInstance.me;
-          me!.lastGroupsListUpdatedTime = lastEvent!.createdAt;
-          me.relayGroupsList = result.bookmarks;
-          await Account.sharedInstance.syncMe();
-          myGroups = _myGroups();
-          _updateGroupSubscription();
-        }
-        if (!completer.isCompleted) completer.complete();
-        myGroupsUpdatedCallBack?.call();
-      }
-    });
-    return completer.future;
-  }
-
   Future<void> syncGroupToDB(RelayGroupDB groupDB) async {
     groups[groupDB.groupId] = groupDB;
     if (myGroups.containsKey(groupDB.groupId)) {
@@ -277,9 +237,11 @@ class RelayGroup {
 
   Future<OKEvent> syncMyGroupListToRelay() async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    List<String> list = myGroups.keys.toList();
-    Event event = await Nip51.createCategorizedBookmarks(
-        identifier, [], list, privkey, pubkey);
+    List<SimpleGroups> list = [];
+    for (var group in myGroups.values) {
+      list.add(SimpleGroups(group.groupId, group.relay));
+    }
+    Event event = await Nip51.createSimpleGroupList([], list, privkey, pubkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (ok.status) {
         Account.sharedInstance.me!.lastGroupsListUpdatedTime = event.createdAt;

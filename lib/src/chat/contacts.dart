@@ -89,6 +89,10 @@ class Contacts {
     await syncBlockListFromDB();
     await _syncContactsFromDB();
     await syncSecretSessionFromDB();
+    Account.sharedInstance.contactListUpdateCallback = (){
+      updateContactSubscriptions();
+      contactUpdatedCallBack?.call();
+    };
 
     _updateSubscriptions();
 
@@ -102,11 +106,7 @@ class Contacts {
 
   Future<void> _updateSubscriptions({String? relay}) async {
     if (relay == null || Connect.sharedInstance.relays().contains(relay)) {
-      await syncBlockListFromRelay(relay: relay);
-      await _syncContactsFromRelay(relay: relay);
-      await _syncFollowingListFromRelay(relay: relay);
-      _subscriptMessages(relay: relay);
-      _subscriptMoment(relay: relay);
+      updateContactSubscriptions(relay: relay);
     }
     subscriptSecretChat(relay: relay);
   }
@@ -141,7 +141,7 @@ class Contacts {
     }
   }
 
-  Future<void> _syncContactsProfiles(List<People> peoples) async {
+  Future<void> syncContactsProfiles(List<People> peoples) async {
     await _syncContactsProfilesFromDB(peoples);
     List<People> friendList = [];
     for (UserDB user in allContacts.values) {
@@ -169,6 +169,11 @@ class Contacts {
     });
   }
 
+  void updateContactSubscriptions({String? relay}){
+    _subscriptMessages(relay: relay);
+    _subscriptMoment(relay: relay);
+  }
+
   Future<OKEvent> addToContact(List<String> pubkeys) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
@@ -181,8 +186,8 @@ class Contacts {
       if (!completer.isCompleted) completer.complete(ok);
     });
     _preloadKind4Messages(pubkeys, currentUnixTimestampSeconds());
-    _subscriptMessages();
-    _subscriptMoment();
+    updateContactSubscriptions();
+    contactUpdatedCallBack?.call();
     return completer.future;
   }
 
@@ -194,8 +199,8 @@ class Contacts {
       _syncContactsToRelay(okCallBack: (OKEvent ok, String relay) {
         if (!completer.isCompleted) completer.complete(ok);
       });
-      _subscriptMessages();
-      _subscriptMoment();
+      updateContactSubscriptions();
+      contactUpdatedCallBack?.call();
     }
     return completer.future;
   }
@@ -295,52 +300,6 @@ class Contacts {
         contactUpdatedCallBack?.call();
       }
     }
-  }
-
-  Future<void> _syncContactsFromRelay({String? relay}) async {
-    Completer<void> completer = Completer<void>();
-    Filter f = Filter(
-        kinds: [30000],
-        d: [identifier],
-        authors: [pubkey],
-        limit: 1,
-        since: Account.sharedInstance.me!.lastFriendsListUpdatedTime + 1);
-    Map<String, List<Filter>> subscriptions = {};
-    if (relay == null) {
-      for (var r in Connect.sharedInstance.relays()) {
-        subscriptions[r] = [f];
-      }
-    } else {
-      subscriptions[relay] = [f];
-    }
-    Event? lastEvent;
-    int lastEventTime = 0;
-    Connect.sharedInstance.addSubscriptions(subscriptions,
-        eventCallBack: (event, relay) async {
-      if (event.content.isNotEmpty && lastEventTime < event.createdAt) {
-        lastEventTime = event.createdAt;
-        lastEvent = event;
-      }
-    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unCompletedRelays.isEmpty) {
-        if (lastEvent != null) {
-          Account.sharedInstance.me!.lastFriendsListUpdatedTime =
-              lastEvent!.createdAt;
-          Account.sharedInstance.syncMe();
-          Lists result = await Nip51.getLists(lastEvent!, pubkey, privkey);
-          await _syncContactsProfiles(result.people);
-        }
-        contactUpdatedCallBack?.call();
-        if (!completer.isCompleted) completer.complete();
-      }
-    });
-    return completer.future;
-  }
-
-  Future<void> _syncFollowingListFromRelay({String? relay}) async {
-    await Account.sharedInstance
-        .syncFollowingListFromRelay(pubkey, relay: relay);
   }
 
   Future<void> _preloadKind4Messages(List<String> pubkeys, int until) async {
