@@ -36,6 +36,7 @@ extension EMember on RelayGroup {
               id: id);
           myGroups[groupId] = relayGroupDB;
           myGroupsUpdatedCallBack?.call();
+          syncGroupToDB(relayGroupDB);
           syncMyGroupListToRelay();
           if (!completer.isCompleted) completer.complete(relayGroupDB);
         } else {
