@@ -480,12 +480,6 @@ class Contacts {
               Moment.sharedInstance
                   .handleReactionEvent(innerEvent, relay, true);
               break;
-            case 40:
-            case 41:
-            case 42:
-              Groups.sharedInstance
-                  .receiveGroupEvents(innerEvent, relay, event.id);
-              break;
             default:
               print('unhandled message $innerEvent');
               break;
