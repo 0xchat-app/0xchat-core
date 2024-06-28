@@ -80,7 +80,7 @@ extension EInfo on RelayGroup {
     return completer.future;
   }
 
-  Future<List<GroupAdmin>?> getGroupAdminsFromLocal(String groupId) async {
+  List<GroupAdmin>? getGroupAdminsFromLocal(String groupId) {
     myGroups[groupId]?.admins;
   }
 
