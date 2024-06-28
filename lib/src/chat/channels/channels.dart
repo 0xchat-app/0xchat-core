@@ -404,6 +404,8 @@ class Channels {
         unknownChannels, relay == null ? null : [relay]);
     await _syncChannelsMetadataFromRelay(
         unknownChannels, relay == null ? null : [relay]);
+
+    myChannelsUpdatedCallBack?.call();
   }
 
   Future<OKEvent> setChannel(ChannelDB channelDB,
