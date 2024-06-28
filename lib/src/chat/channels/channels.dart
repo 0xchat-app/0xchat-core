@@ -217,6 +217,7 @@ class Channels {
       channelDB.name = channel.name;
       channelDB.about = channel.about;
       channelDB.picture = channel.picture;
+      channelDB.relayURL = channel.relay;
       if (channel.createdAt > 0) channelDB.createTime = channel.createdAt;
       if (channel.updatedAt > 0) channelDB.updateTime = channel.updatedAt;
     }
@@ -367,7 +368,7 @@ class Channels {
       {List<String>? relays}) async {
     Completer<ChannelDB?> completer = Completer<ChannelDB?>();
     Filter f = Filter(
-      authors: [owner],
+      authors: owner.isNotEmpty ? [owner] : null,
       kinds: [41],
       e: [channelId],
       limit: 1,
@@ -393,9 +394,11 @@ class Channels {
     List<String> unknownChannels = [];
     List<String> keys = List.from(channels.keys.toList());
     for (var channelId in channelIds) {
-      if (!keys.contains(channelId)) {
+      if (!keys.contains(channelId) || channels[channelId]?.createTime == 0) {
         unknownChannels.add(channelId);
-        channels[channelId] = ChannelDB(channelId: channelId);
+        ChannelDB channelDB = ChannelDB(channelId: channelId);
+        channelDB.name = channelDB.shortChannelId;
+        channels[channelId] = channelDB;
       }
     }
 
