@@ -112,7 +112,7 @@ class Config {
     if (json != null) {
       Map map = jsonDecode(json);
 
-      String? wssdns = map['wssdns'];
+      String? wssdns = map['wssdnsnew'];
       hostConfig[wssHost] = 'wss://${wssdns ?? '54.179.158.105'}';
 
       String? httpsdns = map['httpsdnsnew'];
