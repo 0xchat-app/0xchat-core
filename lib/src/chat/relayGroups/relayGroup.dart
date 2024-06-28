@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
@@ -79,6 +80,19 @@ class RelayGroup {
     myGroups = _myGroups();
   }
 
+  SimpleGroups _getHostAndGroupId(String input) {
+    RegExp exp = RegExp(r"(.*?)'(.*)");
+    Match? match = exp.firstMatch(input);
+
+    if (match != null) {
+      String? host = match.group(1);
+      String? groupId = match.group(2);
+      return SimpleGroups(groupId ?? '', host ?? '');
+    } else {
+      return SimpleGroups(input, '');
+    }
+  }
+
   Map<String, RelayGroupDB> _myGroups() {
     Map<String, RelayGroupDB> result = {};
     UserDB? me = Account.sharedInstance.me;
@@ -88,11 +102,14 @@ class RelayGroup {
       List<String> groupList = me.relayGroupsList!;
       groupRelays.clear();
       for (String id in groupList) {
-        if (!groups.containsKey(id)) {
-          groups[id] = RelayGroupDB(groupId: id);
+        SimpleGroups simpleGroups = _getHostAndGroupId(id);
+        String groupId = simpleGroups.groupId;
+        if (!groups.containsKey(groupId)) {
+          groups[groupId] =
+              RelayGroupDB(groupId: groupId, relay: simpleGroups.relay, id: id);
         }
-        result[id] = groups[id]!;
-        groupRelays.add(groups[id]!.relay);
+        result[groupId] = groups[groupId]!;
+        groupRelays.add(groups[groupId]!.relay);
       }
       connectToRelays(groupRelays);
     }
@@ -229,9 +246,8 @@ class RelayGroup {
   }
 
   Future<void> _syncMyGroupListToDB() async {
-    List<String> list = myGroups.keys.toList();
     UserDB? me = Account.sharedInstance.me;
-    me!.relayGroupsList = list;
+    me!.relayGroupsList = myGroups.values.map((e) => e.id).toList();
     await DB.sharedInstance.insert<UserDB>(me);
   }
 
