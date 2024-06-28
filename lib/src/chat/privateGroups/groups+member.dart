@@ -16,14 +16,15 @@ extension Member on Groups {
   //   return OKEvent(groupId, false, 'group not found');
   // }
 
-  Future<OKEvent> requestGroup(
-      String groupId, String groupOwner, String groupName, String content) async {
+  Future<OKEvent> requestGroup(String groupId, String groupOwner,
+      String groupName, String content) async {
     content = "${Account.sharedInstance.me?.name} request to join the group";
     GroupDB? groupDB = groups[groupId];
     groupDB ??= GroupDB(groupId: groupId, owner: groupOwner, name: groupName);
-    if(groupDB.owner.isEmpty) groupDB.owner = groupOwner;
-    if(groupDB.name.isEmpty) groupDB.name = groupName;
-    await DB.sharedInstance.insert<GroupDB>(groupDB, conflictAlgorithm: ConflictAlgorithm.ignore);
+    if (groupDB.owner.isEmpty) groupDB.owner = groupOwner;
+    if (groupDB.name.isEmpty) groupDB.name = groupName;
+    await DB.sharedInstance
+        .insert<GroupDB>(groupDB, conflictAlgorithm: ConflictAlgorithm.ignore);
     OKEvent? okEvent;
     if (!checkInGroup(groupId)) {
       groups[groupId] = groupDB;
@@ -86,16 +87,16 @@ extension Member on Groups {
     GroupDB? groupDB = groups[groupId];
     List<UserDB> result = [];
     if (groupDB != null && groupDB.members != null) {
-      for (String member in groupDB.members!) {
+      await Future.forEach(groupDB.members!, (member) async {
         UserDB? userDB = await Account.sharedInstance.getUserInfo(member);
-        if (userDB != null){
-          if(groupDB.owner == member) {
+        if (userDB != null) {
+          if (groupDB.owner == member) {
             result.insert(0, userDB);
           } else {
             result.add(userDB);
           }
         }
-      }
+      });
     }
     return result;
   }
