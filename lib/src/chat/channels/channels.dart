@@ -40,10 +40,9 @@ class Channels {
     myChannelsUpdatedCallBack = callBack;
 
     Account.sharedInstance.channelListUpdateCallback = () async {
-      await syncChannelsFromRelay(
-          Account.sharedInstance.me!.channelsList ?? []);
       myChannels = _myChannels();
-      _updateChannelSubscription();
+      _updateSubscriptions();
+      await syncMyChannelsFromRelay();
       myChannelsUpdatedCallBack?.call();
     };
 
@@ -180,6 +179,10 @@ class Channels {
       for (String channelId in channelList) {
         if (channels.containsKey(channelId)) {
           result[channelId] = channels[channelId]!;
+        } else {
+          ChannelDB channelDB = ChannelDB(channelId: channelId);
+          channels[channelId] = channelDB;
+          result[channelId] = channels[channelId]!;
         }
       }
     }
@@ -220,12 +223,13 @@ class Channels {
 
   Future<void> _syncChannelsCreationFromRelay(
       List<String> channelIds, List<String>? relays) async {
+    Completer<void> completer = Completer<void>();
     Filter f = Filter(
       ids: channelIds,
       kinds: [40],
     );
     Connect.sharedInstance.addSubscription([f], relays: relays,
-        eventCallBack: (event, relay) {
+        eventCallBack: (event, relay) async {
       if (!channels.containsKey(event.id)) {
         Channel channel = Nip28.getChannelCreation(event);
         ChannelDB channelDB = _getChannelDBFromChannel(channel);
@@ -233,11 +237,14 @@ class Channels {
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
       Connect.sharedInstance.closeSubscription(requestId, relay);
+      if (unRelays.isEmpty && !completer.isCompleted) completer.complete();
     });
+    return completer.future;
   }
 
   Future<void> _syncChannelsMetadataFromRelay(
       List<String> channelIds, List<String>? relays) async {
+    Completer<void> completer = Completer<void>();
     Filter f = Filter(
       ids: channelIds,
       kinds: [41],
@@ -252,7 +259,9 @@ class Channels {
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
       Connect.sharedInstance.closeSubscription(requestId, relay);
+      if (unRelays.isEmpty && !completer.isCompleted) completer.complete();
     });
+    return completer.future;
   }
 
   Future<void> _syncChannelToDB(ChannelDB channelDB) async {
@@ -351,7 +360,7 @@ class Channels {
     return completer.future;
   }
 
-  Future<ChannelDB?> syncChannelMetadataFromRelay(
+  Future<ChannelDB?> updateChannelMetadataFromRelay(
       String owner, String channelId,
       {List<String>? relays}) async {
     Completer<ChannelDB?> completer = Completer<ChannelDB?>();
@@ -377,9 +386,8 @@ class Channels {
     return completer.future;
   }
 
-  Future<void> syncChannelsFromRelay(List<String> channelIds) async {
-    Completer<void> completer = Completer<void>();
-
+  Future<void> syncMyChannelsFromRelay() async {
+    var channelIds = Account.sharedInstance.me!.channelsList ?? [];
     List<String> unknownChannels = [];
     List<String> keys = List.from(channels.keys.toList());
     for (var channelId in channelIds) {
@@ -389,10 +397,8 @@ class Channels {
       }
     }
 
-    // get create infos
     await _syncChannelsCreationFromRelay(unknownChannels, null);
     await _syncChannelsMetadataFromRelay(channelIds, null);
-    return completer.future;
   }
 
   Future<OKEvent> setChannel(ChannelDB channelDB,
@@ -579,7 +585,7 @@ class Channels {
       if (unRelays.isEmpty) {
         if (!completer.isCompleted) completer.complete(result.values.toList());
         await Future.forEach(result.values, (channel) async {
-          await syncChannelMetadataFromRelay(
+          await updateChannelMetadataFromRelay(
               channel.creator, channel.channelId);
         });
       }
