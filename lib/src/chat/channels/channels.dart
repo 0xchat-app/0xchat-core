@@ -200,7 +200,7 @@ class Channels {
         picture: channel.picture);
   }
 
-  ChannelDB _getChannelDBFromChannel(Channel channel) {
+  ChannelDB getChannelDBFromChannel(Channel channel) {
     ChannelDB? channelDB = channels[channel.channelId];
     if (channelDB == null) {
       channelDB = ChannelDB(
@@ -234,7 +234,7 @@ class Channels {
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) async {
       Channel channel = Nip28.getChannelCreation(event);
-      ChannelDB channelDB = _getChannelDBFromChannel(channel);
+      ChannelDB channelDB = getChannelDBFromChannel(channel);
       _syncChannelToDB(channelDB);
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
       Connect.sharedInstance.closeSubscription(requestId, relay);
@@ -255,7 +255,7 @@ class Channels {
       if (channels.containsKey(event.id) &&
           channels[event.id]!.updateTime < event.createdAt) {
         Channel channel = Nip28.getChannelMetadata(event);
-        ChannelDB channelDB = _getChannelDBFromChannel(channel);
+        ChannelDB channelDB = getChannelDBFromChannel(channel);
         _syncChannelToDB(channelDB);
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
@@ -377,7 +377,7 @@ class Channels {
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) {
       Channel channel = Nip28.getChannelMetadata(event);
-      ChannelDB channelDB = _getChannelDBFromChannel(channel);
+      ChannelDB channelDB = getChannelDBFromChannel(channel);
       _syncChannelToDB(channelDB);
       if (!completer.isCompleted) completer.complete(channelDB);
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
@@ -573,6 +573,7 @@ class Channels {
       await _syncChannelsCreationFromRelay([channelId], relays);
       await _syncChannelsMetadataFromRelay([channelId], relays);
     }
+    // print('searchChannel 333: ${channels[channelId]?.channelId}');
     return channels[channelId];
   }
 
@@ -592,7 +593,7 @@ class Channels {
           !result.containsKey(channel.channelId)) {
         result[channel.channelId] = (channels[channel.channelId]!);
       } else {
-        ChannelDB channelDB = _getChannelDBFromChannel(channel);
+        ChannelDB channelDB = getChannelDBFromChannel(channel);
         _syncChannelToDB(channelDB);
         result[channel.channelId] = channelDB;
       }

@@ -327,6 +327,7 @@ class Account {
     }, eoseCallBack: (requestId, status, relay, unRelays) {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
+        Connect.sharedInstance.eventCache.remove(eventId);
         if (!completer.isCompleted) completer.complete(null);
       }
     });
