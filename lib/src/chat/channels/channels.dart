@@ -567,6 +567,15 @@ class Channels {
     return null;
   }
 
+  Future<ChannelDB?> searchChannel(
+      String channelId, List<String>? relays) async {
+    if (channels[channelId] == null) {
+      await _syncChannelsCreationFromRelay([channelId], relays);
+      await _syncChannelsMetadataFromRelay([channelId], relays);
+    }
+    return channels[channelId];
+  }
+
   // get 20 latest channels
   Future<List<ChannelDB>> getChannelsFromRelay(
       {List<String>? channelIds}) async {
