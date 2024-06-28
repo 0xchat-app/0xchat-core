@@ -63,6 +63,7 @@ class Channels {
       for (var channelDB in maps) (channelDB as ChannelDB).channelId: channelDB
     };
     myChannels = _myChannels();
+    myChannelsUpdatedCallBack?.call();
   }
 
   void _updateChannelSubscription({String? relay}) {
@@ -181,6 +182,7 @@ class Channels {
           result[channelId] = channels[channelId]!;
         } else {
           ChannelDB channelDB = ChannelDB(channelId: channelId);
+          channelDB.name = channelDB.shortChannelId;
           channels[channelId] = channelDB;
           result[channelId] = channels[channelId]!;
         }

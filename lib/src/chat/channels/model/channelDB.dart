@@ -50,6 +50,14 @@ class ChannelDB extends DBObject {
       "8": '''alter table ChannelDB add updateTime INT;''',
     };
   }
+
+  String get shortChannelId {
+    String k = channelId;
+    final String start = k.substring(0, 6);
+    final String end = k.substring(k.length - 6);
+
+    return '$start:$end';
+  }
 }
 
 Map<String, dynamic> _channelInfoToMap(ChannelDB instance) => <String, dynamic>{
