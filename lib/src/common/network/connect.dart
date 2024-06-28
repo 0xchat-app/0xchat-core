@@ -236,9 +236,16 @@ class Connect {
       EOSECallBack? eoseCallBack,
       List<String>? relays}) {
     Map<String, List<Filter>> result = {};
+    if (relays != null) {
+      relays = relays
+          .where((relay) =>
+              relay.isNotEmpty &&
+              (relay.startsWith('ws://') || relay.startsWith('wss://')))
+          .toList();
+    }
     List<String> subscriptionRelays =
         relays?.isNotEmpty == true ? relays! : Connect.sharedInstance.relays();
-    if(subscriptionRelays.isEmpty){
+    if (subscriptionRelays.isEmpty) {
       eoseCallBack?.call('', OKEvent('', false, 'no relays connected'), '', []);
       return '';
     }
