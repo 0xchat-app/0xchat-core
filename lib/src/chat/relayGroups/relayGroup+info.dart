@@ -81,7 +81,7 @@ extension EInfo on RelayGroup {
   }
 
   List<GroupAdmin>? getGroupAdminsFromLocal(String groupId) {
-    myGroups[groupId]?.admins;
+    return myGroups[groupId]?.admins;
   }
 
   Future<List<UserDB>> getGroupMembersFromLocal(String groupId) async {
