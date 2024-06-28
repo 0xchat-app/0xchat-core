@@ -47,6 +47,7 @@ class RelayGroup {
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 && Account.sharedInstance.me != null) {
         if (groupRelays.contains(relay)) {
+          _udpateGroupInfos(relay: relay);
           _updateGroupSubscription(relay: relay);
         }
       }
@@ -78,6 +79,8 @@ class RelayGroup {
       groups[groupDB.groupId] = groupDB;
     }
     myGroups = _myGroups();
+    _udpateGroupInfos();
+    myGroupsUpdatedCallBack?.call();
   }
 
   SimpleGroups _getHostAndGroupId(String input) {
@@ -120,6 +123,17 @@ class RelayGroup {
   void connectToRelays(List<String> groupRelays) {
     for (var relay in groupRelays) {
       Connect.sharedInstance.connect(relay, type: 1);
+    }
+  }
+
+  Future<void> _udpateGroupInfos({String? relay}) async {
+    if (myGroups.isEmpty) return;
+    for (var group in myGroups.values) {
+      if (group.lastUpdatedTime == 0 &&
+          (relay == null || group.relay == relay)) {
+        RelayGroupDB? relayGroupDB = await getGroupMetadataFromRelay(group.id);
+        if (relayGroupDB != null) myGroups[group.id] = relayGroupDB;
+      }
     }
   }
 

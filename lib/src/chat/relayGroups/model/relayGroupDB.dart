@@ -57,6 +57,14 @@ class RelayGroupDB extends DBObject {
     return ['groupId'];
   }
 
+  String get shortGroupId {
+    String k = groupId;
+    final String start = k.substring(0, 6);
+    final String end = k.substring(k.length - 6);
+
+    return '$start:$end';
+  }
+
   static String groupAdminsToString(List<GroupAdmin> admins) {
     List<List<dynamic>> adminsString =
         admins.map((admin) => admin.toJson()).toList();

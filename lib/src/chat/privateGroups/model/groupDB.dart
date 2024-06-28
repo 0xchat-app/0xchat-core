@@ -44,6 +44,14 @@ class GroupDB extends DBObject {
   static List<String?> primaryKey() {
     return ['groupId'];
   }
+
+  String get shortGroupId {
+    String k = groupId;
+    final String start = k.substring(0, 6);
+    final String end = k.substring(k.length - 6);
+
+    return '$start:$end';
+  }
 }
 
 Map<String, dynamic> _groupInfoToMap(GroupDB instance) => <String, dynamic>{
