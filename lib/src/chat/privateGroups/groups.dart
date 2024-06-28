@@ -250,7 +250,7 @@ class Groups {
       RegExp regex = RegExp(keyword, caseSensitive: false);
       List<GroupDB> filteredFriends = myGroups.values
           .where((channel) =>
-              regex.hasMatch(channel.name) || regex.hasMatch(channel.about!))
+              regex.hasMatch(channel.name) || regex.hasMatch(channel.about ?? ''))
           .toList();
       return filteredFriends;
     }
