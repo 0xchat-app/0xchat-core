@@ -42,7 +42,6 @@ class Channels {
     Account.sharedInstance.channelListUpdateCallback = () async {
       myChannels = _myChannels();
       _updateSubscriptions();
-      await syncMyChannelsFromRelay();
       myChannelsUpdatedCallBack?.call();
     };
 
@@ -53,6 +52,7 @@ class Channels {
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 && Account.sharedInstance.me != null) {
         _updateSubscriptions(relay: relay);
+        syncMyChannelsFromRelay(relay: relay);
       }
     });
   }
@@ -233,11 +233,9 @@ class Channels {
     );
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) async {
-      if (!channels.containsKey(event.id)) {
-        Channel channel = Nip28.getChannelCreation(event);
-        ChannelDB channelDB = _getChannelDBFromChannel(channel);
-        _syncChannelToDB(channelDB);
-      }
+      Channel channel = Nip28.getChannelCreation(event);
+      ChannelDB channelDB = _getChannelDBFromChannel(channel);
+      _syncChannelToDB(channelDB);
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty && !completer.isCompleted) completer.complete();
@@ -389,7 +387,7 @@ class Channels {
     return completer.future;
   }
 
-  Future<void> syncMyChannelsFromRelay() async {
+  Future<void> syncMyChannelsFromRelay({String? relay}) async {
     var channelIds = Account.sharedInstance.me!.channelsList ?? [];
     List<String> unknownChannels = [];
     List<String> keys = List.from(channels.keys.toList());
@@ -401,9 +399,11 @@ class Channels {
         channels[channelId] = channelDB;
       }
     }
-
-    await _syncChannelsCreationFromRelay(unknownChannels, null);
-    await _syncChannelsMetadataFromRelay(channelIds, null);
+    if (unknownChannels.isEmpty) return;
+    await _syncChannelsCreationFromRelay(
+        unknownChannels, relay == null ? null : [relay]);
+    await _syncChannelsMetadataFromRelay(
+        unknownChannels, relay == null ? null : [relay]);
   }
 
   Future<OKEvent> setChannel(ChannelDB channelDB,

@@ -238,6 +238,10 @@ class Connect {
     Map<String, List<Filter>> result = {};
     List<String> subscriptionRelays =
         relays?.isNotEmpty == true ? relays! : Connect.sharedInstance.relays();
+    if(subscriptionRelays.isEmpty){
+      eoseCallBack?.call('', OKEvent('', false, 'no relays connected'), '', []);
+      return '';
+    }
     for (var relay in subscriptionRelays) {
       result[relay] = filters;
     }
@@ -281,8 +285,6 @@ class Connect {
 
       /// remove the mapping
       requestsMap.remove(subscriptionId + relay);
-    } else {
-      throw Exception("null subscriptionId");
     }
   }
 
