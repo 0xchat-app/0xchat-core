@@ -107,6 +107,7 @@ class RelayGroup {
         if (!groups.containsKey(groupId)) {
           groups[groupId] =
               RelayGroupDB(groupId: groupId, relay: simpleGroups.relay, id: id);
+          getGroupMetadataFromRelay(groupId);
         }
         result[groupId] = groups[groupId]!;
         groupRelays.add(groups[groupId]!.relay);
