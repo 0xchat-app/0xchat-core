@@ -114,7 +114,7 @@ extension Load on Moment {
       {bool private = false, bool reload = true, List<String>? relays}) async {
     if (notesCache.containsKey(noteId)) return notesCache[noteId];
     NoteDB? note = await loadNoteFromDBWithNoteId(noteId);
-    if (note == null && !private && reload ) {
+    if (note == null && !private && reload) {
       await Connect.sharedInstance.connectRelays(relays ?? [], type: 1);
       note = await loadPublicNoteFromRelay(noteId, relays: relays);
       await Connect.sharedInstance.closeConnects(relays ?? []);
@@ -335,6 +335,15 @@ extension Load on Moment {
       noteDB.reactionCountByMe++;
     }
     saveNoteToDB(noteDB, ConflictAlgorithm.replace);
+  }
+
+  Future<List<NoteDB>?> loadAllNewNotesFromRelay(
+      {int? until, int? since, int? limit}) async {
+    List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
+    authors.addAll(Account.sharedInstance.me?.followingList ?? []);
+    authors.add(pubkey);
+    return await loadNewNotesFromRelay(
+        limit: limit, authors: authors, until: until, since: since);
   }
 
   Future<List<NoteDB>?> loadContactsNewNotesFromRelay(
