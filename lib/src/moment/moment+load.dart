@@ -8,21 +8,30 @@ typedef NoteCallBack = void Function(NoteDB);
 typedef ActionsCallBack = void Function(Map<String, List<dynamic>>);
 
 extension Load on Moment {
-  Future<List<NoteDB>?> loadAllNotesFromDB({int limit = 50, int? until}) async {
-    until ??= currentUnixTimestampSeconds() + 1;
-    List<NoteDB>? notes = await loadNotesFromDB(
-        where: 'createAt < ?',
-        whereArgs: [until],
-        orderBy: 'createAt desc',
-        limit: limit);
-    for (var note in notes) {
-      notesCache[note.noteId] = note;
-      Messages.addToLoaded(note.noteId);
-    }
-    return notes;
+  // Future<List<NoteDB>?> loadAllNotesFromDB({int limit = 50, int? until}) async {
+  //   until ??= currentUnixTimestampSeconds() + 1;
+  //   List<NoteDB>? notes = await loadNotesFromDB(
+  //       where: 'createAt < ?',
+  //       whereArgs: [until],
+  //       orderBy: 'createAt desc',
+  //       limit: limit);
+  //   for (var note in notes) {
+  //     notesCache[note.noteId] = note;
+  //     Messages.addToLoaded(note.noteId);
+  //   }
+  //   return notes;
+  // }
+
+  Future<List<NoteDB>?> loadAllNotesFromDB(
+      {int limit = 50, int? until, bool? private}) async {
+    List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
+    authors.addAll(Account.sharedInstance.me?.followingList ?? []);
+    authors.add(pubkey);
+    return await loadUserNotesFromDB(authors,
+        limit: limit, until: until, private: private);
   }
 
-  Future<List<NoteDB>?> loadMomentNotesFromDB(
+  Future<List<NoteDB>?> loadContactsNotesFromDB(
       {int limit = 50, int? until, bool? private}) async {
     List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
     authors.add(pubkey);
@@ -30,8 +39,34 @@ extension Load on Moment {
         limit: limit, until: until, private: private);
   }
 
+  Future<List<NoteDB>?> loadFollowsNotesFromDB(
+      {int limit = 50, int? until, bool? private}) async {
+    List<String> authors = Account.sharedInstance.me?.followingList ?? [];
+    authors.add(pubkey);
+    return await loadUserNotesFromDB(authors,
+        limit: limit, until: until, private: private);
+  }
+
   Future<List<NoteDB>?> loadMyNotesFromDB({int limit = 50, int? until}) async {
     return await loadUserNotesFromDB([pubkey], limit: limit, until: until);
+  }
+
+  Future<List<NoteDB>?> loadPrivateNotesFromDB(
+      {int limit = 50, int? until, bool? read}) async {
+    until ??= currentUnixTimestampSeconds() + 1;
+    List<NoteDB>? notes = await loadNotesFromDB(
+        where: 'private = ? AND createAt < ? AND read = ?',
+        whereArgs: [true, until, read],
+        orderBy: 'createAt desc',
+        limit: limit);
+    for (var note in notes) {
+      notesCache[note.noteId] = note;
+      Messages.addToLoaded(note.noteId);
+    }
+    List<NoteDB>? result = notes
+        .where((n) => Contacts.sharedInstance.allContacts.containsKey(n.author))
+        .toList();
+    return result;
   }
 
   Future<List<NoteDB>?> loadUserNotesFromDB(List<String> userPubkeys,
@@ -67,42 +102,6 @@ extension Load on Moment {
       }
     }
     return notes;
-  }
-
-  Future<List<NoteDB>?> loadPrivateNotesFromDB(
-      {int limit = 50, int? until, bool? read}) async {
-    until ??= currentUnixTimestampSeconds() + 1;
-    List<NoteDB>? notes = await loadNotesFromDB(
-        where: 'private = ? AND createAt < ? AND read = ?',
-        whereArgs: [true, until, read],
-        orderBy: 'createAt desc',
-        limit: limit);
-    for (var note in notes) {
-      notesCache[note.noteId] = note;
-      Messages.addToLoaded(note.noteId);
-    }
-    List<NoteDB>? result = notes
-        .where((n) => Contacts.sharedInstance.allContacts.containsKey(n.author))
-        .toList();
-    return result;
-  }
-
-  Future<List<NoteDB>?> loadContactsNotesFromDB(
-      {int limit = 50, int? until, bool? read}) async {
-    until ??= currentUnixTimestampSeconds() + 1;
-    List<NoteDB>? notes = await loadNotesFromDB(
-        where: 'private = ? AND createAt < ? AND read = ?',
-        whereArgs: [false, until, read],
-        orderBy: 'createAt desc',
-        limit: limit);
-    for (var note in notes) {
-      notesCache[note.noteId] = note;
-      Messages.addToLoaded(note.noteId);
-    }
-    List<NoteDB>? result = notes
-        .where((n) => Contacts.sharedInstance.allContacts.containsKey(n.author))
-        .toList();
-    return result;
   }
 
   Future<NoteDB?> loadNoteFromDBWithNoteId(String noteId) async {

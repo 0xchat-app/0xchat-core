@@ -55,38 +55,38 @@ extension AccountFollows on Account {
     return completer.future;
   }
 
-// Future<OKEvent> _syncFollowListToRelay(List<String> pubkeys) async {
-//   if (pubkeys.isEmpty) return OKEvent('', false, 'invalid following list!');
-//   Completer<OKEvent> completer = Completer<OKEvent>();
-//   Event event =
-//       await Nip2.encode(toProfiles(pubkeys), currentPubkey, currentPrivkey);
-//   Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
-//     if (!completer.isCompleted) {
-//       completer.complete(ok);
-//     }
-//   });
-//   return completer.future;
-// }
-//
-// Future<OKEvent> addFollows(List<String> pubkeys) async {
-//   List<String> followingList = me?.followingList ?? [];
-//   for (var p in pubkeys) {
-//     if (!followingList.contains(p)) followingList.add(p);
-//   }
-//   me?.followingList = followingList;
-//   syncMe();
-//   Moment.sharedInstance.updateSubscriptions();
-//   return await _syncFollowListToRelay(followingList);
-// }
-//
-// Future<OKEvent> removeFollows(List<String> pubkeys) async {
-//   List<String> followingList = me?.followingList ?? [];
-//   for (var p in pubkeys) {
-//     if (followingList.contains(p)) followingList.remove(p);
-//   }
-//   me?.followingList = followingList;
-//   syncMe();
-//   Moment.sharedInstance.updateSubscriptions();
-//   return await _syncFollowListToRelay(followingList);
-// }
+  Future<OKEvent> _syncFollowListToRelay(List<String> pubkeys) async {
+    if (pubkeys.isEmpty) return OKEvent('', false, 'invalid following list!');
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    Event event =
+        await Nip2.encode(toProfiles(pubkeys), currentPubkey, currentPrivkey);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+      if (!completer.isCompleted) {
+        completer.complete(ok);
+      }
+    });
+    return completer.future;
+  }
+
+  Future<OKEvent> addFollows(List<String> pubkeys) async {
+    List<String> followingList = me?.followingList ?? [];
+    for (var p in pubkeys) {
+      if (!followingList.contains(p)) followingList.add(p);
+    }
+    me?.followingList = followingList;
+    syncMe();
+    Moment.sharedInstance.updateSubscriptions();
+    return await _syncFollowListToRelay(followingList);
+  }
+
+  Future<OKEvent> removeFollows(List<String> pubkeys) async {
+    List<String> followingList = me?.followingList ?? [];
+    for (var p in pubkeys) {
+      if (followingList.contains(p)) followingList.remove(p);
+    }
+    me?.followingList = followingList;
+    syncMe();
+    Moment.sharedInstance.updateSubscriptions();
+    return await _syncFollowListToRelay(followingList);
+  }
 }
