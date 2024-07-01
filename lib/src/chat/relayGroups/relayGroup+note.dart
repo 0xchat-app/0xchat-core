@@ -114,6 +114,7 @@ extension ENote on RelayGroup {
         emojiShotCode: emojiShotCode, emojiURL: emojiURL);
 
     NoteDB noteDB = NoteDB.noteDBFromReactions(Nip25.decode(event));
+    noteDB.groupId = groupId;
     Moment.sharedInstance.saveNoteToDB(noteDB, null);
 
     note.reactionEventIds ??= [];
@@ -160,8 +161,10 @@ extension ENote on RelayGroup {
     if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
     Event event = await Nip18.encodeReposts(repostNoteId, repostNoteRelay,
         note.pTags ?? [], note.rawEvent, pubkey, privkey);
+
     Reposts r = await Nip18.decodeReposts(event);
     NoteDB noteDB = NoteDB.noteDBFromReposts(r);
+    noteDB.groupId = groupId;
     await Moment.sharedInstance.saveNoteToDB(noteDB, null);
 
     note.repostEventIds ??= [];
@@ -207,6 +210,7 @@ extension ENote on RelayGroup {
     }
     NoteDB noteDB =
         NoteDB.noteDBFromQuoteReposts(Nip18.decodeQuoteReposts(event));
+    noteDB.groupId = groupId;
     await Moment.sharedInstance.saveNoteToDB(noteDB, null);
 
     note.quoteRepostEventIds ??= [];
