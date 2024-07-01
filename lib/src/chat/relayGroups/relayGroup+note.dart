@@ -13,16 +13,17 @@ extension ENote on RelayGroup {
         .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
     if (status != 0) {
       noteCallBack?.call(noteDB);
+      Moment.sharedInstance.handleNewNotes(noteDB);
     }
   }
 
-  Future<OKEvent> sendGroupNotes(String groupId, String content, String pubkey,
-      String privkey, List<String> previous,
+  Future<OKEvent> sendGroupNotes(
+      String groupId, String content, List<String> previous,
       {String? rootEvent,
       String? replyEvent,
       List<String>? replyUsers,
       List<String>? hashTags}) async {
-    RelayGroupDB? groupDB = groups[groupId];
+    RelayGroupDB? groupDB = myGroups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event;

@@ -317,11 +317,21 @@ class Account {
     return completer.future;
   }
 
-  static Future<Event?> loadEvent(String eventId) async {
-    if (Connect.sharedInstance.relays().isEmpty) return null;
+  static Future<Event?> loadEvent(String eventId,
+      {List<String>? relays}) async {
     Completer<Event?> completer = Completer<Event?>();
+    Timer(Duration(seconds: 30), () {
+      if (!completer.isCompleted) {
+        completer.complete(null);
+      }
+    });
+
+    if (relays == null && Connect.sharedInstance.relays().isEmpty) return null;
+    if (relays != null && relays.isNotEmpty) {
+      await Connect.sharedInstance.connectRelays(relays);
+    }
     Filter f = Filter(ids: [eventId]);
-    Connect.sharedInstance.addSubscription([f],
+    Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) async {
       if (!completer.isCompleted) completer.complete(event);
     }, eoseCallBack: (requestId, status, relay, unRelays) {
