@@ -128,7 +128,8 @@ class RelayGroup {
 
   Future<void> _udpateGroupInfos({String? relay}) async {
     if (myGroups.isEmpty) return;
-    for (var group in myGroups.values) {
+    List<RelayGroupDB> values = List.from(myGroups.values);
+    for (var group in values) {
       if (group.lastUpdatedTime == 0 &&
           (relay == null || group.relay == relay)) {
         RelayGroupDB? relayGroupDB = await getGroupMetadataFromRelay(group.id);

@@ -141,8 +141,8 @@ class Connect {
               List<String>.from(requestsMap[subscriptionId]!.relays);
           for (var relay in relays) {
             if (subscriptionId.endsWith(relay)) {
-              callBack(requestsMap[subscriptionId]!.subscriptions[relay]!, ok,
-                  relay, []);
+              callBack(requestsMap[subscriptionId]!.subscriptions[relay] ?? '',
+                  ok, relay, []);
               requestsMap[subscriptionId]?.relays.remove(relay);
             }
           }
