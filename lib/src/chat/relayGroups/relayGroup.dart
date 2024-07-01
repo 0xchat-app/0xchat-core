@@ -315,10 +315,11 @@ class RelayGroup {
         .toList();
   }
 
-  static String encodeGroup(
-      String groupId, List<String>? relays, String? author) {
-    String nevent =
-        Nip19.encodeShareableEntity('nevent', groupId, relays, author, null);
+  String? encodeGroup(String groupId) {
+    RelayGroupDB? groupDB = groups[groupId];
+    if (groupDB == null) return null;
+    String nevent = Nip19.encodeShareableEntity(
+        'nevent', groupId, [groupDB.relay], groupDB.author, 39000);
     return Nip21.encode(nevent);
   }
 

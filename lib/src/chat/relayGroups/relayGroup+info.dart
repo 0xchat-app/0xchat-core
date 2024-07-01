@@ -4,9 +4,10 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension EInfo on RelayGroup {
-  Future<RelayGroupDB?> getGroupMetadataFromRelay(String id) async {
+  Future<RelayGroupDB?> getGroupMetadataFromRelay(String id,
+      {String? relay, String? author}) async {
     RelayGroupDB? groupDB = groups[id];
-    if (groupDB == null) return null;
+    groupDB ??= RelayGroupDB(groupId: id, relay: relay ?? '', author: author ?? '');
     Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
     Filter f =
         Filter(kinds: [39000], d: [id], since: groupDB.lastUpdatedTime + 1);
@@ -15,7 +16,7 @@ extension EInfo on RelayGroup {
     Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
       Group group = Nip29.decodeMetadata(event, relay);
-      groupDB.lastUpdatedTime = event.createdAt;
+      groupDB!.lastUpdatedTime = event.createdAt;
       groupDB.name = group.name;
       groupDB.picture = group.picture;
       groupDB.about = group.about;
