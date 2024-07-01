@@ -32,7 +32,7 @@ extension Load on Moment {
   }
 
   Future<List<NoteDB>?> loadContactsNotesFromDB(
-      {int limit = 50, int? until, bool? private}) async {
+      {int limit = 50, int? until, bool? private = false}) async {
     List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
     authors.add(pubkey);
     return await loadUserNotesFromDB(authors,
@@ -40,7 +40,7 @@ extension Load on Moment {
   }
 
   Future<List<NoteDB>?> loadFollowsNotesFromDB(
-      {int limit = 50, int? until, bool? private}) async {
+      {int limit = 50, int? until, bool? private = false}) async {
     List<String> authors = Account.sharedInstance.me?.followingList ?? [];
     authors.add(pubkey);
     return await loadUserNotesFromDB(authors,
@@ -49,24 +49,6 @@ extension Load on Moment {
 
   Future<List<NoteDB>?> loadMyNotesFromDB({int limit = 50, int? until}) async {
     return await loadUserNotesFromDB([pubkey], limit: limit, until: until);
-  }
-
-  Future<List<NoteDB>?> loadPrivateNotesFromDB(
-      {int limit = 50, int? until, bool? read}) async {
-    until ??= currentUnixTimestampSeconds() + 1;
-    List<NoteDB>? notes = await loadNotesFromDB(
-        where: 'private = ? AND createAt < ? AND read = ?',
-        whereArgs: [true, until, read],
-        orderBy: 'createAt desc',
-        limit: limit);
-    for (var note in notes) {
-      notesCache[note.noteId] = note;
-      Messages.addToLoaded(note.noteId);
-    }
-    List<NoteDB>? result = notes
-        .where((n) => Contacts.sharedInstance.allContacts.containsKey(n.author))
-        .toList();
-    return result;
   }
 
   Future<List<NoteDB>?> loadUserNotesFromDB(List<String> userPubkeys,
