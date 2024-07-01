@@ -50,6 +50,13 @@ extension EMember on RelayGroup {
     return completer.future;
   }
 
+  Future<OKEvent> leaveGroup(String groupId) async {
+    RelayGroupDB? groupDB = myGroups[groupId];
+    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
+    myGroups.remove(groupId);
+    return await syncMyGroupListToRelay();
+  }
+
   Future<OKEvent> sendJoinRequest(String groupId, String content) async {
     RelayGroupDB? groupDB = groups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
