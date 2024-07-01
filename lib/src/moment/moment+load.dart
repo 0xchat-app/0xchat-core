@@ -68,6 +68,8 @@ extension Load on Moment {
       whereArgs.add(private ? 1 : 0);
     }
 
+    whereClause += " AND (groupId = '' OR groupId IS NULL)";
+
     List<NoteDB>? notes = await loadNotesFromDB(
         where: whereClause,
         whereArgs: whereArgs,
