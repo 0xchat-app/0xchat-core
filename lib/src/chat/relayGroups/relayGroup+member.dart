@@ -20,7 +20,7 @@ extension EMember on RelayGroup {
     final response = await http.post(url, body: body);
     if (response.statusCode == 200) {
       if (!completer.isCompleted) {
-        final regex = RegExp(r'naddr1[0-9a-zA-Z]+');
+        final regex = RegExp(r'naddr[0-9a-zA-Z]+');
         final match = regex.firstMatch(response.body);
         if (match != null) {
           final naddr = Nip19.decodeShareableEntity(match.group(0)!);
