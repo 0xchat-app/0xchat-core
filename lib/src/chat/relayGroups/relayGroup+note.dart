@@ -21,7 +21,7 @@ extension ENote on RelayGroup {
       String groupId, String content, List<String> previous,
       {String? rootEvent,
       String? replyEvent,
-      List<String>? replyUsers,
+      List<String>? mentions,
       List<String>? hashTags}) async {
     RelayGroupDB? groupDB = myGroups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
@@ -36,7 +36,7 @@ extension ENote on RelayGroup {
           groupId, content, pubkey, privkey, previous,
           rootEvent: rootEvent,
           replyEvent: replyEvent,
-          replyUsers: replyUsers,
+          replyUsers: mentions,
           hashTags: hashTags);
     }
     Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
