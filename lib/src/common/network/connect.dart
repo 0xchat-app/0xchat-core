@@ -579,6 +579,7 @@ class Connect {
     auths[relay]!.eventId = event.id;
     print('send auth: $authJson');
     _send(authJson, toRelays: [relay]);
+    auths.remove(relay);
   }
 
   Future<void> _connectToRelay(String relay) async {
