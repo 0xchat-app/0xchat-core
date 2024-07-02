@@ -7,12 +7,14 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension EMember on RelayGroup {
-  Future<RelayGroupDB?> createGroup(String host, String name) async {
+  Future<RelayGroupDB?> createGroup(String host, String name,
+      {String closed = 'false'}) async {
     Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
-    final url = Uri.parse('https://$host/create');
+    final url = Uri.parse('http://$host/create');
     final body = {
       'pubkey': pubkey,
       'name': name,
+      'closed': closed,
       'createdAt': currentUnixTimestampSeconds().toString()
     };
     final sig = await Account.getSignatureWithSecret(jsonEncode(body));
@@ -34,6 +36,7 @@ extension EMember on RelayGroup {
               name: name,
               author: author,
               members: [author],
+              private: closed == 'true' ? true : false,
               id: id);
           myGroups[groupId] = relayGroupDB;
           myGroupsUpdatedCallBack?.call();
