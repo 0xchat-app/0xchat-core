@@ -53,9 +53,9 @@ class ChannelDB extends DBObject {
 
   String get shortChannelId {
     String k = channelId;
+    if(k.length < 12) return k;
     final String start = k.substring(0, 6);
     final String end = k.substring(k.length - 6);
-
     return '$start:$end';
   }
 }

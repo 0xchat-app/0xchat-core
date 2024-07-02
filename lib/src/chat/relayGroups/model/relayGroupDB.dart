@@ -59,9 +59,9 @@ class RelayGroupDB extends DBObject {
 
   String get shortGroupId {
     String k = groupId;
+    if(k.length < 12) return k;
     final String start = k.substring(0, 6);
     final String end = k.substring(k.length - 6);
-
     return '$start:$end';
   }
 
