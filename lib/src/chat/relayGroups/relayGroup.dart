@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
@@ -132,8 +131,8 @@ class RelayGroup {
     for (var group in values) {
       if (group.lastUpdatedTime == 0 &&
           (relay == null || group.relay == relay)) {
-        RelayGroupDB? relayGroupDB = await getGroupMetadataFromRelay(group.id);
-        if (relayGroupDB != null) myGroups[group.id] = relayGroupDB;
+        RelayGroupDB? relayGroupDB = await getGroupMetadataFromRelay(group.groupId);
+        if (relayGroupDB != null) myGroups[group.groupId] = relayGroupDB;
       }
     }
   }

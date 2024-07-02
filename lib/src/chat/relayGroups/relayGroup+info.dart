@@ -4,15 +4,15 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension EInfo on RelayGroup {
-  Future<RelayGroupDB?> getGroupMetadataFromRelay(String id,
+  Future<RelayGroupDB?> getGroupMetadataFromRelay(String groupId,
       {String? relay, String? author}) async {
-    RelayGroupDB? groupDB = groups[id];
-    groupDB ??=
-        RelayGroupDB(groupId: id, relay: relay ?? '', author: author ?? '');
+    RelayGroupDB? groupDB = groups[groupId];
+    groupDB ??= RelayGroupDB(
+        groupId: groupId, relay: relay ?? '', author: author ?? '');
     Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
     Filter f = Filter(
         kinds: [39000, 39001, 39002],
-        d: [id],
+        d: [groupId],
         since: groupDB.lastUpdatedTime + 1);
     Map<String, List<Filter>> subscriptions = {};
     subscriptions[groupDB.relay] = [f];
@@ -29,11 +29,11 @@ extension EInfo on RelayGroup {
           groupDB.private = group.private;
           break;
         case 39001:
-          List<GroupAdmin> admins = Nip29.decodeGroupAdmins(event, id);
+          List<GroupAdmin> admins = Nip29.decodeGroupAdmins(event, groupId);
           groupDB.admins = admins;
           break;
         case 39002:
-          List<String> members = Nip29.decodeGroupMembers(event, id);
+          List<String> members = Nip29.decodeGroupMembers(event, groupId);
           groupDB.members = members;
           break;
       }
