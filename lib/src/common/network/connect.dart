@@ -4,6 +4,7 @@ import 'dart:core';
 import 'dart:io';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 /// notice callback
 typedef NoticeCallBack = void Function(String notice, String relay);
@@ -71,6 +72,7 @@ class ISocket {
 class Connect {
   Connect._internal() {
     startHeartBeat();
+    listenConnectivity();
   }
   factory Connect() => sharedInstance;
   static final Connect sharedInstance = Connect._internal();
@@ -80,6 +82,7 @@ class Connect {
 
   NoticeCallBack? noticeCallBack;
   ConnectStatusCallBack? connectStatusCallBack;
+  StreamSubscription? _connectivitySubscription;
 
   /// sockets
   Map<String, ISocket> webSockets = {};
@@ -105,6 +108,19 @@ class Connect {
         _checkTimeout();
       });
     }
+  }
+
+  void listenConnectivity() {
+    // Listen for connectivity changes
+    _connectivitySubscription ??= Connectivity()
+        .onConnectivityChanged
+        .listen((ConnectivityResult result) async {
+      if (result != ConnectivityResult.none) {
+        for (var socket in webSockets.values) {
+          await socket.socket?.close();
+        }
+      }
+    });
   }
 
   // void _stopCheckTimeOut() {
@@ -198,13 +214,17 @@ class Connect {
     }
     print("connecting...");
     webSockets[relay] = ISocket(null, 0, type);
-    socket = await _connectWs(relay);
-    if (socket != null) {
-      socket.done.then((dynamic _) => _onDisconnected(relay));
-      _listenEvent(socket, relay);
-      webSockets[relay] = ISocket(socket, 1, type);
-      print("socket connection initialized");
-      _setConnectStatus(relay, 1);
+    try {
+      socket = await _connectWs(relay);
+      if (socket != null) {
+        socket.done.then((dynamic _) => _onDisconnected(relay));
+        _listenEvent(socket, relay);
+        webSockets[relay] = ISocket(socket, 1, type);
+        print("socket connection initialized");
+        _setConnectStatus(relay, 1);
+      }
+    } catch (_) {
+      _onDisconnected(relay);
     }
   }
 

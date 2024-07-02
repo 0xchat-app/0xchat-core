@@ -22,6 +22,7 @@ dependencies:
   json_annotation: ^4.8.0
   http: ^1.0.0
   bolt11_decoder: ^1.0.2
+  connectivity_plus: ^3.0.4
   nostr_core_dart:
     path: ../nostr-dart
 
