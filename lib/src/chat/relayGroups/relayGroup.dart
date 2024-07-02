@@ -131,7 +131,8 @@ class RelayGroup {
     for (var group in values) {
       if (group.lastUpdatedTime == 0 &&
           (relay == null || group.relay == relay)) {
-        RelayGroupDB? relayGroupDB = await getGroupMetadataFromRelay(group.groupId);
+        RelayGroupDB? relayGroupDB =
+            await getGroupMetadataFromRelay(group.groupId);
         if (relayGroupDB != null) myGroups[group.groupId] = relayGroupDB;
       }
     }

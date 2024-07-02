@@ -39,6 +39,7 @@ extension EMember on RelayGroup {
           myGroupsUpdatedCallBack?.call();
           syncGroupToDB(relayGroupDB);
           syncMyGroupListToRelay();
+          connectToRelays([relay]);
           if (!completer.isCompleted) completer.complete(relayGroupDB);
         } else {
           if (!completer.isCompleted) completer.complete(null);
@@ -54,6 +55,7 @@ extension EMember on RelayGroup {
     RelayGroupDB? groupDB = myGroups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     myGroups.remove(groupId);
+    myGroupsUpdatedCallBack?.call();
     return await syncMyGroupListToRelay();
   }
 
@@ -76,5 +78,21 @@ extension EMember on RelayGroup {
     int result = await DB.sharedInstance
         .insert<ModerationDB>(db, conflictAlgorithm: ConflictAlgorithm.ignore);
     if (result > 0) moderationCallBack?.call(db);
+  }
+
+  Future<void> muteGroup(String groupId) async {
+    _setMuteGroup(groupId, true);
+  }
+
+  Future<void> unMuteGroup(String groupId) async {
+    _setMuteGroup(groupId, false);
+  }
+
+  Future<void> _setMuteGroup(String groupId, bool mute) async {
+    if (myGroups.containsKey(groupId)) {
+      RelayGroupDB groupDB = myGroups[groupId]!;
+      groupDB.mute = mute;
+      await syncGroupToDB(groupDB);
+    }
   }
 }
