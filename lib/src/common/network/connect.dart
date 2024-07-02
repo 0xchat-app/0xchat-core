@@ -498,10 +498,12 @@ class Connect {
   Future<void> _handleOk(OKEvent ok, String relay) async {
     print('receive ok: ${ok.serialize()}, $relay');
     // check auth response
-    if (ok.status && auths[relay]?.eventId == ok.eventId) {
-      for (var data in auths[relay]?.resendDatas ?? []) {
-        print('re-send: $data');
-        _send(data, toRelays: [relay]);
+    if (auths[relay]?.eventId == ok.eventId) {
+      if(ok.status){
+        for (var data in auths[relay]?.resendDatas ?? []) {
+          print('re-send: $data');
+          _send(data, toRelays: [relay]);
+        }
       }
       auths.remove(relay);
       return;
@@ -579,7 +581,6 @@ class Connect {
     auths[relay]!.eventId = event.id;
     print('send auth: $authJson');
     _send(authJson, toRelays: [relay]);
-    auths.remove(relay);
   }
 
   Future<void> _connectToRelay(String relay) async {
