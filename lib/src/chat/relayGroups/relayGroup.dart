@@ -34,14 +34,15 @@ class RelayGroup {
     privkey = Account.sharedInstance.currentPrivkey;
     pubkey = Account.sharedInstance.currentPubkey;
     myGroupsUpdatedCallBack = callBack;
-    await _loadAllGroupsFromDB();
-    _updateGroupSubscription();
 
     Account.sharedInstance.relayGroupListUpdateCallback = () {
       myGroups = _myGroups();
       _updateGroupSubscription();
       myGroupsUpdatedCallBack?.call();
     };
+
+    await _loadAllGroupsFromDB();
+    _updateGroupSubscription();
 
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 && Account.sharedInstance.me != null) {

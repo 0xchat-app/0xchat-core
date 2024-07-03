@@ -96,6 +96,18 @@ class Relays {
         : 0;
   }
 
+  int getZapRecordSince(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.getZapRecordSince(relayURL)
+        : 0;
+  }
+
+  int getZapRecordUntil(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.getZapRecordUntil(relayURL)
+        : 0;
+  }
+
   int getCommonMessageUntil(String relayURL) {
     return relays.containsKey(relayURL)
         ? relays[relayURL]!.commonMessagesUntil
@@ -150,6 +162,13 @@ class Relays {
         updateTime > until ? updateTime : until;
   }
 
+  void setZapRecordUntil(int updateTime, String relay) {
+    int until = Relays.sharedInstance.getZapRecordUntil(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
+    Relays.sharedInstance.relays[relay]!.zapRecordUntil![relay] =
+        updateTime > until ? updateTime : until;
+  }
+
   void setGroupMessageUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.getGroupMessageUntil(relay);
     if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
@@ -196,6 +215,13 @@ class Relays {
     int since = Relays.sharedInstance.getMomentSince(relay);
     if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
     Relays.sharedInstance.relays[relay]!.momentSince![relay] =
+        updateTime < since ? updateTime : since;
+  }
+
+  void setZapRecordSince(int updateTime, String relay) {
+    int since = Relays.sharedInstance.getZapRecordSince(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
+    Relays.sharedInstance.relays[relay]!.zapRecordSince![relay] =
         updateTime < since ? updateTime : since;
   }
 

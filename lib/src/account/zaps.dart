@@ -18,8 +18,9 @@ class Zaps {
 
   Map<String, ZapRecordsDB> zapRecords = {};
   ZapRecordsCallBack? zapRecordsCallBack;
+  Map<String, bool> offlineZapRecordFinish = {};
   NostrWalletConnection? nwc;
-  String nwcSubscription = '';
+  String zapsSubscription = '';
   String currentPubkey = '';
 
   void _connectToRelays(List<String> relays) {
@@ -31,14 +32,13 @@ class Zaps {
     }
   }
 
-  void init() {
+  Future<void> init() async {
     currentPubkey = Account.sharedInstance.me!.pubKey;
     updateNWC(null);
+    updateZapsSubscription();
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
-      if (status == 1 &&
-          Account.sharedInstance.me != null &&
-          nwc?.relays.contains(relay) == true) {
-        updateNWCSubscription(relay: relay);
+      if (status == 1 && Account.sharedInstance.me != null) {
+        updateZapsSubscription(relay: relay);
       }
     });
   }
@@ -57,7 +57,6 @@ class Zaps {
     if (nwc != null) {
       _connectToRelays(nwc!.relays);
     }
-    updateNWCSubscription();
     return nwc;
   }
 
@@ -74,39 +73,53 @@ class Zaps {
     return completer.future;
   }
 
-  void updateNWCSubscription({String? relay}) {
-    return;
-    if (nwc == null) return;
-    if (nwcSubscription.isNotEmpty) {
-      Connect.sharedInstance.closeRequests(nwcSubscription, relay: relay);
+  void updateZapsSubscription({String? relay}) {
+    if (zapsSubscription.isNotEmpty) {
+      Connect.sharedInstance.closeRequests(zapsSubscription, relay: relay);
     }
     Map<String, List<Filter>> subscriptions = {};
-
     if (relay == null) {
-      for (String relayURL in nwc!.relays) {
-        Filter f = Filter(
-            kinds: [23195],
-            p: [currentPubkey],
-            since: currentUnixTimestampSeconds());
-        subscriptions[relayURL] = [f];
+      for (String relayURL in Connect.sharedInstance.relays()) {
+        int zapRecordUntil = Relays.sharedInstance.getZapRecordUntil(relayURL);
+        Filter f1 =
+            Filter(kinds: [9735], p: [currentPubkey], since: zapRecordUntil);
+        Filter f2 =
+            Filter(kinds: [9735], P: [currentPubkey], since: zapRecordUntil);
+        subscriptions[relayURL] = [f1, f2];
       }
     } else {
-      Filter f = Filter(
-          kinds: [23195],
-          p: [currentPubkey],
-          since: currentUnixTimestampSeconds());
-      subscriptions[relay] = [f];
+      int zapRecordUntil = Relays.sharedInstance.getZapRecordUntil(relay);
+      Filter f1 =
+          Filter(kinds: [9735], p: [currentPubkey], since: zapRecordUntil);
+      Filter f2 =
+          Filter(kinds: [9735], P: [currentPubkey], since: zapRecordUntil);
+      subscriptions[relay] = [f1, f2];
     }
 
-    nwcSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
+    zapsSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
-      PayInvoiceResult? payInvoiceResult =
-          await Nip47.response(event, nwc!.server, currentPubkey, nwc!.secret);
-      if (payInvoiceResult != null) {
-        print(
-            'nwc success: ${payInvoiceResult.preimage}, id: ${payInvoiceResult.requestId}');
-      }
+      updateZapRecordTime(event.createdAt, relay);
+      Zaps.handleZapRecordEvent(event);
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+      offlineZapRecordFinish[relay] = true;
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
     });
+  }
+
+  void updateZapRecordTime(int eventTime, String relay) {
+    /// set friendMessageUntil friendMessageSince
+    if (Relays.sharedInstance.relays.containsKey(relay)) {
+      Relays.sharedInstance.setZapRecordSince(eventTime, relay);
+      Relays.sharedInstance.setZapRecordUntil(eventTime, relay);
+    } else {
+      Relays.sharedInstance.relays[relay] = RelayDB(
+          url: relay,
+          zapRecordSince: {relay: eventTime},
+          zapRecordUntil: {relay: eventTime});
+    }
+    if (offlineZapRecordFinish[relay] == true) {
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
+    }
   }
 
   static Future<String> getLnurlFromLnaddr(String lnaddr) async {

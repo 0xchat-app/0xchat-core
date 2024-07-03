@@ -7,8 +7,8 @@ import 'package:chatcore/chat-core.dart';
 
 extension AccountProfile on Account {
   Future<void> loginSuccess() async {
+    await Future.delayed(Duration(seconds: 1));
     reloadMyProfileFromRelay();
-
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 && Account.sharedInstance.me != null) {
         reloadMyProfileFromRelay(relay: relay);

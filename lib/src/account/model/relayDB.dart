@@ -43,6 +43,9 @@ class RelayDB extends DBObject {
   Map<String, int>? momentSince;
   Map<String, int>? momentUntil;
 
+  Map<String, int>? zapRecordSince;
+  Map<String, int>? zapRecordUntil;
+
   RelayDB(
       {this.url = '',
       this.pubkey = '',
@@ -69,7 +72,9 @@ class RelayDB extends DBObject {
       this.contactsNotesUntil,
       this.contactsNotesSince,
       this.momentSince,
-      this.momentUntil});
+      this.momentUntil,
+      this.zapRecordSince,
+      this.zapRecordUntil});
 
   @override
   //Map
@@ -157,6 +162,22 @@ class RelayDB extends DBObject {
     return 0;
   }
 
+  int getZapRecordSince(String relay) {
+    zapRecordSince ??= {};
+    if (zapRecordSince!.containsKey(relay)) {
+      return zapRecordSince![relay]!;
+    }
+    return 0;
+  }
+
+  int getZapRecordUntil(String relay) {
+    zapRecordUntil ??= {};
+    if (zapRecordUntil!.containsKey(relay)) {
+      return zapRecordUntil![relay]!;
+    }
+    return 0;
+  }
+
   static RelayDB fromMap(Map<String, Object?> map) {
     return _relayDBInfoFromMap(map);
   }
@@ -173,6 +194,8 @@ class RelayDB extends DBObject {
           '''alter table RelayDB add contactsNotesUntil TEXT; alter table RelayDB add contactsNotesSince TEXT;''',
       "7":
           '''alter table RelayDB add momentUntil TEXT; alter table RelayDB add momentSince TEXT;''',
+      "8":
+          '''alter table RelayDB add zapRecordSince TEXT; alter table RelayDB add zapRecordUntil TEXT;''',
     };
   }
 
@@ -244,6 +267,8 @@ RelayDB _relayDBInfoFromMap(Map<String, dynamic> map) {
     // contactsNotesSince: RelayDB.decodeMap(map['contactsNotesSince'].toString()),
     momentUntil: RelayDB.decodeMap(map['momentUntil'].toString()),
     momentSince: RelayDB.decodeMap(map['momentSince'].toString()),
+    zapRecordSince: RelayDB.decodeMap(map['zapRecordSince'].toString()),
+    zapRecordUntil: RelayDB.decodeMap(map['zapRecordUntil'].toString()),
   );
 }
 
@@ -274,4 +299,6 @@ Map<String, dynamic> _relayDBInfoToMap(RelayDB instance) => <String, dynamic>{
       // 'contactsNotesUntil': jsonEncode(instance.contactsNotesUntil),
       'momentSince': jsonEncode(instance.momentSince),
       'momentUntil': jsonEncode(instance.momentUntil),
+      'zapRecordSince': jsonEncode(instance.zapRecordSince),
+      'zapRecordUntil': jsonEncode(instance.zapRecordUntil),
     };

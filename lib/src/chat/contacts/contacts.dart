@@ -85,14 +85,14 @@ class Contacts {
     pubkey = Account.sharedInstance.currentPubkey;
     contactUpdatedCallBack = callBack;
 
-    // sync friend list from DB & relays
-    await syncBlockListFromDB();
-    await _syncContactsFromDB();
-    await syncSecretSessionFromDB();
     Account.sharedInstance.contactListUpdateCallback = () async {
       await _syncContactsFromDB();
       _subscriptMoment();
     };
+    // sync friend list from DB & relays
+    await syncBlockListFromDB();
+    await _syncContactsFromDB();
+    await syncSecretSessionFromDB();
 
     _updateSubscriptions();
 
@@ -374,35 +374,18 @@ class Contacts {
 
         /// all messages, contacts & unknown contacts
         Filter f1 = Filter(
-            kinds: [4, 9735],
+            kinds: [4, 1059],
             p: [pubkey],
-            since: (friendMessageUntil + 1),
+            since: friendMessageUntil > offset2
+                ? (friendMessageUntil - offset2 + 1)
+                : 1,
             limit: maxLimit);
         Filter f2 = Filter(
             kinds: [4],
             authors: [pubkey],
             since: (friendMessageUntil + 1),
             limit: maxLimit);
-        Filter f3 = Filter(
-            kinds: [1059],
-            p: [pubkey],
-            since: friendMessageUntil > offset2
-                ? (friendMessageUntil - offset2 + 1)
-                : 1,
-            limit: maxLimit);
-        Filter f4 = Filter(
-            kinds: [1059],
-            authors: [pubkey],
-            since: friendMessageUntil > offset2
-                ? (friendMessageUntil - offset2 + 1)
-                : 1,
-            limit: maxLimit);
-        Filter f5 = Filter(
-            kinds: [9735],
-            P: [pubkey],
-            since: (friendMessageUntil + 1),
-            limit: maxLimit);
-        subscriptions[relayURL] = [f1, f2, f3, f4, f5];
+        subscriptions[relayURL] = [f1, f2];
       }
     } else {
       int friendMessageUntil =
@@ -410,35 +393,18 @@ class Contacts {
 
       /// all messages, contacts & unknown contacts
       Filter f1 = Filter(
-          kinds: [4, 9735],
+          kinds: [4, 1059],
           p: [pubkey],
-          since: (friendMessageUntil + 1),
+          since: friendMessageUntil > offset2
+              ? (friendMessageUntil - offset2 + 1)
+              : 1,
           limit: maxLimit);
       Filter f2 = Filter(
           kinds: [4],
           authors: [pubkey],
           since: (friendMessageUntil + 1),
           limit: maxLimit);
-      Filter f3 = Filter(
-          kinds: [1059],
-          p: [pubkey],
-          since: friendMessageUntil > offset2
-              ? (friendMessageUntil - offset2 + 1)
-              : 1,
-          limit: maxLimit);
-      Filter f4 = Filter(
-          kinds: [1059],
-          authors: [pubkey],
-          since: friendMessageUntil > offset2
-              ? (friendMessageUntil - offset2 + 1)
-              : 1,
-          limit: maxLimit);
-      Filter f5 = Filter(
-          kinds: [9735],
-          P: [pubkey],
-          since: (friendMessageUntil + 1),
-          limit: maxLimit);
-      subscriptions[relay] = [f1, f2, f3, f4, f5];
+      subscriptions[relay] = [f1, f2];
     }
     friendMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
@@ -446,9 +412,6 @@ class Contacts {
       if (event.kind == 4) {
         updateFriendMessageTime(event.createdAt, relay);
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
-      } else if (event.kind == 9735) {
-        updateFriendMessageTime(event.createdAt, relay);
-        Zaps.handleZapRecordEvent(event);
       } else if (event.kind == 1059) {
         Event? innerEvent = await decodeNip24Event(event);
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
