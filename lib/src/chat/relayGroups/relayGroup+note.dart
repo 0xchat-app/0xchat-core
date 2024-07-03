@@ -2,19 +2,14 @@ import 'dart:async';
 
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension ENote on RelayGroup {
   Future<void> handleGroupNotes(Event event, String relay) async {
     GroupNote groupNote = Nip29.decodeGroupNote(event);
     NoteDB noteDB = NoteDB.noteDBFromNote(groupNote.note);
     noteDB.groupId = groupNote.groupId;
-    int status = await DB.sharedInstance
-        .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
-    if (status != 0) {
-      noteCallBack?.call(noteDB);
-      Moment.sharedInstance.handleNewNotes(noteDB);
-    }
+    noteCallBack?.call(noteDB);
+    Moment.sharedInstance.handleNewNotes(noteDB);
   }
 
   Future<OKEvent> sendGroupNotes(
