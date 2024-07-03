@@ -38,7 +38,7 @@ extension EAdmin on RelayGroup {
       return OKEvent(joinRequest.groupId, false, 'group not exit');
     }
     if (hasPermissions(groupDB.admins!, pubkey, [GroupActionKind.addUser])) {
-      return await addUser(groupDB.groupId, joinRequest.author, '');
+      return await addUser(groupDB.groupId, [joinRequest.author], '');
     } else {
       return OKEvent(joinRequest.groupId, false, 'no permissions');
     }
@@ -77,16 +77,16 @@ extension EAdmin on RelayGroup {
     return completer.future;
   }
 
-  Future<OKEvent> addUser(String groupId, String addUser, String reason) async {
+  Future<OKEvent> addUser(String groupId, List<String> addUsers, String reason) async {
     GroupModeration moderation =
-        GroupModeration.addUser(groupId, addUser, reason);
+        GroupModeration.addUser(groupId, addUsers.first, reason);
     return sendModeration(moderation);
   }
 
   Future<OKEvent> removeUser(
-      String groupId, String removeUser, String reason) async {
+      String groupId, List<String> removeUsers, String reason) async {
     GroupModeration moderation =
-        GroupModeration.removeUser(groupId, removeUser, reason);
+        GroupModeration.removeUser(groupId, removeUsers.first, reason);
     return sendModeration(moderation);
   }
 
