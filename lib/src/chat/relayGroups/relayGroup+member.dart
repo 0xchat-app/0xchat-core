@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:chatcore/src/common/network/connect.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:chatcore/chat-core.dart';
@@ -74,16 +75,20 @@ extension EMember on RelayGroup {
     SimpleGroups simpleGroups = getHostAndGroupId(input);
     String groupId = simpleGroups.groupId;
     String relay = simpleGroups.relay;
+    if(relay.isEmpty) return OKEvent(input, false, 'empty relay');
     RelayGroupDB? groupDB = groups[groupId];
     if (groupDB == null) {
       groupDB = RelayGroupDB(groupId: groupId, relay: relay, id: input);
       groups[groupId] = groupDB;
       syncGroupToDB(groupDB);
     }
+
+    await Connect.sharedInstance.connectRelays([relay], type: 1);
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event =
         await Nip29.encodeJoinRequest(groupId, content, pubkey, privkey);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
+    Connect.sharedInstance.sendEvent(event, toRelays: [relay],
+        sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
