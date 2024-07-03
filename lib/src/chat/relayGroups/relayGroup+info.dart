@@ -19,7 +19,7 @@ extension EInfo on RelayGroup {
     subscriptions[groupDB.relay] = [f];
     Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
-      if (groupDB!.lastUpdatedTime > event.createdAt) return;
+      if (groupDB!.lastUpdatedTime > event.createdAt && event.createdAt != 0) return;
       groupDB.lastUpdatedTime = event.createdAt;
       switch (event.kind) {
         case 39000:
