@@ -34,17 +34,12 @@ class Groups {
     privkey = Account.sharedInstance.currentPrivkey;
     pubkey = Account.sharedInstance.currentPubkey;
     myGroupsUpdatedCallBack = callBack;
-    await _loadAllGroupsFromDB();
+
     Account.sharedInstance.groupListUpdateCallback = () async {
       myGroups = _myGroups();
       myGroupsUpdatedCallBack?.call();
     };
-
-    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
-      if (status == 1 &&
-          Account.sharedInstance.me != null &&
-          Connect.sharedInstance.relays().contains(relay)) {}
-    });
+    await _loadAllGroupsFromDB();
   }
 
   /// 0, not in the group, 1, in the group & not joined, 2. joined

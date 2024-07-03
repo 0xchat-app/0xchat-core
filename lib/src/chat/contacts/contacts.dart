@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
-import 'dart:math';
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/services.dart';
 import 'package:nostr_core_dart/nostr.dart';
@@ -85,19 +84,10 @@ class Contacts {
     pubkey = Account.sharedInstance.currentPubkey;
     contactUpdatedCallBack = callBack;
 
-    _subscriptMessages();
-
     Account.sharedInstance.contactListUpdateCallback = () async {
       await _syncContactsFromDB();
       _subscriptMoment();
     };
-    // sync friend list from DB & relays
-    await syncBlockListFromDB();
-    await _syncContactsFromDB();
-    await syncSecretSessionFromDB();
-
-    _updateSubscriptions();
-
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 && Account.sharedInstance.me != null) {
@@ -105,6 +95,13 @@ class Contacts {
         _updateSubscriptions(relay: relay);
       }
     });
+    _subscriptMessages();
+    // sync friend list from DB & relays
+    await syncBlockListFromDB();
+    await _syncContactsFromDB();
+    await syncSecretSessionFromDB();
+
+    _updateSubscriptions();
   }
 
   Future<void> _updateSubscriptions({String? relay}) async {

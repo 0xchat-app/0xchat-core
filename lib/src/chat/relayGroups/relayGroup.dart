@@ -40,10 +40,6 @@ class RelayGroup {
       _updateGroupSubscription();
       myGroupsUpdatedCallBack?.call();
     };
-
-    await _loadAllGroupsFromDB();
-    _updateGroupSubscription();
-
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 && Account.sharedInstance.me != null) {
         if (groupRelays.contains(relay)) {
@@ -52,6 +48,8 @@ class RelayGroup {
         }
       }
     });
+    await _loadAllGroupsFromDB();
+    _updateGroupSubscription();
   }
 
   /// 0, not in the group, 1, in the group & not joined, 2. joined

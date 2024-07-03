@@ -75,11 +75,15 @@ extension EMember on RelayGroup {
     String groupId = simpleGroups.groupId;
     String relay = simpleGroups.relay;
     RelayGroupDB? groupDB = groups[groupId];
+    if (groupDB == null) {
+      groupDB = RelayGroupDB(groupId: groupId, relay: relay, id: input);
+      groups[groupId] = groupDB;
+      syncGroupToDB(groupDB);
+    }
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event =
         await Nip29.encodeJoinRequest(groupId, content, pubkey, privkey);
-    Connect.sharedInstance.sendEvent(event, toRelays: [groupDB?.relay ?? relay],
-        sendCallBack: (ok, relay) async {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;

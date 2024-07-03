@@ -36,13 +36,13 @@ class Config {
   final String mintHost = 'mint.0xchat.com';
 
   Future<void> initConfig() async {
-    await _loadConfig();
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 && Account.sharedInstance.me != null) {
         _loadConfigFromRelay(relay: relay);
       }
     });
+    await _loadConfig();
   }
 
   Future<void> _loadConfig() async {

@@ -7,13 +7,13 @@ import 'package:chatcore/chat-core.dart';
 
 extension AccountProfile on Account {
   Future<void> loginSuccess() async {
-    await Future.delayed(Duration(seconds: 1));
-    reloadMyProfileFromRelay();
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 && Account.sharedInstance.me != null) {
         reloadMyProfileFromRelay(relay: relay);
       }
     });
+    await Future.delayed(Duration(seconds: 1));
+    reloadMyProfileFromRelay();
   }
 
   Future<UserDB> reloadMyProfileFromRelay({String? relay}) async {
@@ -309,7 +309,7 @@ extension AccountProfile on Account {
       db.lastRelayGroupsListUpdatedTime = event.createdAt;
       Lists result = await Nip51.getLists(event, currentPubkey, currentPrivkey);
       List<String> relayGroupsList = [];
-      for(var g in result.groups){
+      for (var g in result.groups) {
         relayGroupsList.add('${g.relay}\'${g.groupId}');
       }
       db.relayGroupsList = relayGroupsList;

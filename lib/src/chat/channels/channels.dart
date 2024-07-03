@@ -44,10 +44,6 @@ class Channels {
       _updateSubscriptions();
       myChannelsUpdatedCallBack?.call();
     };
-
-    await _loadAllChannelsFromDB();
-
-    _updateSubscriptions();
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 && Account.sharedInstance.me != null) {
@@ -55,6 +51,8 @@ class Channels {
         syncMyChannelsFromRelay(relay: relay);
       }
     });
+    await _loadAllChannelsFromDB();
+    _updateSubscriptions();
   }
 
   Future<void> _loadAllChannelsFromDB() async {
