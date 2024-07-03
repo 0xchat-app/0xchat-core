@@ -85,6 +85,8 @@ class Contacts {
     pubkey = Account.sharedInstance.currentPubkey;
     contactUpdatedCallBack = callBack;
 
+    _subscriptMessages();
+
     Account.sharedInstance.contactListUpdateCallback = () async {
       await _syncContactsFromDB();
       _subscriptMoment();
@@ -99,6 +101,7 @@ class Contacts {
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 && Account.sharedInstance.me != null) {
+        _subscriptMessages(relay: relay);
         _updateSubscriptions(relay: relay);
       }
     });
@@ -106,7 +109,6 @@ class Contacts {
 
   Future<void> _updateSubscriptions({String? relay}) async {
     _subscriptMoment(relay: relay);
-    _subscriptMessages(relay: relay);
     subscriptSecretChat(relay: relay);
   }
 
