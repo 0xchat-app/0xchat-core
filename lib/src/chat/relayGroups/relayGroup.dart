@@ -36,9 +36,7 @@ class RelayGroup {
     myGroupsUpdatedCallBack = callBack;
 
     Account.sharedInstance.relayGroupListUpdateCallback = () {
-      myGroups = _myGroups();
-      _updateGroupSubscription();
-      myGroupsUpdatedCallBack?.call();
+      groupListUpdated();
     };
     Connect.sharedInstance.addConnectStatusListener((relay, status) async {
       if (status == 1 && Account.sharedInstance.me != null) {
@@ -67,6 +65,12 @@ class RelayGroup {
 
   bool checkInMyGroupList(String groupId) {
     return myGroups.containsKey(groupId);
+  }
+
+  void groupListUpdated(){
+    myGroups = _myGroups();
+    _updateGroupSubscription();
+    myGroupsUpdatedCallBack?.call();
   }
 
   Future<void> _loadAllGroupsFromDB() async {
@@ -264,6 +268,7 @@ class RelayGroup {
     UserDB? me = Account.sharedInstance.me;
     me!.relayGroupsList = myGroups.values.map((e) => e.id).toList();
     await DB.sharedInstance.insert<UserDB>(me);
+    groupListUpdated();
   }
 
   Future<OKEvent> syncMyGroupListToRelay() async {

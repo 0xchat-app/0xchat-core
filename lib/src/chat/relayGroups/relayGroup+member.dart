@@ -40,10 +40,8 @@ extension EMember on RelayGroup {
               private: closed == 'true' ? true : false,
               id: id);
           myGroups[groupId] = relayGroupDB;
-          myGroupsUpdatedCallBack?.call();
           syncGroupToDB(relayGroupDB);
           syncMyGroupListToRelay();
-          connectToRelays([relay]);
           if (!completer.isCompleted) completer.complete(relayGroupDB);
         } else {
           if (!completer.isCompleted) completer.complete(null);
@@ -59,7 +57,6 @@ extension EMember on RelayGroup {
     RelayGroupDB? groupDB = myGroups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     myGroups.remove(groupId);
-    myGroupsUpdatedCallBack?.call();
     return await syncMyGroupListToRelay();
   }
 
