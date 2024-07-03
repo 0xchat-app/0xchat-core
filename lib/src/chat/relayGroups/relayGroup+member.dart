@@ -62,13 +62,23 @@ extension EMember on RelayGroup {
     return await syncMyGroupListToRelay();
   }
 
-  Future<OKEvent> sendJoinRequest(String groupId, String content) async {
+  Future<OKEvent> joinGroup(String groupId, String content) async {
+    if (groups.containsKey(groupId)) {
+      myGroups[groupId] = groups[groupId]!;
+      return await syncMyGroupListToRelay();
+    }
+    return OKEvent(groupId, false, 'group not found');
+  }
+
+  Future<OKEvent> sendJoinRequest(String input, String content) async {
+    SimpleGroups simpleGroups = getHostAndGroupId(input);
+    String groupId = simpleGroups.groupId;
+    String relay = simpleGroups.relay;
     RelayGroupDB? groupDB = groups[groupId];
-    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event =
         await Nip29.encodeJoinRequest(groupId, content, pubkey, privkey);
-    Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
+    Connect.sharedInstance.sendEvent(event, toRelays: [groupDB?.relay ?? relay],
         sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
     });

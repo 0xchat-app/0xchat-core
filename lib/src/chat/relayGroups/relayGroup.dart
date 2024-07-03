@@ -83,7 +83,7 @@ class RelayGroup {
     myGroupsUpdatedCallBack?.call();
   }
 
-  SimpleGroups _getHostAndGroupId(String input) {
+  SimpleGroups getHostAndGroupId(String input) {
     RegExp exp = RegExp(r"(.*?)'(.*)");
     Match? match = exp.firstMatch(input);
 
@@ -105,7 +105,7 @@ class RelayGroup {
       List<String> groupList = me.relayGroupsList!;
       groupRelays.clear();
       for (String id in groupList) {
-        SimpleGroups simpleGroups = _getHostAndGroupId(id);
+        SimpleGroups simpleGroups = getHostAndGroupId(id);
         String groupId = simpleGroups.groupId;
         if (!groups.containsKey(groupId)) {
           groups[groupId] =
