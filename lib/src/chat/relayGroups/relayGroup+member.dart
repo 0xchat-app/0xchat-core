@@ -8,13 +8,15 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension EMember on RelayGroup {
   Future<RelayGroupDB?> createGroup(String host, String name,
-      {String closed = 'false'}) async {
+      {String closed = 'false', String picture = '', String about = ''}) async {
     Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
     final url = Uri.parse('http://$host/create');
     final body = {
       'pubkey': pubkey,
       'name': name,
       'closed': closed,
+      'picture': picture,
+      'about': about,
       'createdAt': currentUnixTimestampSeconds().toString()
     };
     final sig = await Account.getSignatureWithSecret(jsonEncode(body));
