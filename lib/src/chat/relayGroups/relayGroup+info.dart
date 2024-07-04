@@ -10,10 +10,11 @@ extension EInfo on RelayGroup {
     SimpleGroups simpleGroups = getHostAndGroupId(groupId);
     groupId = simpleGroups.groupId;
     relay ??= simpleGroups.relay;
-    bool temp = false;
-    if (relay.isNotEmpty && !Connect.sharedInstance.relays().contains(relay)) {
+    List<String> tempRelays = [];
+    if (relay.isNotEmpty &&
+        !Connect.sharedInstance.webSockets.keys.contains(relay)) {
       await Connect.sharedInstance.connectRelays([relay], type: 1);
-      temp = true;
+      tempRelays.add(relay);
     }
     RelayGroupDB? groupDB = groups[groupId];
     groupDB ??= RelayGroupDB(
@@ -51,7 +52,7 @@ extension EInfo on RelayGroup {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty && !completer.isCompleted) {
         if (groupDB != null) await syncGroupToDB(groupDB);
-        if(temp) Connect.sharedInstance.closeConnects([relay]);
+        Connect.sharedInstance.closeConnects(tempRelays);
         completer.complete(groupDB);
       }
     });

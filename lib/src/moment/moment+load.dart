@@ -137,6 +137,14 @@ extension Load on Moment {
   Future<NoteDB?> loadPublicNoteFromRelay(String noteId,
       {List<String>? relays}) async {
     if (noteId.isEmpty) return null;
+    List<String> tempRelays = [];
+    for (var relay in relays ?? []) {
+      if (relay.isNotEmpty &&
+          !Connect.sharedInstance.webSockets.keys.contains(relay)) {
+        await Connect.sharedInstance.connectRelays([relay], type: 1);
+        tempRelays.add(relay);
+      }
+    }
     Completer<NoteDB?> completer = Completer<NoteDB?>();
     Filter f = Filter(ids: [noteId]);
     Connect.sharedInstance.addSubscription([f], relays: relays,
@@ -168,6 +176,7 @@ extension Load on Moment {
       if (unRelays.isEmpty) {
         if (!completer.isCompleted) {
           NoteDB? note = await loadNoteWithNoteId(noteId, reload: false);
+          Connect.sharedInstance.closeConnects(tempRelays);
           completer.complete(note);
         }
       }
