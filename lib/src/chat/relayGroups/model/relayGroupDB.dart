@@ -10,6 +10,7 @@ class RelayGroupDB extends DBObject {
   String relay;
   String relayPubkey;
   bool private;
+  bool closed;
   int lastUpdatedTime;
   bool mute;
   List<GroupAdmin>? admins;
@@ -28,6 +29,7 @@ class RelayGroupDB extends DBObject {
       this.relay = '',
       this.relayPubkey = '',
       this.private = false,
+      this.closed = false,
       this.lastUpdatedTime = 0,
       this.mute = false,
       this.admins,
@@ -59,7 +61,7 @@ class RelayGroupDB extends DBObject {
 
   String get shortGroupId {
     String k = groupId;
-    if(k.length < 12) return k;
+    if (k.length < 12) return k;
     final String start = k.substring(0, 6);
     final String end = k.substring(k.length - 6);
     return '$start:$end';
@@ -92,6 +94,7 @@ Map<String, dynamic> _groupInfoToMap(RelayGroupDB instance) =>
       'relay': instance.relay,
       'relayPubkey': instance.relayPubkey,
       'private': instance.private,
+      'private': instance.closed,
       'lastUpdatedTime': instance.lastUpdatedTime,
       'mute': instance.mute,
       'admins': instance.admins == null
@@ -114,6 +117,7 @@ RelayGroupDB _groupInfoFromMap(Map<String, dynamic> map) {
     relay: map['relay'].toString(),
     relayPubkey: map['relayPubkey'].toString(),
     private: map['private'] > 0 ? true : false,
+    closed: map['closed'] > 0 ? true : false,
     lastUpdatedTime: map['lastUpdatedTime'],
     mute: map['mute'] > 0 ? true : false,
     admins: RelayGroupDB.stringToGroupAdmins(map['admins'].toString()),

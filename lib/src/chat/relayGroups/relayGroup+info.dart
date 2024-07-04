@@ -6,7 +6,7 @@ import 'package:nostr_core_dart/nostr.dart';
 extension EInfo on RelayGroup {
   Future<RelayGroupDB?> getGroupMetadataFromRelay(String groupId,
       {String? relay, String? author}) async {
-    if(groupId.isEmpty) return null;
+    if (groupId.isEmpty) return null;
     RelayGroupDB? groupDB = groups[groupId];
     groupDB ??= RelayGroupDB(
         groupId: groupId, relay: relay ?? '', author: author ?? '');
@@ -28,6 +28,7 @@ extension EInfo on RelayGroup {
           groupDB.picture = group.picture;
           groupDB.about = group.about;
           groupDB.private = group.private;
+          groupDB.closed = group.closed;
           break;
         case 39001:
           List<GroupAdmin> admins = Nip29.decodeGroupAdmins(event, groupId);
