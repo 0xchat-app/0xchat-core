@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:chatcore/src/common/network/connect.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:chatcore/chat-core.dart';
