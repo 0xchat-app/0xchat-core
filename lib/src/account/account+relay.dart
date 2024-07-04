@@ -26,7 +26,7 @@ extension AccountRelay on Account {
     return completer.future;
   }
 
-  Future<OKEvent> updateRelaysMetadata(List<String> relays) async {
+  Future<OKEvent> setRelayListToRelay(List<String> relays) async {
     me!.relayList = relays;
     syncMe();
     Completer<OKEvent> completer = Completer<OKEvent>();
