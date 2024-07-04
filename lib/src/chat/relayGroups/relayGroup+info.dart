@@ -19,8 +19,8 @@ extension EInfo on RelayGroup {
     subscriptions[groupDB.relay] = [f];
     Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
-      if (groupDB!.lastUpdatedTime > event.createdAt) return;
-      groupDB.lastUpdatedTime = event.createdAt;
+      // if (groupDB!.lastUpdatedTime > event.createdAt) return;
+      groupDB!.lastUpdatedTime = event.createdAt;
       switch (event.kind) {
         case 39000:
           Group group = Nip29.decodeMetadata(event, relay);
