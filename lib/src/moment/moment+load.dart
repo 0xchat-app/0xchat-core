@@ -497,7 +497,7 @@ extension Load on Moment {
       int result = await DB.sharedInstance.insert<NotificationDB>(
           notificationDB,
           conflictAlgorithm: ConflictAlgorithm.ignore);
-      if (result > 0) {
+      if (result > 0 && notificationDB.author != pubkey) {
         newNotifications.add(notificationDB);
         newNotificationCallBack?.call(newNotifications);
       }
