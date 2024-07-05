@@ -58,6 +58,7 @@ extension AccountRelay on Account {
 
   Future<OKEvent> setDMRelayListToRelay(List<String> relays) async {
     me!.dmRelayList = relays;
+    me!.lastDMRelayListUpdatedTime = currentUnixTimestampSeconds();
     Relays.sharedInstance.connectDMRelays();
     syncMe();
     Completer<OKEvent> completer = Completer<OKEvent>();
@@ -136,6 +137,7 @@ extension AccountRelay on Account {
 
   Future<OKEvent> setGeneralRelayListToRelay(List<String> relays) async {
     me!.relayList = relays;
+    me!.lastRelayListUpdatedTime = currentUnixTimestampSeconds();
     Relays.sharedInstance.connectGeneralRelays();
     syncMe();
     Completer<OKEvent> completer = Completer<OKEvent>();
