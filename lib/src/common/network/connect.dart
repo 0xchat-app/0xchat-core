@@ -257,6 +257,12 @@ class Connect {
     });
   }
 
+  Future closeAllConnects() async {
+    await Future.forEach(webSockets.keys, (relay) async {
+      await closeConnect(relay);
+    });
+  }
+
   Future closeConnect(String relay) async {
     print('closeConnect ${webSockets[relay]?.socket}');
     final socket = webSockets[relay]?.socket;

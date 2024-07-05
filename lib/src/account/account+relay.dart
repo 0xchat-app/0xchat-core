@@ -91,6 +91,17 @@ extension AccountRelay on Account {
     return await setGeneralRelayListToRelay([relay]);
   }
 
+  Future<void> closeAllRelays() async{
+    await Connect.sharedInstance.closeAllConnects();
+  }
+
+  Future<void> resumeAllRelays() async{
+    await Relays.sharedInstance.connectGeneralRelays();
+    await Relays.sharedInstance.connectDMRelays();
+    await Contacts.sharedInstance.syncSecretSessionFromDB();
+    RelayGroup.sharedInstance.groupListUpdated;
+  }
+
   int getConnectedRelaysCount() {
     List<RelayDB> myRelays = getMyGeneralRelayList();
     myRelays.addAll(getMyDMRelayList());
