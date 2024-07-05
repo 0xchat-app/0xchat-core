@@ -6,7 +6,6 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 extension EAdmin on RelayGroup {
   bool hasPermissions(
       List<GroupAdmin> admins, String user, List<GroupActionKind> permissions) {
-    return true;
     if (admins.isNotEmpty && admins.any((admin) => admin.pubkey == user)) {
       var admin = admins.firstWhere((admin) => admin.pubkey == user);
       return permissions
