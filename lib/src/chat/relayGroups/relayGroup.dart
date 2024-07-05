@@ -340,7 +340,8 @@ class RelayGroup {
         return {
           'groupId': result['special'],
           'relays': result['relays'],
-          'author': result['author']
+          'author': result['author'],
+          'kind': result['kind']
         };
       }
     } else if (encodedGroup.startsWith('note')) {
