@@ -634,7 +634,7 @@ class Channels {
   static String encodeChannel(
       String channelId, List<String>? relays, String? author) {
     String nevent =
-        Nip19.encodeShareableEntity('nevent', channelId, relays, author, null);
+        Nip19.encodeShareableEntity('nevent', channelId, relays, author, 40);
     return Nip21.encode(nevent);
   }
 
