@@ -42,26 +42,39 @@ class Relays {
     if (result.isNotEmpty) {
       relays = {for (var item in result) item.url: item};
     }
-    _initGeneralRelays();
-    _initDMRelays();
+    connectGeneralRelays();
+    connectDMRelays();
   }
 
-  void _initGeneralRelays() {
+  Future<void> connectGeneralRelays() async {
+    List<String> connectedGeneralRelays =
+        Connect.sharedInstance.relays(relayKind: RelayKind.general);
+    List<String> generalRelays = Account.sharedInstance.me?.relayList ?? [];
+    List<String> notInGeneralRelays = connectedGeneralRelays
+        .where((relay) => !generalRelays.contains(relay))
+        .toList();
+    await Connect.sharedInstance.closeConnects(notInGeneralRelays);
+
     int updatedTime = Account.sharedInstance.me?.lastRelayListUpdatedTime ?? 0;
     if (updatedTime > 0) {
-      List<String>? relays = Account.sharedInstance.me?.relayList;
-      Connect.sharedInstance.connectRelays(relays ?? []);
+      Connect.sharedInstance
+          .connectRelays(generalRelays, relayKind: RelayKind.general);
     } else {
-      Connect.sharedInstance.connectRelays(recommendGeneralRelays);
+      Connect.sharedInstance
+          .connectRelays(recommendGeneralRelays, relayKind: RelayKind.general);
     }
   }
 
-  void _initDMRelays() {
-    List<String>? relays = Account.sharedInstance.me?.dmRelayList;
-    Connect.sharedInstance.connectRelays(relays ?? []);
+  Future<void> connectDMRelays() async {
+    List<String> connectedDMRelays =
+        Connect.sharedInstance.relays(relayKind: RelayKind.dm);
+    List<String> dmRelays = Account.sharedInstance.me?.dmRelayList ?? [];
+    List<String> notInDMRelays =
+        connectedDMRelays.where((relay) => !dmRelays.contains(relay)).toList();
+    await Connect.sharedInstance.closeConnects(notInDMRelays);
+
+    Connect.sharedInstance.connectRelays(dmRelays, relayKind: RelayKind.dm);
   }
-
-
 
   Future<List<RelayDB>?> _loadRelaysFromDB() async {
     return await DB.sharedInstance.objects<RelayDB>();

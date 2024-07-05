@@ -252,9 +252,9 @@ class Connect {
   }
 
   Future closeConnects(List<String> relays) async {
-    for (var relay in relays) {
-      closeConnect(relay);
-    }
+    await Future.forEach(relays, (relay) async {
+      await closeConnect(relay);
+    });
   }
 
   Future closeConnect(String relay) async {

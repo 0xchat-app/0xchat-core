@@ -287,6 +287,7 @@ extension AccountProfile on Account {
       Set<String> relaySet = Set.from(db.relayList!);
       relaySet.addAll(result.map((e) => e.url).toList());
       db.relayList = relaySet.toList();
+      Relays.sharedInstance.connectGeneralRelays();
       relayListUpdateCallback?.call();
     }
     return db;
@@ -324,6 +325,7 @@ extension AccountProfile on Account {
       db.lastDMRelayListUpdatedTime = event.createdAt;
       List<String> relayList = Nip17.decodeDMRelays(event);
       db.dmRelayList = relayList;
+      Relays.sharedInstance.connectDMRelays();
       if (db.pubKey == currentPubkey) dmRelayListUpdateCallback?.call();
     }
     return db;

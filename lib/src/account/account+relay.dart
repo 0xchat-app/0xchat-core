@@ -4,7 +4,25 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
 extension AccountRelay on Account {
-  Future<List<String>> getDMRelayList(String pubkey) async {
+  Future<List<RelayDB>> getMyDMRelayList() async {
+    List<String> dmRelays = me?.dmRelayList ?? [];
+    List<RelayDB> result = [];
+    for (var relay in dmRelays) {
+      result.add(Relays.sharedInstance.relays[relay] ?? RelayDB(url: relay));
+    }
+    return result;
+  }
+
+  Future<List<RelayDB>> getMyGeneralRelayList() async {
+    List<String> dmRelays = me?.relayList ?? [];
+    List<RelayDB> result = [];
+    for (var relay in dmRelays) {
+      result.add(Relays.sharedInstance.relays[relay] ?? RelayDB(url: relay));
+    }
+    return result;
+  }
+
+  Future<List<String>> getUserDMRelayList(String pubkey) async {
     UserDB? userDB = await getUserInfo(pubkey);
     if (userDB != null) {
       return userDB.dmRelayList ?? [];
@@ -12,8 +30,17 @@ extension AccountRelay on Account {
     return [];
   }
 
+  Future<List<String>> getUserGeneralRelayList(String pubkey) async {
+    UserDB? userDB = await getUserInfo(pubkey);
+    if (userDB != null) {
+      return userDB.relayList ?? [];
+    }
+    return [];
+  }
+
   Future<OKEvent> setDMRelayListToRelay(List<String> relays) async {
     me!.dmRelayList = relays;
+    Relays.sharedInstance.connectDMRelays();
     syncMe();
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event =
@@ -26,8 +53,9 @@ extension AccountRelay on Account {
     return completer.future;
   }
 
-  Future<OKEvent> setRelayListToRelay(List<String> relays) async {
+  Future<OKEvent> setGeneralRelayListToRelay(List<String> relays) async {
     me!.relayList = relays;
+    Relays.sharedInstance.connectGeneralRelays();
     syncMe();
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<Relay> list = [];
