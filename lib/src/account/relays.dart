@@ -6,8 +6,35 @@ class Relays {
   Relays._internal();
   factory Relays() => sharedInstance;
   static final Relays sharedInstance = Relays._internal();
-
+  // ALL relays list
   Map<String, RelayDB> relays = {};
+
+  List<String> recommendGeneralRelays = [
+    'wss://relay.0xchat.com',
+    'wss://yabu.me',
+    'wss://relay.siamstr.com',
+    'wss://relay.damus.io',
+    'wss://relay.nostr.band',
+    'wss://nos.lol',
+    'wss://nostr.wine',
+    'wss://nostr.coinfund.app',
+    'wss://eden.nostr.land'
+  ];
+
+  List<String> recommendDMRelays = [
+    'wss://auth.nostr1.com',
+    'wss://relay.0xchat.com'
+  ];
+
+  List<String> recommendGroupRelays = [
+    'wss://groups.fiatjaf.com',
+    'wss://groups.0xchat.com'
+  ];
+
+  List<String> recommendSecretChatRelays = [
+    'wss://auth.nostr1.com',
+    'wss://relay.0xchat.com'
+  ];
 
   Future<void> init() async {
     await Config.sharedInstance.initConfig();
@@ -15,7 +42,26 @@ class Relays {
     if (result.isNotEmpty) {
       relays = {for (var item in result) item.url: item};
     }
+    _initGeneralRelays();
+    _initDMRelays();
   }
+
+  void _initGeneralRelays() {
+    int updatedTime = Account.sharedInstance.me?.lastRelayListUpdatedTime ?? 0;
+    if (updatedTime > 0) {
+      List<String>? relays = Account.sharedInstance.me?.relayList;
+      Connect.sharedInstance.connectRelays(relays ?? []);
+    } else {
+      Connect.sharedInstance.connectRelays(recommendGeneralRelays);
+    }
+  }
+
+  void _initDMRelays() {
+    List<String>? relays = Account.sharedInstance.me?.dmRelayList;
+    Connect.sharedInstance.connectRelays(relays ?? []);
+  }
+
+
 
   Future<List<RelayDB>?> _loadRelaysFromDB() async {
     return await DB.sharedInstance.objects<RelayDB>();
@@ -247,7 +293,7 @@ class Relays {
 
   static Future<RelayDB?> getRelayDetails(String relayURL,
       {bool? refresh}) async {
-    if (refresh != null && refresh == false) {
+    if (refresh != true) {
       RelayDB? relayDB = await getRelayDetailsFromDB(relayURL);
       if (relayDB != null) return relayDB;
     }

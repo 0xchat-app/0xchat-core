@@ -126,7 +126,7 @@ class RelayGroup {
 
   void connectToRelays(List<String> groupRelays) {
     for (var relay in groupRelays) {
-      Connect.sharedInstance.connect(relay, type: 1);
+      Connect.sharedInstance.connect(relay, relayKind: RelayKind.relayGroup);
     }
   }
 

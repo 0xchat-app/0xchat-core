@@ -8,8 +8,10 @@ extension SecretChat on Contacts {
   void _connectToRelay(String? relay) {
     if (relay != null &&
         relay.isNotEmpty &&
-        !Connect.sharedInstance.relays(type: 1).contains(relay)) {
-      Connect.sharedInstance.connect(relay, type: 1);
+        !Connect.sharedInstance
+            .relays(relayKind: RelayKind.secretChat)
+            .contains(relay)) {
+      Connect.sharedInstance.connect(relay, relayKind: RelayKind.secretChat);
     }
   }
 
@@ -446,8 +448,8 @@ extension SecretChat on Contacts {
           completer.complete(OKEvent(event.id, true, ''));
         }
       } else {
-        Connect.sharedInstance.sendEvent(event, toRelays: [sessionDB.relay ?? ''],
-            sendCallBack: (ok, relay) async {
+        Connect.sharedInstance.sendEvent(event,
+            toRelays: [sessionDB.relay ?? ''], sendCallBack: (ok, relay) async {
           messageDB.status = ok.status ? 1 : 2;
           await Messages.saveMessageToDB(messageDB,
               conflictAlgorithm: ConflictAlgorithm.replace);
@@ -507,8 +509,10 @@ extension SecretChat on Contacts {
 
     Map<String, List<Filter>> subscriptions = {};
     if (relay == null) {
-      List<String> relays = Connect.sharedInstance.relays(type: 0);
-      relays.addAll(Connect.sharedInstance.relays(type: 1));
+      List<String> relays =
+          Connect.sharedInstance.relays(relayKind: RelayKind.secretChat);
+      relays.addAll(
+          Connect.sharedInstance.relays(relayKind: RelayKind.secretChat));
       for (var r in relays) {
         int friendMessageUntil = Relays.sharedInstance.getFriendMessageUntil(r);
         Filter f = Filter(

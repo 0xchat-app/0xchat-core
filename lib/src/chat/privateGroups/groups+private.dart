@@ -6,20 +6,20 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension PrivateGroups on Groups {
-  Future<void> connectToGroupRelays(String groupId) async {
-    GroupDB? groupDB = myGroups[groupId];
-    if (groupDB != null) {
-      Map<String, UserDB> users =
-          await Account.sharedInstance.getUserInfos(groupDB.members ?? []);
-      Set<String> relays = {};
-      for (var user in users.values) {
-        relays.addAll(user.relayList ?? []);
-      }
-      currentGroupRelays[groupId] = relays.toList();
-      await Connect.sharedInstance
-          .connectRelays(currentGroupRelays[groupId]!, type: 1);
-    }
-  }
+  // Future<void> connectToGroupRelays(String groupId) async {
+  //   GroupDB? groupDB = myGroups[groupId];
+  //   if (groupDB != null) {
+  //     Map<String, UserDB> users =
+  //         await Account.sharedInstance.getUserInfos(groupDB.members ?? []);
+  //     Set<String> relays = {};
+  //     for (var user in users.values) {
+  //       relays.addAll(user.relayList ?? []);
+  //     }
+  //     currentGroupRelays[groupId] = relays.toList();
+  //     await Connect.sharedInstance.connectRelays(currentGroupRelays[groupId]!,
+  //         relayKind: RelayKind.relayGroup);
+  //   }
+  // }
 
   Future<void> closeGroupConnects(String groupId) async {
     await Connect.sharedInstance

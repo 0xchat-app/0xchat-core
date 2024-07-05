@@ -63,6 +63,8 @@ extension EMember on RelayGroup {
   }
 
   Future<OKEvent> joinGroup(String groupId, String content) async {
+    SimpleGroups simpleGroups = getHostAndGroupId(groupId);
+    groupId = simpleGroups.groupId;
     if (groups.containsKey(groupId) && !myGroups.containsKey(groupId)) {
       myGroups[groupId] = groups[groupId]!;
       myGroupsUpdatedCallBack?.call();
@@ -83,7 +85,7 @@ extension EMember on RelayGroup {
       syncGroupToDB(groupDB);
     }
 
-    await Connect.sharedInstance.connectRelays([relay], type: 1);
+    await Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.relayGroup);
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event =
         await Nip29.encodeJoinRequest(groupId, content, pubkey, privkey);

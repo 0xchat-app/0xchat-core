@@ -26,8 +26,10 @@ class Zaps {
   void _connectToRelays(List<String> relays) {
     for (var relay in relays) {
       if (relay.isNotEmpty &&
-          !Connect.sharedInstance.relays(type: 1).contains(relay)) {
-        Connect.sharedInstance.connect(relay, type: 1);
+          !Connect.sharedInstance
+              .relays(relayKind: RelayKind.nwc)
+              .contains(relay)) {
+        Connect.sharedInstance.connect(relay, relayKind: RelayKind.nwc);
       }
     }
   }

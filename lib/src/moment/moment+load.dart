@@ -99,7 +99,8 @@ extension Load on Moment {
     if (notesCache.containsKey(noteId)) return notesCache[noteId];
     NoteDB? note = await loadNoteFromDBWithNoteId(noteId);
     if (note == null && !private && reload) {
-      await Connect.sharedInstance.connectRelays(relays ?? [], type: 1);
+      await Connect.sharedInstance
+          .connectRelays(relays ?? [], relayKind: RelayKind.temp);
       note = await loadPublicNoteFromRelay(noteId, relays: relays);
       await Connect.sharedInstance.closeConnects(relays ?? []);
     }
@@ -141,7 +142,8 @@ extension Load on Moment {
     for (var relay in relays ?? []) {
       if (relay.isNotEmpty &&
           !Connect.sharedInstance.webSockets.keys.contains(relay)) {
-        await Connect.sharedInstance.connectRelays([relay], type: 1);
+        await Connect.sharedInstance
+            .connectRelays([relay], relayKind: RelayKind.temp);
         tempRelays.add(relay);
       }
     }

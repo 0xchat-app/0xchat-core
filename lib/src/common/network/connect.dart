@@ -61,12 +61,18 @@ class ISocket {
   /// closing = 2;
   /// closed = 3;
   int connectStatus;
+  RelayKind relayKind;
 
-  /// 0: normal
-  /// 1: custom
-  int type;
+  ISocket(this.socket, this.connectStatus, this.relayKind);
+}
 
-  ISocket(this.socket, this.connectStatus, this.type);
+enum RelayKind {
+  general,
+  dm,
+  relayGroup,
+  secretChat,
+  nwc,
+  temp,
 }
 
 class Connect {
@@ -187,18 +193,24 @@ class Connect {
     }
   }
 
-  List<String> relays({int type = 0}) {
+  List<String> relays({RelayKind relayKind = RelayKind.general}) {
     List<String> result = [];
     for (var relay in webSockets.keys) {
       if (webSockets[relay]?.connectStatus == 1 &&
-          webSockets[relay]?.type == type) result.add(relay);
+          webSockets[relay]?.relayKind == relayKind) result.add(relay);
     }
     return result;
   }
 
-  Future<void> connect(String relay, {int type = 0}) async {
+  Future<void> connect(String relay,
+      {RelayKind relayKind = RelayKind.general}) async {
     if (relay.isEmpty) return;
-    if (webSockets[relay]?.type == 0) type = 0;
+    RelayKind? preKind = webSockets[relay]?.relayKind;
+
+    // already exit, don't change the kind
+    if (preKind != null && preKind != RelayKind.temp) {
+      relayKind = preKind;
+    }
     // connecting or open
     if (webSockets[relay]?.connectStatus == 0 ||
         webSockets[relay]?.connectStatus == 1) return;
@@ -213,13 +225,13 @@ class Connect {
       }
     }
     print("connecting...");
-    webSockets[relay] = ISocket(null, 0, type);
+    webSockets[relay] = ISocket(null, 0, relayKind);
     try {
       socket = await _connectWs(relay);
       if (socket != null) {
         socket.done.then((dynamic _) => _onDisconnected(relay));
         _listenEvent(socket, relay);
-        webSockets[relay] = ISocket(socket, 1, type);
+        webSockets[relay] = ISocket(socket, 1, relayKind);
         print("socket connection initialized");
         _setConnectStatus(relay, 1);
       }
@@ -228,10 +240,11 @@ class Connect {
     }
   }
 
-  Future<void> connectRelays(List<String> relays, {int type = 0}) async {
+  Future<void> connectRelays(List<String> relays,
+      {RelayKind relayKind = RelayKind.general}) async {
     final completer = Completer<void>();
     for (String relay in relays) {
-      connect(relay, type: type).then((value) {
+      connect(relay, relayKind: relayKind).then((value) {
         if (!completer.isCompleted) completer.complete();
       });
     }
@@ -499,7 +512,7 @@ class Connect {
     print('receive ok: ${ok.serialize()}, $relay');
     // check auth response
     if (auths[relay]?.eventId == ok.eventId) {
-      if(ok.status){
+      if (ok.status) {
         for (var data in auths[relay]?.resendDatas ?? []) {
           print('re-send: $data');
           _send(data, toRelays: [relay]);

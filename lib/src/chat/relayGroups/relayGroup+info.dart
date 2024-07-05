@@ -13,7 +13,7 @@ extension EInfo on RelayGroup {
     List<String> tempRelays = [];
     if (relay.isNotEmpty &&
         !Connect.sharedInstance.webSockets.keys.contains(relay)) {
-      await Connect.sharedInstance.connectRelays([relay], type: 1);
+      await Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.temp);
       tempRelays.add(relay);
     }
     RelayGroupDB? groupDB = groups[groupId];

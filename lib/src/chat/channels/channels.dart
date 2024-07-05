@@ -370,7 +370,7 @@ class Channels {
       limit: 1,
     );
     if (relays != null) {
-      await Connect.sharedInstance.connectRelays(relays, type: 1);
+      await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.temp);
     }
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) {
