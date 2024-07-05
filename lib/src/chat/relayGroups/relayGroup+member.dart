@@ -58,12 +58,14 @@ extension EMember on RelayGroup {
     RelayGroupDB? groupDB = myGroups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     myGroups.remove(groupId);
+    myGroupsUpdatedCallBack?.call();
     return await syncMyGroupListToRelay();
   }
 
   Future<OKEvent> joinGroup(String groupId, String content) async {
-    if (groups.containsKey(groupId)) {
+    if (groups.containsKey(groupId) && !myGroups.containsKey(groupId)) {
       myGroups[groupId] = groups[groupId]!;
+      myGroupsUpdatedCallBack?.call();
       return await syncMyGroupListToRelay();
     }
     return OKEvent(groupId, false, 'group not found');
@@ -73,7 +75,7 @@ extension EMember on RelayGroup {
     SimpleGroups simpleGroups = getHostAndGroupId(input);
     String groupId = simpleGroups.groupId;
     String relay = simpleGroups.relay;
-    if(relay.isEmpty) return OKEvent(input, false, 'empty relay');
+    if (relay.isEmpty) return OKEvent(input, false, 'empty relay');
     RelayGroupDB? groupDB = groups[groupId];
     if (groupDB == null) {
       groupDB = RelayGroupDB(groupId: groupId, relay: relay, id: input);
