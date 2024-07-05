@@ -4,7 +4,7 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
 extension AccountRelay on Account {
-  Future<List<RelayDB>> getMyDMRelayList() async {
+  List<RelayDB> getMyDMRelayList() {
     List<String> dmRelays = me?.dmRelayList ?? [];
     List<RelayDB> result = [];
     for (var relay in dmRelays) {
@@ -13,8 +13,26 @@ extension AccountRelay on Account {
     return result;
   }
 
-  Future<List<RelayDB>> getMyGeneralRelayList() async {
+  List<RelayDB> getMyGeneralRelayList() {
     List<String> dmRelays = me?.relayList ?? [];
+    List<RelayDB> result = [];
+    for (var relay in dmRelays) {
+      result.add(Relays.sharedInstance.relays[relay] ?? RelayDB(url: relay));
+    }
+    return result;
+  }
+
+  List<RelayDB> getMyRecommendGeneralRelaysList() {
+    List<String> dmRelays = Relays.sharedInstance.recommendGeneralRelays;
+    List<RelayDB> result = [];
+    for (var relay in dmRelays) {
+      result.add(Relays.sharedInstance.relays[relay] ?? RelayDB(url: relay));
+    }
+    return result;
+  }
+
+  List<RelayDB> getMyRecommendDMRelaysList() {
+    List<String> dmRelays = Relays.sharedInstance.recommendDMRelays;
     List<RelayDB> result = [];
     for (var relay in dmRelays) {
       result.add(Relays.sharedInstance.relays[relay] ?? RelayDB(url: relay));
@@ -51,6 +69,42 @@ extension AccountRelay on Account {
       }
     });
     return completer.future;
+  }
+
+  Future<OKEvent> addGeneralRelay(String relay) async {
+    //TODO:
+    return await setGeneralRelayListToRelay([relay]);
+  }
+
+  Future<OKEvent> removeGeneralRelay(String relay) async {
+    //TODO:
+    return await setGeneralRelayListToRelay([relay]);
+  }
+
+  Future<OKEvent> addDMRelay(String relay) async {
+    //TODO:
+    return await setGeneralRelayListToRelay([relay]);
+  }
+
+  Future<OKEvent> removeDMRelay(String relay) async {
+    //TODO:
+    return await setGeneralRelayListToRelay([relay]);
+  }
+
+  int getConnectedRelaysCount() {
+    List<RelayDB> myRelays = getMyGeneralRelayList();
+    myRelays.addAll(getMyDMRelayList());
+    int connected = 0;
+    for (var relay in myRelays) {
+      if (relay.connectStatus == 1) ++connected;
+    }
+    return connected;
+  }
+
+  int getAllRelaysCount() {
+    List<RelayDB> general = getMyGeneralRelayList();
+    List<RelayDB> dm = getMyDMRelayList();
+    return general.length + dm.length;
   }
 
   Future<OKEvent> setGeneralRelayListToRelay(List<String> relays) async {

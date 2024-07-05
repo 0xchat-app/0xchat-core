@@ -61,9 +61,9 @@ extension EMember on RelayGroup {
     return await syncMyGroupListToRelay();
   }
 
-  Future<OKEvent> joinGroup(String groupId, String content) async {
-    SimpleGroups simpleGroups = getHostAndGroupId(groupId);
-    groupId = simpleGroups.groupId;
+  Future<OKEvent> joinGroup(String id, String content) async {
+    SimpleGroups simpleGroups = getHostAndGroupId(id);
+    String groupId = simpleGroups.groupId;
     if (groups.containsKey(groupId) && !myGroups.containsKey(groupId)) {
       myGroups[groupId] = groups[groupId]!;
       return await syncMyGroupListToRelay();
