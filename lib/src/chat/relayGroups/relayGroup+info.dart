@@ -23,7 +23,8 @@ extension EInfo on RelayGroup {
     Filter f = Filter(
         kinds: [39000, 39001, 39002],
         d: [groupId],
-        since: groupDB.lastUpdatedTime + 1);
+        // since: groupDB.lastUpdatedTime + 1
+    );
     Map<String, List<Filter>> subscriptions = {};
     subscriptions[groupDB.relay] = [f];
     Connect.sharedInstance.addSubscriptions(subscriptions,

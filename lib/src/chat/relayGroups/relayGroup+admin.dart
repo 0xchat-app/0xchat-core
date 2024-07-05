@@ -51,7 +51,7 @@ extension EAdmin on RelayGroup {
 
   Future<OKEvent> sendModeration(GroupModeration moderation) async {
     String groupId = moderation.groupId;
-    RelayGroupDB? groupDB = groups[groupId];
+    RelayGroupDB? groupDB = myGroups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     if (groupDB.admins == null) {
       return OKEvent(groupId, false, 'group admins not exit');
