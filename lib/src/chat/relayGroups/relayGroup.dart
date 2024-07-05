@@ -52,6 +52,8 @@ class RelayGroup {
 
   /// 0, not in the group, 1, in the group & not joined, 2. joined
   int getInGroupStatus(String groupId) {
+    SimpleGroups simpleGroups = getHostAndGroupId(groupId);
+    groupId = simpleGroups.groupId;
     return !checkInGroup(groupId)
         ? 0
         : !checkInMyGroupList(groupId)
