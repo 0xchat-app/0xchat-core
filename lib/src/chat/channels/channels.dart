@@ -123,7 +123,7 @@ class Channels {
     if (me!.blockedList != null && me.blockedList!.contains(user) == false) {
       me.blockedList!.add(user);
     }
-    await DB.sharedInstance.insert<UserDB>(me);
+    await DB.sharedInstance.insertBatch<UserDB>(me);
   }
 
   Future<void> _receiveChannelMessages(Event event, String relay) async {
@@ -266,7 +266,7 @@ class Channels {
     if (myChannels.containsKey(channelDB.channelId)) {
       myChannels[channelDB.channelId] = channelDB;
     }
-    await DB.sharedInstance.insert<ChannelDB>(channelDB);
+    await DB.sharedInstance.insertBatch<ChannelDB>(channelDB);
   }
 
   Future<void> _syncMyChannelListToDB() async {

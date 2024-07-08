@@ -24,7 +24,7 @@ extension Member on Groups {
     if (groupDB.owner.isEmpty) groupDB.owner = groupOwner;
     if (groupDB.name.isEmpty) groupDB.name = groupName;
     await DB.sharedInstance
-        .insert<GroupDB>(groupDB, conflictAlgorithm: ConflictAlgorithm.ignore);
+        .insertBatch<GroupDB>(groupDB, conflictAlgorithm: ConflictAlgorithm.ignore);
     OKEvent? okEvent;
     if (!checkInGroup(groupId)) {
       groups[groupId] = groupDB;

@@ -16,26 +16,23 @@ extension Notification on Moment {
 
   Future<void> handleZapNotification(
       ZapRecordsDB zapRecordsDB, Event zapEvent) async {
-    final reactedMessageDB = await Messages.sharedInstance
-        .loadMessageDBFromDB(zapRecordsDB.eventId);
+    final reactedMessageDB =
+        await Messages.sharedInstance.loadMessageDBFromDB(zapRecordsDB.eventId);
     if (reactedMessageDB != null) {
       await Messages.sharedInstance.handleZapRecordEvent(zapEvent);
-    }
-    else{
+    } else {
       await addZapRecordToNote(zapEvent, zapRecordsDB.eventId);
       NotificationDB notificationDB =
-      NotificationDB.notificationDBFromZapRecordsDB(
-          zapRecordsDB, zapEvent.id);
-      int result = await DB.sharedInstance.insert<NotificationDB>(notificationDB,
+          NotificationDB.notificationDBFromZapRecordsDB(
+              zapRecordsDB, zapEvent.id);
+      await DB.sharedInstance.insertBatch<NotificationDB>(notificationDB,
           conflictAlgorithm: ConflictAlgorithm.ignore);
-      if (result > 0) {
-        if (notificationDB.author != pubkey) {
-          Moment.sharedInstance.newNotifications.add(notificationDB);
-          Moment.sharedInstance.newNotificationCallBack
-              ?.call(Moment.sharedInstance.newNotifications);
-        } else {
-          Moment.sharedInstance.myZapNotificationCallBack?.call([notificationDB]);
-        }
+      if (notificationDB.author != pubkey) {
+        Moment.sharedInstance.newNotifications.add(notificationDB);
+        Moment.sharedInstance.newNotificationCallBack
+            ?.call(Moment.sharedInstance.newNotifications);
+      } else {
+        Moment.sharedInstance.myZapNotificationCallBack?.call([notificationDB]);
       }
     }
   }

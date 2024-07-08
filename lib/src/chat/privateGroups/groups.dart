@@ -211,14 +211,14 @@ class Groups {
     if (myGroups.containsKey(groupDB.groupId)) {
       myGroups[groupDB.groupId] = groupDB;
     }
-    await DB.sharedInstance.insert<GroupDB>(groupDB);
+    await DB.sharedInstance.insertBatch<GroupDB>(groupDB);
   }
 
   Future<void> syncMyGroupListToDB() async {
     List<String> list = myGroups.keys.toList();
     UserDB? me = Account.sharedInstance.me;
     me!.groupsList = list;
-    await DB.sharedInstance.insert<UserDB>(me);
+    await DB.sharedInstance.insertBatch<UserDB>(me);
   }
 
   Future<OKEvent> syncMyGroupListToRelay() async {

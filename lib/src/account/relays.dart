@@ -83,17 +83,17 @@ class Relays {
 
   Future<void> syncRelaysToDB({String? r}) async {
     if (r != null && relays[r] != null) {
-      await DB.sharedInstance.insert(relays[r]!);
+      await DB.sharedInstance.insertBatch(relays[r]!);
     } else {
       await Future.forEach(relays.values, (relay) async {
-        await DB.sharedInstance.insert(relay);
+        await DB.sharedInstance.insertBatch(relay);
       });
     }
   }
 
   Future<void> _syncRelayToDB(String url) async {
     var relay = relays[url];
-    if (relay != null) await DB.sharedInstance.insert(relay);
+    if (relay != null) await DB.sharedInstance.insertBatch(relay);
   }
 
   int getFriendMessageUntil(String relayURL) {
@@ -321,7 +321,7 @@ class Relays {
           ? Relays.sharedInstance.relays[relayURL]
           : RelayDB(url: relayURL);
       relayDB = RelayDB.relayDBInfoFromJSON(response.body, relayDB!);
-      await DB.sharedInstance.insert(relayDB);
+      await DB.sharedInstance.insertBatch(relayDB);
       return relayDB;
     } else {
       print('Request failed with status: ${response.statusCode}.');

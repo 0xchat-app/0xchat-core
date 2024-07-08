@@ -494,21 +494,18 @@ extension Load on Moment {
   }
 
   Future<void> handleNewNotes(NoteDB noteDB) async {
-    int result = await DB.sharedInstance
-        .insert<NoteDB>(noteDB, conflictAlgorithm: ConflictAlgorithm.ignore);
-    if (result > 0 &&
-        noteDB.getReplyLevel(null) != 2 &&
-        noteDB.createAt > latestNoteTime) {
+    await DB.sharedInstance.insertBatch<NoteDB>(noteDB,
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    if (noteDB.createAt > latestNoteTime) {
       newNotes.add(noteDB);
       newNotesCallBack?.call(newNotes);
     }
     if (noteDB.pTags?.contains(pubkey) == true) {
       NotificationDB notificationDB =
           NotificationDB.notificationDBFromNoteDB(noteDB);
-      int result = await DB.sharedInstance.insert<NotificationDB>(
-          notificationDB,
+      await DB.sharedInstance.insertBatch<NotificationDB>(notificationDB,
           conflictAlgorithm: ConflictAlgorithm.ignore);
-      if (result > 0 && notificationDB.author != pubkey) {
+      if (notificationDB.author != pubkey) {
         newNotifications.add(notificationDB);
         newNotificationCallBack?.call(newNotifications);
       }

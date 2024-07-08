@@ -112,7 +112,11 @@ class DB {
   }
 
   Future<void> batchCommit() async {
-    await batchCache.commit(noResult: true);
+    try {
+      await batchCache.commit(noResult: true);
+    } catch (e) {
+      print('batchCommit error: $e');
+    }
   }
 
   Future<void> cipherMigrate(

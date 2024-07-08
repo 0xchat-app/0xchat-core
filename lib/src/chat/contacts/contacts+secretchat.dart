@@ -37,7 +37,7 @@ extension SecretChat on Contacts {
           relay: chatRelay,
           interval: interval,
           expiration: expiration);
-      await DB.sharedInstance.insert<SecretSessionDB>(secretSessionDB);
+      await DB.sharedInstance.insertBatch<SecretSessionDB>(secretSessionDB);
       secretSessionMap[secretSessionDB.sessionId] = secretSessionDB;
     }
     return okEvent;
@@ -266,7 +266,7 @@ extension SecretChat on Contacts {
     secretSessionDB.toAliasPubkey = keyExchangeSession.fromAliasPubkey;
     secretSessionDB.status = 1;
     secretSessionDB.lastUpdateTime = keyExchangeSession.createTime;
-    await DB.sharedInstance.insert<SecretSessionDB>(secretSessionDB);
+    await DB.sharedInstance.insertBatch<SecretSessionDB>(secretSessionDB);
 
     /// add to secretSessionMap
     secretSessionMap[secretSessionDB.sessionId] = secretSessionDB;
@@ -289,7 +289,7 @@ extension SecretChat on Contacts {
           Keychain.getPublicKey(secretSessionDB.shareSecretKey!);
       secretSessionDB.status = 2;
       secretSessionDB.lastUpdateTime = session.createTime;
-      await DB.sharedInstance.insert<SecretSessionDB>(secretSessionDB);
+      await DB.sharedInstance.insertBatch<SecretSessionDB>(secretSessionDB);
 
       subscriptSecretChat();
 

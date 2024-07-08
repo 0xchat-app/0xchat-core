@@ -263,13 +263,13 @@ class RelayGroup {
     if (myGroups.containsKey(groupDB.groupId)) {
       myGroups[groupDB.groupId] = groupDB;
     }
-    await DB.sharedInstance.insert<RelayGroupDB>(groupDB);
+    await DB.sharedInstance.insertBatch<RelayGroupDB>(groupDB);
   }
 
   Future<void> _syncMyGroupListToDB() async {
     UserDB? me = Account.sharedInstance.me;
     me!.relayGroupsList = myGroups.values.map((e) => e.id).toList();
-    await DB.sharedInstance.insert<UserDB>(me);
+    await DB.sharedInstance.insertBatch<UserDB>(me);
     groupListUpdated();
   }
 
