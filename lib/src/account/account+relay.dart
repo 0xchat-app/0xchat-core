@@ -14,9 +14,9 @@ extension AccountRelay on Account {
   }
 
   List<RelayDB> getMyGeneralRelayList() {
-    List<String> dmRelays = me?.relayList ?? [];
+    List<String> generalRelays = me?.relayList ?? [];
     List<RelayDB> result = [];
-    for (var relay in dmRelays) {
+    for (var relay in generalRelays) {
       result.add(Relays.sharedInstance.relays[relay] ?? RelayDB(url: relay));
     }
     return result;
@@ -77,7 +77,7 @@ extension AccountRelay on Account {
     List<String> relays = me?.relayList ?? [];
     if (relays.contains(relay)) return OKEvent(relay, false, 'already exit');
     relays.add(relay);
-    Connect.sharedInstance.connectRelays([relay]);
+    Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.general);
     return await setGeneralRelayListToRelay(relays);
   }
 
@@ -95,7 +95,7 @@ extension AccountRelay on Account {
     List<String> relays = me?.dmRelayList ?? [];
     if (relays.contains(relay)) return OKEvent(relay, false, 'already exit');
     relays.add(relay);
-    Connect.sharedInstance.connectRelays([relay]);
+    Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.dm);
     return await setDMRelayListToRelay(relays);
   }
 

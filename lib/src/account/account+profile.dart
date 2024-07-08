@@ -18,9 +18,21 @@ extension AccountProfile on Account {
 
   Future<UserDB> reloadMyProfileFromRelay({String? relay}) async {
     Completer<UserDB> completer = Completer<UserDB>();
-    Filter f = Filter(
-        kinds: [0, 3, 10000, 10002, 10005, 10009, 10050, 30000, 30003, 30008],
-        authors: [currentPubkey]);
+    Filter f = Filter(kinds: [
+      0,
+      3,
+      10000,
+      10002,
+      10005,
+      10009,
+      10050,
+      30000,
+      30001,
+      30003,
+      30008
+    ], authors: [
+      currentPubkey
+    ]);
     List<Event> events = [];
     Connect.sharedInstance
         .addSubscription([f], relays: relay == null ? null : [relay],
@@ -54,6 +66,9 @@ extension AccountProfile on Account {
               break;
             case 30000:
               me = await _handleKind30000Event(me, event);
+              break;
+            case 30001:
+              me = await _handleKind30001Event(me, event);
               break;
             case 30003:
               me = await _handleKind30003Event(me, event);
@@ -343,6 +358,19 @@ extension AccountProfile on Account {
           result.people, currentPrivkey, currentPubkey);
       db.friendsList = e.content;
       contactListUpdateCallback?.call();
+    }
+    return db;
+  }
+
+  // old list
+  Future<UserDB?> _handleKind30001Event(UserDB? db, Event event) async {
+    if (db == null) return null;
+    Lists result = await Nip51.getLists(event, currentPubkey, currentPrivkey);
+    if (result.identifier == Channels.identifier &&
+        db.lastChannelsListUpdatedTime < event.createdAt) {
+      db.lastChannelsListUpdatedTime = event.createdAt;
+      db.channelsList = result.bookmarks;
+      channelListUpdateCallback?.call();
     }
     return db;
   }
