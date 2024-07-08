@@ -34,7 +34,7 @@ class DB {
   void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
       timer = Timer.periodic(Duration(seconds: 10), (Timer t) async {
-        await batchCommit();
+        await batchApply();
       });
     }
   }
@@ -111,9 +111,9 @@ class DB {
     startHeartBeat();
   }
 
-  Future<void> batchCommit() async {
+  Future<void> batchApply() async {
     try {
-      await batchCache.commit(noResult: true);
+      await batchCache.apply(noResult: true);
     } catch (e) {
       print('batchCommit error: $e');
     }
