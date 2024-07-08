@@ -518,7 +518,7 @@ class Contacts {
       }
     } else {
       UserDB? toUser = await Account.sharedInstance.getUserInfo(toPubkey);
-      List<String>? dmRelays = toUser?.relayList;
+      List<String>? dmRelays = toUser?.dmRelayList;
       Connect.sharedInstance.sendEvent(event, toRelays: dmRelays,
           sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;

@@ -12,7 +12,7 @@ class ModerationDB extends DBObject {
   List<String>? previous;
   int actionKind;
 
-  String user;
+  List<String>? users;
   String permission;
   String eventId;
   bool private;
@@ -29,7 +29,7 @@ class ModerationDB extends DBObject {
     this.content = '',
     this.previous,
     this.actionKind = 0,
-    this.user = '',
+    this.users,
     this.permission = '',
     this.eventId = '',
     this.private = false,
@@ -66,7 +66,7 @@ class ModerationDB extends DBObject {
         content: moderation.content,
         previous: moderation.previous,
         actionKind: moderation.actionKind.kind,
-        user: moderation.user,
+        users: moderation.users,
         permission: moderation.permission,
         eventId: moderation.eventId,
         private: moderation.private,
@@ -87,7 +87,7 @@ Map<String, dynamic> _moderationInfoToMap(ModerationDB instance) =>
       'previous':
           instance.previous == null ? null : jsonEncode(instance.previous),
       'actionKind': instance.actionKind,
-      'user': instance.user,
+      'user': instance.users,
       'permission': instance.permission,
       'eventId': instance.eventId,
       'private': instance.private,
@@ -106,7 +106,7 @@ ModerationDB _moderationDBInfoFromMap(Map<String, dynamic> map) {
     content: map['content'].toString(),
     previous: UserDB.decodeStringList(map['previous'].toString()),
     actionKind: map['actionKind'],
-    user: map['user'].toString(),
+    users: UserDB.decodeStringList(map['users'].toString()),
     permission: map['permission'].toString(),
     eventId: map['eventId'].toString(),
     private: (map['private'] ?? 0) > 0 ? true : false,

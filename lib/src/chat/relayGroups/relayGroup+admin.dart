@@ -79,14 +79,14 @@ extension EAdmin on RelayGroup {
 
   Future<OKEvent> addUser(String groupId, List<String> addUsers, String reason) async {
     GroupModeration moderation =
-        GroupModeration.addUser(groupId, addUsers.first, reason);
+        GroupModeration.addUser(groupId, addUsers, reason);
     return sendModeration(moderation);
   }
 
   Future<OKEvent> removeUser(
       String groupId, List<String> removeUsers, String reason) async {
     GroupModeration moderation =
-        GroupModeration.removeUser(groupId, removeUsers.first, reason);
+        GroupModeration.removeUser(groupId, removeUsers, reason);
     return sendModeration(moderation);
   }
 
@@ -100,14 +100,14 @@ extension EAdmin on RelayGroup {
   Future<OKEvent> addPermission(
       String groupId, String user, String permission, String reason) async {
     GroupModeration moderation =
-        GroupModeration.addPermission(groupId, user, permission, reason);
+        GroupModeration.addPermission(groupId, [user], permission, reason);
     return sendModeration(moderation);
   }
 
   Future<OKEvent> removePermission(
       String groupId, String user, String permission, String reason) async {
     GroupModeration moderation =
-        GroupModeration.removePermission(groupId, user, permission, reason);
+        GroupModeration.removePermission(groupId, [user], permission, reason);
     return sendModeration(moderation);
   }
 

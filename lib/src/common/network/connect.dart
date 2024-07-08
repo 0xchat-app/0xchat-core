@@ -357,12 +357,16 @@ class Connect {
 
   /// send an event to relay/relays
   void sendEvent(Event event,
-      {OKCallBack? sendCallBack, List<String>? toRelays}) {
+      {OKCallBack? sendCallBack,
+      List<String>? toRelays,
+      RelayKind relayKind = RelayKind.general}) {
     String eventString = event.serialize();
     print('send event: $eventString');
     Sends sends = Sends(
         generate64RandomHexChars(),
-        (toRelays == null || toRelays.isEmpty) ? relays() : toRelays,
+        (toRelays == null || toRelays.isEmpty)
+            ? relays(relayKind: relayKind)
+            : toRelays,
         DateTime.now().millisecondsSinceEpoch,
         event.id,
         sendCallBack,
