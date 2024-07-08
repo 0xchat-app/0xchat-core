@@ -27,10 +27,8 @@ extension EMessage on RelayGroup {
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
     messageDB.decryptSecret = map['decryptSecret'];
-    int status = await Messages.saveMessageToDB(messageDB);
-    if (status != 0) {
-      groupMessageCallBack?.call(messageDB);
-    }
+    await Messages.saveMessageToDB(messageDB);
+    groupMessageCallBack?.call(messageDB);
   }
 
   Future<void> handleGroupReaction(Event event, String relay) async {

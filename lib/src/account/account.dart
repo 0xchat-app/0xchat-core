@@ -122,7 +122,7 @@ class Account {
       } else {
         db = UserDB(pubKey: pubkey);
         db.name = db.shortEncodedPubkey;
-        await DB.sharedInstance.insert<UserDB>(db);
+        await DB.sharedInstance.insertBatch<UserDB>(db);
         return db;
       }
     }
@@ -185,7 +185,7 @@ class Account {
         encryptPrivateKey(hexToBytes(privkey), defaultPassword);
     db.encryptedPrivKey = bytesToHex(enPrivkey);
     db.defaultPassword = defaultPassword;
-    await DB.sharedInstance.insert<UserDB>(db);
+    await DB.sharedInstance.insertBatch<UserDB>(db);
     me = db;
     currentPrivkey = privkey;
     currentPubkey = db.pubKey;
@@ -241,7 +241,7 @@ class Account {
     db.pubKey = user.public;
     db.encryptedPrivKey = bytesToHex(enPrivkey);
     db.defaultPassword = defaultPassword;
-    await DB.sharedInstance.insert<UserDB>(db);
+    await DB.sharedInstance.insertBatch<UserDB>(db);
     return db;
   }
 
@@ -256,7 +256,7 @@ class Account {
     UserDB db = UserDB();
     db.pubKey = user.public;
     db.encryptedPrivKey = bytesToHex(enPrivkey);
-    await DB.sharedInstance.insert<UserDB>(db);
+    await DB.sharedInstance.insertBatch<UserDB>(db);
     return db;
   }
 

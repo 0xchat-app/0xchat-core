@@ -163,7 +163,7 @@ class Zaps {
         zapsDB = ZapsDB.fromMap(jsonDecode(response.body));
         zapsDB.lnURL = lnurl;
         // cache to DB
-        await DB.sharedInstance.insert<ZapsDB>(zapsDB);
+        await DB.sharedInstance.insertBatch<ZapsDB>(zapsDB);
         return zapsDB;
       } else {
         throw Exception(response.toString());
@@ -329,7 +329,7 @@ class Zaps {
     ZapRecordsDB zapRecordsDB =
         ZapRecordsDB.zapReceiptToZapRecordsDB(zapReceipt);
     //add to zap records
-    await DB.sharedInstance.insert<ZapRecordsDB>(zapRecordsDB,
+    await DB.sharedInstance.insertBatch<ZapRecordsDB>(zapRecordsDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
     Zaps.sharedInstance.zapRecords[zapRecordsDB.bolt11] = zapRecordsDB;
     Zaps.sharedInstance.zapRecordsCallBack?.call(zapRecordsDB);

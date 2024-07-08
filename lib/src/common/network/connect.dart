@@ -463,11 +463,13 @@ class Connect {
         eventCheckerFutures.remove(subscriptionId);
       }
       _removeRequestsMapRelay(subscriptionId, relay);
-      var relays = requestsMap[requestsMapKey]!.relays;
-      // all relays have EOSE
-      EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
-      OKEvent ok = OKEvent(subscriptionId, true, '');
-      if (callBack != null) callBack(subscriptionId, ok, relay, relays);
+      var relays = requestsMap[requestsMapKey]?.relays;
+      if (relays != null) {
+        // all relays have EOSE
+        EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
+        OKEvent ok = OKEvent(subscriptionId, true, '');
+        if (callBack != null) callBack(subscriptionId, ok, relay, relays);
+      }
     }
   }
 

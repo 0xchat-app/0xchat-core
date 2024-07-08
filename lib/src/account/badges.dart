@@ -64,7 +64,7 @@ class BadgesHelper {
           // save to DB
           BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
           badgeAwardDB.badgeId = badgeDB.id;
-          await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB,
+          await DB.sharedInstance.insertBatch<BadgeAwardDB>(badgeAwardDB,
               conflictAlgorithm: ConflictAlgorithm.ignore);
           // cache to user DB
           await _addUserBadgeToDB(badgeAwardDB.badgeOwner, badgeDB.id);
@@ -92,7 +92,7 @@ class BadgesHelper {
           d: data['identifies']);
       chatBadges[badgeDB.d] = badgeDB;
       badgeInfos[badgeDB.id] = badgeDB;
-      DB.sharedInstance.insert<BadgeDB>(badgeDB,
+      DB.sharedInstance.insertBatch<BadgeDB>(badgeDB,
           conflictAlgorithm: ConflictAlgorithm.ignore);
     }
   }
@@ -172,7 +172,7 @@ class BadgesHelper {
   }
 
   static Future<void> syncBadgeInfoToDB(BadgeDB badgeDB) async {
-    await DB.sharedInstance.insert<BadgeDB>(badgeDB);
+    await DB.sharedInstance.insertBatch<BadgeDB>(badgeDB);
     BadgesHelper.sharedInstance.badgeInfos[badgeDB.id] = badgeDB;
   }
 
@@ -242,7 +242,7 @@ class BadgesHelper {
               // save to DB
               BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
               badgeAwardDB.badgeId = badgeDB.id;
-              await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB);
+              await DB.sharedInstance.insertBatch<BadgeAwardDB>(badgeAwardDB);
               var exists = badgeAwardsDB.any(
                   (badgeAward) => badgeAward.badgeId == badgeAwardDB.badgeId);
               if (!exists) {
@@ -313,7 +313,7 @@ class BadgesHelper {
     UserDB? userDB = await Account.sharedInstance.getUserInfo(userPubkey);
     if (userDB != null && badges.isNotEmpty) {
       userDB.badgesList = badges;
-      await DB.sharedInstance.insert<UserDB>(userDB);
+      await DB.sharedInstance.insertBatch<UserDB>(userDB);
     }
   }
 
@@ -323,10 +323,10 @@ class BadgesHelper {
     if (userDB != null && addBadge.isNotEmpty) {
       if (userDB.badgesList != null && !userDB.badgesList!.contains(addBadge)) {
         userDB.badgesList!.add(addBadge);
-        await DB.sharedInstance.insert<UserDB>(userDB);
+        await DB.sharedInstance.insertBatch<UserDB>(userDB);
       } else if (userDB.badgesList == null) {
         userDB.badgesList = [addBadge];
-        await DB.sharedInstance.insert<UserDB>(userDB);
+        await DB.sharedInstance.insertBatch<UserDB>(userDB);
       }
     }
   }
@@ -359,7 +359,7 @@ class BadgesHelper {
         if (ok.status) {
           UserDB? userDB = Account.sharedInstance.me;
           userDB!.badges = jsonEncode(badgeIds);
-          await DB.sharedInstance.insert<UserDB>(userDB);
+          await DB.sharedInstance.insertBatch<UserDB>(userDB);
         }
         if (!completer.isCompleted) completer.complete(ok);
       });
@@ -389,14 +389,14 @@ class BadgesHelper {
           // save to DB
           BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
           badgeAwardDB.badgeId = badgeDB.id;
-          await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB);
+          await DB.sharedInstance.insertBatch<BadgeAwardDB>(badgeAwardDB);
           result.add(badgeDB);
         }
         if (profileBadges.last == badgeAward) {
           UserDB? userDB = await Account.sharedInstance.getUserInfo(userPubkey);
           if (userDB != null) {
             userDB.badges = jsonEncode(result.map((e) => e?.id).toList());
-            await DB.sharedInstance.insert<UserDB>(userDB);
+            await DB.sharedInstance.insertBatch<UserDB>(userDB);
           }
           if (!completer.isCompleted) completer.complete(result);
         }
@@ -420,7 +420,7 @@ class BadgesHelper {
       if (badgeAward != null) {
         // cache to DB
         BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
-        await DB.sharedInstance.insert<BadgeAwardDB>(badgeAwardDB);
+        await DB.sharedInstance.insertBatch<BadgeAwardDB>(badgeAwardDB);
         List<BadgeDB> badges = await searchBadgeInfosFromDB([badgeAward]);
         if (badges.isEmpty) {
           badges = await searchBadgesInfoFromRelay([badgeAward]);
@@ -431,7 +431,7 @@ class BadgesHelper {
             String badgeId = badges[0].id;
             if (userDB != null && !userDB.badgesList!.contains(badgeId)) {
               userDB.badgesList!.add(badgeId);
-              await DB.sharedInstance.insert<UserDB>(userDB);
+              await DB.sharedInstance.insertBatch<UserDB>(userDB);
             }
           }
           if (callBack != null) callBack([badgeAward]);

@@ -20,6 +20,8 @@ class DB {
   List<String> allTablenames = [];
   bool deleteDBIfNeedMirgration = false;
   late Database db;
+  late Batch batchCache;
+  Timer? timer;
 
   static final DB sharedInstance = DB._internal();
 
@@ -27,6 +29,14 @@ class DB {
 
   factory DB() {
     return sharedInstance;
+  }
+
+  void startHeartBeat() {
+    if (timer == null || timer!.isActive == false) {
+      timer = Timer.periodic(Duration(seconds: 10), (Timer t) async {
+        await batchCommit();
+      });
+    }
   }
 
   Future open(String dbPath, {int? version, String? password}) async {
@@ -97,6 +107,12 @@ class DB {
     List<Map<String, dynamic>> tables =
         await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'");
     allTablenames = tables.map((item) => item["name"].toString()).toList();
+    batchCache = db.batch();
+    startHeartBeat();
+  }
+
+  Future<void> batchCommit() async {
+    await batchCache.commit(noResult: true);
   }
 
   Future<void> cipherMigrate(
@@ -141,7 +157,7 @@ class DB {
 
   Future<String> getDatabaseFilePath(String dbName) async {
     final String dbPath = await getDatabasesPath();
-    return  p.join(dbPath, dbName);
+    return p.join(dbPath, dbName);
   }
 
   Future<void> execute(String sql, [List<Object?>? arguments]) async {
@@ -153,6 +169,14 @@ class DB {
     String tableName = DBHelper.getTableName(T);
     await createTableForDBObject<T>(tableName);
     return await db.insert(tableName, object.toMap(),
+        conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.replace);
+  }
+
+  Future<void> insertBatch<T extends DBObject>(T object,
+      {ConflictAlgorithm? conflictAlgorithm}) async {
+    String tableName = DBHelper.getTableName(T);
+    await createTableForDBObject<T>(tableName);
+    batchCache.insert(tableName, object.toMap(),
         conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.replace);
   }
 

@@ -127,6 +127,10 @@ extension AccountProfile on Account {
     for (var key in pQueueTemp) {
       UserDB? db = userCache[key]?.value;
       db ??= await getUserFromDB(pubkey: key);
+      if (db != null && db.lastUpdatedTime > 0){
+        pQueue.remove(db.pubKey);
+        continue;
+      }
       if (db == null) {
         db = UserDB();
         db.pubKey = key;
@@ -135,12 +139,11 @@ extension AccountProfile on Account {
         db.name = db.shortEncodedPubkey;
       }
       users[key] = db;
-      if (db.lastUpdatedTime > 0) pQueue.remove(db.pubKey);
     }
 
     Filter f = Filter(
       kinds: [0, 10050, 30008],
-      authors: pQueue,
+      authors: users.keys.toList(),
     );
 
     Connect.sharedInstance.addSubscription([f],
@@ -159,7 +162,7 @@ extension AccountProfile on Account {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         for (var db in users.values) {
-          await DB.sharedInstance.insert<UserDB>(db);
+          await DB.sharedInstance.insertBatch<UserDB>(db);
           UserDB? user = await getUserFromDB(pubkey: db.pubKey);
           userCache[db.pubKey]?.value = user!;
           pQueue.remove(db.pubKey);

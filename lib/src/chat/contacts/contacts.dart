@@ -268,7 +268,7 @@ class Contacts {
     if (allContacts.containsKey(friendPubkey)) {
       UserDB friend = allContacts[friendPubkey]!;
       friend.mute = mute;
-      await DB.sharedInstance.insert<UserDB>(friend);
+      await DB.sharedInstance.insertBatch<UserDB>(friend);
     }
   }
 
@@ -461,15 +461,13 @@ class Contacts {
           await MessageDB.fromPrivateMessage(event, pubkey, privkey);
       if (messageDB != null) {
         if (giftWrappedId != null) messageDB.giftWrappedId = giftWrappedId;
-        int status = await Messages.saveMessageToDB(messageDB);
-        if (status != 0) {
-          if (messageDB.groupId.isNotEmpty) {
-            // private group
-            Groups.sharedInstance.groupMessageCallBack?.call(messageDB);
-          } else {
-            // private chat
-            privateChatMessageCallBack?.call(messageDB);
-          }
+        await Messages.saveMessageToDB(messageDB);
+        if (messageDB.groupId.isNotEmpty) {
+          // private group
+          Groups.sharedInstance.groupMessageCallBack?.call(messageDB);
+        } else {
+          // private chat
+          privateChatMessageCallBack?.call(messageDB);
         }
       }
     }

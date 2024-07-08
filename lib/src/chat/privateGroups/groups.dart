@@ -156,32 +156,28 @@ class Groups {
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
     messageDB.decryptSecret = map['decryptSecret'];
-    int status = await Messages.saveMessageToDB(messageDB);
-    if (status != 0) {
-      groupMessageCallBack?.call(messageDB);
-    }
+    await Messages.saveMessageToDB(messageDB);
+    groupMessageCallBack?.call(messageDB);
   }
 
   Future<void> receiveGroupEvents(
       Event event, String relay, String giftWrappedEventId) async {
     MessageDB messageDB = MessageDB(messageId: giftWrappedEventId);
-    int result = await DB.sharedInstance.insert<MessageDB>(messageDB,
+    await DB.sharedInstance.insertBatch<MessageDB>(messageDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
-    if (result != 0) {
-      switch (event.kind) {
-        case 40:
-          _handleGroupCreation(event);
-          break;
-        case 41:
-          _handleGroupMetadata(event);
-          break;
-        case 42:
-          _handleGroupMessage(event);
-          break;
-        default:
-          print('unknown event: ${event.kind}');
-          break;
-      }
+    switch (event.kind) {
+      case 40:
+        _handleGroupCreation(event);
+        break;
+      case 41:
+        _handleGroupMetadata(event);
+        break;
+      case 42:
+        _handleGroupMessage(event);
+        break;
+      default:
+        print('unknown event: ${event.kind}');
+        break;
     }
   }
 
@@ -245,7 +241,8 @@ class Groups {
       RegExp regex = RegExp(keyword, caseSensitive: false);
       List<GroupDB> filteredFriends = myGroups.values
           .where((channel) =>
-              regex.hasMatch(channel.name) || regex.hasMatch(channel.about ?? ''))
+              regex.hasMatch(channel.name) ||
+              regex.hasMatch(channel.about ?? ''))
           .toList();
       return filteredFriends;
     }

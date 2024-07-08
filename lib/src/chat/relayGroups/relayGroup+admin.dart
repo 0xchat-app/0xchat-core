@@ -20,9 +20,9 @@ extension EAdmin on RelayGroup {
     if (groupDB == null || !groupDB.private || groupDB.admins == null) return;
     if (hasPermissions(groupDB.admins!, pubkey, [GroupActionKind.addUser])) {
       JoinRequestDB joinRequestDB = JoinRequestDB.toJoinRequestDB(joinRequest);
-      int result = await DB.sharedInstance.insert<JoinRequestDB>(joinRequestDB,
+      await DB.sharedInstance.insertBatch<JoinRequestDB>(joinRequestDB,
           conflictAlgorithm: ConflictAlgorithm.ignore);
-      if (result > 0) joinRequestCallBack?.call(joinRequestDB);
+      joinRequestCallBack?.call(joinRequestDB);
     }
   }
 
@@ -70,7 +70,7 @@ extension EAdmin on RelayGroup {
       if (!completer.isCompleted) completer.complete(ok);
       if (ok.status == true) {
         ModerationDB moderationDB = ModerationDB.toModerationDB(moderation);
-        await DB.sharedInstance.insert<ModerationDB>(moderationDB,
+        await DB.sharedInstance.insertBatch<ModerationDB>(moderationDB,
             conflictAlgorithm: ConflictAlgorithm.ignore);
       }
     });

@@ -128,7 +128,7 @@ class Messages {
   Future<void> handleReactionEvent(Event event) async {
     Reactions reactions = Nip25.decode(event);
     NoteDB reactionsNoteDB = NoteDB.noteDBFromReactions(reactions);
-    await DB.sharedInstance.insert<NoteDB>(reactionsNoteDB,
+    await DB.sharedInstance.insertBatch<NoteDB>(reactionsNoteDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
     final reactedMessageDB =
         await loadMessageDBFromDB(reactions.reactedEventId);
@@ -137,7 +137,7 @@ class Messages {
     if (!reactedMessageDB.reactionEventIds!
         .contains(reactions.id)) {
       reactedMessageDB.reactionEventIds!.add(reactions.id);
-      await DB.sharedInstance.insert<MessageDB>(reactedMessageDB);
+      await DB.sharedInstance.insertBatch<MessageDB>(reactedMessageDB);
       actionsCallBack?.call(reactedMessageDB);
     }
   }
@@ -150,7 +150,7 @@ class Messages {
     ZapRecordsDB zapRecordsDB =
         ZapRecordsDB.zapReceiptToZapRecordsDB(zapReceipt);
     //add to zap records
-    await DB.sharedInstance.insert<ZapRecordsDB>(zapRecordsDB,
+    await DB.sharedInstance.insertBatch<ZapRecordsDB>(zapRecordsDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
     Zaps.sharedInstance.zapRecords[zapRecordsDB.bolt11] = zapRecordsDB;
 
@@ -158,7 +158,7 @@ class Messages {
     if (reactedMessageDB == null) return;
     if (!reactedMessageDB.zapEventIds!.contains(zapRecordsDB.bolt11)) {
       reactedMessageDB.zapEventIds!.add(zapRecordsDB.bolt11);
-      await DB.sharedInstance.insert<MessageDB>(reactedMessageDB);
+      await DB.sharedInstance.insertBatch<MessageDB>(reactedMessageDB);
       actionsCallBack?.call(reactedMessageDB);
     }
   }
@@ -360,9 +360,9 @@ class Messages {
     await DB.sharedInstance.update(message);
   }
 
-  static Future<int> saveMessageToDB(MessageDB message,
+  static Future<void> saveMessageToDB(MessageDB message,
       {ConflictAlgorithm? conflictAlgorithm}) async {
-    return await DB.sharedInstance.insert<MessageDB>(message,
+     await DB.sharedInstance.insertBatch<MessageDB>(message,
         conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.ignore);
   }
 

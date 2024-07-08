@@ -83,7 +83,8 @@ extension EMember on RelayGroup {
       syncGroupToDB(groupDB);
     }
 
-    await Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.relayGroup);
+    await Connect.sharedInstance
+        .connectRelays([relay], relayKind: RelayKind.relayGroup);
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event =
         await Nip29.encodeJoinRequest(groupId, content, pubkey, privkey);
@@ -97,9 +98,9 @@ extension EMember on RelayGroup {
   Future<void> handleModeration(Event event, String relay) async {
     GroupModeration moderation = Nip29.decodeModeration(event);
     ModerationDB db = ModerationDB.toModerationDB(moderation);
-    int result = await DB.sharedInstance
-        .insert<ModerationDB>(db, conflictAlgorithm: ConflictAlgorithm.ignore);
-    if (result > 0) moderationCallBack?.call(db);
+    await DB.sharedInstance.insertBatch<ModerationDB>(db,
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    moderationCallBack?.call(db);
   }
 
   Future<void> muteGroup(String groupId) async {

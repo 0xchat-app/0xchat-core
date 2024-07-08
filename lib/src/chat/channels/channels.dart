@@ -148,10 +148,8 @@ class Channels {
 
     _updateChannelMessageTime(event.createdAt, relay);
 
-    int status = await Messages.saveMessageToDB(messageDB);
-    if (status != 0) {
-      channelMessageCallBack?.call(messageDB);
-    }
+    await Messages.saveMessageToDB(messageDB);
+    channelMessageCallBack?.call(messageDB);
   }
 
   void _updateChannelMessageTime(int eventTime, String relay) {

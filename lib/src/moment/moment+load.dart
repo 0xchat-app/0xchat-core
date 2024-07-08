@@ -130,9 +130,9 @@ extension Load on Moment {
         conflictAlgorithm == ConflictAlgorithm.replace) {
       notesCache[noteDB.noteId] = noteDB;
     }
-    int result = await DB.sharedInstance
-        .insert<NoteDB>(noteDB, conflictAlgorithm: conflictAlgorithm);
-    if (result > 0) notesCache[noteDB.noteId] = noteDB;
+    await DB.sharedInstance
+        .insertBatch<NoteDB>(noteDB, conflictAlgorithm: conflictAlgorithm);
+    notesCache[noteDB.noteId] = noteDB;
   }
 
   Future<NoteDB?> loadPublicNoteFromRelay(String noteId,
@@ -247,7 +247,7 @@ extension Load on Moment {
     ZapRecordsDB zapRecordsDB =
         ZapRecordsDB.zapReceiptToZapRecordsDB(zapReceipt);
     if (noteDB.zapEventIds?.contains(zapRecordsDB.bolt11) == true) return;
-    DB.sharedInstance.insert<ZapRecordsDB>(zapRecordsDB,
+    DB.sharedInstance.insertBatch<ZapRecordsDB>(zapRecordsDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
     noteDB.zapEventIds?.add(zapRecordsDB.bolt11);
     noteDB.zapCount++;

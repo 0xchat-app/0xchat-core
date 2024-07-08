@@ -47,7 +47,7 @@ extension AccountFollows on Account {
             (pubkey == currentPubkey) ? me : await getUserInfo(pubkey);
         if (user != null && profiles.isNotEmpty) {
           user.followingList = profiles.map((e) => e.key).toList();
-          await DB.sharedInstance.insert<UserDB>(user);
+          await DB.sharedInstance.insertBatch<UserDB>(user);
         }
         if (!completer.isCompleted) completer.complete();
       }

@@ -232,9 +232,8 @@ extension SecretChat on Contacts {
   Future<void> handleSecretSession(
       Event event, String relay, String giftWrapEventId) async {
     MessageDB messageDB = MessageDB(messageId: giftWrapEventId);
-    int result = await DB.sharedInstance.insert<MessageDB>(messageDB,
+    await DB.sharedInstance.insertBatch<MessageDB>(messageDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
-    if (result == 0) return;
     switch (event.kind) {
       case 10100:
         handleRequest(event, relay);
@@ -370,10 +369,8 @@ extension SecretChat on Contacts {
       if (messageDB != null) {
         messageDB.sessionId = sessionId;
         messageDB.giftWrappedId = giftWrapEventId;
-        int status = await Messages.saveMessageToDB(messageDB);
-        if (status != 0) {
-          secretChatMessageCallBack?.call(messageDB);
-        }
+        await Messages.saveMessageToDB(messageDB);
+        secretChatMessageCallBack?.call(messageDB);
       }
     }
   }
