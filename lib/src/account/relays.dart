@@ -1,5 +1,6 @@
 import 'package:chatcore/chat-core.dart';
 import 'package:http/http.dart' as http;
+import 'package:nostr_core_dart/nostr.dart';
 
 class Relays {
   /// singleton
@@ -61,6 +62,7 @@ class Relays {
       Connect.sharedInstance
           .connectRelays(generalRelays, relayKind: RelayKind.general);
     } else {
+      Account.sharedInstance.me!.relayList = recommendGeneralRelays;
       Connect.sharedInstance
           .connectRelays(recommendGeneralRelays, relayKind: RelayKind.general);
     }
