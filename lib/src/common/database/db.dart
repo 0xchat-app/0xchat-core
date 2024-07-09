@@ -113,7 +113,9 @@ class DB {
 
   Future<void> batchApply() async {
     try {
-      await batchCache.apply(noResult: true);
+      List<Object?> result = await batchCache.apply();
+      print('batchApply success: ${result.length}');
+      batchCache = db.batch();
     } catch (e) {
       print('batchCommit error: $e');
     }
