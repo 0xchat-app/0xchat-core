@@ -147,6 +147,8 @@ class DB {
       await db.close();
       await deleteDatabase(dbPath);
       db = newDb;
+      batchCache = db.batch();
+      startHeartBeat();
       if (!completer.isCompleted) completer.complete();
     });
     return completer.future;
