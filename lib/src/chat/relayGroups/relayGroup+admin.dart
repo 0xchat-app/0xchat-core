@@ -77,38 +77,97 @@ extension EAdmin on RelayGroup {
     return completer.future;
   }
 
-  Future<OKEvent> addUser(String groupId, List<String> addUsers, String reason) async {
+  Future<OKEvent> addUser(
+      String groupId, List<String> addUsers, String reason) async {
+    RelayGroupDB? groupDB = myGroups[groupId];
+    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     GroupModeration moderation =
         GroupModeration.addUser(groupId, addUsers, reason);
-    return sendModeration(moderation);
+    OKEvent ok = await sendModeration(moderation);
+    if (ok.status) {
+      groupDB.members ??= [];
+      groupDB.members!.addAll(addUsers);
+      syncGroupToDB(groupDB);
+    }
+    return ok;
   }
 
   Future<OKEvent> removeUser(
       String groupId, List<String> removeUsers, String reason) async {
+    RelayGroupDB? groupDB = myGroups[groupId];
+    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     GroupModeration moderation =
         GroupModeration.removeUser(groupId, removeUsers, reason);
-    return sendModeration(moderation);
+    OKEvent ok = await sendModeration(moderation);
+    if (ok.status) {
+      groupDB.members?.removeWhere((e) => removeUsers.contains(e));
+      syncGroupToDB(groupDB);
+    }
+    return ok;
   }
 
   Future<OKEvent> editMetadata(String groupId, String name, String about,
       String picture, String reason) async {
+    RelayGroupDB? groupDB = myGroups[groupId];
+    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     GroupModeration moderation =
         GroupModeration.editMetadata(groupId, name, about, picture, reason);
-    return sendModeration(moderation);
+    OKEvent ok = await sendModeration(moderation);
+    if (ok.status) {
+      groupDB.name = name;
+      groupDB.about = about;
+      groupDB.picture = picture;
+      syncGroupToDB(groupDB);
+    }
+    return ok;
   }
 
   Future<OKEvent> addPermission(
       String groupId, String user, String permission, String reason) async {
+    RelayGroupDB? groupDB = myGroups[groupId];
+    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     GroupModeration moderation =
         GroupModeration.addPermission(groupId, [user], permission, reason);
-    return sendModeration(moderation);
+    OKEvent ok = await sendModeration(moderation);
+    if (ok.status) {
+      bool exit = false;
+      for (GroupAdmin admin in groupDB.admins ?? []) {
+        if (admin.pubkey == user) {
+          exit = true;
+          admin.permissions.add(GroupActionKind.fromString(permission));
+        }
+      }
+      if (!exit) {
+        GroupAdmin admin =
+            GroupAdmin(user, 'admin', [GroupActionKind.fromString(permission)]);
+        groupDB.admins ??= [];
+        groupDB.admins?.add(admin);
+      }
+      syncGroupToDB(groupDB);
+    }
+    return ok;
   }
 
   Future<OKEvent> removePermission(
       String groupId, String user, String permission, String reason) async {
+    RelayGroupDB? groupDB = myGroups[groupId];
+    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     GroupModeration moderation =
         GroupModeration.removePermission(groupId, [user], permission, reason);
-    return sendModeration(moderation);
+    OKEvent ok = await sendModeration(moderation);
+    if (ok.status) {
+      for (GroupAdmin admin in groupDB.admins ?? []) {
+        if (admin.pubkey == user) {
+          admin.permissions.remove(GroupActionKind.fromString(permission));
+          if (admin.permissions.isEmpty) {
+            groupDB.admins?.remove(admin);
+            break;
+          }
+        }
+      }
+      syncGroupToDB(groupDB);
+    }
+    return ok;
   }
 
   Future<OKEvent> deleteEvent(
@@ -119,9 +178,17 @@ extension EAdmin on RelayGroup {
   }
 
   Future<OKEvent> editGroupStatus(
-      String groupId, bool private, String reason) async {
+      String groupId, bool closed, bool private, String reason) async {
+    RelayGroupDB? groupDB = myGroups[groupId];
+    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     GroupModeration moderation =
         GroupModeration.editGroupStatus(groupId, private, reason);
-    return sendModeration(moderation);
+    OKEvent ok = await sendModeration(moderation);
+    if (ok.status) {
+      groupDB.private = private;
+      groupDB.closed = closed;
+      syncGroupToDB(groupDB);
+    }
+    return ok;
   }
 }
