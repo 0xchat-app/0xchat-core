@@ -116,7 +116,7 @@ extension AccountRelay on Account {
     await Relays.sharedInstance.connectGeneralRelays();
     await Relays.sharedInstance.connectDMRelays();
     await Contacts.sharedInstance.syncSecretSessionFromDB();
-    RelayGroup.sharedInstance.groupListUpdated;
+    RelayGroup.sharedInstance.groupListUpdated();
   }
 
   int getConnectedRelaysCount() {
