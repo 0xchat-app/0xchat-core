@@ -571,7 +571,7 @@ class Contacts {
       }
     } else {
       UserDB? toUser = await Account.sharedInstance.getUserInfo(pubkey);
-      List<String>? dmRelays = toUser?.relayList;
+      List<String>? dmRelays = toUser?.dmRelayList;
       Connect.sharedInstance.sendEvent(event, toRelays: dmRelays,
           sendCallBack: (ok, relay) async {
         if (!completer.isCompleted) completer.complete(ok);
@@ -582,15 +582,15 @@ class Contacts {
 
   Future<void> connectUserDMRelays(String pubkey) async {
     UserDB? toUser = await Account.sharedInstance.getUserInfo(pubkey);
-    List<String>? relays = toUser?.relayList;
+    List<String>? relays = toUser?.dmRelayList;
     if (relays?.isNotEmpty == true) {
-      await Connect.sharedInstance.connectRelays(relays!);
+      await Connect.sharedInstance.connectRelays(relays!, relayKind: RelayKind.dm);
     }
   }
 
   Future<void> closeUserDMRelays(String pubkey) async {
     UserDB? toUser = await Account.sharedInstance.getUserInfo(pubkey);
-    List<String>? relays = toUser?.relayList;
+    List<String>? relays = toUser?.dmRelayList;
     if (relays?.isNotEmpty == true) {
       await Connect.sharedInstance.closeConnects(relays!);
     }

@@ -69,7 +69,7 @@ class RelayGroup {
     return myGroups.containsKey(groupId);
   }
 
-  void groupListUpdated(){
+  void groupListUpdated() {
     myGroups = _myGroups();
     _updateGroupSubscription();
     myGroupsUpdatedCallBack?.call();
@@ -79,8 +79,10 @@ class RelayGroup {
     List<Object?> maps = await DB.sharedInstance.objects<RelayGroupDB>();
     for (var e in maps) {
       RelayGroupDB groupDB = e as RelayGroupDB;
-      if (groupDB.name.isEmpty) groupDB.name = groupDB.groupId;
-      groups[groupDB.groupId] = groupDB;
+      if (groupDB.groupId.isNotEmpty) {
+        if (groupDB.name.isEmpty) groupDB.name = groupDB.groupId;
+        groups[groupDB.groupId] = groupDB;
+      }
     }
     myGroups = _myGroups();
     _udpateGroupInfos();
@@ -111,6 +113,7 @@ class RelayGroup {
       for (String id in groupList) {
         SimpleGroups simpleGroups = getHostAndGroupId(id);
         String groupId = simpleGroups.groupId;
+        if (groupId.isEmpty) continue;
         if (!groups.containsKey(groupId)) {
           groups[groupId] =
               RelayGroupDB(groupId: groupId, relay: simpleGroups.relay, id: id);
@@ -268,7 +271,8 @@ class RelayGroup {
 
   Future<void> _syncMyGroupListToDB() async {
     UserDB? me = Account.sharedInstance.me;
-    me!.relayGroupsList = myGroups.values.map((e) => e.id).toList();
+    me!.relayGroupsList =
+        myGroups.values.map((e) => '${e.relay}\'${e.groupId}').toList();
     await DB.sharedInstance.insertBatch<UserDB>(me);
     groupListUpdated();
   }

@@ -13,17 +13,21 @@ extension EInfo on RelayGroup {
     List<String> tempRelays = [];
     if (relay.isNotEmpty &&
         !Connect.sharedInstance.webSockets.keys.contains(relay)) {
-      await Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.temp);
+      await Connect.sharedInstance
+          .connectRelays([relay], relayKind: RelayKind.temp);
       tempRelays.add(relay);
     }
     RelayGroupDB? groupDB = groups[groupId];
     groupDB ??= RelayGroupDB(
-        groupId: groupId, relay: relay ?? '', author: author ?? '');
+        groupId: groupId,
+        relay: relay ?? '',
+        author: author ?? '',
+        id: '$relay\'$groupId');
     Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
     Filter f = Filter(
-        kinds: [39000, 39001, 39002],
-        d: [groupId],
-        // since: groupDB.lastUpdatedTime + 1
+      kinds: [39000, 39001, 39002],
+      d: [groupId],
+      // since: groupDB.lastUpdatedTime + 1
     );
     Map<String, List<Filter>> subscriptions = {};
     subscriptions[groupDB.relay] = [f];
