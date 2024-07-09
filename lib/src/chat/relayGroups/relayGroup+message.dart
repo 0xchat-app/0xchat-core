@@ -19,7 +19,7 @@ extension EMessage on RelayGroup {
         kind: event.kind,
         tags: jsonEncode(event.tags),
         content: groupMessage.content,
-        replyId: groupMessage.thread.reply?.eventId ?? '',
+        replyId: groupMessage.thread.root.eventId ?? '',
         createTime: event.createdAt,
         plaintEvent: jsonEncode(event),
         chatType: 4);
@@ -85,7 +85,7 @@ extension EMessage on RelayGroup {
         groupId: groupId,
         kind: event.kind,
         tags: jsonEncode(event.tags),
-        replyId: replyEvent ?? rootEvent ?? '',
+        replyId: rootEvent ?? '',
         content: event.content,
         decryptContent: content,
         type: MessageDB.messageTypeToString(type),
