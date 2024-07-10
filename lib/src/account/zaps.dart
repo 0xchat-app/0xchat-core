@@ -10,6 +10,14 @@ import 'package:decimal/decimal.dart';
 
 typedef ZapRecordsCallBack = void Function(ZapRecordsDB);
 
+enum ZapType {
+  normal,
+  privateChat,
+  channleChat,
+  privateGroup,
+  relayGroup,
+}
+
 class Zaps {
   /// singleton
   Zaps._internal();
@@ -174,11 +182,13 @@ class Zaps {
   }
 
   static Future<Map<String, dynamic>> getInvoice(
-      List<String> relays, int sats, String lnurl, String recipient,
+      ZapType zapType, int sats, String lnurl, String recipient,
       {String? eventId,
       String? coordinate,
       String? content,
-      bool? privateZap}) async {
+      bool? privateZap,
+      String? reveiver,
+      String? groupId}) async {
     Completer<Map<String, dynamic>> completer =
         Completer<Map<String, dynamic>>();
     ZapsDB? zapsDB = await getZapsInfoFromLnurl(lnurl);
@@ -187,7 +197,7 @@ class Zaps {
           '${zapsDB.callback}?amount=${sats * 1000}&lnurl=${zapsDB.lnURL}';
       if (zapsDB.allowsNostr == true) {
         Event event = await Nip57.zapRequest(
-            relays,
+            [],
             (sats * 1000).toString(),
             lnurl,
             recipient,
