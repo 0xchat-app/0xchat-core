@@ -125,20 +125,6 @@ extension ENote on RelayGroup {
     return completer.future;
   }
 
-  Future<Map<String, dynamic>> getZapNoteInvoice(
-      String groupId,
-      int sats,
-      String lnurl,
-      String recipient,
-      String noteId,
-      String? content,
-      bool privateZap) async {
-    RelayGroupDB? groupDB = myGroups[groupId];
-    if (groupDB == null) return {};
-    return Zaps.getInvoice([groupDB.relay], sats, lnurl, recipient,
-        eventId: noteId, content: content, privateZap: privateZap);
-  }
-
   Future<OKEvent> sendRepost(
       String repostNoteId, String? repostNoteRelay) async {
     NoteDB? note = await Moment.sharedInstance.loadNoteWithNoteId(repostNoteId);
