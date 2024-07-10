@@ -120,4 +120,37 @@ extension EMember on RelayGroup {
       await syncGroupToDB(groupDB);
     }
   }
+
+  Future<bool> checkInGroupFromRelay(String groupId, String user) async {
+    SimpleGroups simpleGroups = getHostAndGroupId(groupId);
+    groupId = simpleGroups.groupId;
+    String relay = simpleGroups.relay;
+    RelayGroupDB? relayGroupDB = groups[groupId];
+    relayGroupDB ??=
+        RelayGroupDB(groupId: groupId, relay: relay, id: '$relay\'$groupId');
+
+    Filter f = Filter(kinds: [9000, 9001], p: [user], limit: 1);
+
+    Completer<bool> completer = Completer<bool>();
+    Connect.sharedInstance.addSubscription([f], relays: [relayGroupDB.relay],
+        eventCallBack: (event, relay) {
+      GroupModeration moderation = Nip29.decodeModeration(event);
+      if (moderation.actionKind == GroupActionKind.addUser) {
+        relayGroupDB!.members ??= [];
+        relayGroupDB.members?.add(user);
+        syncGroupToDB(relayGroupDB);
+        if (!completer.isCompleted) completer.complete(true);
+      } else if (moderation.actionKind == GroupActionKind.removeUser) {
+        relayGroupDB!.members?.remove(user);
+        syncGroupToDB(relayGroupDB);
+        if (!completer.isCompleted) completer.complete(false);
+      }
+    }, eoseCallBack: (String requestId, OKEvent ok, String relay,
+            List<String> unCompletedRelays) {
+      if (!completer.isCompleted) {
+        completer.complete(relayGroupDB!.members?.contains(user));
+      }
+    });
+    return completer.future;
+  }
 }
