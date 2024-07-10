@@ -105,19 +105,19 @@ extension EMember on RelayGroup {
     moderationCallBack?.call(db);
     String content = '';
     Map<String, UserDB> users =
-        await Account.sharedInstance.getUserInfos(db.users ?? []);
+        await Account.sharedInstance.getUserInfos(moderation.users);
     switch (moderation.actionKind) {
       case GroupActionKind.addUser:
         for (var user in users.values) {
           content = '${user.name}$content ';
         }
-        content = 'join the group';
+        content = '${content}join the group';
         break;
       case GroupActionKind.removeUser:
         for (var user in users.values) {
           content = '${user.name}$content,';
         }
-        content = 'leave the group';
+        content = '${content}leave the group';
         break;
       case GroupActionKind.editMetadata:
       case GroupActionKind.addPermission:
@@ -125,9 +125,9 @@ extension EMember on RelayGroup {
       case GroupActionKind.deleteEvent:
         return;
       case GroupActionKind.editGroupStatus:
-        String private = moderation.private ? 'private' : 'public';
-        String closed = moderation.closed ? 'closed' : 'open';
-        content = 'Admin change group to $private, $closed';
+        String private = moderation.private ? 'PRIVATE' : 'PUBLIC';
+        String closed = moderation.closed ? 'CLOSED' : 'OPEN';
+        content = 'Admin change group status to $closed, $private';
         break;
       default:
         return;
