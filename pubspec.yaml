@@ -13,7 +13,7 @@ dev_dependencies:
 dependencies:
   flutter:
     sdk: flutter
-  sqflite_sqlcipher: ^2.2.1
+  sqflite_sqlcipher: ^3.1.0+1
   convert: ^3.1.1
   pointycastle: ^3.3.0
   decimal: ^2.3.3

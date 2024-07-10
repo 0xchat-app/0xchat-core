@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:reflectable/reflectable.dart';
@@ -15,12 +16,22 @@ class Reflector extends Reflectable {
 
 const reflector = Reflector();
 
+class BatchOperation {
+  String table;
+  Map<String, Object?> values;
+  String? nullColumnHack;
+  ConflictAlgorithm? conflictAlgorithm;
+  BatchOperation(
+      this.table, this.values, this.nullColumnHack, this.conflictAlgorithm);
+}
+
 class DB {
   List<Type> schemes = [];
   List<String> allTablenames = [];
   bool deleteDBIfNeedMirgration = false;
   late Database db;
-  late Batch batchCache;
+  // late Batch batchCache;
+  List<BatchOperation> insertOperations = [];
   Timer? timer;
 
   static final DB sharedInstance = DB._internal();
@@ -107,15 +118,19 @@ class DB {
     List<Map<String, dynamic>> tables =
         await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'");
     allTablenames = tables.map((item) => item["name"].toString()).toList();
-    batchCache = db.batch();
     startHeartBeat();
   }
 
   Future<void> batchApply() async {
     try {
-      List<Object?> result = await batchCache.apply();
-      print('batchApply success: ${result.length}');
-      batchCache = db.batch();
+      List<BatchOperation> batchOperations = List.from(insertOperations);
+      insertOperations.clear();
+      var batch = db.batch();
+      for (var batchOperation in batchOperations) {
+        batch.insert(batchOperation.table, batchOperation.values,
+            conflictAlgorithm: batchOperation.conflictAlgorithm);
+      }
+      await batch.commit(continueOnError: true);
     } catch (e) {
       print('batchCommit error: $e');
     }
@@ -147,7 +162,6 @@ class DB {
       await db.close();
       await deleteDatabase(dbPath);
       db = newDb;
-      batchCache = db.batch();
       startHeartBeat();
       if (!completer.isCompleted) completer.complete();
     });
@@ -184,8 +198,8 @@ class DB {
       {ConflictAlgorithm? conflictAlgorithm}) async {
     String tableName = DBHelper.getTableName(T);
     await createTableForDBObject<T>(tableName);
-    batchCache.insert(tableName, object.toMap(),
-        conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.replace);
+    insertOperations.add(BatchOperation(tableName, object.toMap(), null,
+        conflictAlgorithm ?? ConflictAlgorithm.replace));
   }
 
   Future<int> insertObjects<T extends DBObject>(List<T> objects) async {
@@ -218,6 +232,7 @@ class DB {
 
   Future<int> delete<T extends DBObject>(
       {String? where, List<Object?>? whereArgs}) async {
+    print('db delete: $where, ${jsonEncode(whereArgs)}');
     String tableName = DBHelper.getTableName(T);
     await createTableForDBObject<T>(tableName);
     return await db.delete(tableName, where: where, whereArgs: whereArgs);
