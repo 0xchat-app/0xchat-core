@@ -58,7 +58,6 @@ extension EMember on RelayGroup {
     RelayGroupDB? groupDB = myGroups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     myGroups.remove(groupId);
-    myGroupsUpdatedCallBack?.call();
     return await syncMyGroupListToRelay();
   }
 
@@ -67,7 +66,6 @@ extension EMember on RelayGroup {
     String groupId = simpleGroups.groupId;
     if (groups.containsKey(groupId) && !myGroups.containsKey(groupId)) {
       myGroups[groupId] = groups[groupId]!;
-      myGroupsUpdatedCallBack?.call();
       return await syncMyGroupListToRelay();
     }
     return OKEvent(groupId, false, 'group not found');
@@ -85,7 +83,6 @@ extension EMember on RelayGroup {
       syncGroupToDB(groupDB);
     }
     myGroups[groupId] = groups[groupId]!;
-    myGroupsUpdatedCallBack?.call();
     syncMyGroupListToRelay();
 
     await Connect.sharedInstance
