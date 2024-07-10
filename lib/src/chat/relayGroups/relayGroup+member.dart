@@ -84,6 +84,9 @@ extension EMember on RelayGroup {
       groups[groupId] = groupDB;
       syncGroupToDB(groupDB);
     }
+    myGroups[groupId] = groups[groupId]!;
+    myGroupsUpdatedCallBack?.call();
+    syncMyGroupListToRelay();
 
     await Connect.sharedInstance
         .connectRelays([relay], relayKind: RelayKind.relayGroup);
