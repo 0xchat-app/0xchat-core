@@ -170,6 +170,34 @@ extension EAdmin on RelayGroup {
     return ok;
   }
 
+  Future<OKEvent> deleteMessageFromRelay(
+      String groupId, String messageId, String reason) async {
+    OKEvent ok = await deleteEvent(groupId, messageId, reason);
+    if (ok.status) {
+      ok = await deleteMessageFromLocal(messageId);
+    }
+    return ok;
+  }
+
+  Future<OKEvent> deleteMessageFromLocal(String messageId) async {
+    await Messages.deleteMessagesFromDB(messageIds: [messageId]);
+    return OKEvent(messageId, true, '');
+  }
+
+  Future<OKEvent> deleteNoteFromRelay(
+      String groupId, String noteId, String reason) async {
+    OKEvent ok = await deleteEvent(groupId, noteId, reason);
+    if (ok.status) {
+      ok = await deleteNoteFromLocal(noteId);
+    }
+    return ok;
+  }
+
+  Future<OKEvent> deleteNoteFromLocal(String noteId) async {
+    await deleteNotesFromDB(noteIds: [noteId]);
+    return OKEvent(noteId, true, '');
+  }
+
   Future<OKEvent> deleteEvent(
       String groupId, String eventId, String reason) async {
     GroupModeration moderation =

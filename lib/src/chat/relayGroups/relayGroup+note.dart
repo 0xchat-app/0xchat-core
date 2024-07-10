@@ -237,4 +237,21 @@ extension ENote on RelayGroup {
     }
     return notes;
   }
+
+  Future<void> deleteNotesFromDB({
+    List<String>? noteIds,
+    String? where,
+    List<Object?>? whereArgs,
+  }) async {
+    if (where != null) {
+      await DB.sharedInstance
+          .delete<NoteDB>(where: where, whereArgs: whereArgs);
+    } else if (noteIds != null && noteIds.isNotEmpty) {
+      String inClause = List.filled(noteIds.length, '?').join(',');
+      await DB.sharedInstance.delete<NoteDB>(
+        where: 'noteId IN ($inClause)',
+        whereArgs: noteIds,
+      );
+    }
+  }
 }

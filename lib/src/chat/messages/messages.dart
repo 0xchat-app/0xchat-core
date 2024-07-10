@@ -394,16 +394,20 @@ class Messages {
         conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.ignore);
   }
 
-  static deleteMessagesFromDB(
-      {List<String>? messageIds,
-      String? where,
-      List<Object?>? whereArgs}) async {
+  static deleteMessagesFromDB({
+    List<String>? messageIds,
+    String? where,
+    List<Object?>? whereArgs,
+  }) async {
     if (where != null) {
       await DB.sharedInstance
           .delete<MessageDB>(where: where, whereArgs: whereArgs);
     } else if (messageIds != null && messageIds.isNotEmpty) {
-      await DB.sharedInstance
-          .delete<MessageDB>(where: 'messageId = ?', whereArgs: messageIds);
+      String inClause = List.filled(messageIds.length, '?').join(',');
+      await DB.sharedInstance.delete<MessageDB>(
+        where: 'messageId IN ($inClause)',
+        whereArgs: messageIds,
+      );
     }
   }
 
