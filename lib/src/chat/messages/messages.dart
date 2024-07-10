@@ -95,7 +95,7 @@ class Messages {
   }
 
   Future<void> loadMessagesReactions(List<String> eventIds) async {
-    if(eventIds.isEmpty) return;
+    if (eventIds.isEmpty) return;
     await closeMessagesActionsRequests();
     Filter f = Filter(kinds: [7, 9735], e: eventIds);
     messagesActionsRequestsId = Connect.sharedInstance.addSubscription([f],
@@ -134,8 +134,7 @@ class Messages {
         await loadMessageDBFromDB(reactions.reactedEventId);
     if (reactedMessageDB == null) return;
     reactedMessageDB.reactionEventIds ??= [];
-    if (!reactedMessageDB.reactionEventIds!
-        .contains(reactions.id)) {
+    if (!reactedMessageDB.reactionEventIds!.contains(reactions.id)) {
       reactedMessageDB.reactionEventIds!.add(reactions.id);
       await DB.sharedInstance.insertBatch<MessageDB>(reactedMessageDB);
       actionsCallBack?.call(reactedMessageDB);
@@ -164,13 +163,16 @@ class Messages {
   }
 
   Future<OKEvent> sendMessageReaction(String messageId, String content,
-      {String? emojiShotCode, String? emojiURL}) async {
+      {String? emojiShotCode, String? emojiURL, String? groupId}) async {
     MessageDB? messageDB = await loadMessageDBFromDB(messageId);
     if (messageDB != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       Event event = await Nip25.encode(messageId, [messageDB.sender],
           messageDB.kind.toString(), true, pubkey, privkey,
-          content: content, emojiShotCode: emojiShotCode, emojiURL: emojiURL);
+          content: content,
+          emojiShotCode: emojiShotCode,
+          emojiURL: emojiURL,
+          relayGroupId: groupId);
 
       NoteDB noteDB = NoteDB.noteDBFromReactions(Nip25.decode(event));
       Moment.sharedInstance.saveNoteToDB(noteDB, null);
@@ -178,16 +180,32 @@ class Messages {
       // messageDB.reactionEventIds ??= [];
       // messageDB.reactionEventIds!.add(event.id);
       // saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
-
-      if (messageDB.chatType == 0 || messageDB.chatType == 3) {
-        OKEvent ok = await Moment.sharedInstance
-            .sendPrivateMessage([messageDB.sender, pubkey], event);
-        if (!completer.isCompleted) completer.complete(ok);
-      } else {
-        Connect.sharedInstance.sendEvent(event,
-            sendCallBack: (ok, relay) async {
+      switch (messageDB.chatType) {
+        case 0:
+        case 3:
+          OKEvent ok = await Moment.sharedInstance
+              .sendPrivateMessage([messageDB.sender, pubkey], event);
           if (!completer.isCompleted) completer.complete(ok);
-        });
+          break;
+        case 1:
+          if (groupId != null) {
+            OKEvent ok =
+                await Groups.sharedInstance.sendToGroup(groupId, event);
+            if (!completer.isCompleted) completer.complete(ok);
+            break;
+          }
+        case 4:
+          if (groupId != null) {
+            OKEvent ok =
+                await RelayGroup.sharedInstance.sendToGroup(groupId, event);
+            if (!completer.isCompleted) completer.complete(ok);
+            break;
+          }
+        default:
+          Connect.sharedInstance.sendEvent(event,
+              sendCallBack: (ok, relay) async {
+            if (!completer.isCompleted) completer.complete(ok);
+          });
       }
       return completer.future;
     } else {
@@ -362,7 +380,7 @@ class Messages {
 
   static Future<void> saveMessageToDB(MessageDB message,
       {ConflictAlgorithm? conflictAlgorithm}) async {
-     await DB.sharedInstance.insertBatch<MessageDB>(message,
+    await DB.sharedInstance.insertBatch<MessageDB>(message,
         conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.ignore);
   }
 

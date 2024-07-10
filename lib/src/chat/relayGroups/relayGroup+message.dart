@@ -112,4 +112,18 @@ extension EMessage on RelayGroup {
     }
     return completer.future;
   }
+
+  Future<OKEvent> sendToGroup(String groupId, Event event) async {
+    RelayGroupDB? groupDB = myGroups[groupId];
+    if (groupDB != null) {
+      Completer<OKEvent> completer = Completer<OKEvent>();
+      Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
+          sendCallBack: (ok, relay) async {
+        if (!completer.isCompleted) completer.complete(ok);
+      });
+      return completer.future;
+    } else {
+      return OKEvent(event.id, false, 'relay group not found');
+    }
+  }
 }
