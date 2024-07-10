@@ -94,10 +94,13 @@ class Messages {
     }
   }
 
-  Future<void> loadMessagesReactions(List<String> eventIds) async {
+  Future<void> loadMessagesReactions(
+      List<String> eventIds, int chatType) async {
     if (eventIds.isEmpty) return;
     await closeMessagesActionsRequests();
-    Filter f = Filter(kinds: [7, 9735], e: eventIds);
+    Filter f = chatType == 2
+        ? Filter(kinds: [7, 9735], e: eventIds)
+        : Filter(kinds: [9735], e: eventIds);
     messagesActionsRequestsId = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) {
       if (Messages.isLoaded(event.id)) return;
