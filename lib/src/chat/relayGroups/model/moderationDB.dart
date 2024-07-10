@@ -16,6 +16,7 @@ class ModerationDB extends DBObject {
   String permission;
   String eventId;
   bool private;
+  bool closed;
   String name;
   String about;
   String picture;
@@ -33,6 +34,7 @@ class ModerationDB extends DBObject {
     this.permission = '',
     this.eventId = '',
     this.private = false,
+    this.closed = false,
     this.name = '',
     this.about = '',
     this.picture = '',
@@ -70,6 +72,7 @@ class ModerationDB extends DBObject {
         permission: moderation.permission,
         eventId: moderation.eventId,
         private: moderation.private,
+        closed: moderation.closed,
         name: moderation.name,
         about: moderation.about,
         picture: moderation.picture,
@@ -91,6 +94,7 @@ Map<String, dynamic> _moderationInfoToMap(ModerationDB instance) =>
       'permission': instance.permission,
       'eventId': instance.eventId,
       'private': instance.private,
+      'closed': instance.closed,
       'name': instance.name,
       'about': instance.about,
       'picture': instance.picture,
@@ -110,6 +114,7 @@ ModerationDB _moderationDBInfoFromMap(Map<String, dynamic> map) {
     permission: map['permission'].toString(),
     eventId: map['eventId'].toString(),
     private: (map['private'] ?? 0) > 0 ? true : false,
+    closed: (map['private'] ?? 0) > 0 ? true : false,
     name: map['name'].toString(),
     about: map['about'].toString(),
     picture: map['picture'].toString(),

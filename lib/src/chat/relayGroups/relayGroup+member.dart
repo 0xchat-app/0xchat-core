@@ -103,6 +103,37 @@ extension EMember on RelayGroup {
     await DB.sharedInstance.insertBatch<ModerationDB>(db,
         conflictAlgorithm: ConflictAlgorithm.ignore);
     moderationCallBack?.call(db);
+    String content = '';
+    Map<String, UserDB> users =
+        await Account.sharedInstance.getUserInfos(db.users ?? []);
+    switch (moderation.actionKind) {
+      case GroupActionKind.addUser:
+        for (var user in users.values) {
+          content = '${user.name}$content ';
+        }
+        content = 'join the group';
+        break;
+      case GroupActionKind.removeUser:
+        for (var user in users.values) {
+          content = '${user.name}$content,';
+        }
+        content = 'leave the group';
+        break;
+      case GroupActionKind.editMetadata:
+      case GroupActionKind.addPermission:
+      case GroupActionKind.removePermission:
+      case GroupActionKind.deleteEvent:
+        return;
+      case GroupActionKind.editGroupStatus:
+        String private = moderation.private ? 'private' : 'public';
+        String closed = moderation.closed ? 'closed' : 'open';
+        content = 'Admin change group to $private, $closed';
+        break;
+      default:
+        return;
+    }
+    sendGroupMessage(moderation.groupId, MessageType.system, content, [],
+        local: true);
   }
 
   Future<void> muteGroup(String groupId) async {
