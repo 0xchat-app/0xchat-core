@@ -13,7 +13,7 @@ typedef ZapRecordsCallBack = void Function(ZapRecordsDB);
 enum ZapType {
   normal,
   privateChat,
-  channleChat,
+  channelChat,
   privateGroup,
   relayGroup,
 }
