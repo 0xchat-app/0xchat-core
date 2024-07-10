@@ -187,7 +187,7 @@ class Zaps {
       String? coordinate,
       String? content,
       bool? privateZap,
-      String? reveiver,
+      String? receiver,
       String? groupId}) async {
     Completer<Map<String, dynamic>> completer =
         Completer<Map<String, dynamic>>();
