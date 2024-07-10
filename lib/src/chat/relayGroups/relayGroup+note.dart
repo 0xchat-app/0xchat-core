@@ -126,14 +126,16 @@ extension ENote on RelayGroup {
   }
 
   Future<Map<String, dynamic>> getZapNoteInvoice(
-      List<String> relays,
+      String groupId,
       int sats,
       String lnurl,
       String recipient,
       String noteId,
       String? content,
       bool privateZap) async {
-    return Zaps.getInvoice(relays, sats, lnurl, recipient,
+    RelayGroupDB? groupDB = myGroups[groupId];
+    if (groupDB == null) return {};
+    return Zaps.getInvoice([groupDB.relay], sats, lnurl, recipient,
         eventId: noteId, content: content, privateZap: privateZap);
   }
 

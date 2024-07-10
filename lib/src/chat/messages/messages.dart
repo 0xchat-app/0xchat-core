@@ -98,9 +98,16 @@ class Messages {
       List<String> eventIds, int chatType) async {
     if (eventIds.isEmpty) return;
     await closeMessagesActionsRequests();
-    Filter f = chatType == 2
-        ? Filter(kinds: [7, 9735], e: eventIds)
-        : Filter(kinds: [9735], e: eventIds);
+    late Filter f;
+    switch (chatType) {
+      case 2:
+        f = Filter(kinds: [7, 9735], e: eventIds);
+        break;
+      case 7:
+        return;
+      default:
+        f = Filter(kinds: [9735], e: eventIds);
+    }
     messagesActionsRequestsId = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) {
       if (Messages.isLoaded(event.id)) return;
