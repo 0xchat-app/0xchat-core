@@ -5,6 +5,7 @@ import 'package:nostr_core_dart/nostr.dart';
 typedef GroupsJoinRequestCallBack = void Function(JoinRequestDB);
 typedef GroupsModerationCallBack = void Function(ModerationDB);
 typedef GroupsNoteCallBack = void Function(NoteDB);
+typedef GroupMetadataUpdatedCallBack = void Function(RelayGroupDB);
 
 class RelayGroup {
   /// singleton
@@ -12,8 +13,6 @@ class RelayGroup {
   factory RelayGroup() => sharedInstance;
   static final RelayGroup sharedInstance = RelayGroup._internal();
 
-  static final String identifier = 'Chat-Relay-Groups';
-  // {relay1:subscriptionID1, relay2:subscriptionID2, ...}
   String groupMessageSubscription = '';
 
   // memory storage
@@ -25,6 +24,7 @@ class RelayGroup {
   List<String> groupRelays = [];
 
   GroupsUpdatedCallBack? myGroupsUpdatedCallBack;
+  GroupMetadataUpdatedCallBack? groupMetadataUpdatedCallBack;
   GroupMessageCallBack? groupMessageCallBack;
   GroupsJoinRequestCallBack? joinRequestCallBack;
   GroupsModerationCallBack? moderationCallBack;
@@ -175,9 +175,11 @@ class RelayGroup {
               9005,
               9006,
               9021,
-              9735
+              9735,
+              39000,
+              39001,
+              39002
             ],
-            limit: 1000,
             since: (groupMessageUntil + 1));
         subscriptions[relayURL] = [f];
       }
@@ -199,9 +201,11 @@ class RelayGroup {
             9005,
             9006,
             9021,
-            9735
+            9735,
+            39000,
+            39001,
+            39002
           ],
-          limit: 1000,
           since: (groupMessageUntil + 1));
       subscriptions[relay] = [f];
     }
@@ -234,6 +238,15 @@ class RelayGroup {
           break;
         case 9735:
           handleGroupZaps(event, relay);
+          break;
+        case 39000:
+          handleGroupMetadata(event, relay);
+          break;
+        case 39001:
+          handleGroupAdmins(event, relay);
+          break;
+        case 39002:
+          handleGroupMembers(event, relay);
           break;
         default:
           print('unhandled message $event');

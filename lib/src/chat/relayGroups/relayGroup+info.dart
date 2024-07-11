@@ -44,11 +44,11 @@ extension EInfo on RelayGroup {
           groupDB.closed = group.closed;
           break;
         case 39001:
-          List<GroupAdmin> admins = Nip29.decodeGroupAdmins(event, groupId);
+          List<GroupAdmin> admins = Nip29.decodeGroupAdmins(event);
           groupDB.admins = admins;
           break;
         case 39002:
-          List<String> members = Nip29.decodeGroupMembers(event, groupId);
+          List<String> members = Nip29.decodeGroupMembers(event);
           groupDB.members = members;
           break;
       }
@@ -61,6 +61,50 @@ extension EInfo on RelayGroup {
       }
     });
     return completer.future;
+  }
+
+  Future<void> handleGroupMetadata(Event event, String relay) async {
+    Group group = Nip29.decodeMetadata(event, relay);
+    RelayGroupDB? groupDB = groups[group.groupId];
+    groupDB ??= RelayGroupDB(
+        groupId: group.groupId,
+        relay: relay ?? '',
+        id: '$relay\'${group.groupId}');
+    if (groupDB.lastUpdatedTime > event.createdAt) return;
+    groupDB.name = group.name;
+    groupDB.picture = group.picture;
+    groupDB.about = group.about;
+    groupDB.private = group.private;
+    groupDB.closed = group.closed;
+    groupDB.lastUpdatedTime = event.createdAt;
+    groupMetadataUpdatedCallBack?.call(groupDB);
+    await syncGroupToDB(groupDB);
+  }
+
+  Future<void> handleGroupAdmins(Event event, String relay) async {
+    String groupId = Nip29.getGroupIdFromEvent(event) ?? '';
+    List<GroupAdmin> admins = Nip29.decodeGroupAdmins(event);
+    RelayGroupDB? groupDB = groups[groupId];
+    groupDB ??= RelayGroupDB(
+        groupId: groupId, relay: relay ?? '', id: '$relay\'$groupId');
+    if (groupDB.lastUpdatedTime > event.createdAt) return;
+    groupDB.admins = admins;
+    groupDB.lastUpdatedTime = event.createdAt;
+    groupMetadataUpdatedCallBack?.call(groupDB);
+    await syncGroupToDB(groupDB);
+  }
+
+  Future<void> handleGroupMembers(Event event, String relay) async {
+    String groupId = Nip29.getGroupIdFromEvent(event) ?? '';
+    List<String> members = Nip29.decodeGroupMembers(event);
+    RelayGroupDB? groupDB = groups[groupId];
+    groupDB ??= RelayGroupDB(
+        groupId: groupId, relay: relay ?? '', id: '$relay\'$groupId');
+    if (groupDB.lastUpdatedTime > event.createdAt) return;
+    groupDB.members = members;
+    groupDB.lastUpdatedTime = event.createdAt;
+    groupMetadataUpdatedCallBack?.call(groupDB);
+    await syncGroupToDB(groupDB);
   }
 
   List<GroupAdmin>? getGroupAdminsFromLocal(String groupId) {
