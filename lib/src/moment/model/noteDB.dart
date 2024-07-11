@@ -125,6 +125,10 @@ class NoteDB extends DBObject {
     return 0;
   }
 
+  String get encodedNoteId {
+    return Nip19.encodeNote(noteId);
+  }
+
   static NoteDB fromMap(Map<String, Object?> map) {
     return _noteInfoFromMap(map);
   }
