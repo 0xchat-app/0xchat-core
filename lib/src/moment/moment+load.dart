@@ -102,7 +102,7 @@ extension Load on Moment {
       await Connect.sharedInstance
           .connectRelays(relays ?? [], relayKind: RelayKind.temp);
       note = await loadPublicNoteFromRelay(noteId, relays: relays);
-      await Connect.sharedInstance.closeConnects(relays ?? []);
+      await Connect.sharedInstance.closeTempConnects(relays ?? []);
     }
     if (note != null) notesCache[noteId] = note;
     return note;

@@ -258,6 +258,14 @@ class Connect {
     });
   }
 
+  Future closeTempConnects(List<String> relays) async {
+    await Future.forEach(relays, (relay) async {
+      if (webSockets[relay]?.relayKind == RelayKind.temp) {
+        await closeConnect(relay);
+      }
+    });
+  }
+
   Future closeAllConnects() async {
     await Future.forEach(webSockets.keys, (relay) async {
       await closeConnect(relay);
