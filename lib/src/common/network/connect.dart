@@ -204,6 +204,7 @@ class Connect {
 
   Future<void> connect(String relay,
       {RelayKind relayKind = RelayKind.general}) async {
+    print('connect to $relay, kind: ${relayKind.name}');
     if (relay.isEmpty) return;
     RelayKind? preKind = webSockets[relay]?.relayKind;
 
@@ -218,13 +219,13 @@ class Connect {
     if (webSockets.containsKey(relay) && webSockets[relay] != null) {
       socket = webSockets[relay]!.socket;
       // _setConnectStatus(relay, socket.readyState);
-      print('status =  ${webSockets[relay]?.connectStatus}');
+      print('$relay status = ${webSockets[relay]?.connectStatus}');
       if (webSockets[relay]?.connectStatus != 3) {
         /// not closed
         return;
       }
     }
-    print("connecting...");
+    print("connecting... $relay");
     webSockets[relay] = ISocket(null, 0, relayKind);
     try {
       socket = await _connectWs(relay);
@@ -362,11 +363,12 @@ class Connect {
       RelayKind relayKind = RelayKind.general}) {
     String eventString = event.serialize();
     print('send event: $eventString');
+    toRelays = (toRelays == null || toRelays.isEmpty)
+        ? relays(relayKind: relayKind)
+        : toRelays;
     Sends sends = Sends(
         generate64RandomHexChars(),
-        (toRelays == null || toRelays.isEmpty)
-            ? relays(relayKind: relayKind)
-            : toRelays,
+        toRelays,
         DateTime.now().millisecondsSinceEpoch,
         event.id,
         sendCallBack,

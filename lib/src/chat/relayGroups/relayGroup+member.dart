@@ -7,7 +7,46 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension EMember on RelayGroup {
-  Future<RelayGroupDB?> createGroup(String host, String name,
+  Future<RelayGroupDB?> createGroup(String relay,
+      {String name = '',
+      bool closed = false,
+      String picture = '',
+      String about = ''}) async {
+    await Connect.sharedInstance
+        .connectRelays([relay], relayKind: RelayKind.relayGroup);
+    Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
+    String groupId = generate64RandomHexChars();
+    Event event = await Nip29.encodeCreateGroup(groupId, pubkey, privkey);
+    Connect.sharedInstance.sendEvent(event, toRelays: [relay],
+        sendCallBack: (ok, relay) async {
+      if (ok.status) {
+        String id = '$relay\'$groupId';
+        RelayGroupDB relayGroupDB = RelayGroupDB(
+            groupId: groupId,
+            relay: relay,
+            author: pubkey,
+            members: [pubkey],
+            admins: [GroupAdmin(pubkey, 'Admin', GroupActionKind.all())],
+            closed: closed,
+            private: closed,
+            name: name,
+            picture: picture,
+            about: about,
+            id: id);
+        myGroups[groupId] = relayGroupDB;
+        await syncGroupToDB(relayGroupDB);
+        await syncMyGroupListToRelay();
+        await editGroupStatus(groupId, closed, closed, '');
+        await editMetadata(groupId, name, about, picture, '');
+        if (!completer.isCompleted) completer.complete(relayGroupDB);
+      } else {
+        if (!completer.isCompleted) completer.complete(null);
+      }
+    });
+    return completer.future;
+  }
+
+  Future<RelayGroupDB?> createGroup2(String host, String name,
       {String closed = 'false', String picture = '', String about = ''}) async {
     Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
     final url = Uri.parse('http://$host/create');
