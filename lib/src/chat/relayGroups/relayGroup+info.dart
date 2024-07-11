@@ -32,8 +32,7 @@ extension EInfo on RelayGroup {
     subscriptions[groupDB.relay] = [f];
     Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
-      if (groupDB!.lastUpdatedTime > event.createdAt) return;
-      groupDB.lastUpdatedTime = event.createdAt;
+      groupDB!.lastUpdatedTime = event.createdAt;
       switch (event.kind) {
         case 39000:
           Group group = Nip29.decodeMetadata(event, relay);
@@ -70,7 +69,6 @@ extension EInfo on RelayGroup {
         groupId: group.groupId,
         relay: relay ?? '',
         id: '$relay\'${group.groupId}');
-    if (groupDB.lastUpdatedTime > event.createdAt) return;
     groupDB.name = group.name;
     groupDB.picture = group.picture;
     groupDB.about = group.about;
@@ -87,7 +85,6 @@ extension EInfo on RelayGroup {
     RelayGroupDB? groupDB = groups[groupId];
     groupDB ??= RelayGroupDB(
         groupId: groupId, relay: relay ?? '', id: '$relay\'$groupId');
-    if (groupDB.lastUpdatedTime > event.createdAt) return;
     groupDB.admins = admins;
     groupDB.lastUpdatedTime = event.createdAt;
     groupMetadataUpdatedCallBack?.call(groupDB);
@@ -100,7 +97,6 @@ extension EInfo on RelayGroup {
     RelayGroupDB? groupDB = groups[groupId];
     groupDB ??= RelayGroupDB(
         groupId: groupId, relay: relay ?? '', id: '$relay\'$groupId');
-    if (groupDB.lastUpdatedTime > event.createdAt) return;
     groupDB.members = members;
     groupDB.lastUpdatedTime = event.createdAt;
     groupMetadataUpdatedCallBack?.call(groupDB);
