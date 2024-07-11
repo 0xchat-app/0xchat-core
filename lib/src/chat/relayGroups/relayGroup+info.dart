@@ -25,7 +25,7 @@ extension EInfo on RelayGroup {
         id: '$relay\'$groupId');
     Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
     Filter f = Filter(
-        kinds: [39000],
+        kinds: [39000, 39001, 39002],
         d: [groupId],
         since: groupDB.lastUpdatedTime + 1);
     Map<String, List<Filter>> subscriptions = {};
