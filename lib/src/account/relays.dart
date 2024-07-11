@@ -29,8 +29,6 @@ class Relays {
 
   List<String> recommendGroupRelays = [
     'wss://groups.0xchat.com',
-    'wss://groups.fiatjaf.com',
-    'ws://192.168.1.123:5577'
   ];
 
   List<String> recommendSecretChatRelays = [
