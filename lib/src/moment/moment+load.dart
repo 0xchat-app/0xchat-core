@@ -112,12 +112,15 @@ extension Load on Moment {
       {bool private = false, bool reload = true}) async {
     String? noteId;
     List<String>? relays;
+    if (nevent.startsWith('nostr:')) {
+      nevent = Nip21.decode(nevent)!;
+    }
     Map result = Nip19.decodeShareableEntity(nevent);
-    if (result['prefix'] == 'nevent' && result['kind'] == 1) {
+    if (result['prefix'] == 'nevent') {
       noteId = result['special'];
       relays = result['relays'];
       if (noteId != null) {
-        return loadNoteWithNoteId(noteId,
+        return await loadNoteWithNoteId(noteId,
             private: private, reload: reload, relays: relays);
       }
     }
