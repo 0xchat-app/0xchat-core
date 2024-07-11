@@ -27,6 +27,7 @@ class Config {
     "wss://relay.0xchat.com": "wss://54.179.158.105",
     "www.0xchat.com": "54.179.158.105:9602",
     "mint.0xchat.com": "13.38.85.175:3337",
+    "wss://groups.0xchat.com": "ws://54.179.158.105:5577",
   };
   final String _serverPubkey =
       '093dff31a87bbf838c54fd39ff755e72b38bd6b7975c670c0f2633fa7c54ddd0';
@@ -34,6 +35,7 @@ class Config {
   final String wssHost = 'wss://relay.0xchat.com';
   final String httpHost = 'www.0xchat.com';
   final String mintHost = 'mint.0xchat.com';
+  final String relayGroupHost = 'wss://groups.0xchat.com';
 
   Future<void> initConfig() async {
     // subscript friend requests
@@ -125,6 +127,9 @@ class Config {
 
       String? mintdns = map['mintdnsnew'];
       hostConfig[mintHost] = mintdns ?? '13.38.85.175:3337';
+
+      String? relayGroupdns = map['wssgroupdns'];
+      hostConfig[relayGroupHost] = relayGroupdns ?? 'ws://54.179.158.105:5577';
     }
   }
 }
