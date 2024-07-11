@@ -210,7 +210,7 @@ extension EAdmin on RelayGroup {
     RelayGroupDB? groupDB = myGroups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     GroupModeration moderation =
-        GroupModeration.editGroupStatus(groupId, private, reason);
+        GroupModeration.editGroupStatus(groupId, closed, private, reason);
     OKEvent ok = await sendModeration(moderation);
     if (ok.status) {
       groupDB.private = private;
