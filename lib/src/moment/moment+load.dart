@@ -120,6 +120,8 @@ extension Load on Moment {
       noteId = result['special'];
       relays = result['relays'];
       if (noteId != null) {
+        await Connect.sharedInstance
+            .connectRelays(relays ?? [], relayKind: RelayKind.temp);
         return await loadNoteWithNoteId(noteId,
             private: private, reload: reload, relays: relays);
       }
