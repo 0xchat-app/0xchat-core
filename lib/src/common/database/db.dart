@@ -30,7 +30,7 @@ class DB {
   List<String> allTablenames = [];
   bool deleteDBIfNeedMirgration = false;
   late Database db;
-  // late Batch batchCache;
+  late Batch batchCache;
   List<BatchOperation> insertOperations = [];
   Timer? timer;
 
@@ -118,6 +118,7 @@ class DB {
     List<Map<String, dynamic>> tables =
         await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'");
     allTablenames = tables.map((item) => item["name"].toString()).toList();
+    batchCache = db.batch();
     startHeartBeat();
   }
 
@@ -125,12 +126,12 @@ class DB {
     try {
       List<BatchOperation> batchOperations = List.from(insertOperations);
       insertOperations.clear();
-      var batch = db.batch();
+      // var batch = db.batch();
       for (var batchOperation in batchOperations) {
-        batch.insert(batchOperation.table, batchOperation.values,
+        batchCache.insert(batchOperation.table, batchOperation.values,
             conflictAlgorithm: batchOperation.conflictAlgorithm);
       }
-      await batch.commit(continueOnError: true);
+      await batchCache.commit(continueOnError: true);
     } catch (e) {
       print('batchCommit error: $e');
     }
@@ -162,6 +163,7 @@ class DB {
       await db.close();
       await deleteDatabase(dbPath);
       db = newDb;
+      batchCache = db.batch();
       startHeartBeat();
       if (!completer.isCompleted) completer.complete();
     });
