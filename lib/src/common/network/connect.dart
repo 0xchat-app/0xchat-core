@@ -282,7 +282,8 @@ class Connect {
   String addSubscription(List<Filter> filters,
       {EventCallBack? eventCallBack,
       EOSECallBack? eoseCallBack,
-      List<String>? relays}) {
+      List<String>? relays,
+      RelayKind relayKind = RelayKind.general}) {
     Map<String, List<Filter>> result = {};
     if (relays != null) {
       relays = relays
@@ -291,8 +292,9 @@ class Connect {
               (relay.startsWith('ws://') || relay.startsWith('wss://')))
           .toList();
     }
-    List<String> subscriptionRelays =
-        relays?.isNotEmpty == true ? relays! : Connect.sharedInstance.relays();
+    List<String> subscriptionRelays = relays?.isNotEmpty == true
+        ? relays!
+        : Connect.sharedInstance.relays(relayKind: relayKind);
     if (subscriptionRelays.isEmpty) {
       eoseCallBack?.call('', OKEvent('', false, 'no relays connected'), '', []);
       return '';
@@ -652,7 +654,7 @@ class Connect {
       _setConnectStatus(relay, 3); // closed
       if (webSockets.containsKey(relay)) {
         await Future.delayed(Duration(milliseconds: 3000));
-        return await _connectWs(relay);
+        return await connect(relay);
       }
     }
   }
@@ -660,6 +662,9 @@ class Connect {
   Future<void> _onDisconnected(String relay) async {
     print("_onDisconnected");
     _setConnectStatus(relay, 3); // closed
-    await _connectToRelay(relay);
+    if (webSockets.containsKey(relay)) {
+      await Future.delayed(Duration(milliseconds: 3000));
+      return await connect(relay);
+    }
   }
 }
