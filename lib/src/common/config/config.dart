@@ -39,8 +39,11 @@ class Config {
 
   Future<void> initConfig() async {
     // subscript friend requests
-    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
-      if (status == 1 && Account.sharedInstance.me != null) {
+    Connect.sharedInstance
+        .addConnectStatusListener((relay, status, relayKind) async {
+      if (status == 1 &&
+          Account.sharedInstance.me != null &&
+          relayKind == RelayKind.general) {
         _loadConfigFromRelay(relay: relay);
       }
     });

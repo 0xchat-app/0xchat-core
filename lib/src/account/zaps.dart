@@ -46,8 +46,11 @@ class Zaps {
     currentPubkey = Account.sharedInstance.me!.pubKey;
     updateNWC(null);
     updateZapsSubscription();
-    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
-      if (status == 1 && Account.sharedInstance.me != null) {
+    Connect.sharedInstance
+        .addConnectStatusListener((relay, status, relayKind) async {
+      if (status == 1 &&
+          Account.sharedInstance.me != null &&
+          relayKind == RelayKind.general) {
         updateZapsSubscription(relay: relay);
       }
     });
@@ -196,17 +199,14 @@ class Zaps {
       String url =
           '${zapsDB.callback}?amount=${sats * 1000}&lnurl=${zapsDB.lnURL}';
       if (zapsDB.allowsNostr == true) {
-        Event event = await Nip57.zapRequest(
-            [],
+        Event event = await Nip57.zapRequest([],
             (sats * 1000).toString(),
             lnurl,
             recipient,
             Account.sharedInstance.currentPubkey,
             Account.sharedInstance.currentPrivkey,
             privateZap ?? false,
-            eventId: eventId,
-            coordinate: coordinate,
-            content: content);
+            eventId: eventId, coordinate: coordinate, content: content);
         String encodedUri = Uri.encodeFull(jsonEncode(event));
         url = '$url&nostr=$encodedUri';
       }

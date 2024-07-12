@@ -38,7 +38,8 @@ class RelayGroup {
     Account.sharedInstance.relayGroupListUpdateCallback = () {
       groupListUpdated();
     };
-    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
+    Connect.sharedInstance
+        .addConnectStatusListener((relay, status, relayKind) async {
       if (status == 1 && Account.sharedInstance.me != null) {
         if (groupRelays.contains(relay)) {
           _udpateGroupInfos(relay: relay);

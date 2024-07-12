@@ -18,7 +18,8 @@ typedef EOSECallBack = void Function(
     String requestId, OKEvent ok, String relay, List<String> unCompletedRelays);
 
 /// connect callback
-typedef ConnectStatusCallBack = void Function(String relay, int status);
+typedef ConnectStatusCallBack = void Function(
+    String relay, int status, RelayKind? relayKind);
 
 class Sends {
   String sendsId;
@@ -175,9 +176,9 @@ class Connect {
 
   void _setConnectStatus(String relay, int status) {
     webSockets[relay]?.connectStatus = status;
-    connectStatusCallBack?.call(relay, status);
+    connectStatusCallBack?.call(relay, status, webSockets[relay]?.relayKind);
     for (var callBack in connectStatusListeners) {
-      callBack(relay, status);
+      callBack(relay, status, webSockets[relay]?.relayKind);
     }
   }
 

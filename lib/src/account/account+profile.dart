@@ -7,8 +7,11 @@ import 'package:chatcore/chat-core.dart';
 
 extension AccountProfile on Account {
   Future<void> loginSuccess() async {
-    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
-      if (status == 1 && Account.sharedInstance.me != null) {
+    Connect.sharedInstance
+        .addConnectStatusListener((relay, status, relayKind) async {
+      if (status == 1 &&
+          Account.sharedInstance.me != null &&
+          relayKind == RelayKind.general) {
         reloadMyProfileFromRelay(relay: relay);
       }
     });
@@ -127,7 +130,7 @@ extension AccountProfile on Account {
     for (var key in pQueueTemp) {
       UserDB? db = userCache[key]?.value;
       db ??= await getUserFromDB(pubkey: key);
-      if (db != null && db.lastUpdatedTime > 0){
+      if (db != null && db.lastUpdatedTime > 0) {
         pQueue.remove(db.pubKey);
         continue;
       }

@@ -45,8 +45,11 @@ class Channels {
       myChannelsUpdatedCallBack?.call();
     };
     // subscript friend requests
-    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
-      if (status == 1 && Account.sharedInstance.me != null) {
+    Connect.sharedInstance
+        .addConnectStatusListener((relay, status, relayKind) async {
+      if (status == 1 &&
+          Account.sharedInstance.me != null &&
+          relayKind == RelayKind.general) {
         _updateSubscriptions(relay: relay);
         syncMyChannelsFromRelay(relay: relay);
       }
@@ -368,7 +371,8 @@ class Channels {
       limit: 1,
     );
     if (relays != null) {
-      await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.temp);
+      await Connect.sharedInstance
+          .connectRelays(relays, relayKind: RelayKind.temp);
     }
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) {

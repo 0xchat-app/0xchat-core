@@ -89,8 +89,11 @@ class Contacts {
       _subscriptMoment();
     };
     // subscript friend requests
-    Connect.sharedInstance.addConnectStatusListener((relay, status) async {
-      if (status == 1 && Account.sharedInstance.me != null) {
+    Connect.sharedInstance
+        .addConnectStatusListener((relay, status, relayKind) async {
+      if (status == 1 &&
+          Account.sharedInstance.me != null &&
+          (relayKind == RelayKind.general || relayKind == RelayKind.dm)) {
         _subscriptMessages(relay: relay);
         _updateSubscriptions(relay: relay);
       }
@@ -584,7 +587,8 @@ class Contacts {
     UserDB? toUser = await Account.sharedInstance.getUserInfo(pubkey);
     List<String>? relays = toUser?.dmRelayList;
     if (relays?.isNotEmpty == true) {
-      await Connect.sharedInstance.connectRelays(relays!, relayKind: RelayKind.dm);
+      await Connect.sharedInstance
+          .connectRelays(relays!, relayKind: RelayKind.dm);
     }
   }
 

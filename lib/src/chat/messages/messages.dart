@@ -44,7 +44,7 @@ class Messages {
     _initSubscription();
 
     // subscript friend requests
-    Connect.sharedInstance.addConnectStatusListener((relay, status) {
+    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKind) {
       if (status == 1) {
         _initSubscription();
       }
