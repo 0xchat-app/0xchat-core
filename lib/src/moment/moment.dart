@@ -24,6 +24,7 @@ class Moment {
   Map<String, bool> offlineMomentFinish = {};
 
   int latestNoteTime = 0;
+  int latestNotificationTime = 0;
   int limit = 50;
 
   Future<void> init() async {

@@ -5,12 +5,13 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 extension Notification on Moment {
   Future<List<NotificationDB>?> loadNotificationsFromDB(int until,
       {int limit = 50}) async {
-    List<NotificationDB>? notifications = await DB.sharedInstance
+    List<NotificationDB> notifications = await DB.sharedInstance
         .objects<NotificationDB>(
             where: 'createAt < ?',
             whereArgs: [until],
             orderBy: 'createAt desc',
             limit: limit);
+    latestNotificationTime = notifications.first.createAt;
     return notifications;
   }
 
@@ -27,12 +28,12 @@ extension Notification on Moment {
               zapRecordsDB, zapEvent.id);
       await DB.sharedInstance.insertBatch<NotificationDB>(notificationDB,
           conflictAlgorithm: ConflictAlgorithm.ignore);
-      if (notificationDB.author != pubkey) {
-        Moment.sharedInstance.newNotifications.add(notificationDB);
-        Moment.sharedInstance.newNotificationCallBack
-            ?.call(Moment.sharedInstance.newNotifications);
+      if (notificationDB.author != pubkey &&
+          notificationDB.createAt > latestNotificationTime) {
+        newNotifications.add(notificationDB);
+        newNotificationCallBack?.call(newNotifications);
       } else {
-        Moment.sharedInstance.myZapNotificationCallBack?.call([notificationDB]);
+        myZapNotificationCallBack?.call([notificationDB]);
       }
     }
   }

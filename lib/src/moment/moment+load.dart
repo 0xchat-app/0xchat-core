@@ -508,7 +508,8 @@ extension Load on Moment {
           NotificationDB.notificationDBFromNoteDB(noteDB);
       await DB.sharedInstance.insertBatch<NotificationDB>(notificationDB,
           conflictAlgorithm: ConflictAlgorithm.ignore);
-      if (notificationDB.author != pubkey) {
+      if (notificationDB.author != pubkey &&
+          notificationDB.createAt > latestNotificationTime) {
         newNotifications.add(notificationDB);
         newNotificationCallBack?.call(newNotifications);
       }
