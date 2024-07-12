@@ -56,7 +56,7 @@ class Relays {
     await Connect.sharedInstance.closeConnects(notInGeneralRelays);
 
     int updatedTime = Account.sharedInstance.me?.lastRelayListUpdatedTime ?? 0;
-    if (updatedTime > 0) {
+    if (updatedTime > 0 && generalRelays.isNotEmpty) {
       Connect.sharedInstance
           .connectRelays(generalRelays, relayKind: RelayKind.general);
     } else {
