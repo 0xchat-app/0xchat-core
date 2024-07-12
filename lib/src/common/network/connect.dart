@@ -210,9 +210,10 @@ class Connect {
     RelayKind? preKind = webSockets[relay]?.relayKind;
 
     // already exit, don't change the kind
-    if (preKind != null && preKind != RelayKind.temp) {
+    if (preKind != null && relayKind == RelayKind.temp) {
       relayKind = preKind;
     }
+    webSockets[relay]?.relayKind = relayKind;
     // connecting or open
     if (webSockets[relay]?.connectStatus == 0 ||
         webSockets[relay]?.connectStatus == 1) return;
@@ -373,10 +374,11 @@ class Connect {
       List<String>? toRelays,
       RelayKind relayKind = RelayKind.general}) {
     String eventString = event.serialize();
-    print('send event: $eventString');
     toRelays = (toRelays == null || toRelays.isEmpty)
         ? relays(relayKind: relayKind)
         : toRelays;
+    print(
+        'send event toRelays: ${jsonEncode(toRelays)}, eventString: $eventString');
     Sends sends = Sends(
         generate64RandomHexChars(),
         toRelays,

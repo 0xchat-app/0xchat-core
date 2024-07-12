@@ -588,7 +588,7 @@ class Contacts {
     List<String>? relays = toUser?.dmRelayList;
     if (relays?.isNotEmpty == true) {
       await Connect.sharedInstance
-          .connectRelays(relays!, relayKind: RelayKind.dm);
+          .connectRelays(relays!, relayKind: RelayKind.temp);
     }
   }
 
@@ -596,7 +596,7 @@ class Contacts {
     UserDB? toUser = await Account.sharedInstance.getUserInfo(pubkey);
     List<String>? relays = toUser?.dmRelayList;
     if (relays?.isNotEmpty == true) {
-      await Connect.sharedInstance.closeConnects(relays!);
+      await Connect.sharedInstance.closeTempConnects(relays!);
     }
   }
 
