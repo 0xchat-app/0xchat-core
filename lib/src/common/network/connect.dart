@@ -377,8 +377,7 @@ class Connect {
     List<String> rs = (toRelays == null || toRelays.isEmpty)
         ? relays(relayKind: relayKind)
         : List.from(toRelays);
-    print(
-        'send event toRelays: ${jsonEncode(rs)}, eventString: $eventString');
+    print('send event toRelays: ${jsonEncode(rs)}, eventString: $eventString');
     Sends sends = Sends(
         generate64RandomHexChars(),
         rs,
@@ -623,10 +622,11 @@ class Connect {
     _send(authJson, toRelays: [relay]);
   }
 
-  Future<void> _connectToRelay(String relay) async {
+  Future<void> _reConnectToRelay(String relay) async {
+    _setConnectStatus(relay, 3); // closed
+    await Future.delayed(Duration(milliseconds: 3000));
     if (webSockets.containsKey(relay)) {
-      await Future.delayed(Duration(milliseconds: 3000));
-      connect(relay);
+      await connect(relay);
     }
   }
 
@@ -635,12 +635,10 @@ class Connect {
       await _handleMessage(message, relay);
     }, onDone: () async {
       print("connect aborted");
-      _setConnectStatus(relay, 3); // closed
-      await _connectToRelay(relay);
+      await _reConnectToRelay(relay);
     }, onError: (e) async {
       print('Server error: $e');
-      _setConnectStatus(relay, 3); // closed
-      await _connectToRelay(relay);
+      await _reConnectToRelay(relay);
     });
   }
 
@@ -654,20 +652,12 @@ class Connect {
       return await WebSocket.connect(relay);
     } catch (e) {
       print("Error! can not connect WS connectWs $e relay:$relay");
-      _setConnectStatus(relay, 3); // closed
-      if (webSockets.containsKey(relay)) {
-        await Future.delayed(Duration(milliseconds: 3000));
-        return await connect(relay);
-      }
+      return await _reConnectToRelay(relay);
     }
   }
 
   Future<void> _onDisconnected(String relay) async {
     print("_onDisconnected");
-    _setConnectStatus(relay, 3); // closed
-    if (webSockets.containsKey(relay)) {
-      await Future.delayed(Duration(milliseconds: 3000));
-      return await connect(relay);
-    }
+    return await _reConnectToRelay(relay);
   }
 }
