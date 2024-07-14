@@ -410,16 +410,13 @@ class Connect {
     }
   }
 
-  // Future<Message> deserializeInBackgroud(String message) async {
-  //   return compute(_deserializeMessage, message);
-  // }
-  //
-  // static Future<Message> _deserializeMessage(String message) async {
-  //   return await Message.deserialize(message);
-  // }
+  static Future<Message> _deserializeMessage(String message) async {
+    return await Message.deserialize(message);
+  }
 
   Future<void> _handleMessage(String message, String relay) async {
-    var m = await Message.deserialize(message);
+    var m = await ThreadPoolManager.sharedInstance
+        .runOtherTask(() => _deserializeMessage(message));
     switch (m.type) {
       case "EVENT":
         _handleEvent(m.message, relay);
