@@ -374,20 +374,20 @@ class Connect {
       List<String>? toRelays,
       RelayKind relayKind = RelayKind.general}) {
     String eventString = event.serialize();
-    toRelays = (toRelays == null || toRelays.isEmpty)
+    List<String> rs = (toRelays == null || toRelays.isEmpty)
         ? relays(relayKind: relayKind)
-        : toRelays;
+        : List.from(toRelays);
     print(
-        'send event toRelays: ${jsonEncode(toRelays)}, eventString: $eventString');
+        'send event toRelays: ${jsonEncode(rs)}, eventString: $eventString');
     Sends sends = Sends(
         generate64RandomHexChars(),
-        toRelays,
+        rs,
         DateTime.now().millisecondsSinceEpoch,
         event.id,
         sendCallBack,
         eventString);
     sendsMap[event.id] = sends;
-    _send(eventString, toRelays: toRelays);
+    _send(eventString, toRelays: rs);
   }
 
   void _send(String data, {List<String>? toRelays}) {
