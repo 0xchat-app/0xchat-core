@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
@@ -408,8 +409,16 @@ class Connect {
     }
   }
 
+  Future<Message> deserializeInBackgroud(String message) async {
+    return compute(_deserializeMessage, message);
+  }
+
+  static Future<Message> _deserializeMessage(String message) async {
+    return await Message.deserialize(message);
+  }
+
   Future<void> _handleMessage(String message, String relay) async {
-    var m = await Message.deserialize(message);
+    var m = await deserializeInBackgroud(message);
     switch (m.type) {
       case "EVENT":
         _handleEvent(m.message, relay);
@@ -457,7 +466,8 @@ class Connect {
   }
 
   Future<void> _handleEvent(Event event, String relay) async {
-    print('Received event: ${event.serialize()}, $relay');
+    print(
+        'Received event id: ${event.id}, from: $relay, kind = ${event.kind}, content = ${event.content}');
     if (eventCache.contains(event.id)) return;
     // add to cache
     eventCache.add(event.id);
