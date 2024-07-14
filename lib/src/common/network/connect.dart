@@ -652,7 +652,11 @@ class Connect {
       return await WebSocket.connect(relay);
     } catch (e) {
       print("Error! can not connect WS connectWs $e relay:$relay");
-      return await _reConnectToRelay(relay);
+      _setConnectStatus(relay, 3); // closed
+      await Future.delayed(Duration(milliseconds: 3000));
+      if (webSockets.containsKey(relay)) {
+        return await _connectWs(relay);
+      }
     }
   }
 
