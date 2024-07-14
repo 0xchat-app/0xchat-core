@@ -105,7 +105,7 @@ class Channels {
           _receiveChannelMessages(event, relay);
           break;
         default:
-          print('unhandled message $event');
+          print('channel unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {

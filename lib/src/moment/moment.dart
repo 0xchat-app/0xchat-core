@@ -83,7 +83,7 @@ class Moment {
             handleReactionEvent(event, relay, false);
             break;
           default:
-            print('unhandled message $event');
+            print('moment unhandled message ${event.toJson()}');
             break;
         }
       }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {

@@ -537,7 +537,7 @@ extension SecretChat on Contacts {
               _handleSecretMessage(session.sessionId, innerEvent, event.id);
               break;
             default:
-              print('unhandled message $innerEvent');
+              print('secretchat unhandled message ${event.toJson()}');
               break;
           }
         }

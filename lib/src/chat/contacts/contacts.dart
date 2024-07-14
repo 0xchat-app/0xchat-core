@@ -443,7 +443,7 @@ class Contacts {
                   .handleReactionEvent(innerEvent, relay, true);
               break;
             default:
-              print('unhandled message $innerEvent');
+              print('contacts unhandled message ${innerEvent.toJson()}');
               break;
           }
         }

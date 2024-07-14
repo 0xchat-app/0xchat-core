@@ -79,7 +79,7 @@ class Messages {
           _handleMuteUserEvent(event);
           break;
         default:
-          print('unhandled message $event');
+          print('messages unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (String requestId, OKEvent ok, String relay,

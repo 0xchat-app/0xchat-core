@@ -251,7 +251,7 @@ class RelayGroup {
           handleGroupMembers(event, relay);
           break;
         default:
-          print('unhandled message $event');
+          print('relaygroup unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {

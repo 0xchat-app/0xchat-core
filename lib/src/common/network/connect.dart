@@ -409,16 +409,16 @@ class Connect {
     }
   }
 
-  Future<Message> deserializeInBackgroud(String message) async {
-    return compute(_deserializeMessage, message);
-  }
-
-  static Future<Message> _deserializeMessage(String message) async {
-    return await Message.deserialize(message);
-  }
+  // Future<Message> deserializeInBackgroud(String message) async {
+  //   return compute(_deserializeMessage, message);
+  // }
+  //
+  // static Future<Message> _deserializeMessage(String message) async {
+  //   return await Message.deserialize(message);
+  // }
 
   Future<void> _handleMessage(String message, String relay) async {
-    var m = await deserializeInBackgroud(message);
+    var m = await Message.deserialize(message);
     switch (m.type) {
       case "EVENT":
         _handleEvent(m.message, relay);
@@ -467,7 +467,7 @@ class Connect {
 
   Future<void> _handleEvent(Event event, String relay) async {
     print(
-        'Received event id: ${event.id}, from: $relay, kind = ${event.kind}, content = ${event.content}');
+        'Received event ${event.toJson()}');
     if (eventCache.contains(event.id)) return;
     // add to cache
     eventCache.add(event.id);

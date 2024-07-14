@@ -86,7 +86,7 @@ class Config {
           _handleAppData(event);
           break;
         default:
-          print('unhandled message $event');
+          print('config unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (String requestId, OKEvent ok, String relay,
