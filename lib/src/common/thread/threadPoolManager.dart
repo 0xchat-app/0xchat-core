@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:isolate';
+import 'package:flutter/services.dart';
 
 class ThreadPoolManager {
   late Isolate _databaseIsolate;
@@ -8,11 +9,13 @@ class ThreadPoolManager {
   late SendPort _databaseSendPort;
   late SendPort _algorithmSendPort;
   late SendPort _otherSendPort;
+  final RootIsolateToken _rootIsolateToken;
 
   /// singleton
-  ThreadPoolManager._internal();
+  ThreadPoolManager._internal(this._rootIsolateToken);
   factory ThreadPoolManager() => sharedInstance;
-  static final ThreadPoolManager sharedInstance = ThreadPoolManager._internal();
+  static final ThreadPoolManager sharedInstance =
+      ThreadPoolManager._internal(RootIsolateToken.instance!);
 
   Future<void> initialize() async {
     _databaseSendPort = await _createIsolate((sendPort) {
@@ -41,7 +44,7 @@ class ThreadPoolManager {
       Future<dynamic> Function() task, SendPort sendPort) async {
     final completer = Completer<dynamic>();
     final port = ReceivePort();
-    sendPort.send([task, port.sendPort]);
+    sendPort.send([task, port.sendPort, _rootIsolateToken]);
     port.listen((message) {
       completer.complete(message);
       port.close(); // Close the port once the task is completed
@@ -78,9 +81,14 @@ void _isolateEntry(SendPort sendPort) {
   final port = ReceivePort();
   sendPort.send(port.sendPort);
   port.listen((message) async {
-    if (message is List && message.length == 2) {
+    if (message is List && message.length == 3) {
       final task = message[0] as Future Function();
       final replyPort = message[1] as SendPort;
+      final rootIsolateToken = message[2] as RootIsolateToken;
+
+      // Attach root isolate token to the current isolate
+      BackgroundIsolateBinaryMessenger.ensureInitialized(rootIsolateToken);
+
       final result = await task();
       replyPort.send(result);
     }
