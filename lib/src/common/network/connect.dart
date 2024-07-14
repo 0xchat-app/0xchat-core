@@ -288,15 +288,16 @@ class Connect {
       List<String>? relays,
       RelayKind relayKind = RelayKind.general}) {
     Map<String, List<Filter>> result = {};
+    List<String> rs = [];
     if (relays != null) {
-      relays = relays
+      rs = List.from(relays
           .where((relay) =>
               relay.isNotEmpty &&
               (relay.startsWith('ws://') || relay.startsWith('wss://')))
-          .toList();
+          .toList());
     }
-    List<String> subscriptionRelays = relays?.isNotEmpty == true
-        ? relays!
+    List<String> subscriptionRelays = rs.isNotEmpty == true
+        ? rs
         : Connect.sharedInstance.relays(relayKind: relayKind);
     if (subscriptionRelays.isEmpty) {
       eoseCallBack?.call('', OKEvent('', false, 'no relays connected'), '', []);
@@ -466,8 +467,7 @@ class Connect {
   }
 
   Future<void> _handleEvent(Event event, String relay) async {
-    print(
-        'Received event ${event.toJson()}');
+    print('Received event ${event.toJson()}');
     if (eventCache.contains(event.id)) return;
     // add to cache
     eventCache.add(event.id);

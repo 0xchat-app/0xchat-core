@@ -368,7 +368,6 @@ class Channels {
       authors: owner.isNotEmpty ? [owner] : null,
       kinds: [41],
       e: [channelId],
-      limit: 1,
     );
     if (relays != null) {
       await Connect.sharedInstance
