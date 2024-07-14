@@ -12,6 +12,11 @@ extension EMember on RelayGroup {
       bool closed = false,
       String picture = '',
       String about = ''}) async {
+    if (relay == 'wss://groups.fiatjaf.com') {
+      return await createGroup2(relay,
+          name: name, closed: closed, picture: picture, about: about);
+    }
+
     await Connect.sharedInstance
         .connectRelays([relay], relayKind: RelayKind.relayGroup);
     Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
@@ -46,20 +51,19 @@ extension EMember on RelayGroup {
     return completer.future;
   }
 
-  Future<RelayGroupDB?> createGroup2(String host, String name,
-      {String closed = 'false', String picture = '', String about = ''}) async {
+  Future<RelayGroupDB?> createGroup2(String relay,
+      {String name = '',
+      bool closed = false,
+      String picture = '',
+      String about = ''}) async {
     Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
-    final url = Uri.parse('http://$host/create');
+    var uri = Uri.parse(relay);
+    var hostWithPort = uri.hasPort ? '${uri.host}:${uri.port}' : uri.host;
+    final url = Uri.parse('https://$hostWithPort/create');
     final body = {
       'pubkey': pubkey,
       'name': name,
-      'closed': closed,
-      'picture': picture,
-      'about': about,
-      'createdAt': currentUnixTimestampSeconds().toString()
     };
-    final sig = await Account.getSignatureWithSecret(jsonEncode(body));
-    body['sig'] = sig;
     final response = await http.post(url, body: body);
     if (response.statusCode == 200) {
       if (!completer.isCompleted) {
@@ -74,14 +78,20 @@ extension EMember on RelayGroup {
           RelayGroupDB relayGroupDB = RelayGroupDB(
               groupId: groupId,
               relay: relay,
-              name: name,
               author: author,
               members: [author],
-              private: closed == 'true' ? true : false,
+              admins: [GroupAdmin(author, 'Admin', GroupActionKind.all())],
+              closed: closed,
+              private: closed,
+              name: name,
+              picture: picture,
+              about: about,
               id: id);
           myGroups[groupId] = relayGroupDB;
-          syncGroupToDB(relayGroupDB);
-          syncMyGroupListToRelay();
+          await syncGroupToDB(relayGroupDB);
+          await syncMyGroupListToRelay();
+          await editGroupStatus(groupId, closed, closed, '');
+          await editMetadata(groupId, name, about, picture, '');
           if (!completer.isCompleted) completer.complete(relayGroupDB);
         } else {
           if (!completer.isCompleted) completer.complete(null);
