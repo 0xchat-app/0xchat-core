@@ -1,6 +1,5 @@
 import 'package:chatcore/chat-core.dart';
 import 'package:http/http.dart' as http;
-import 'package:nostr_core_dart/nostr.dart';
 
 class Relays {
   /// singleton
@@ -55,7 +54,8 @@ class Relays {
     List<String> notInGeneralRelays = connectedGeneralRelays
         .where((relay) => !generalRelays.contains(relay))
         .toList();
-    await Connect.sharedInstance.closeConnects(notInGeneralRelays);
+    await Connect.sharedInstance
+        .closeConnects(notInGeneralRelays, RelayKind.general);
 
     int updatedTime = Account.sharedInstance.me?.lastRelayListUpdatedTime ?? 0;
     if (updatedTime > 0 && generalRelays.isNotEmpty) {
@@ -74,7 +74,7 @@ class Relays {
     List<String> dmRelays = Account.sharedInstance.me?.dmRelayList ?? [];
     List<String> notInDMRelays =
         connectedDMRelays.where((relay) => !dmRelays.contains(relay)).toList();
-    await Connect.sharedInstance.closeConnects(notInDMRelays);
+    await Connect.sharedInstance.closeConnects(notInDMRelays, RelayKind.dm);
 
     Connect.sharedInstance.connectRelays(dmRelays, relayKind: RelayKind.dm);
   }

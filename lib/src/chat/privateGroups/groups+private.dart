@@ -23,7 +23,7 @@ extension PrivateGroups on Groups {
 
   Future<void> closeGroupConnects(String groupId) async {
     await Connect.sharedInstance
-        .closeConnects(currentGroupRelays[groupId] ?? []);
+        .closeConnects(currentGroupRelays[groupId] ?? [], RelayKind.relayGroup);
   }
 
   Future<GroupDB?> createPrivateGroup(String sender, String groupId,

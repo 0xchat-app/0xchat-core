@@ -86,7 +86,7 @@ extension AccountRelay on Account {
     List<String> relays = me?.relayList ?? [];
     if (!relays.contains(relay)) return OKEvent(relay, false, 'not exit');
     relays.remove(relay);
-    Connect.sharedInstance.closeConnects([relay]);
+    Connect.sharedInstance.closeConnects([relay], RelayKind.general);
     return await setGeneralRelayListToRelay(relays);
   }
 
@@ -104,7 +104,7 @@ extension AccountRelay on Account {
     List<String> relays = me?.dmRelayList ?? [];
     if (!relays.contains(relay)) return OKEvent(relay, false, 'not exit');
     relays.remove(relay);
-    Connect.sharedInstance.closeConnects([relay]);
+    Connect.sharedInstance.closeConnects([relay], RelayKind.dm);
     return await setDMRelayListToRelay(relays);
   }
 

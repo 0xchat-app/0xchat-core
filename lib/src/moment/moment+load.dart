@@ -181,7 +181,7 @@ extension Load on Moment {
       if (unRelays.isEmpty) {
         if (!completer.isCompleted) {
           NoteDB? note = await loadNoteWithNoteId(noteId, reload: false);
-          Connect.sharedInstance.closeConnects(tempRelays);
+          Connect.sharedInstance.closeConnects(tempRelays, RelayKind.temp);
           completer.complete(note);
         }
       }

@@ -254,19 +254,17 @@ class Connect {
     return completer.future;
   }
 
-  Future closeConnects(List<String> relays) async {
+  Future closeConnects(List<String> relays, RelayKind relayKind) async {
     await Future.forEach(relays, (relay) async {
-      await closeConnect(relay);
-    });
-  }
-
-  Future closeTempConnects(List<String> relays) async {
-    await Future.forEach(relays, (relay) async {
-      webSockets[relay]?.relayKinds.remove(RelayKind.temp);
+      webSockets[relay]?.relayKinds.remove(relayKind);
       if (webSockets[relay]?.relayKinds.isEmpty == true) {
         await closeConnect(relay);
       }
     });
+  }
+
+  Future closeTempConnects(List<String> relays) async {
+    await closeConnects(relays, RelayKind.temp);
   }
 
   Future closeAllConnects() async {
