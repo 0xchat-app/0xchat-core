@@ -67,7 +67,8 @@ class Config {
     }
 
     Map<String, List<Filter>> subscriptions = {};
-    Filter f = Filter(kinds: [30078], d: [configD], authors: [_serverPubkey]);
+    Filter f = Filter(
+        kinds: [30078], d: [configD], authors: [_serverPubkey], limit: 1);
 
     if (relay == null) {
       for (var r in Connect.sharedInstance.relays()) {
@@ -79,8 +80,6 @@ class Config {
 
     _configRequestsId = Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) {
-      Relays.sharedInstance.setCommonMessageUntil(event.createdAt, relay);
-      Relays.sharedInstance.setCommonMessageSince(event.createdAt, relay);
       switch (event.kind) {
         case 30078:
           _handleAppData(event);
@@ -100,6 +99,7 @@ class Config {
   Future<void> _handleAppData(Event event) async {
     AppData appData = Nip78.decodeAppData(event);
     if (appData.d == null) return;
+    if (event.createdAt <= (configs[appData.d]?.time ?? 0)) return;
     ConfigDB configDB = ConfigDB(
         d: appData.d ?? '',
         eventId: event.id,

@@ -212,13 +212,15 @@ class Channels {
       if (channel.updatedAt > 0) channelDB.updateTime = channel.updatedAt;
       channels[channel.channelId] = channelDB;
     } else {
-      channelDB.creator = channel.owner;
-      channelDB.name = channel.name;
-      channelDB.about = channel.about;
-      channelDB.picture = channel.picture;
-      channelDB.relayURL = channel.relay;
       if (channel.createdAt > 0) channelDB.createTime = channel.createdAt;
-      if (channel.updatedAt > 0) channelDB.updateTime = channel.updatedAt;
+      if (channel.updatedAt > channelDB.updateTime) {
+        channelDB.updateTime = channel.updatedAt;
+        channelDB.creator = channel.owner;
+        channelDB.name = channel.name;
+        channelDB.about = channel.about;
+        channelDB.picture = channel.picture;
+        channelDB.relayURL = channel.relay;
+      }
     }
     return channelDB;
   }
