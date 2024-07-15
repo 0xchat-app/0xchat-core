@@ -660,10 +660,10 @@ class Connect {
     } catch (e) {
       print("Error! can not connect WS connectWs $e relay:$relay");
       _setConnectStatus(relay, 3); // closed
-      await Future.delayed(Duration(milliseconds: 3000));
-      if (webSockets.containsKey(relay)) {
-        return await _connectWs(relay);
-      }
+      // await Future.delayed(Duration(milliseconds: 30000));
+      // if (webSockets.containsKey(relay)) {
+      //   return await _connectWs(relay);
+      // }
     }
   }
 
