@@ -195,8 +195,6 @@ class Connect {
   List<String> relays({RelayKind relayKind = RelayKind.general}) {
     List<String> result = [];
     for (var relay in webSockets.keys) {
-      print(
-          '$relay status = ${webSockets[relay]?.connectStatus}, kinds = ${webSockets[relay]?.relayKinds.contains(relayKind)}, ${webSockets[relay]?.relayKinds.length}');
       if (webSockets[relay]?.connectStatus == 1 &&
           webSockets[relay]?.relayKinds.contains(relayKind) == true) {
         result.add(relay);
