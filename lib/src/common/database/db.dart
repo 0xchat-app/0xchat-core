@@ -30,7 +30,6 @@ class DB {
   List<String> allTablenames = [];
   bool deleteDBIfNeedMirgration = false;
   late Database db;
-  late Batch batchCache;
   List<BatchOperation> insertOperations = [];
   Timer? timer;
 
@@ -118,7 +117,6 @@ class DB {
     List<Map<String, dynamic>> tables =
         await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'");
     allTablenames = tables.map((item) => item["name"].toString()).toList();
-    batchCache = db.batch();
     startHeartBeat();
   }
 
@@ -126,12 +124,16 @@ class DB {
     try {
       List<BatchOperation> batchOperations = List.from(insertOperations);
       insertOperations.clear();
-      // var batch = db.batch();
+      var batch = db.batch();
       for (var batchOperation in batchOperations) {
-        batchCache.insert(batchOperation.table, batchOperation.values,
+        batch.insert(batchOperation.table, batchOperation.values,
             conflictAlgorithm: batchOperation.conflictAlgorithm);
       }
-      await batchCache.commit(continueOnError: true);
+      List<Object?> result = await batch.commit(continueOnError: true);
+      if (result.length < batchOperations.length) {
+        print('batchApply error: result: ${result.length}, expected: ${batchOperations.length}');
+        insertOperations.addAll(batchOperations);
+      }
     } catch (e) {
       print('batchCommit error: $e');
     }
@@ -163,7 +165,6 @@ class DB {
       await db.close();
       await deleteDatabase(dbPath);
       db = newDb;
-      batchCache = db.batch();
       startHeartBeat();
       if (!completer.isCompleted) completer.complete();
     });
