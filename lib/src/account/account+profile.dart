@@ -166,8 +166,8 @@ extension AccountProfile on Account {
       if (unRelays.isEmpty) {
         for (var db in users.values) {
           await DB.sharedInstance.insertBatch<UserDB>(db);
-          UserDB? user = await getUserFromDB(pubkey: db.pubKey);
-          userCache[db.pubKey]?.value = user!;
+          userCache[db.pubKey]?.value = db;
+          userCache[db.pubKey]?.notifyListeners();
           pQueue.remove(db.pubKey);
         }
         if (!completer.isCompleted) completer.complete();
