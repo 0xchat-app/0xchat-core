@@ -365,6 +365,11 @@ class Channels {
   Future<ChannelDB?> updateChannelMetadataFromRelay(
       String owner, String channelId,
       {List<String>? relays}) async {
+    ChannelDB? channelDB = channels[channelId];
+    if (channelDB == null || channelDB.createTime == 0) {
+      await _syncChannelsCreationFromRelay([channelId], relays);
+    }
+
     Completer<ChannelDB?> completer = Completer<ChannelDB?>();
     Filter f = Filter(
       authors: owner.isNotEmpty ? [owner] : null,
