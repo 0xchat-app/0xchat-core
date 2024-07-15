@@ -237,6 +237,7 @@ class Connect {
   Future<void> connectRelays(List<String> relays,
       {RelayKind relayKind = RelayKind.general}) async {
     final completer = Completer<void>();
+    if (relays.isEmpty && !completer.isCompleted) completer.complete();
     for (String relay in relays) {
       connect(relay, relayKind: relayKind).then((value) {
         if (!completer.isCompleted) completer.complete();
@@ -453,7 +454,8 @@ class Connect {
   }
 
   Future<void> _handleEvent(Event event, String relay) async {
-    print('Received event, subscriptionId: ${event.subscriptionId}, ${event.toJson()}');
+    print(
+        'Received event, subscriptionId: ${event.subscriptionId}, ${event.toJson()}');
     if (eventCache.contains(event.id)) return;
     // add to cache
     eventCache.add(event.id);
