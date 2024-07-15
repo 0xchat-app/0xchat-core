@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
 import 'package:chatcore/chat-core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
@@ -20,7 +19,7 @@ typedef EOSECallBack = void Function(
 
 /// connect callback
 typedef ConnectStatusCallBack = void Function(
-    String relay, int status, RelayKind? relayKind);
+    String relay, int status, List<RelayKind> relayKinds);
 
 class Sends {
   String sendsId;
@@ -63,9 +62,9 @@ class ISocket {
   /// closing = 2;
   /// closed = 3;
   int connectStatus;
-  RelayKind relayKind;
+  List<RelayKind> relayKinds = [];
 
-  ISocket(this.socket, this.connectStatus, this.relayKind);
+  ISocket(this.socket, this.connectStatus, this.relayKinds);
 }
 
 enum RelayKind {
@@ -89,7 +88,6 @@ class Connect {
   static final int timeout = 15;
 
   NoticeCallBack? noticeCallBack;
-  ConnectStatusCallBack? connectStatusCallBack;
   StreamSubscription? _connectivitySubscription;
 
   /// sockets
@@ -177,9 +175,8 @@ class Connect {
 
   void _setConnectStatus(String relay, int status) {
     webSockets[relay]?.connectStatus = status;
-    connectStatusCallBack?.call(relay, status, webSockets[relay]?.relayKind);
     for (var callBack in connectStatusListeners) {
-      callBack(relay, status, webSockets[relay]?.relayKind);
+      callBack(relay, status, webSockets[relay]?.relayKinds ?? []);
     }
   }
 
@@ -198,8 +195,12 @@ class Connect {
   List<String> relays({RelayKind relayKind = RelayKind.general}) {
     List<String> result = [];
     for (var relay in webSockets.keys) {
+      print(
+          '$relay status = ${webSockets[relay]?.connectStatus}, kinds = ${webSockets[relay]?.relayKinds.contains(relayKind)}, ${webSockets[relay]?.relayKinds.length}');
       if (webSockets[relay]?.connectStatus == 1 &&
-          webSockets[relay]?.relayKind == relayKind) result.add(relay);
+          webSockets[relay]?.relayKinds.contains(relayKind) == true) {
+        result.add(relay);
+      }
     }
     return result;
   }
@@ -208,34 +209,34 @@ class Connect {
       {RelayKind relayKind = RelayKind.general}) async {
     print('connect to $relay, kind: ${relayKind.name}');
     if (relay.isEmpty) return;
-    RelayKind? preKind = webSockets[relay]?.relayKind;
 
-    // already exit, don't change the kind
-    if (preKind != null && relayKind == RelayKind.temp) {
-      relayKind = preKind;
-    }
-    webSockets[relay]?.relayKind = relayKind;
     // connecting or open
     if (webSockets[relay]?.connectStatus == 0 ||
         webSockets[relay]?.connectStatus == 1) return;
     WebSocket? socket;
+    List<RelayKind> relayKinds = webSockets[relay]?.relayKinds ?? [relayKind];
+    if (!relayKinds.contains(relayKind)) {
+      relayKinds.add(relayKind);
+    }
+
     if (webSockets.containsKey(relay) && webSockets[relay] != null) {
       socket = webSockets[relay]!.socket;
       // _setConnectStatus(relay, socket.readyState);
       print('$relay status = ${webSockets[relay]?.connectStatus}');
       if (webSockets[relay]?.connectStatus != 3) {
         /// not closed
+        webSockets[relay]?.relayKinds = relayKinds;
         return;
       }
     }
     print("connecting... $relay");
-    webSockets[relay] = ISocket(null, 0, relayKind);
+    webSockets[relay] = ISocket(null, 0, relayKinds);
     try {
       socket = await _connectWs(relay);
       if (socket != null) {
         socket.done.then((dynamic _) => _onDisconnected(relay));
         _listenEvent(socket, relay);
-        webSockets[relay] = ISocket(socket, 1, relayKind);
+        webSockets[relay] = ISocket(socket, 1, relayKinds);
         print("socket connection initialized");
         _setConnectStatus(relay, 1);
       }
@@ -263,7 +264,8 @@ class Connect {
 
   Future closeTempConnects(List<String> relays) async {
     await Future.forEach(relays, (relay) async {
-      if (webSockets[relay]?.relayKind == RelayKind.temp) {
+      webSockets[relay]?.relayKinds.remove(RelayKind.temp);
+      if (webSockets[relay]?.relayKinds.isEmpty == true) {
         await closeConnect(relay);
       }
     });

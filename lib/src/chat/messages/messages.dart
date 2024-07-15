@@ -28,27 +28,6 @@ class Messages {
     pubkey = Account.sharedInstance.currentPubkey;
 
     return;
-
-    // delete event
-    List<DeleteEvent> deleteEvents = await _loadDeleteMessagesFromDB();
-    for (DeleteEvent deleteEvent in deleteEvents) {
-      await _handleDeleteMessages(deleteEvent.deleteEvents, deleteEvent.pubkey);
-    }
-
-    // hide message event
-    List<ChannelMessageHidden> hiddenMessages = await _loadHideMessagesFromDB();
-    for (ChannelMessageHidden hiddenMessage in hiddenMessages) {
-      await _handleHideMessage(hiddenMessage.messageId, hiddenMessage.operator);
-    }
-
-    _initSubscription();
-
-    // subscript friend requests
-    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKind) {
-      if (status == 1) {
-        _initSubscription();
-      }
-    });
   }
 
   void _initSubscription() {

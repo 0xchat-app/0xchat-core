@@ -8,10 +8,10 @@ import 'package:chatcore/chat-core.dart';
 extension AccountProfile on Account {
   Future<void> loginSuccess() async {
     Connect.sharedInstance
-        .addConnectStatusListener((relay, status, relayKind) async {
+        .addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 &&
           Account.sharedInstance.me != null &&
-          relayKind == RelayKind.general) {
+          relayKinds.contains(RelayKind.general)) {
         reloadMyProfileFromRelay(relay: relay);
       }
     });

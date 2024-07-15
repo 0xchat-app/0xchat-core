@@ -90,10 +90,11 @@ class Contacts {
     };
     // subscript friend requests
     Connect.sharedInstance
-        .addConnectStatusListener((relay, status, relayKind) async {
+        .addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 &&
           Account.sharedInstance.me != null &&
-          (relayKind == RelayKind.general || relayKind == RelayKind.dm)) {
+          (relayKinds.contains(RelayKind.general) ||
+              relayKinds.contains(RelayKind.dm))) {
         _subscriptMessages(relay: relay);
         _updateSubscriptions(relay: relay);
       }
@@ -370,7 +371,10 @@ class Contacts {
 
     Map<String, List<Filter>> subscriptions = {};
     if (relay == null) {
-      for (String relayURL in Connect.sharedInstance.relays()) {
+      List<String> relays =
+          Connect.sharedInstance.relays(relayKind: RelayKind.general);
+      relays.addAll(Connect.sharedInstance.relays(relayKind: RelayKind.dm));
+      for (String relayURL in relays) {
         int friendMessageUntil =
             Relays.sharedInstance.getFriendMessageUntil(relayURL);
 

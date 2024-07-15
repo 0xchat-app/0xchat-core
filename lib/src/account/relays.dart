@@ -34,6 +34,7 @@ class Relays {
 
   List<String> recommendSecretChatRelays = [
     'wss://auth.nostr1.com',
+    'wss://inbox.nostr.wine',
     'wss://relay.0xchat.com'
   ];
 
