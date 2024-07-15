@@ -277,12 +277,14 @@ extension AccountProfile on Account {
       List<Profile> profiles = Nip2.decode(event);
       db.followingList = profiles.map((e) => e.key).toList();
       // relay list
-      Map map = jsonDecode(event.content);
-      db.relayList ??= [];
-      Set<String> relaySet = Set.from(db.relayList!);
-      relaySet.addAll(map.keys.map((e) => e.toString()).toList());
-      db.relayList = relaySet.toList();
-      relayListUpdateCallback?.call();
+      if (db.lastRelayListUpdatedTime == 0){
+        Map map = jsonDecode(event.content);
+        db.relayList ??= [];
+        Set<String> relaySet = Set.from(db.relayList!);
+        relaySet.addAll(map.keys.map((e) => e.toString()).toList());
+        db.relayList = relaySet.toList();
+        relayListUpdateCallback?.call();
+      }
     }
     return db;
   }
