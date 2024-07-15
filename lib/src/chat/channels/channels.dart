@@ -213,7 +213,7 @@ class Channels {
       channels[channel.channelId] = channelDB;
     } else {
       if (channel.createdAt > 0) channelDB.createTime = channel.createdAt;
-      if (channel.updatedAt > channelDB.updateTime) {
+      if (channel.updatedAt >= channelDB.updateTime) {
         channelDB.updateTime = channel.updatedAt;
         channelDB.creator = channel.owner;
         channelDB.name = channel.name;
@@ -365,11 +365,6 @@ class Channels {
   Future<ChannelDB?> updateChannelMetadataFromRelay(
       String owner, String channelId,
       {List<String>? relays}) async {
-    ChannelDB? channelDB = channels[channelId];
-    if (channelDB == null || channelDB.createTime == 0) {
-      await _syncChannelsCreationFromRelay([channelId], relays);
-    }
-
     Completer<ChannelDB?> completer = Completer<ChannelDB?>();
     Filter f = Filter(
       authors: owner.isNotEmpty ? [owner] : null,
