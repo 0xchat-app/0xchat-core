@@ -238,6 +238,15 @@ class Connect {
       {RelayKind relayKind = RelayKind.general}) async {
     final completer = Completer<void>();
     if (relays.isEmpty && !completer.isCompleted) completer.complete();
+    if (relayKind == RelayKind.temp) {
+      // timeout for temp relays
+      Timer(Duration(seconds: 10), () {
+        if (!completer.isCompleted) {
+          completer.complete();
+          closeConnects(relays, relayKind);
+        }
+      });
+    }
     for (String relay in relays) {
       connect(relay, relayKind: relayKind).then((value) {
         if (!completer.isCompleted) completer.complete();
