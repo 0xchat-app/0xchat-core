@@ -208,28 +208,19 @@ class Connect {
     print('connect to $relay, kind: ${relayKind.name}');
     if (relay.isEmpty) return;
 
-    // connecting or open
-    if (webSockets[relay]?.connectStatus == 0 ||
-        webSockets[relay]?.connectStatus == 1) return;
-    WebSocket? socket;
     List<RelayKind> relayKinds = webSockets[relay]?.relayKinds ?? [relayKind];
     if (!relayKinds.contains(relayKind)) {
       relayKinds.add(relayKind);
     }
+    webSockets[relay]?.relayKinds = relayKinds;
+    // connecting or open
+    if (webSockets[relay]?.connectStatus == 0 ||
+        webSockets[relay]?.connectStatus == 1) return;
 
-    if (webSockets.containsKey(relay) && webSockets[relay] != null) {
-      socket = webSockets[relay]!.socket;
-      // _setConnectStatus(relay, socket.readyState);
-      print('$relay status = ${webSockets[relay]?.connectStatus}');
-      if (webSockets[relay]?.connectStatus != 3) {
-        /// not closed
-        webSockets[relay]?.relayKinds = relayKinds;
-        return;
-      }
-    }
     print("connecting... $relay");
     webSockets[relay] = ISocket(null, 0, relayKinds);
     try {
+      WebSocket? socket;
       socket = await _connectWs(relay);
       if (socket != null) {
         socket.done.then((dynamic _) => _onDisconnected(relay));
