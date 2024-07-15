@@ -341,6 +341,9 @@ class Zaps {
     //add to zap records
     await DB.sharedInstance.insertBatch<ZapRecordsDB>(zapRecordsDB,
         conflictAlgorithm: ConflictAlgorithm.ignore);
+    await DB.sharedInstance.insertBatch<MessageDB>(
+        MessageDB(messageId: event.id),
+        conflictAlgorithm: ConflictAlgorithm.ignore);
     Zaps.sharedInstance.zapRecords[zapRecordsDB.bolt11] = zapRecordsDB;
     Zaps.sharedInstance.zapRecordsCallBack?.call(zapRecordsDB);
     //add to moment notifications

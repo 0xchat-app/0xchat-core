@@ -453,7 +453,7 @@ class Connect {
   }
 
   Future<void> _handleEvent(Event event, String relay) async {
-    print('Received event ${event.toJson()}');
+    print('Received event, subscriptionId: ${event.subscriptionId}, ${event.toJson()}');
     if (eventCache.contains(event.id)) return;
     // add to cache
     eventCache.add(event.id);
