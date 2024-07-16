@@ -419,6 +419,7 @@ class Contacts {
         updateFriendMessageTime(event.createdAt, relay);
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       } else if (event.kind == 1059) {
+        await Messages.saveMessageToDB(MessageDB(messageId: event.id));
         Event? innerEvent = await decodeNip24Event(event);
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
