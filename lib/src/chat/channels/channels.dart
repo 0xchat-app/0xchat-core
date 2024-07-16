@@ -225,7 +225,7 @@ class Channels {
     return channelDB;
   }
 
-  Future<void> _syncChannelsCreationFromRelay(
+  Future<void> syncChannelsCreationFromRelay(
       List<String> channelIds, List<String>? relays) async {
     Completer<void> completer = Completer<void>();
     Filter f = Filter(
@@ -244,7 +244,7 @@ class Channels {
     return completer.future;
   }
 
-  Future<void> _syncChannelsMetadataFromRelay(
+  Future<void> syncChannelsMetadataFromRelay(
       List<String> channelIds, List<String>? relays) async {
     Completer<void> completer = Completer<void>();
     Filter f = Filter(
@@ -401,9 +401,9 @@ class Channels {
       }
     }
     if (unknownChannels.isEmpty) return;
-    await _syncChannelsCreationFromRelay(
+    await syncChannelsCreationFromRelay(
         unknownChannels, relay == null ? null : [relay]);
-    await _syncChannelsMetadataFromRelay(
+    await syncChannelsMetadataFromRelay(
         unknownChannels, relay == null ? null : [relay]);
 
     myChannelsUpdatedCallBack?.call();
@@ -571,8 +571,8 @@ class Channels {
   Future<ChannelDB?> searchChannel(
       String channelId, List<String>? relays) async {
     if (channels[channelId] == null) {
-      await _syncChannelsCreationFromRelay([channelId], relays);
-      await _syncChannelsMetadataFromRelay([channelId], relays);
+      await syncChannelsCreationFromRelay([channelId], relays);
+      await syncChannelsMetadataFromRelay([channelId], relays);
     }
     // print('searchChannel 333: ${channels[channelId]?.channelId}');
     return channels[channelId];

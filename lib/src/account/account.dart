@@ -319,8 +319,9 @@ class Account {
 
   static Future<Event?> loadEvent(String eventId,
       {List<String>? relays}) async {
+    Connect.sharedInstance.eventCache.remove(eventId);
     Completer<Event?> completer = Completer<Event?>();
-    Timer(Duration(seconds: 30), () {
+    Timer(Duration(seconds: 15), () {
       if (!completer.isCompleted) {
         completer.complete(null);
       }
