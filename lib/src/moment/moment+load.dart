@@ -130,7 +130,7 @@ extension Load on Moment {
   Future<void> saveNoteToDB(
       NoteDB noteDB, ConflictAlgorithm? conflictAlgorithm) async {
     if (!notesCache.containsKey(noteDB.noteId) ||
-        conflictAlgorithm == ConflictAlgorithm.replace) {
+        conflictAlgorithm != ConflictAlgorithm.ignore) {
       notesCache[noteDB.noteId] = noteDB;
     }
     await DB.sharedInstance
