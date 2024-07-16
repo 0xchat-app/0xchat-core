@@ -287,7 +287,6 @@ class Account {
     Channels.sharedInstance.channels.clear();
     Channels.sharedInstance.myChannels.clear();
     Relays.sharedInstance.relays.clear();
-    Messages.sharedInstance.messagesLoaded.clear();
     NotificationHelper.sharedInstance.logout();
     me?.defaultPassword = '';
     syncMe();

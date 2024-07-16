@@ -80,7 +80,6 @@ extension Load on Moment {
       notesCache[note.noteId] = note;
       latestNoteTime =
           note.createAt > latestNoteTime ? note.createAt : latestNoteTime;
-      Messages.addToLoaded(note.noteId);
       if (!Connect.sharedInstance.eventCache.contains(note.noteId)) {
         Connect.sharedInstance.eventCache.add(note.noteId);
       }
@@ -377,15 +376,10 @@ extension Load on Moment {
         List<Event> values = List.from(result.values);
         for (Event event in values) {
           NoteDB? noteDB;
-          if (Messages.isLoaded(event.id)) {
-            noteDB = await loadNoteWithNoteId(event.id);
-          } else {
-            Messages.addToLoaded(event.id);
-            Note note = Nip1.decodeNote(event);
-            noteDB = NoteDB.noteDBFromNote(note);
-            await saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
-          }
-          if (noteDB != null) r.add(noteDB);
+          Note note = Nip1.decodeNote(event);
+          noteDB = NoteDB.noteDBFromNote(note);
+          await saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
+          r.add(noteDB);
         }
         if (!completer.isCompleted) completer.complete(r);
       }
@@ -407,15 +401,10 @@ extension Load on Moment {
         List<NoteDB> r = [];
         for (Event event in result.values) {
           NoteDB? noteDB;
-          if (Messages.isLoaded(event.id)) {
-            noteDB = await loadNoteWithNoteId(event.id);
-          } else {
-            Messages.addToLoaded(event.id);
-            Note note = Nip1.decodeNote(event);
-            noteDB = NoteDB.noteDBFromNote(note);
-            saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
-          }
-          if (noteDB != null) r.add(noteDB);
+          Note note = Nip1.decodeNote(event);
+          noteDB = NoteDB.noteDBFromNote(note);
+          saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
+          r.add(noteDB);
         }
         if (!completer.isCompleted) completer.complete(r);
       }

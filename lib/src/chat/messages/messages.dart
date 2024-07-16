@@ -21,8 +21,6 @@ class Messages {
   String messagesActionsRequestsId = '';
   MessageActionsCallBack? actionsCallBack;
 
-  List<String> messagesLoaded = [];
-
   Future<void> init() async {
     privkey = Account.sharedInstance.currentPrivkey;
     pubkey = Account.sharedInstance.currentPubkey;
@@ -89,8 +87,6 @@ class Messages {
     }
     messagesActionsRequestsId = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) {
-      if (Messages.isLoaded(event.id)) return;
-      Messages.addToLoaded(event.id);
       switch (event.kind) {
         case 7:
           handleReactionEvent(event);
@@ -318,18 +314,6 @@ class Messages {
     }
   }
 
-  static bool isLoaded(String messageId) {
-    return Messages.sharedInstance.messagesLoaded.contains(messageId);
-  }
-
-  static bool addToLoaded(String messageId) {
-    if (!isLoaded(messageId)) {
-      Messages.sharedInstance.messagesLoaded.add(messageId);
-      return true;
-    }
-    return false;
-  }
-
   static Future<Map> loadMessagesFromDB(
       {String? where, List<Object?>? whereArgs, String? orderBy}) async {
     int theLastTime = 0;
@@ -345,7 +329,6 @@ class Messages {
         message.decryptContent = map['content'];
         message.type = map['contentType'];
       }
-      Messages.addToLoaded(message.messageId);
       if (!Connect.sharedInstance.eventCache.contains(message.messageId)) {
         Connect.sharedInstance.eventCache.add(message.messageId);
       }

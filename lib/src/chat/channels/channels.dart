@@ -130,7 +130,6 @@ class Channels {
   }
 
   Future<void> _receiveChannelMessages(Event event, String relay) async {
-    if (!Messages.addToLoaded(event.id)) return;
     ChannelMessage channelMessage = Nip28.getChannelMessage(event);
     if (await _checkBlockedList(channelMessage.sender)) return;
     MessageDB messageDB = MessageDB(

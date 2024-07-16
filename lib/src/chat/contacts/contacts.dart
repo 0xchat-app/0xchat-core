@@ -414,7 +414,6 @@ class Contacts {
     }
     friendMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
-      if (Messages.isLoaded(event.id)) return;
       if (event.kind == 4) {
         updateFriendMessageTime(event.createdAt, relay);
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
@@ -464,19 +463,17 @@ class Contacts {
 
   Future<void> _handlePrivateMessage(Event event, String relay,
       {String? giftWrappedId}) async {
-    if (Messages.addToLoaded(event.id)) {
-      MessageDB? messageDB =
-          await MessageDB.fromPrivateMessage(event, pubkey, privkey);
-      if (messageDB != null) {
-        if (giftWrappedId != null) messageDB.giftWrappedId = giftWrappedId;
-        await Messages.saveMessageToDB(messageDB);
-        if (messageDB.groupId.isNotEmpty) {
-          // private group
-          Groups.sharedInstance.groupMessageCallBack?.call(messageDB);
-        } else {
-          // private chat
-          privateChatMessageCallBack?.call(messageDB);
-        }
+    MessageDB? messageDB =
+        await MessageDB.fromPrivateMessage(event, pubkey, privkey);
+    if (messageDB != null) {
+      if (giftWrappedId != null) messageDB.giftWrappedId = giftWrappedId;
+      await Messages.saveMessageToDB(messageDB);
+      if (messageDB.groupId.isNotEmpty) {
+        // private group
+        Groups.sharedInstance.groupMessageCallBack?.call(messageDB);
+      } else {
+        // private chat
+        privateChatMessageCallBack?.call(messageDB);
       }
     }
   }

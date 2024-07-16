@@ -362,16 +362,13 @@ extension SecretChat on Contacts {
 
   Future<void> _handleSecretMessage(
       String sessionId, Event event, String giftWrapEventId) async {
-    if (Messages.addToLoaded(event.id)) {
-      MessageDB? messageDB = await MessageDB.fromPrivateMessage(
-          event, pubkey, privkey,
-          chatType: 3);
-      if (messageDB != null) {
-        messageDB.sessionId = sessionId;
-        messageDB.giftWrappedId = giftWrapEventId;
-        await Messages.saveMessageToDB(messageDB);
-        secretChatMessageCallBack?.call(messageDB);
-      }
+    MessageDB? messageDB =
+        await MessageDB.fromPrivateMessage(event, pubkey, privkey, chatType: 3);
+    if (messageDB != null) {
+      messageDB.sessionId = sessionId;
+      messageDB.giftWrappedId = giftWrapEventId;
+      await Messages.saveMessageToDB(messageDB);
+      secretChatMessageCallBack?.call(messageDB);
     }
   }
 
@@ -527,7 +524,7 @@ extension SecretChat on Contacts {
     secretSessionSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       SecretSessionDB? session = _getSessionFromPubkey(event.pubkey);
-      if (session != null && Messages.addToLoaded(event.id)) {
+      if (session != null) {
         Event? innerEvent = await Nip17.decode(event, pubkey, privkey,
             sealedPrivkey: session.shareSecretKey!);
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
