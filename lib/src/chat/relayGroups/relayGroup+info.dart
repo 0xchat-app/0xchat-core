@@ -76,6 +76,22 @@ extension EInfo on RelayGroup {
     await syncGroupToDB(groupDB);
   }
 
+  Future<void> handleGroupMetadataFromModeration(
+      GroupModeration moderation, String relay) async {
+    RelayGroupDB? groupDB = groups[moderation.groupId];
+    groupDB ??= RelayGroupDB(
+        groupId: moderation.groupId,
+        relay: relay ?? '',
+        id: '$relay\'${moderation.groupId}');
+    if (moderation.createdAt < groupDB.lastUpdatedTime) return;
+    groupDB.name = moderation.name;
+    groupDB.picture = moderation.picture;
+    groupDB.about = moderation.about;
+    groupDB.lastUpdatedTime = moderation.createdAt;
+    groupMetadataUpdatedCallBack?.call(groupDB);
+    await syncGroupToDB(groupDB);
+  }
+
   Future<void> handleGroupAdmins(Event event, String relay) async {
     String groupId = Nip29.getGroupIdFromEvent(event) ?? '';
     List<GroupAdmin> admins = Nip29.decodeGroupAdmins(event);

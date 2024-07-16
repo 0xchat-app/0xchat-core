@@ -36,12 +36,13 @@ extension EMember on RelayGroup {
             name: name,
             picture: picture,
             about: about,
-            id: id);
+            id: id,
+            lastUpdatedTime: event.createdAt);
         myGroups[groupId] = relayGroupDB;
         await syncGroupToDB(relayGroupDB);
-        await syncMyGroupListToRelay();
         await editGroupStatus(groupId, closed, closed, '');
         await editMetadata(groupId, name, about, picture, '');
+        syncMyGroupListToRelay();
         if (!completer.isCompleted) completer.complete(relayGroupDB);
       } else {
         if (!completer.isCompleted) completer.complete(null);
@@ -85,7 +86,8 @@ extension EMember on RelayGroup {
               name: name,
               picture: picture,
               about: about,
-              id: id);
+              id: id,
+              lastUpdatedTime: currentUnixTimestampSeconds());
           myGroups[groupId] = relayGroupDB;
           await syncGroupToDB(relayGroupDB);
           await syncMyGroupListToRelay();
@@ -168,6 +170,8 @@ extension EMember on RelayGroup {
         content = '${content}leave the group';
         break;
       case GroupActionKind.editMetadata:
+        await handleGroupMetadataFromModeration(moderation, relay);
+        break;
       case GroupActionKind.addPermission:
       case GroupActionKind.removePermission:
       case GroupActionKind.deleteEvent:

@@ -177,9 +177,9 @@ class RelayGroup {
               9006,
               9021,
               9735,
-              39000,
-              39001,
-              39002
+              // 39000,
+              // 39001,
+              // 39002
             ],
             since: (groupMessageUntil + 1));
         subscriptions[relayURL] = [f];
@@ -203,9 +203,9 @@ class RelayGroup {
             9006,
             9021,
             9735,
-            39000,
-            39001,
-            39002
+            // 39000,
+            // 39001,
+            // 39002
           ],
           since: (groupMessageUntil + 1));
       subscriptions[relay] = [f];
