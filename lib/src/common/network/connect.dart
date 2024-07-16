@@ -124,7 +124,7 @@ class Connect {
       //   await webSockets[relay]?.socket?.close();
       // }
       for (var relayKind in webSockets[relay]?.relayKinds ?? []) {
-        await connect(relay, relayKind: relayKind);
+        connect(relay, relayKind: relayKind);
       }
     }
   }
