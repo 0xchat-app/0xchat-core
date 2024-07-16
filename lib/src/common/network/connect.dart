@@ -114,6 +114,19 @@ class Connect {
         _checkTimeout();
       });
     }
+    resetConnection();
+  }
+
+  Future<void> resetConnection() async {
+    for (var relay in webSockets.keys) {
+      // if (webSockets[relay]?.connectStatus != 3) {
+      //   webSockets[relay]?.connectStatus = 3;
+      //   await webSockets[relay]?.socket?.close();
+      // }
+      for (var relayKind in webSockets[relay]?.relayKinds ?? []) {
+        await connect(relay, relayKind: relayKind);
+      }
+    }
   }
 
   void listenConnectivity() {
@@ -122,9 +135,7 @@ class Connect {
         .onConnectivityChanged
         .listen((ConnectivityResult result) async {
       if (result != ConnectivityResult.none) {
-        for (var socket in webSockets.values) {
-          await socket.socket?.close();
-        }
+        resetConnection();
       }
     });
   }

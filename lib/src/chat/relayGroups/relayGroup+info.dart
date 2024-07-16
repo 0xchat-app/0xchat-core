@@ -24,15 +24,13 @@ extension EInfo on RelayGroup {
         author: author ?? '',
         id: '$relay\'$groupId');
     Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
-    Filter f = Filter(
-        kinds: [39000, 39001, 39002],
-        d: [groupId],
-        since: groupDB.lastUpdatedTime + 1);
+    Filter f = Filter(kinds: [39000, 39001, 39002], d: [groupId]);
     Map<String, List<Filter>> subscriptions = {};
     subscriptions[groupDB.relay] = [f];
     Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
-      groupDB!.lastUpdatedTime = event.createdAt;
+      if (event.createdAt < groupDB!.lastUpdatedTime) return;
+      groupDB.lastUpdatedTime = event.createdAt;
       switch (event.kind) {
         case 39000:
           Group group = Nip29.decodeMetadata(event, relay);
