@@ -67,6 +67,7 @@ extension EInfo on RelayGroup {
         groupId: group.groupId,
         relay: relay ?? '',
         id: '$relay\'${group.groupId}');
+    if (event.createdAt < groupDB.lastUpdatedTime) return;
     groupDB.name = group.name;
     groupDB.picture = group.picture;
     groupDB.about = group.about;
@@ -83,6 +84,7 @@ extension EInfo on RelayGroup {
     RelayGroupDB? groupDB = groups[groupId];
     groupDB ??= RelayGroupDB(
         groupId: groupId, relay: relay ?? '', id: '$relay\'$groupId');
+    if (event.createdAt < groupDB.lastUpdatedTime) return;
     groupDB.admins = admins;
     groupDB.lastUpdatedTime = event.createdAt;
     groupMetadataUpdatedCallBack?.call(groupDB);
@@ -95,6 +97,7 @@ extension EInfo on RelayGroup {
     RelayGroupDB? groupDB = groups[groupId];
     groupDB ??= RelayGroupDB(
         groupId: groupId, relay: relay ?? '', id: '$relay\'$groupId');
+    if (event.createdAt < groupDB.lastUpdatedTime) return;
     groupDB.members = members;
     groupDB.lastUpdatedTime = event.createdAt;
     groupMetadataUpdatedCallBack?.call(groupDB);
