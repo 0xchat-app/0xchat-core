@@ -217,6 +217,7 @@ class MessageDB extends DBObject {
         path.endsWith('.bmp') ||
         path.endsWith('.svg') ||
         path.endsWith('.webp') ||
+        path.endsWith('.heic') ||
         path.startsWith('image/gif;base64,') ||
         path.startsWith('image/png;base64,')) {
       return MessageType.image;
