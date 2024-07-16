@@ -660,7 +660,7 @@ class Channels {
         'channelId': Nip19.decodeNote(encodedChannel),
         'relays': [],
         'author': null,
-        'kind': 40
+        'kind': 1
       };
     }
     return null;
