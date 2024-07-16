@@ -26,21 +26,6 @@ extension Send on Moment {
         replyUsers: mentions,
         replyUserRelays: mentionsRelays,
         hashTags: hashTags);
-
-    NoteDB? note;
-    if (rootEvent != null && replyEvent == null) {
-      note = await loadNoteWithNoteId(rootEvent);
-    } else if (replyEvent != null) {
-      note = await loadNoteWithNoteId(replyEvent);
-    }
-    if (note != null) {
-      note.replyEventIds ??= [];
-      note.replyEventIds!.add(event.id);
-      note.replyCount++;
-      note.replyCountByMe++;
-      saveNoteToDB(note, null);
-    }
-
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) {
         Connect.sharedInstance.eventCache.add(event.id);
@@ -69,22 +54,7 @@ extension Send on Moment {
         replyUsers: mentions,
         replyUserRelays: mentionsRelays,
         hashTags: hashTags);
-
-    NoteDB? note;
-    if (rootEvent != null && replyEvent == null) {
-      note = await loadNoteWithNoteId(rootEvent);
-    } else if (replyEvent != null) {
-      note = await loadNoteWithNoteId(replyEvent);
-    }
-    if (note != null) {
-      note.replyEventIds ??= [];
-      note.replyEventIds!.add(event.id);
-      note.replyCount++;
-      note.replyCountByMe++;
-      saveNoteToDB(note, null);
-    }
     await handleNoteEvent(event, '', true);
-
     int sendedMessagesCount = 0;
     return await sendPrivateMessage(pubkeys, event, sendMessageCallBack: () {
       sendMessageProgressCallBack?.call(++sendedMessagesCount);
