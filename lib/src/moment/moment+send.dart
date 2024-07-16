@@ -44,7 +44,7 @@ extension Send on Moment {
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) {
         Connect.sharedInstance.eventCache.add(event.id);
-        handleNoteEvent(event, relay, false);
+        await handleNoteEvent(event, relay, false);
         completer.complete(ok);
       }
     });
@@ -83,7 +83,7 @@ extension Send on Moment {
       note.replyCountByMe++;
       saveNoteToDB(note, null);
     }
-    handleNoteEvent(event, '', true);
+    await handleNoteEvent(event, '', true);
 
     int sendedMessagesCount = 0;
     return await sendPrivateMessage(pubkeys, event, sendMessageCallBack: () {
