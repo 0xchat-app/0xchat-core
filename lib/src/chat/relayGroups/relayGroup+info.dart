@@ -29,12 +29,10 @@ extension EInfo on RelayGroup {
     subscriptions[groupDB.relay] = [f];
     Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
-      if (event.createdAt < groupDB!.lastUpdatedTime) return;
-      groupDB.lastUpdatedTime = event.createdAt;
       switch (event.kind) {
         case 39000:
           Group group = Nip29.decodeMetadata(event, relay);
-          groupDB.name = group.name;
+          groupDB!.name = group.name;
           groupDB.picture = group.picture;
           groupDB.about = group.about;
           groupDB.private = group.private;
@@ -42,11 +40,11 @@ extension EInfo on RelayGroup {
           break;
         case 39001:
           List<GroupAdmin> admins = Nip29.decodeGroupAdmins(event);
-          groupDB.admins = admins;
+          groupDB!.admins = admins;
           break;
         case 39002:
           List<String> members = Nip29.decodeGroupMembers(event);
-          groupDB.members = members;
+          groupDB!.members = members;
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
