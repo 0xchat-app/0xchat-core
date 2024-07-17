@@ -74,13 +74,15 @@ class RelayGroupDB extends DBObject {
   }
 
   static List<GroupAdmin> stringToGroupAdmins(String json) {
-    List<dynamic> groupAdminsJson = [];
+    if(json.isEmpty || json == 'null') return [];
     try {
+      List<dynamic> groupAdminsJson = [];
       groupAdminsJson = jsonDecode(json);
       List<GroupAdmin> admins =
-          groupAdminsJson.map((json) => GroupAdmin.fromJson(json)).toList();
+      groupAdminsJson.map((json) => GroupAdmin.fromJson(json)).toList();
       return admins;
     } catch (e) {
+      print('stringToGroupAdmins error: $e');
       return [];
     }
   }
