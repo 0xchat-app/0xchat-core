@@ -585,13 +585,14 @@ class Contacts {
     return completer.future;
   }
 
-  Future<void> connectUserDMRelays(String pubkey) async {
+  Future<bool> connectUserDMRelays(String pubkey) async {
     UserDB toUser = await Account.sharedInstance.reloadProfileFromRelay(pubkey);
     List<String>? relays = toUser.dmRelayList;
     if (relays?.isNotEmpty == true) {
-      await Connect.sharedInstance
+      return await Connect.sharedInstance
           .connectRelays(relays!, relayKind: RelayKind.temp);
     }
+    return true;
   }
 
   Future<void> closeUserDMRelays(String pubkey) async {

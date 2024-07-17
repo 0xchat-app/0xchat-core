@@ -245,22 +245,22 @@ class Connect {
     }
   }
 
-  Future<void> connectRelays(List<String> relays,
+  Future<bool> connectRelays(List<String> relays,
       {RelayKind relayKind = RelayKind.general}) async {
-    final completer = Completer<void>();
-    if (relays.isEmpty && !completer.isCompleted) completer.complete();
+    final completer = Completer<bool>();
+    if (relays.isEmpty && !completer.isCompleted) completer.complete(true);
     if (relayKind == RelayKind.temp) {
       // timeout for temp relays
       Timer(Duration(seconds: 10), () {
         if (!completer.isCompleted) {
-          completer.complete();
+          completer.complete(false);
           closeConnects(relays, relayKind);
         }
       });
     }
     for (String relay in relays) {
       connect(relay, relayKind: relayKind).then((value) {
-        if (!completer.isCompleted) completer.complete();
+        if (!completer.isCompleted) completer.complete(true);
       });
     }
     return completer.future;
