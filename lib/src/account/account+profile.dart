@@ -152,6 +152,7 @@ extension AccountProfile on Account {
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       UserDB? db = users[event.pubkey];
+      if(db == null) return;
       if (event.kind == 0) {
         users[event.pubkey] = _handleKind0Event(db, event)!;
       }
