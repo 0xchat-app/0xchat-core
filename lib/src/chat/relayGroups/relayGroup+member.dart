@@ -171,7 +171,7 @@ extension EMember on RelayGroup {
         break;
       case GroupActionKind.editMetadata:
         await handleGroupMetadataFromModeration(moderation, relay);
-        break;
+        return;
       case GroupActionKind.addPermission:
       case GroupActionKind.removePermission:
       case GroupActionKind.deleteEvent:
