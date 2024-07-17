@@ -123,17 +123,17 @@ class DB {
   Future<void> batchApply() async {
     try {
       List<BatchOperation> batchOperations = List.from(insertOperations);
-      insertOperations.clear();
+      // insertOperations.clear();
       var batch = db.batch();
       for (var batchOperation in batchOperations) {
         batch.insert(batchOperation.table, batchOperation.values,
             conflictAlgorithm: batchOperation.conflictAlgorithm);
       }
       List<Object?> result = await batch.commit(continueOnError: true);
-      if (result.length < batchOperations.length) {
-        print('batchApply error: result: ${result.length}, expected: ${batchOperations.length}');
-        insertOperations.addAll(batchOperations);
-      }
+      // if (result.length < batchOperations.length) {
+      //   print('batchApply error: result: ${result.length}, expected: ${batchOperations.length}');
+      //   insertOperations.addAll(batchOperations);
+      // }
     } catch (e) {
       print('batchCommit error: $e');
     }
