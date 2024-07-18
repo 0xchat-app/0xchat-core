@@ -234,14 +234,14 @@ class Connect {
       WebSocket? socket;
       socket = await _connectWs(relay);
       if (socket != null) {
-        socket.done.then((dynamic _) => _onDisconnected(relay));
-        _listenEvent(socket, relay);
+        socket.done.then((dynamic _) => _onDisconnected(relay, relayKind));
+        _listenEvent(socket, relay, relayKind);
         webSockets[relay] = ISocket(socket, 1, relayKinds);
         print("socket connection initialized");
         _setConnectStatus(relay, 1);
       }
     } catch (_) {
-      _onDisconnected(relay);
+      _onDisconnected(relay, relayKind);
     }
   }
 
@@ -640,23 +640,23 @@ class Connect {
     _send(authJson, toRelays: [relay]);
   }
 
-  Future<void> _reConnectToRelay(String relay) async {
+  Future<void> _reConnectToRelay(String relay, RelayKind relayKind) async {
     _setConnectStatus(relay, 3); // closed
     await Future.delayed(Duration(milliseconds: 3000));
     if (webSockets.containsKey(relay)) {
-      await connect(relay);
+      await connect(relay, relayKind: relayKind);
     }
   }
 
-  void _listenEvent(WebSocket socket, String relay) {
+  void _listenEvent(WebSocket socket, String relay, RelayKind relayKind) {
     socket.listen((message) async {
       await _handleMessage(message, relay);
     }, onDone: () async {
       print("connect aborted");
-      await _reConnectToRelay(relay);
+      await _reConnectToRelay(relay, relayKind);
     }, onError: (e) async {
       print('Server error: $e');
-      await _reConnectToRelay(relay);
+      await _reConnectToRelay(relay, relayKind);
     });
   }
 
@@ -678,8 +678,8 @@ class Connect {
     }
   }
 
-  Future<void> _onDisconnected(String relay) async {
+  Future<void> _onDisconnected(String relay, RelayKind relayKind) async {
     print("_onDisconnected");
-    return await _reConnectToRelay(relay);
+    return await _reConnectToRelay(relay, relayKind);
   }
 }
