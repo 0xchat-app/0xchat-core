@@ -105,8 +105,9 @@ extension EMember on RelayGroup {
   }
 
   Future<OKEvent> leaveGroup(String groupId) async {
-    RelayGroupDB? groupDB = myGroups[groupId];
+    RelayGroupDB? groupDB = groups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
+    groupDB.members?.remove(pubkey);
     myGroups.remove(groupId);
     return await syncMyGroupListToRelay();
   }
