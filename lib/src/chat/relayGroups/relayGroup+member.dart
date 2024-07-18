@@ -125,8 +125,9 @@ extension EMember on RelayGroup {
     SimpleGroups simpleGroups = getHostAndGroupId(input);
     String groupId = simpleGroups.groupId;
     String relay = simpleGroups.relay;
-    if (relay.isEmpty) return OKEvent(input, false, 'empty relay');
     RelayGroupDB? groupDB = groups[groupId];
+    if (groupDB != null) relay = groupDB.relay;
+    if (relay.isEmpty) return OKEvent(input, false, 'empty relay');
     if (groupDB == null) {
       groupDB = RelayGroupDB(groupId: groupId, relay: relay, id: input);
       groups[groupId] = groupDB;
