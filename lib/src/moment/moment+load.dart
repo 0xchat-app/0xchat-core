@@ -188,6 +188,68 @@ extension Load on Moment {
     return completer.future;
   }
 
+  Future<NoteDB> loadPublicNoteActionsFromDB(NoteDB noteDB,
+      {NoteCallBack? noteCallBack}) async {
+    String whereClause =
+        'root = ? OR reply = ? OR repostId = ? OR quoteRepostId = ? OR reactedId = ?';
+    List<Object?> whereArgs = [
+      noteDB.noteId,
+      noteDB.noteId,
+      noteDB.noteId,
+      noteDB.noteId,
+      noteDB.noteId
+    ];
+
+    List<NoteDB> notes = await loadNotesFromDB(
+      where: whereClause,
+      whereArgs: whereArgs,
+    );
+
+    noteDB.replyEventIds ??= [];
+    noteDB.repostEventIds ??= [];
+    noteDB.quoteRepostEventIds ??= [];
+    noteDB.reactionEventIds ??= [];
+
+    for (var note in notes) {
+      // check reply
+      if (note.reply == noteDB.noteId &&
+          !noteDB.replyEventIds!.contains(note.noteId)) {
+        noteDB.replyEventIds!.add(note.noteId);
+        noteDB.replyCount++;
+        if (note.author == pubkey) noteDB.replyCountByMe++;
+      } else if ((note.root == noteDB.noteId &&
+              (note.reply == null || note.reply!.isEmpty)) &&
+          !noteDB.replyEventIds!.contains(note.noteId)) {
+        noteDB.replyEventIds!.add(note.noteId);
+        noteDB.replyCount++;
+        if (note.author == pubkey) noteDB.replyCountByMe++;
+      }
+      // check repost
+      if (note.repostId == noteDB.noteId &&
+          !noteDB.repostEventIds!.contains(note.noteId)) {
+        noteDB.repostEventIds!.add(note.noteId);
+        noteDB.repostCount++;
+        if (note.author == pubkey) noteDB.repostCountByMe++;
+      }
+      // check quote repost
+      if (note.quoteRepostId == noteDB.noteId &&
+          !noteDB.quoteRepostEventIds!.contains(note.noteId)) {
+        noteDB.quoteRepostEventIds!.add(note.noteId);
+        noteDB.quoteRepostCount++;
+        if (note.author == pubkey) noteDB.quoteRepostCountByMe++;
+      }
+      // check reaction
+      if (note.reactedId == noteDB.noteId &&
+          !noteDB.reactionEventIds!.contains(note.noteId)) {
+        noteDB.reactionEventIds!.add(note.noteId);
+        noteDB.reactionCount++;
+        if (note.author == pubkey) noteDB.reactionCountByMe++;
+      }
+    }
+    saveNoteToDB(noteDB, ConflictAlgorithm.replace);
+    return noteDB;
+  }
+
   Future<NoteDB> loadPublicNoteActionsFromRelay(NoteDB noteDB,
       {NoteCallBack? noteCallBack}) async {
     String noteId = noteDB.noteId;
@@ -450,6 +512,9 @@ extension Load on Moment {
     };
     NoteDB? noteDB = await loadNoteWithNoteId(noteId, reload: reload);
     if (noteDB != null) {
+      noteDB = await loadPublicNoteActionsFromDB(noteDB);
+      result['reply'] = await loadNoteIdsToNoteDBs(
+          noteDB.replyEventIds ?? [], noteDB.private, reload);
       if (!noteDB.private && reload) {
         await loadPublicNoteActionsFromRelay(noteDB,
             noteCallBack: (noteDB) async {
