@@ -134,6 +134,11 @@ extension EMember on RelayGroup {
       syncGroupToDB(groupDB);
     }
     myGroups[groupId] = groups[groupId]!;
+    if (groupDB.closed == false) {
+      //open group, auto join
+      groupDB.members ??= [];
+      if (!groupDB.members!.contains(pubkey)) groupDB.members!.add(pubkey);
+    }
     syncMyGroupListToRelay();
 
     await Connect.sharedInstance
