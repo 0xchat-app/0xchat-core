@@ -199,14 +199,44 @@ class Zaps {
       String url =
           '${zapsDB.callback}?amount=${sats * 1000}&lnurl=${zapsDB.lnURL}';
       if (zapsDB.allowsNostr == true) {
-        Event event = await Nip57.zapRequest([],
+        List<String> toRelays = [];
+        switch (zapType) {
+          case ZapType.normal:
+          case ZapType.channelChat:
+            toRelays.addAll(
+                Connect.sharedInstance.relays(relayKind: RelayKind.general));
+            break;
+          case ZapType.privateChat:
+          case ZapType.privateGroup:
+            UserDB? toUser =
+                await Account.sharedInstance.getUserInfo(recipient);
+            toRelays.addAll(
+                Connect.sharedInstance.relays(relayKind: RelayKind.general));
+            toRelays.addAll(toUser?.dmRelayList ?? []);
+            break;
+          case ZapType.relayGroup:
+            RelayGroupDB? relayGroupDB =
+                RelayGroup.sharedInstance.groups[groupId];
+            if (relayGroupDB != null) {
+              toRelays.addAll(
+                  Connect.sharedInstance.relays(relayKind: RelayKind.general));
+            } else {
+              return {"invoice": '', "zapsDB": zapsDB};
+            }
+            break;
+        }
+
+        Event event = await Nip57.zapRequest(
+            toRelays,
             (sats * 1000).toString(),
             lnurl,
             recipient,
             Account.sharedInstance.currentPubkey,
             Account.sharedInstance.currentPrivkey,
             privateZap ?? false,
-            eventId: eventId, coordinate: coordinate, content: content);
+            eventId: eventId,
+            coordinate: coordinate,
+            content: content);
         String encodedUri = Uri.encodeFull(jsonEncode(event));
         url = '$url&nostr=$encodedUri';
       }
