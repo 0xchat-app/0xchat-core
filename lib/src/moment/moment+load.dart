@@ -265,6 +265,7 @@ extension Load on Moment {
     }
     Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) async {
+      if (Contacts.sharedInstance.inBlockList(event.pubkey)) return;
       if (!result.containsKey(event.id)) {
         result[event.id] = event;
         switch (event.kind) {
