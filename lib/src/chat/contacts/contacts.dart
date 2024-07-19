@@ -586,8 +586,8 @@ class Contacts {
   }
 
   Future<bool> connectUserDMRelays(String pubkey) async {
-    UserDB toUser = await Account.sharedInstance.reloadProfileFromRelay(pubkey);
-    List<String>? relays = toUser.dmRelayList;
+    UserDB? toUser = await Account.sharedInstance.getUserInfo(pubkey);
+    List<String>? relays = toUser?.dmRelayList;
     if (relays?.isNotEmpty == true) {
       return await Connect.sharedInstance
           .connectRelays(relays!, relayKind: RelayKind.temp);
