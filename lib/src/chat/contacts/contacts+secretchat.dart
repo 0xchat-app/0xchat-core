@@ -5,13 +5,14 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension SecretChat on Contacts {
-  void _connectToRelay(String? relay) {
+  Future<void> _connectToRelay(String? relay) async {
     if (relay != null &&
         relay.isNotEmpty &&
         !Connect.sharedInstance
             .relays(relayKind: RelayKind.secretChat)
             .contains(relay)) {
-      Connect.sharedInstance.connect(relay, relayKind: RelayKind.secretChat);
+      await Connect.sharedInstance
+          .connect(relay, relayKind: RelayKind.secretChat);
     }
   }
 
@@ -494,7 +495,7 @@ extension SecretChat on Contacts {
           .closeRequests(secretSessionSubscription, relay: relay);
     }
 
-    List<String> pubkeys = [pubkey];
+    List<String> pubkeys = [];
     secretSessionMap.forEach((key, value) {
       if (value.status == 2 || value.status == 5) {
         if (value.sharePubkey!.isNotEmpty) pubkeys.add(value.sharePubkey!);
@@ -504,23 +505,30 @@ extension SecretChat on Contacts {
     Map<String, List<Filter>> subscriptions = {};
     if (relay == null) {
       List<String> relays =
-          Connect.sharedInstance.relays(relayKind: RelayKind.secretChat);
+          Connect.sharedInstance.relays(relayKind: RelayKind.general);
       relays.addAll(
           Connect.sharedInstance.relays(relayKind: RelayKind.secretChat));
       for (var r in relays) {
         int friendMessageUntil = Relays.sharedInstance.getFriendMessageUntil(r);
         Filter f = Filter(
-            kinds: [1059], authors: pubkeys, since: friendMessageUntil + 1);
+            kinds: [1059],
+            authors: pubkeys,
+            since: friendMessageUntil > offset2
+                ? (friendMessageUntil - offset2 + 1)
+                : 1);
         subscriptions[r] = [f];
       }
     } else {
       int friendMessageUntil =
           Relays.sharedInstance.getFriendMessageUntil(relay);
       Filter f = Filter(
-          kinds: [1059], authors: pubkeys, since: friendMessageUntil + 1);
+          kinds: [1059],
+          authors: pubkeys,
+          since: friendMessageUntil > offset2
+              ? (friendMessageUntil - offset2 + 1)
+              : 1);
       subscriptions[relay] = [f];
     }
-
     secretSessionSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       SecretSessionDB? session = _getSessionFromPubkey(event.pubkey);
