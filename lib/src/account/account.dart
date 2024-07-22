@@ -211,7 +211,7 @@ class Account {
         return null;
       }
     } catch (e) {
-      print(e);
+      debugPrint(e.toString());
       return null;
     }
   }

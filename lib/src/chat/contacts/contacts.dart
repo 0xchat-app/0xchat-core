@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
@@ -447,7 +448,7 @@ class Contacts {
                   .handleReactionEvent(innerEvent, relay, true);
               break;
             default:
-              print('contacts unhandled message ${innerEvent.toJson()}');
+              debugPrint('contacts unhandled message ${innerEvent.toJson()}');
               break;
           }
         }

@@ -1,4 +1,5 @@
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 typedef NewNotesCallBack = void Function(List<NoteDB>);
@@ -81,7 +82,7 @@ class Moment {
             handleReactionEvent(event, relay, false);
             break;
           default:
-            print('moment unhandled message ${event.toJson()}');
+            debugPrint('moment unhandled message ${event.toJson()}');
             break;
         }
       }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 enum MessageType {
@@ -272,7 +273,7 @@ class MessageDB extends DBObject {
       }
       return {'contentType': 'text', 'content': content};
     } catch (e) {
-      print('decodeContent fail: $content, error msg: ${e.toString()}');
+      debugPrint('decodeContent fail: $content, error msg: ${e.toString()}');
       MessageType type = _identifyUrl(content);
       return {'contentType': messageTypeToString(type), 'content': content};
     }

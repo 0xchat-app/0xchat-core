@@ -4,6 +4,7 @@
 import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 class Config {
@@ -85,7 +86,7 @@ class Config {
           _handleAppData(event);
           break;
         default:
-          print('config unhandled message ${event.toJson()}');
+          debugPrint('config unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (String requestId, OKEvent ok, String relay,

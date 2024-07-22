@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
@@ -56,7 +57,7 @@ class Messages {
           _handleMuteUserEvent(event);
           break;
         default:
-          print('messages unhandled message ${event.toJson()}');
+          debugPrint('messages unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (String requestId, OKEvent ok, String relay,
@@ -95,7 +96,7 @@ class Messages {
           handleZapRecordEvent(event);
           break;
         default:
-          print('unhandled message $event');
+          debugPrint('unhandled message $event');
           break;
       }
     },

@@ -1,4 +1,5 @@
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class Relays {
@@ -326,7 +327,7 @@ class Relays {
       await DB.sharedInstance.insertBatch(relayDB);
       return relayDB;
     } else {
-      print('Request failed with status: ${response.statusCode}.');
+      debugPrint('Request failed with status: ${response.statusCode}.');
       return null;
     }
   }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
@@ -176,7 +177,7 @@ class Groups {
         _handleGroupMessage(event);
         break;
       default:
-        print('unknown event: ${event.kind}');
+        debugPrint('unknown event: ${event.kind}');
         break;
     }
   }

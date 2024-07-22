@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 typedef GroupsJoinRequestCallBack = void Function(JoinRequestDB);
@@ -251,7 +252,7 @@ class RelayGroup {
           handleGroupMembers(event, relay);
           break;
         default:
-          print('relaygroup unhandled message ${event.toJson()}');
+          debugPrint('relaygroup unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {

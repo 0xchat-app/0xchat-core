@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:reflectable/reflectable.dart';
 import 'db_helper.dart';
@@ -53,7 +54,7 @@ class DB {
     if (deleteDBIfNeedMirgration) {
       bool exists = await databaseExists(dbPath);
       if (exists) {
-        print("delete Table");
+        debugPrint("delete Table");
         await deleteDatabase(dbPath);
       }
     }
@@ -67,7 +68,7 @@ class DB {
           try {
             batch.execute(sql);
           } catch (_) {
-            print("create ${objectMirror.simpleName} failure");
+            debugPrint("create ${objectMirror.simpleName} failure");
           }
         }
       }
@@ -104,7 +105,7 @@ class DB {
                   }
                 }
               } catch (_) {
-                print(
+                debugPrint(
                     "update ${objectMirror.simpleName} failure ==> ${updateSql.toString()}");
               }
             }
@@ -135,7 +136,7 @@ class DB {
       //   insertOperations.addAll(batchOperations);
       // }
     } catch (e) {
-      print('batchCommit error: $e');
+      debugPrint('batchCommit error: $e');
     }
   }
 
@@ -235,7 +236,7 @@ class DB {
 
   Future<int> delete<T extends DBObject>(
       {String? where, List<Object?>? whereArgs}) async {
-    print('db delete: $where, ${jsonEncode(whereArgs)}');
+    debugPrint('db delete: $where, ${jsonEncode(whereArgs)}');
     String tableName = DBHelper.getTableName(T);
     await createTableForDBObject<T>(tableName);
     return await db.delete(tableName, where: where, whereArgs: whereArgs);

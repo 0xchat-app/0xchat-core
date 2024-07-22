@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 @reflector
@@ -82,7 +83,7 @@ class RelayGroupDB extends DBObject {
       groupAdminsJson.map((json) => GroupAdmin.fromJson(json)).toList();
       return admins;
     } catch (e) {
-      print('stringToGroupAdmins error: $e');
+      debugPrint('stringToGroupAdmins error: $e');
       return [];
     }
   }

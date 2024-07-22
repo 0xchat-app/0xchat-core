@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
@@ -105,7 +106,7 @@ class Channels {
           _receiveChannelMessages(event, relay);
           break;
         default:
-          print('channel unhandled message ${event.toJson()}');
+          debugPrint('channel unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
@@ -304,7 +305,7 @@ class Channels {
           _receiveChannelMessages(event, relay);
           break;
         default:
-          print('unhandled message $event');
+          debugPrint('unhandled message $event');
           break;
       }
     }, eoseCallBack: (String requestId, OKEvent ok, String relay,
