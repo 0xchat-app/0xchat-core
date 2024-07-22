@@ -51,7 +51,7 @@ extension EInfo on RelayGroup {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty && !completer.isCompleted) {
         if (groupDB != null) await syncGroupToDB(groupDB);
-        Connect.sharedInstance.closeConnects(tempRelays, RelayKind.relayGroup);
+        Connect.sharedInstance.closeConnects(tempRelays, RelayKind.temp);
         completer.complete(groupDB);
       }
     });
