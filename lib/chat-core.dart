@@ -8,6 +8,7 @@ export 'src/account/account+relay.dart';
 export 'src/account/account+follows.dart';
 export 'src/account/badges.dart';
 export 'src/account/zaps.dart';
+export 'src/account/zaps+nuts.dart';
 export 'src/account/relays.dart';
 export 'src/account/npub-cash.dart';
 export 'src/account/notification.dart';
