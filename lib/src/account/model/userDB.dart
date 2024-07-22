@@ -68,6 +68,8 @@ class UserDB extends DBObject {
   // nostr wallet connect URI
   String? nwcURI;
 
+  String? settings;
+
   UserDB({
     this.pubKey = '',
     this.encryptedPrivKey = '',
@@ -110,6 +112,7 @@ class UserDB extends DBObject {
     this.lastDMRelayListUpdatedTime = 0,
     this.otherField = '{}',
     this.nwcURI,
+    this.settings,
   });
 
   @override
@@ -142,6 +145,7 @@ class UserDB extends DBObject {
           '''alter table userDB add banner TEXT; alter table userDB add followingList TEXT; alter table userDB add followersList TEXT; alter table userDB add relayList TEXT; alter table userDB add relayGroupsList TEXT; alter table userDB add lastRelayListUpdatedTime INT;''',
       "8":
           '''alter table userDB add lastFollowingListUpdatedTime INT; alter table userDB add dmRelayList TEXT; alter table userDB add lastDMRelayListUpdatedTime INT; alter table userDB add lastRelayGroupsListUpdatedTime INT;''',
+      "9": '''alter table userDB add settings TEXT;''',
     };
   }
 
@@ -264,6 +268,7 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     lastDMRelayListUpdatedTime: map['lastDMRelayListUpdatedTime'] ?? 0,
     otherField: map['otherField']?.toString(),
     nwcURI: map['nwcURI']?.toString(),
+    settings: map['settings']?.toString(),
   );
 }
 
@@ -305,5 +310,6 @@ Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
       'lastFollowingListUpdatedTime': instance.lastFollowingListUpdatedTime,
       'lastDMRelayListUpdatedTime': instance.lastDMRelayListUpdatedTime,
       'otherField': instance.otherField,
-      'nwcURI': instance.nwcURI
+      'nwcURI': instance.nwcURI,
+      'settings': instance.settings
     };
