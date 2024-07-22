@@ -184,6 +184,16 @@ extension EMember on RelayGroup {
           content = '${user.name}$content,';
         }
         content = '${content}leave the group';
+
+        RelayGroupDB? groupDB = groups[db.groupId];
+        if (groupDB != null) {
+          groupDB.members ??= [];
+          if (groupDB.members!.contains(pubkey) &&
+              moderation.users.contains(pubkey)) {
+            groupDB.members!.remove(pubkey);
+            syncGroupToDB(groupDB);
+          }
+        }
         break;
       case GroupActionKind.editMetadata:
         await handleGroupMetadataFromModeration(moderation, relay);
