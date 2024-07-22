@@ -90,9 +90,9 @@ extension EMember on RelayGroup {
               lastUpdatedTime: currentUnixTimestampSeconds());
           myGroups[groupId] = relayGroupDB;
           await syncGroupToDB(relayGroupDB);
-          await syncMyGroupListToRelay();
           await editGroupStatus(groupId, closed, closed, '');
           await editMetadata(groupId, name, about, picture, '');
+          syncMyGroupListToRelay();
           if (!completer.isCompleted) completer.complete(relayGroupDB);
         } else {
           if (!completer.isCompleted) completer.complete(null);
