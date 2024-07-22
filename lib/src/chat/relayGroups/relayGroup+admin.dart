@@ -122,24 +122,58 @@ extension EAdmin on RelayGroup {
     return ok;
   }
 
-  Future<OKEvent> addPermission(
-      String groupId, String user, String permission, String reason) async {
+  Future<OKEvent> setPermissions(String groupId, String user,
+      List<GroupActionKind> permissions, String reason) async {
     RelayGroupDB? groupDB = myGroups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
-    GroupModeration moderation =
-        GroupModeration.addPermission(groupId, [user], permission, reason);
+    List<GroupAdmin>? admins =
+        groupDB.admins?.where((admin) => admin.pubkey == user).toList();
+    if (admins != null && admins.isNotEmpty) {
+      List<GroupActionKind> oldList = admins.first.permissions;
+      List<GroupActionKind> addList = [];
+      List<GroupActionKind> removeList = [];
+
+      for (var newItem in permissions) {
+        if (!oldList.contains(newItem)) {
+          addList.add(newItem);
+        }
+      }
+
+      for (var oldItem in oldList) {
+        if (!permissions.contains(oldItem)) {
+          removeList.add(oldItem);
+        }
+      }
+
+      OKEvent okEvent = OKEvent(groupId, true, '');
+      if (addList.isNotEmpty) {
+        okEvent = await _addPermissions(groupId, user, addList, reason);
+      }
+      if (removeList.isNotEmpty) {
+        okEvent = await _removePermissions(groupId, user, removeList, reason);
+      }
+      return okEvent;
+    }
+    return _addPermissions(groupId, user, permissions, reason);
+  }
+
+  Future<OKEvent> _addPermissions(String groupId, String user,
+      List<GroupActionKind> permissions, String reason) async {
+    RelayGroupDB? groupDB = myGroups[groupId];
+    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
+    GroupModeration moderation = GroupModeration.addPermission(
+        groupId, [user], permissions.map((e) => e.name).toList(), reason);
     OKEvent ok = await sendModeration(moderation);
     if (ok.status) {
       bool exit = false;
       for (GroupAdmin admin in groupDB.admins ?? []) {
         if (admin.pubkey == user) {
           exit = true;
-          admin.permissions.add(GroupActionKind.fromString(permission));
+          admin.permissions.addAll(permissions);
         }
       }
       if (!exit) {
-        GroupAdmin admin =
-            GroupAdmin(user, 'admin', [GroupActionKind.fromString(permission)]);
+        GroupAdmin admin = GroupAdmin(user, 'admin', permissions);
         groupDB.admins ??= [];
         groupDB.admins?.add(admin);
       }
@@ -148,17 +182,18 @@ extension EAdmin on RelayGroup {
     return ok;
   }
 
-  Future<OKEvent> removePermission(
-      String groupId, String user, String permission, String reason) async {
+  Future<OKEvent> _removePermissions(String groupId, String user,
+      List<GroupActionKind> permissions, String reason) async {
     RelayGroupDB? groupDB = myGroups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
-    GroupModeration moderation =
-        GroupModeration.removePermission(groupId, [user], permission, reason);
+    GroupModeration moderation = GroupModeration.removePermission(
+        groupId, [user], permissions.map((e) => e.name).toList(), reason);
     OKEvent ok = await sendModeration(moderation);
     if (ok.status) {
       for (GroupAdmin admin in groupDB.admins ?? []) {
         if (admin.pubkey == user) {
-          admin.permissions.remove(GroupActionKind.fromString(permission));
+          admin.permissions.removeWhere((permission) =>
+              permissions.any((element) => element.name == permission.name));
           if (admin.permissions.isEmpty) {
             groupDB.admins?.remove(admin);
             break;

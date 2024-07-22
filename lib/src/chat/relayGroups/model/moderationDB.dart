@@ -13,6 +13,7 @@ class ModerationDB extends DBObject {
   int actionKind;
 
   List<String>? users;
+  List<String>? permissions;
   String permission;
   String eventId;
   bool private;
@@ -31,6 +32,7 @@ class ModerationDB extends DBObject {
     this.previous,
     this.actionKind = 0,
     this.users,
+    this.permissions,
     this.permission = '',
     this.eventId = '',
     this.private = false,
@@ -59,6 +61,13 @@ class ModerationDB extends DBObject {
     return ['moderationId'];
   }
 
+  //'ALTER TABLE Company ADD description TEXT'
+  static Map<String, String?> updateTable() {
+    return {
+      "9": '''alter table ModerationDB add permissions TEXT;''',
+    };
+  }
+
   static ModerationDB toModerationDB(GroupModeration moderation) {
     return ModerationDB(
         moderationId: moderation.moderationId,
@@ -69,7 +78,7 @@ class ModerationDB extends DBObject {
         previous: moderation.previous,
         actionKind: moderation.actionKind.kind,
         users: moderation.users,
-        permission: moderation.permission,
+        permissions: moderation.permissions,
         eventId: moderation.eventId,
         private: moderation.private,
         closed: moderation.closed,
@@ -91,6 +100,7 @@ Map<String, dynamic> _moderationInfoToMap(ModerationDB instance) =>
           instance.previous == null ? null : jsonEncode(instance.previous),
       'actionKind': instance.actionKind,
       'user': instance.users,
+      'permissions': instance.permissions,
       'permission': instance.permission,
       'eventId': instance.eventId,
       'private': instance.private,
@@ -111,6 +121,7 @@ ModerationDB _moderationDBInfoFromMap(Map<String, dynamic> map) {
     previous: UserDB.decodeStringList(map['previous'].toString()),
     actionKind: map['actionKind'],
     users: UserDB.decodeStringList(map['users'].toString()),
+    permissions: UserDB.decodeStringList(map['permissions'].toString()),
     permission: map['permission'].toString(),
     eventId: map['eventId'].toString(),
     private: (map['private'] ?? 0) > 0 ? true : false,
