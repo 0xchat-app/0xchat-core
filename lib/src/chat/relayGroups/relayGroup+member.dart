@@ -159,7 +159,6 @@ extension EMember on RelayGroup {
     ModerationDB db = ModerationDB.toModerationDB(moderation);
     await DB.sharedInstance.insertBatch<ModerationDB>(db,
         conflictAlgorithm: ConflictAlgorithm.ignore);
-    moderationCallBack?.call(db);
     String content = '';
     Map<String, UserDB> users =
         await Account.sharedInstance.getUserInfos(moderation.users);
@@ -169,6 +168,16 @@ extension EMember on RelayGroup {
           content = '${user.name}$content ';
         }
         content = '${content}join the group';
+
+        RelayGroupDB? groupDB = groups[db.groupId];
+        if (groupDB != null) {
+          groupDB.members ??= [];
+          if (!groupDB.members!.contains(pubkey) &&
+              moderation.users.contains(pubkey)) {
+            groupDB.members!.add(pubkey);
+            syncGroupToDB(groupDB);
+          }
+        }
         break;
       case GroupActionKind.removeUser:
         for (var user in users.values) {
@@ -193,6 +202,7 @@ extension EMember on RelayGroup {
     }
     sendGroupMessage(moderation.groupId, MessageType.system, content, [],
         local: true);
+    moderationCallBack?.call(db);
   }
 
   Future<void> muteGroup(String groupId) async {
