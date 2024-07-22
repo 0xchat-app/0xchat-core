@@ -85,6 +85,8 @@ class NotificationHelper {
   // call setNotification when online or updating notification
   Future<OKEvent> setNotification(
       String deviceId, List<int> kinds, List<String> relays) async {
+    if(serverPubkey.isEmpty) return OKEvent('', false, 'not init');
+    
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<String> channels = Channels.sharedInstance.getAllUnMuteChannels();
     var authors = Contacts.sharedInstance.allContacts.keys.toList();
