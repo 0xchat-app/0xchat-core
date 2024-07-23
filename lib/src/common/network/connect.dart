@@ -238,7 +238,7 @@ class Connect {
         socket.done.then((dynamic _) => _onDisconnected(relay, relayKind));
         _listenEvent(socket, relay, relayKind);
         webSockets[relay] = ISocket(socket, 1, relayKinds);
-        debugPrint("socket connection initialized");
+        debugPrint("$relay connection initialized");
         _setConnectStatus(relay, 1);
       }
     } catch (_) {
@@ -390,7 +390,8 @@ class Connect {
     List<String> rs = (toRelays == null || toRelays.isEmpty)
         ? relays(relayKind: relayKind)
         : List.from(toRelays);
-    debugPrint('send event toRelays: ${jsonEncode(rs)}, eventString: $eventString');
+    debugPrint(
+        'send event toRelays: ${jsonEncode(rs)}, eventString: $eventString');
     Sends sends = Sends(
         generate64RandomHexChars(),
         rs,
@@ -402,20 +403,33 @@ class Connect {
     _send(eventString, toRelays: rs);
   }
 
-  void _send(String data, {List<String>? toRelays}) {
+  void _send(String data,
+      {List<String>? toRelays, String? eventId, String? subscriptionId}) {
     if (toRelays != null && toRelays.isNotEmpty) {
       for (var relay in toRelays) {
         if (webSockets.containsKey(relay)) {
           var socket = webSockets[relay]?.socket;
           if (webSockets[relay]?.connectStatus == 1 && socket != null) {
             socket.add(data);
+          } else if (eventId != null) {
+            _handleOk(OKEvent(eventId, false, 'not connect to relay'), relay);
+          } else if (subscriptionId != null) {
+            _handleCLOSED(Closed(subscriptionId), relay);
           }
+        } else if (eventId != null) {
+          _handleOk(OKEvent(eventId, false, 'not connect to relay'), relay);
+        } else if (subscriptionId != null) {
+          _handleCLOSED(Closed(subscriptionId), relay);
         }
       }
     } else {
       webSockets.forEach((url, socket) {
         if (webSockets[url]?.connectStatus == 1 && socket.socket != null) {
           socket.socket?.add(data);
+        } else if (eventId != null) {
+          _handleOk(OKEvent(eventId, false, 'not connect to relay'), url);
+        } else if (subscriptionId != null) {
+          _handleCLOSED(Closed(subscriptionId), url);
         }
       });
     }

@@ -17,6 +17,8 @@ class NotificationHelper {
   Timer? timer;
   String oxchatRelay = 'wss://relay.0xchat.com';
 
+  Event? unSendNotification;
+
   // key: private key
   // serverkey: server pubkey
   Future<void> init(String serverKey) async {
@@ -25,6 +27,20 @@ class NotificationHelper {
     serverPubkey = serverKey;
 
     startHeartBeat();
+
+    Connect.sharedInstance
+        .addConnectStatusListener((relay, status, relayKinds) async {
+      if (status == 1 && relay == oxchatRelay) {
+        if (unSendNotification != null) {
+          Connect.sharedInstance.sendEvent(unSendNotification!,
+              sendCallBack: (ok, relay) {
+            if (ok.status) unSendNotification = null;
+          }, toRelays: [oxchatRelay]);
+        } else {
+          _heartBeat(serverPubkey, privkey);
+        }
+      }
+    });
   }
 
   void startHeartBeat() {
@@ -85,8 +101,8 @@ class NotificationHelper {
   // call setNotification when online or updating notification
   Future<OKEvent> setNotification(
       String deviceId, List<int> kinds, List<String> relays) async {
-    if(serverPubkey.isEmpty) return OKEvent('', false, 'not init');
-    
+    if (serverPubkey.isEmpty) return OKEvent('', false, 'not init');
+
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<String> channels = Channels.sharedInstance.getAllUnMuteChannels();
     var authors = Contacts.sharedInstance.allContacts.keys.toList();
@@ -112,8 +128,12 @@ class NotificationHelper {
       '#p': ptags
     };
     Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
+    unSendNotification = event;
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
-      if (!completer.isCompleted) completer.complete(ok);
+      if (!completer.isCompleted) {
+        if (ok.status) unSendNotification = null;
+        completer.complete(ok);
+      }
     }, toRelays: [oxchatRelay]);
     return completer.future;
   }
