@@ -18,7 +18,6 @@ class Relays {
     'wss://relay.nostr.band',
     'wss://nos.lol',
     'wss://nostr.wine',
-    'wss://nostr.coinfund.app',
     'wss://eden.nostr.land'
   ];
 
