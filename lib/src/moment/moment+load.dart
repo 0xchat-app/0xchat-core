@@ -45,12 +45,36 @@ extension Load on Moment {
         limit: limit, until: until, private: private);
   }
 
+  Future<List<NoteDB>?> loadMyReactedNotesFromDB(
+      {int limit = 50, int? until, bool? private = false}) async {
+    List<String> authors = [pubkey];
+    List<NoteDB>? reactedNotes = await loadUserNotesFromDB(authors,
+        limit: limit, until: until, private: private, isReacted: true);
+    List<ZapRecordsDB?> zapRecords = await Zaps.loadZapRecordsFromDB(
+        where: 'sender = ?', whereArgs: authors);
+    List<String> reactedIds = [];
+    for (NoteDB note in reactedNotes ?? []) {
+      if (note.reactedId != null) reactedIds.add(note.reactedId!);
+    }
+    for (ZapRecordsDB? zapRecordsDB in zapRecords) {
+      if (zapRecordsDB != null && zapRecordsDB.eventId.isNotEmpty) {
+        reactedIds.add(zapRecordsDB.eventId);
+      }
+    }
+    List<NoteDB> result = [];
+    await Future.forEach(reactedIds, (noteId) async {
+      NoteDB? n = await loadNoteWithNoteId(noteId, reload: false);
+      if (n != null) result.add(n);
+    });
+    return result;
+  }
+
   Future<List<NoteDB>?> loadMyNotesFromDB({int limit = 50, int? until}) async {
     return await loadUserNotesFromDB([pubkey], limit: limit, until: until);
   }
 
   Future<List<NoteDB>?> loadUserNotesFromDB(List<String> userPubkeys,
-      {int limit = 50, int? until, bool? private}) async {
+      {int limit = 50, int? until, bool? private, bool? isReacted}) async {
     // remove blocklist pubkeys
     userPubkeys = userPubkeys
         .where((pubkey) => !Contacts.sharedInstance.inBlockList(pubkey))
@@ -67,6 +91,10 @@ extension Load on Moment {
     }
 
     whereClause += " AND (groupId = '' OR groupId IS NULL)";
+
+    if (isReacted != null) {
+      whereClause += " AND reactedId IS NOT NULL AND reactedId != ''";
+    }
 
     List<NoteDB>? notes = await loadNotesFromDB(
         where: whereClause,

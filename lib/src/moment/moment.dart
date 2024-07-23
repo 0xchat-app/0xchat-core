@@ -57,6 +57,9 @@ class Moment {
           Filter f2 = Filter(
               p: [pubkey], kinds: [1, 6, 7], since: momentUntil, limit: limit);
           subscriptions[relayURL] = [f1, f2];
+          Filter f3 = Filter(
+              authors: [pubkey], kinds: [7], since: momentUntil, limit: limit);
+          subscriptions[relayURL] = [f1, f2, f3];
         }
       } else {
         int momentUntil = Relays.sharedInstance.getMomentUntil(relay);
@@ -64,7 +67,9 @@ class Moment {
             authors: authors, kinds: [1, 6], since: momentUntil, limit: limit);
         Filter f2 = Filter(
             p: [pubkey], kinds: [1, 6, 7], since: momentUntil, limit: limit);
-        subscriptions[relay] = [f1, f2];
+        Filter f3 = Filter(
+            authors: [pubkey], kinds: [7], since: momentUntil, limit: limit);
+        subscriptions[relay] = [f1, f2, f3];
       }
 
       notesSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
