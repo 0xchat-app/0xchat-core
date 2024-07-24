@@ -375,15 +375,25 @@ class Messages {
   }
 
   static Future<OKEvent> deleteMessageFromRelay(
-      List<String> messageIds, String reason) async {
+      String messageId, String reason) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
+    Map result = await loadMessagesFromDB(
+        where: 'messageId = ?', whereArgs: [messageId]);
+    List<MessageDB> messages = result['messages'];
+    for (MessageDB message in messages) {
+      if (message.chatType == 4) {
+        // relay group
+        return await RelayGroup.sharedInstance
+            .deleteMessageFromRelay(message.groupId, messageId, '');
+      }
+    }
 
     /// delete frome DB
-    deleteMessagesFromDB(messageIds: messageIds);
+    deleteMessagesFromDB(messageIds: [messageId]);
 
     /// send delete event to relay
     Event event = await Nip9.encode(
-        messageIds,
+        [messageId],
         reason,
         Account.sharedInstance.currentPubkey,
         Account.sharedInstance.currentPrivkey);
