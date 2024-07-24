@@ -86,7 +86,8 @@ extension EAdmin on RelayGroup {
     OKEvent ok = await sendModeration(moderation);
     if (ok.status) {
       groupDB.members ??= [];
-      groupDB.members!.addAll(addUsers);
+      groupDB.members =
+          groupDB.members!.toSet().union(addUsers.toSet()).toList();
       syncGroupToDB(groupDB);
     }
     return ok;
