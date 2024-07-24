@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'package:flutter/foundation.dart';
 
 extension EAdmin on RelayGroup {
   bool hasPermissions(
@@ -56,7 +57,11 @@ extension EAdmin on RelayGroup {
     if (groupDB.admins == null) {
       return OKEvent(groupId, false, 'group admins not exit');
     }
-    if (!hasPermissions(groupDB.admins!, pubkey, [moderation.actionKind])) {
+    if (moderation.actionKind == GroupActionKind.removeUser &&
+        moderation.users.singleOrNull == pubkey) {
+      debugPrint('sendModeration: leave group');
+    } else if (!hasPermissions(
+        groupDB.admins!, pubkey, [moderation.actionKind])) {
       return OKEvent(groupId, false, 'permission not met');
     }
 

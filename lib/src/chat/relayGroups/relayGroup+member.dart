@@ -107,6 +107,7 @@ extension EMember on RelayGroup {
   Future<OKEvent> leaveGroup(String groupId) async {
     RelayGroupDB? groupDB = groups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
+    removeUser(groupId, [pubkey], '');
     groupDB.members?.remove(pubkey);
     myGroups.remove(groupId);
     return await syncMyGroupListToRelay();
@@ -181,7 +182,7 @@ extension EMember on RelayGroup {
         break;
       case GroupActionKind.removeUser:
         for (var user in users.values) {
-          content = '${user.name}$content,';
+          content = '${user.name}$content ';
         }
         content = '${content}leave the group';
 
