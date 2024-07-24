@@ -166,7 +166,7 @@ extension EMember on RelayGroup {
     switch (moderation.actionKind) {
       case GroupActionKind.addUser:
         for (var user in users.values) {
-          content = '${user.name}$content ';
+          content = '${user.name} $content ';
         }
         content = '${content}join the group';
 
@@ -182,7 +182,7 @@ extension EMember on RelayGroup {
         break;
       case GroupActionKind.removeUser:
         for (var user in users.values) {
-          content = '${user.name}$content ';
+          content = '${user.name} $content ';
         }
         content = '${content}leave the group';
 
