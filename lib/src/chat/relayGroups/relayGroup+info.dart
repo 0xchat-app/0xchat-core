@@ -44,7 +44,15 @@ extension EInfo on RelayGroup {
           break;
         case 39002:
           List<String> members = Nip29.decodeGroupMembers(event);
-          groupDB!.members = members;
+          if ((!checkInGroup(groupId) && members.contains(pubkey)) ||
+              (checkInGroup(groupId) && !members.contains(pubkey))) {
+            groupDB!.members = members;
+            await syncGroupToDB(groupDB);
+            updateGroupSubscription();
+          }
+          else{
+            groupDB!.members = members;
+          }
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {

@@ -44,12 +44,12 @@ class RelayGroup {
       if (status == 1 && Account.sharedInstance.me != null) {
         if (groupRelays.contains(relay)) {
           _udpateGroupInfos(relay: relay);
-          _updateGroupSubscription(relay: relay);
+          updateGroupSubscription(relay: relay);
         }
       }
     });
     await _loadAllGroupsFromDB();
-    _updateGroupSubscription();
+    updateGroupSubscription();
   }
 
   /// 0, not in the group, 1, in the group & not joined, 2. joined
@@ -73,7 +73,7 @@ class RelayGroup {
 
   void groupListUpdated() {
     myGroups = _myGroups();
-    _updateGroupSubscription();
+    updateGroupSubscription();
     myGroupsUpdatedCallBack?.call();
   }
 
@@ -148,7 +148,7 @@ class RelayGroup {
     }
   }
 
-  void _updateGroupSubscription({String? relay}) {
+  void updateGroupSubscription({String? relay}) {
     if (myGroups.isEmpty) return;
     if (groupMessageSubscription.isNotEmpty) {
       Connect.sharedInstance
@@ -156,13 +156,16 @@ class RelayGroup {
     }
 
     Map<String, List<Filter>> subscriptions = {};
-
+    List<String> groupList = [];
+    for (var g in myGroups.values) {
+      if (g.members?.contains(pubkey) == true) groupList.add(g.groupId);
+    }
     if (relay == null) {
       for (String relayURL in groupRelays) {
         int groupMessageUntil =
             Relays.sharedInstance.getGroupMessageUntil(relayURL);
         Filter f = Filter(
-            h: myGroups.keys.toList(),
+            h: groupList,
             kinds: [
               7,
               9,
@@ -188,7 +191,7 @@ class RelayGroup {
     } else {
       int groupMessageUntil = Relays.sharedInstance.getGroupMessageUntil(relay);
       Filter f = Filter(
-          h: myGroups.keys.toList(),
+          h: groupList,
           kinds: [
             7,
             9,
