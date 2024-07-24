@@ -66,6 +66,7 @@ extension Load on Moment {
       NoteDB? n = await loadNoteWithNoteId(noteId, reload: false);
       if (n != null) result.add(n);
     });
+    result.sort((a, b) => b.createAt.compareTo(a.createAt));
     return result;
   }
 
