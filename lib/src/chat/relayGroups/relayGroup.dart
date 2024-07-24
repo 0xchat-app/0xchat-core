@@ -258,10 +258,15 @@ class RelayGroup {
           debugPrint('relaygroup unhandled message ${event.toJson()}');
           break;
       }
-    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       offlineGroupMessageFinish[relay] = true;
       _updateGroupMessageTime(currentUnixTimestampSeconds(), relay);
-      if (unCompletedRelays.isEmpty) {}
+      if (!ok.status && Nip29.restricted(ok.message)) {
+        await Future.forEach(groupList, (g) async {
+          await getGroupMetadataFromRelay(g);
+        });
+        updateGroupSubscription(relay: relay);
+      }
     });
   }
 

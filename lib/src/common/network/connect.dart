@@ -543,7 +543,7 @@ class Connect {
       var relays = requestsMap[requestsMapKey]!.relays;
       // all relays have EOSE
       EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
-      OKEvent ok = OKEvent(subscriptionId, true, '');
+      OKEvent ok = OKEvent(subscriptionId, false, closed.message);
       if (callBack != null) callBack(subscriptionId, ok, relay, relays);
     }
   }
