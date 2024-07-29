@@ -14,7 +14,6 @@ class Config {
   factory Config() => sharedInstance;
   static final Config sharedInstance = Config._internal();
 
-  String _configRequestsId = '';
   Map<String, ConfigDB> configs = {};
 
   // recommendChannels config
@@ -63,10 +62,6 @@ class Config {
   }
 
   void _loadConfigFromRelay({String? relay}) {
-    if (_configRequestsId.isNotEmpty) {
-      Connect.sharedInstance.closeRequests(_configRequestsId);
-    }
-
     Map<String, List<Filter>> subscriptions = {};
     Filter f = Filter(
         kinds: [30078], d: [configD], authors: [_serverPubkey], limit: 1);
@@ -79,7 +74,7 @@ class Config {
       subscriptions[relay] = [f];
     }
 
-    _configRequestsId = Connect.sharedInstance.addSubscriptions(subscriptions,
+    Connect.sharedInstance.addSubscriptions(subscriptions,
         eventCallBack: (event, relay) {
       switch (event.kind) {
         case 30078:
@@ -99,18 +94,16 @@ class Config {
 
   Future<void> _handleAppData(Event event) async {
     AppData appData = Nip78.decodeAppData(event);
-    if (appData.d == null) return;
-    if (event.createdAt <= (configs[appData.d]?.time ?? 0)) return;
+    // if (appData.d == null) return;
+    // if (event.createdAt <= (configs[appData.d]?.time ?? 0)) return;
     ConfigDB configDB = ConfigDB(
         d: appData.d ?? '',
         eventId: event.id,
         time: appData.createAt,
         configJson: appData.content);
-    int result = await DB.sharedInstance.insert<ConfigDB>(configDB);
-    if (result > 0) {
-      configs[configDB.d] = configDB;
-      _setConfig();
-    }
+    configs[configDB.d] = configDB;
+    _setConfig();
+    DB.sharedInstance.insert<ConfigDB>(configDB);
   }
 
   void _setConfig() {
