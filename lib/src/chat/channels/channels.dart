@@ -232,6 +232,8 @@ class Channels {
       ids: channelIds,
       kinds: [40],
     );
+    await Connect.sharedInstance
+        .connectRelays(relays ?? [], relayKind: RelayKind.temp);
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) async {
       Channel channel = Nip28.getChannelCreation(event);
@@ -239,7 +241,10 @@ class Channels {
       _syncChannelToDB(channelDB);
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
       Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unRelays.isEmpty && !completer.isCompleted) completer.complete();
+      if (unRelays.isEmpty && !completer.isCompleted) {
+        completer.complete();
+        Connect.sharedInstance.closeTempConnects(relays ?? []);
+      }
     });
     return completer.future;
   }
@@ -251,6 +256,8 @@ class Channels {
       ids: channelIds,
       kinds: [41],
     );
+    await Connect.sharedInstance
+        .connectRelays(relays ?? [], relayKind: RelayKind.temp);
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) {
       if (channels.containsKey(event.id) &&
@@ -261,7 +268,10 @@ class Channels {
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
       Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unRelays.isEmpty && !completer.isCompleted) completer.complete();
+      if (unRelays.isEmpty && !completer.isCompleted) {
+        completer.complete();
+        Connect.sharedInstance.closeTempConnects(relays ?? []);
+      }
     });
     return completer.future;
   }
