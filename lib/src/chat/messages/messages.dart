@@ -3,10 +3,11 @@ import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
-typedef MessageActionsCallBack = void Function(MessageDB);
+typedef MessageActionsCallBack = void Function(MessageDBISAR);
 
 class Messages {
   /// singleton
@@ -104,11 +105,15 @@ class Messages {
             List<String> unCompletedRelays) {});
   }
 
-  Future<MessageDB?> loadMessageDBFromDB(String messageId) async {
-    final result = await Messages.loadMessagesFromDB(
-        where: 'messageId = ?', whereArgs: [messageId]);
-    List<MessageDB> messages = result['messages'];
-    return (messages.isNotEmpty ? messages.first : null);
+  Future<MessageDBISAR?> loadMessageDBFromDB(String messageId) async {
+    final isar = DBISAR.sharedInstance.isar;
+    var queryBuilder =
+        isar.messageDBISARs.where().filter().messageIdEqualTo(messageId);
+    final messages = await queryBuilder.sortByCreateTimeDesc().findAll();
+    if (messages.isNotEmpty) {
+      return messages.first;
+    }
+    return null;
   }
 
   Future<void> handleReactionEvent(Event event) async {
@@ -122,7 +127,7 @@ class Messages {
     reactedMessageDB.reactionEventIds ??= [];
     if (!reactedMessageDB.reactionEventIds!.contains(reactions.id)) {
       reactedMessageDB.reactionEventIds!.add(reactions.id);
-      await DB.sharedInstance.insertBatch<MessageDB>(reactedMessageDB);
+      await saveMessageToDB(reactedMessageDB);
       actionsCallBack?.call(reactedMessageDB);
     }
   }
@@ -143,14 +148,14 @@ class Messages {
     if (reactedMessageDB == null) return;
     if (!reactedMessageDB.zapEventIds!.contains(zapRecordsDB.bolt11)) {
       reactedMessageDB.zapEventIds!.add(zapRecordsDB.bolt11);
-      await DB.sharedInstance.insertBatch<MessageDB>(reactedMessageDB);
+      await saveMessageToDB(reactedMessageDB);
       actionsCallBack?.call(reactedMessageDB);
     }
   }
 
   Future<OKEvent> sendMessageReaction(String messageId, String content,
       {String? emojiShotCode, String? emojiURL, String? groupId}) async {
-    MessageDB? messageDB = await loadMessageDBFromDB(messageId);
+    MessageDBISAR? messageDB = await loadMessageDBFromDB(messageId);
     if (messageDB != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       Event event = await Nip25.encode(messageId, [messageDB.sender],
@@ -202,7 +207,7 @@ class Messages {
   Future<void> _handleDeleteEvent(Event event) async {
     DeleteEvent? deleteEvent = Nip9.decode(event);
     if (deleteEvent != null) {
-      MessageDB messageDB = MessageDB(
+      MessageDBISAR messageDB = MessageDBISAR(
           messageId: event.id,
           sender: event.pubkey,
           kind: event.kind,
@@ -216,32 +221,27 @@ class Messages {
 
   Future<void> _handleDeleteMessages(
       List<String> eventIds, String pubkey) async {
-    Map result =
-        await loadMessagesFromDB(where: 'messageId = ?', whereArgs: eventIds);
-    List<MessageDB> messages = result['messages'];
-    for (MessageDB message in messages) {
-      // only message's owner can delete
-      if (message.sender == pubkey) {
-        await deleteMessagesFromDB(messageIds: [message.messageId]);
-      }
+    MessageDBISAR? message = await loadMessageDBFromDB(eventIds.first);
+    if (message != null && message.sender == pubkey) {
+      await deleteMessagesFromDB(messageIds: [message.messageId]);
     }
   }
 
   Future<List<DeleteEvent>> _loadDeleteMessagesFromDB() async {
-    Map result = await loadMessagesFromDB(where: 'kind = ?', whereArgs: [5]);
-    List<MessageDB> messages = result['messages'];
+    final isar = DBISAR.sharedInstance.isar;
+    var queryBuilder = isar.messageDBISARs.where().filter().kindEqualTo(5);
+    final messages = await queryBuilder.sortByCreateTimeDesc().findAll();
     List<DeleteEvent> deleteEvents = [];
-    for (MessageDB message in messages) {
-      if (message.kind == 5) {
-        List<dynamic> tags = jsonDecode(message.tags);
-        List<String> deleteEventIds = Nip9.tagsToList(tags.map((item) {
-          return List<String>.from(item.cast<String>());
-        }).toList());
-        if (deleteEventIds.isNotEmpty) {
-          DeleteEvent deleteEvent = DeleteEvent(message.sender, deleteEventIds,
-              message.content, message.createTime);
-          deleteEvents.add(deleteEvent);
-        }
+    if (messages.isNotEmpty) {
+      var message = messages.first;
+      List<dynamic> tags = jsonDecode(message.tags);
+      List<String> deleteEventIds = Nip9.tagsToList(tags.map((item) {
+        return List<String>.from(item.cast<String>());
+      }).toList());
+      if (deleteEventIds.isNotEmpty) {
+        DeleteEvent deleteEvent = DeleteEvent(message.sender, deleteEventIds,
+            message.content, message.createTime);
+        deleteEvents.add(deleteEvent);
       }
     }
     return deleteEvents;
@@ -249,7 +249,7 @@ class Messages {
 
   Future<void> _handleHideMessageEvent(Event event) async {
     ChannelMessageHidden messageHidden = Nip28.getMessageHidden(event);
-    MessageDB messageDB = MessageDB(
+    MessageDBISAR messageDB = MessageDBISAR(
         messageId: event.id,
         sender: event.pubkey,
         kind: event.kind,
@@ -261,11 +261,8 @@ class Messages {
   }
 
   Future<void> _handleHideMessage(String messageId, String operator) async {
-    Map result = await loadMessagesFromDB(
-        where: 'messageId = ?', whereArgs: [messageId]);
-    List<MessageDB> messages = result['messages'];
-    if (messages.isNotEmpty) {
-      MessageDB message = messages.first;
+    MessageDBISAR? message = await loadMessageDBFromDB(messageId);
+    if (message != null) {
       if (operator == pubkey) {
         // hide by me, delete
         await deleteMessagesFromDB(messageIds: [message.messageId]);
@@ -285,10 +282,12 @@ class Messages {
   }
 
   Future<List<ChannelMessageHidden>> _loadHideMessagesFromDB() async {
-    Map result = await loadMessagesFromDB(where: 'kind = ?', whereArgs: [43]);
-    List<MessageDB> messages = result['messages'];
+    final isar = DBISAR.sharedInstance.isar;
+    var queryBuilder = isar.messageDBISARs.where().filter().kindEqualTo(43);
+    final messages = await queryBuilder.sortByCreateTimeDesc().findAll();
     List<ChannelMessageHidden> hiddenMessages = [];
-    for (MessageDB message in messages) {
+    if (messages.isNotEmpty) {
+      var message = messages.first;
       List<dynamic> tags = jsonDecode(message.tags);
       String? hiddenMessageId = Nip28.tagsToMessageId(tags.map((item) {
         return List<String>.from(item.cast<String>());
@@ -303,7 +302,7 @@ class Messages {
   Future<void> _handleMuteUserEvent(Event event) async {
     ChannelUserMuted userMuted = Nip28.getUserMuted(event);
     if (userMuted.operator == pubkey) {
-      MessageDB messageDB = MessageDB(
+      MessageDBISAR messageDB = MessageDBISAR(
           messageId: event.id,
           sender: event.pubkey,
           kind: event.kind,
@@ -315,18 +314,18 @@ class Messages {
     }
   }
 
-  static Future<Map> loadMessagesFromDB(
-      {String? where, List<Object?>? whereArgs, String? orderBy}) async {
+  static Future<Map> loadMessagesFromDB() async {
+    final isar = DBISAR.sharedInstance.isar;
+    var queryBuilder = isar.messageDBISARs.where();
+    final messages = await queryBuilder.sortByCreateTimeDesc().findAll();
     int theLastTime = 0;
-    List<MessageDB> messages = await DB.sharedInstance.objects<MessageDB>(
-        where: where, whereArgs: whereArgs, orderBy: orderBy);
-    for (MessageDB message in messages) {
+    for (var message in messages) {
       theLastTime =
           message.createTime > theLastTime ? message.createTime : theLastTime;
       if (message.content.isNotEmpty &&
           message.decryptContent.isEmpty &&
           message.type != 'text') {
-        var map = MessageDB.decodeContent(message.content);
+        var map = MessageDBISAR.decodeContent(message.content);
         message.decryptContent = map['content'];
         message.type = map['contentType'];
       }
@@ -341,51 +340,146 @@ class Messages {
     return {'theLastTime': theLastTime, 'messages': messages};
   }
 
-  static Future<void> updateMessagesReadStatus(
-      String where, List<Object?> whereArgs, bool read) async {
-    await DB.sharedInstance
-        .rawUpdate('UPDATE MessageDB SET read = $read WHERE $where', whereArgs);
-  }
-
-  static Future<void> updateMessageReadStatus(MessageDB message) async {
-    await DB.sharedInstance.update(message);
-  }
-
-  static Future<void> saveMessageToDB(MessageDB message,
-      {ConflictAlgorithm? conflictAlgorithm}) async {
-    await DB.sharedInstance.insertBatch<MessageDB>(message,
-        conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.ignore);
-  }
-
-  static deleteMessagesFromDB({
-    List<String>? messageIds,
-    String? where,
-    List<Object?>? whereArgs,
-  }) async {
-    if (where != null) {
-      await DB.sharedInstance
-          .delete<MessageDB>(where: where, whereArgs: whereArgs);
-    } else if (messageIds != null && messageIds.isNotEmpty) {
-      String inClause = List.filled(messageIds.length, '?').join(',');
-      await DB.sharedInstance.delete<MessageDB>(
-        where: 'messageId IN ($inClause)',
-        whereArgs: messageIds,
-      );
+  static Future<Map> searchGroupMessagesFromDB(
+      String? groupId, String contentNotLike, String decryptContentLike) async {
+    final isar = DBISAR.sharedInstance.isar;
+    final queryBuilder = isar.messageDBISARs
+        .filter()
+        .groupIdIsNotEmpty()
+        .contentMatches(r'^(?!.*' + RegExp.escape(contentNotLike) + r').*$',
+            caseSensitive: false) // NOT LIKE
+        .and()
+        .decryptContentMatches(decryptContentLike,
+            caseSensitive: false); // LIKE
+    List<MessageDBISAR> messages;
+    if (groupId != null) {
+      messages = await queryBuilder
+          .groupIdEqualTo(groupId)
+          .sortByCreateTimeDesc()
+          .findAll();
+    } else {
+      messages = await queryBuilder.sortByCreateTimeDesc().findAll();
     }
+    int theLastTime = 0;
+    for (var message in messages) {
+      theLastTime =
+          message.createTime > theLastTime ? message.createTime : theLastTime;
+      if (message.content.isNotEmpty &&
+          message.decryptContent.isEmpty &&
+          message.type != 'text') {
+        var map = MessageDBISAR.decodeContent(message.content);
+        message.decryptContent = map['content'];
+        message.type = map['contentType'];
+      }
+      if (!Connect.sharedInstance.eventCache.contains(message.messageId)) {
+        Connect.sharedInstance.eventCache.add(message.messageId);
+      }
+      if (message.giftWrappedId.isNotEmpty &&
+          !Connect.sharedInstance.eventCache.contains(message.giftWrappedId)) {
+        Connect.sharedInstance.eventCache.add(message.giftWrappedId);
+      }
+    }
+    return {'theLastTime': theLastTime, 'messages': messages};
+  }
+
+  static Future<Map> searchPrivateMessagesFromDB(
+      String? chatId, String orignalSearchTxt) async {
+    final isar = DBISAR.sharedInstance.isar;
+    List<MessageDBISAR> messages;
+    if (chatId == null) {
+      messages = await isar.messageDBISARs
+          .filter()
+          .senderIsNotEmpty()
+          .receiverIsNotEmpty()
+          .decryptContentMatches(orignalSearchTxt, caseSensitive: false)
+          .findAll();
+    } else {
+      messages = await isar.messageDBISARs
+          .filter()
+          .group((q) => q
+              .senderEqualTo(chatId)
+              .and()
+              .receiverEqualTo(Account.sharedInstance.currentPubkey))
+          .or()
+          .group((q) => q
+              .senderEqualTo(Account.sharedInstance.currentPubkey)
+              .and()
+              .receiverEqualTo(chatId))
+          .and()
+          .decryptContentMatches(orignalSearchTxt, caseSensitive: false)
+          .findAll();
+    }
+    int theLastTime = 0;
+    for (var message in messages) {
+      theLastTime =
+          message.createTime > theLastTime ? message.createTime : theLastTime;
+      if (message.content.isNotEmpty &&
+          message.decryptContent.isEmpty &&
+          message.type != 'text') {
+        var map = MessageDBISAR.decodeContent(message.content);
+        message.decryptContent = map['content'];
+        message.type = map['contentType'];
+      }
+      if (!Connect.sharedInstance.eventCache.contains(message.messageId)) {
+        Connect.sharedInstance.eventCache.add(message.messageId);
+      }
+      if (message.giftWrappedId.isNotEmpty &&
+          !Connect.sharedInstance.eventCache.contains(message.giftWrappedId)) {
+        Connect.sharedInstance.eventCache.add(message.giftWrappedId);
+      }
+    }
+    return {'theLastTime': theLastTime, 'messages': messages};
+  }
+
+  static Future<void> saveMessageToDB(MessageDBISAR message,
+      {ConflictAlgorithm? conflictAlgorithm}) async {
+    final isar = DBISAR.sharedInstance.isar;
+    await isar.writeTxn(() async {
+      await isar.messageDBISARs.put(message);
+    });
+  }
+
+  static deleteMessagesFromDB({List<String>? messageIds}) async {
+    if (messageIds != null) {
+      final isar = DBISAR.sharedInstance.isar;
+      await isar.writeTxn(() async {
+        await isar.messageDBISARs
+            .filter()
+            .anyOf(messageIds, (q, messageId) => q.messageIdEqualTo(messageId))
+            .deleteAll();
+      });
+    }
+  }
+
+  static deleteGroupMessagesFromDB(String? groupId) async {
+    if (groupId != null) {
+      final isar = DBISAR.sharedInstance.isar;
+      await isar.writeTxn(() async {
+        await isar.messageDBISARs.filter().groupIdEqualTo(groupId).deleteAll();
+      });
+    }
+  }
+
+  static deleteSingleChatMessagesFromDB(String sender, String receiver) async {
+    final isar = DBISAR.sharedInstance.isar;
+    await isar.writeTxn(() async {
+      await isar.messageDBISARs
+          .filter()
+          .senderEqualTo(sender)
+          .receiverEqualTo(receiver)
+          .chatTypeEqualTo(0)
+          .deleteAll();
+    });
   }
 
   static Future<OKEvent> deleteMessageFromRelay(
       String messageId, String reason) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    Map result = await loadMessagesFromDB(
-        where: 'messageId = ?', whereArgs: [messageId]);
-    List<MessageDB> messages = result['messages'];
-    for (MessageDB message in messages) {
-      if (message.chatType == 4) {
-        // relay group
-        return await RelayGroup.sharedInstance
-            .deleteMessageFromRelay(message.groupId, messageId, '');
-      }
+    var message = await Messages.sharedInstance.loadMessageDBFromDB(messageId);
+    if (message != null && message.chatType == 4) {
+      // relay group
+      return await RelayGroup.sharedInstance
+          .deleteMessageFromRelay(message.groupId, messageId, '');
     }
 
     /// delete frome DB

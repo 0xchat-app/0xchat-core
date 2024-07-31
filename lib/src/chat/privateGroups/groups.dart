@@ -2,13 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/chat/messages/model/messageDB_isar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 typedef GroupsUpdatedCallBack = void Function();
-typedef GroupMessageCallBack = void Function(MessageDB);
+typedef GroupMessageCallBack = void Function(MessageDBISAR);
 
 class Groups {
   /// singleton
@@ -140,7 +141,7 @@ class Groups {
         if (groupDB.members?.contains(groupMessage.sender) == false) return;
     }
 
-    MessageDB messageDB = MessageDB(
+    MessageDBISAR messageDB = MessageDBISAR(
         messageId: event.id,
         sender: groupMessage.sender,
         receiver: '',
@@ -153,7 +154,7 @@ class Groups {
         plaintEvent: jsonEncode(event),
         chatType: 1,
         subType: subType);
-    var map = MessageDB.decodeContent(groupMessage.content);
+    var map = MessageDBISAR.decodeContent(groupMessage.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
     messageDB.decryptSecret = map['decryptSecret'];
@@ -163,9 +164,8 @@ class Groups {
 
   Future<void> receiveGroupEvents(
       Event event, String relay, String giftWrappedEventId) async {
-    MessageDB messageDB = MessageDB(messageId: giftWrappedEventId);
-    await DB.sharedInstance.insertBatch<MessageDB>(messageDB,
-        conflictAlgorithm: ConflictAlgorithm.ignore);
+    MessageDBISAR messageDB = MessageDBISAR(messageId: giftWrappedEventId);
+    await Messages.saveMessageToDB(messageDB);
     switch (event.kind) {
       case 40:
         _handleGroupCreation(event);
@@ -268,13 +268,13 @@ class Groups {
       String? actionsType,
       String? decryptSecret}) async {
     Event event = await Nip28.sendChannelMessage(
-        groupId, MessageDB.getContent(type, content, source), pubkey, privkey,
+        groupId, MessageDBISAR.getContent(type, content, source), pubkey, privkey,
         channelRelay: groupRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDB.getSubContent(type, content,
+        subContent: MessageDBISAR.getSubContent(type, content,
             decryptSecret: decryptSecret),
         actionsType: actionsType);
     return event;
@@ -295,17 +295,17 @@ class Groups {
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= await Nip28.sendChannelMessage(
-        groupId, MessageDB.getContent(type, content, source), pubkey, privkey,
+        groupId, MessageDBISAR.getContent(type, content, source), pubkey, privkey,
         channelRelay: groupRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDB.getSubContent(type, content,
+        subContent: MessageDBISAR.getSubContent(type, content,
             decryptSecret: decryptSecret),
         actionsType: actionsType);
 
-    MessageDB messageDB = MessageDB(
+    MessageDBISAR messageDB = MessageDBISAR(
         messageId: event.id,
         sender: event.pubkey,
         receiver: '',
@@ -315,7 +315,7 @@ class Groups {
         replyId: replyMessage ?? '',
         content: event.content,
         decryptContent: content,
-        type: MessageDB.messageTypeToString(type),
+        type: MessageDBISAR.messageTypeToString(type),
         createTime: event.createdAt,
         status: 0,
         plaintEvent: jsonEncode(event),

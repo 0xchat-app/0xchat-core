@@ -11,7 +11,7 @@ extension EMessage on RelayGroup {
     RelayGroupDB? groupDB = myGroups[groupMessage.groupId];
     if (groupDB == null) return;
 
-    MessageDB messageDB = MessageDB(
+    MessageDBISAR messageDB = MessageDBISAR(
         messageId: event.id,
         sender: groupMessage.pubkey,
         receiver: '',
@@ -23,7 +23,7 @@ extension EMessage on RelayGroup {
         createTime: event.createdAt,
         plaintEvent: jsonEncode(event),
         chatType: 4);
-    var map = MessageDB.decodeContent(groupMessage.content);
+    var map = MessageDBISAR.decodeContent(groupMessage.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
     messageDB.decryptSecret = map['decryptSecret'];
@@ -49,11 +49,11 @@ extension EMessage on RelayGroup {
       bool local = false,
       String? decryptSecret}) async {
     Event event = await Nip29.encodeGroupMessageReply(id,
-        MessageDB.getContent(type, content, source), previous, pubkey, privkey,
+        MessageDBISAR.getContent(type, content, source), previous, pubkey, privkey,
         rootEvent: rootEvent,
         replyEvent: replyEvent,
         replyUsers: replyUsers,
-        subContent: MessageDB.getSubContent(type, content,
+        subContent: MessageDBISAR.getSubContent(type, content,
             decryptSecret: decryptSecret));
     return event;
   }
@@ -71,14 +71,14 @@ extension EMessage on RelayGroup {
     RelayGroupDB? groupDB = groups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     event ??= await Nip29.encodeGroupMessageReply(groupId,
-        MessageDB.getContent(type, content, source), previous, pubkey, privkey,
+        MessageDBISAR.getContent(type, content, source), previous, pubkey, privkey,
         rootEvent: rootEvent,
         replyEvent: replyEvent,
         replyUsers: replyUsers,
-        subContent: MessageDB.getSubContent(type, content,
+        subContent: MessageDBISAR.getSubContent(type, content,
             decryptSecret: decryptSecret));
 
-    MessageDB messageDB = MessageDB(
+    MessageDBISAR messageDB = MessageDBISAR(
         messageId: event.id,
         sender: event.pubkey,
         receiver: '',
@@ -88,7 +88,7 @@ extension EMessage on RelayGroup {
         replyId: rootEvent ?? '',
         content: event.content,
         decryptContent: content,
-        type: MessageDB.messageTypeToString(type),
+        type: MessageDBISAR.messageTypeToString(type),
         createTime: event.createdAt,
         status: 0,
         plaintEvent: jsonEncode(event),

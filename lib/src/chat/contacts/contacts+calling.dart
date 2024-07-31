@@ -102,7 +102,7 @@ extension Calling on Contacts {
         /// outdated request
         callMessage.media = map['media'];
         callMessage.start = eventTime;
-        MessageDB callMessageDB = callMessageToDB(callMessage);
+        MessageDBISAR callMessageDB = callMessageToDB(callMessage);
         await Messages.saveMessageToDB(callMessageDB,
             conflictAlgorithm: ConflictAlgorithm.replace);
         privateChatMessageCallBack?.call(callMessageDB);
@@ -157,7 +157,7 @@ extension Calling on Contacts {
       callMessage.end = eventTime;
       callMessage.state = state;
       callMessages[callMessage.callId] = callMessage;
-      MessageDB callMessageDB = callMessageToDB(callMessage);
+      MessageDBISAR callMessageDB = callMessageToDB(callMessage);
       await Messages.saveMessageToDB(callMessageDB,
           conflictAlgorithm: ConflictAlgorithm.replace);
       privateChatMessageCallBack?.call(callMessageDB);
@@ -166,7 +166,7 @@ extension Calling on Contacts {
     return true;
   }
 
-  MessageDB callMessageToDB(CallMessage callMessage) {
+  MessageDBISAR callMessageToDB(CallMessage callMessage) {
     String content = jsonEncode({
       'contentType': 'call',
       'content': jsonEncode({
@@ -175,7 +175,7 @@ extension Calling on Contacts {
         'media': callMessage.media
       })
     });
-    return MessageDB(
+    return MessageDBISAR(
         messageId: callMessage.callId,
         sender: callMessage.sender,
         receiver: callMessage.receiver,

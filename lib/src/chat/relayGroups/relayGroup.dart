@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 typedef GroupsJoinRequestCallBack = void Function(JoinRequestDB);
@@ -332,11 +333,13 @@ class RelayGroup {
 
   Future<List<String>> getPrevious(String groupId) async {
     List<String> previous = [];
-    List<MessageDB> messages = await DB.sharedInstance.objects<MessageDB>(
-        where: 'groupId = ?',
-        whereArgs: [groupId],
-        orderBy: 'createTime desc',
-        limit: 3);
+    final isar = DBISAR.sharedInstance.isar;
+    List<MessageDBISAR> messages = await isar.messageDBISARs
+        .filter()
+        .groupIdEqualTo(groupId)
+        .sortByCreateTimeDesc()
+        .limit(3)
+        .findAll();
     for (var message in messages) {
       previous.add(message.messageId.substring(0, 8));
     }

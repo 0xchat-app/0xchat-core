@@ -12,8 +12,8 @@ typedef SecretChatAcceptCallBack = void Function(SecretSessionDB);
 typedef SecretChatRejectCallBack = void Function(SecretSessionDB);
 typedef SecretChatUpdateCallBack = void Function(SecretSessionDB);
 typedef SecretChatCloseCallBack = void Function(SecretSessionDB);
-typedef PrivateChatMessageCallBack = void Function(MessageDB);
-typedef SecretChatMessageCallBack = void Function(MessageDB);
+typedef PrivateChatMessageCallBack = void Function(MessageDBISAR);
+typedef SecretChatMessageCallBack = void Function(MessageDBISAR);
 typedef ContactUpdatedCallBack = void Function();
 typedef OfflinePrivateMessageFinishCallBack = void Function();
 
@@ -246,9 +246,9 @@ class Contacts {
         ? (expiration + currentUnixTimestampSeconds())
         : null;
     event ??= await Nip17.encodeSealedGossipDM(friendPubkey,
-        MessageDB.getContent(type, content, source), replayId, pubkey, privkey,
+        MessageDBISAR.getContent(type, content, source), replayId, pubkey, privkey,
         sealedReceiver: sealedReceiver,
-        subContent: MessageDB.getSubContent(type, content,
+        subContent: MessageDBISAR.getSubContent(type, content,
             decryptSecret: decryptSecret),
         expiration: expiration);
     return event;
@@ -419,7 +419,7 @@ class Contacts {
         updateFriendMessageTime(event.createdAt, relay);
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       } else if (event.kind == 1059) {
-        await Messages.saveMessageToDB(MessageDB(messageId: event.id));
+        await Messages.saveMessageToDB(MessageDBISAR(messageId: event.id));
         Event? innerEvent = await decodeNip24Event(event);
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
@@ -464,8 +464,8 @@ class Contacts {
 
   Future<void> _handlePrivateMessage(Event event, String relay,
       {String? giftWrappedId}) async {
-    MessageDB? messageDB =
-        await MessageDB.fromPrivateMessage(event, pubkey, privkey);
+    MessageDBISAR? messageDB =
+        await MessageDBISAR.fromPrivateMessage(event, pubkey, privkey);
     if (messageDB != null) {
       if (giftWrappedId != null) messageDB.giftWrappedId = giftWrappedId;
       await Messages.saveMessageToDB(messageDB);
@@ -497,7 +497,7 @@ class Contacts {
     expiration = expiration != null
         ? (expiration + currentUnixTimestampSeconds())
         : null;
-    MessageDB messageDB = MessageDB(
+    MessageDBISAR messageDB = MessageDBISAR(
         messageId: event?.innerEvent?.id ?? event!.id,
         sender: pubkey,
         receiver: toPubkey,
@@ -508,7 +508,7 @@ class Contacts {
         replyId: replyId,
         createTime: currentUnixTimestampSeconds(),
         decryptContent: content,
-        type: MessageDB.messageTypeToString(type),
+        type: MessageDBISAR.messageTypeToString(type),
         status: 0,
         plaintEvent: jsonEncode(event),
         chatType: 0,
@@ -562,9 +562,9 @@ class Contacts {
     if (innerEvent == null) return OKEvent('', false, 'innerEvent == null');
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= await Nip17.encodeSealedGossipDM(toPubkey,
-        MessageDB.getContent(type, content, source), replyId, pubkey, privkey,
+        MessageDBISAR.getContent(type, content, source), replyId, pubkey, privkey,
         sealedReceiver: pubkey,
-        subContent: MessageDB.getSubContent(type, content,
+        subContent: MessageDBISAR.getSubContent(type, content,
             decryptSecret: decryptSecret),
         expiration: expiration,
         innerEvent: innerEvent);

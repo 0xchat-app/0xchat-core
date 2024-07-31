@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/chat/messages/model/messageDB_isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
@@ -78,11 +79,11 @@ extension PrivateGroups on Groups {
     if (members == null) return null;
     Event event = await Nip17.encodeInnerEvent(
         '',
-        MessageDB.getContent(type, content, source),
+        MessageDBISAR.getContent(type, content, source),
         replyMessage ?? '',
         pubkey,
         privkey,
-        subContent: MessageDB.getSubContent(type, content,
+        subContent: MessageDBISAR.getSubContent(type, content,
             decryptSecret: decryptSecret),
         members: members,
         subject: groupDB.name);
@@ -102,7 +103,7 @@ extension PrivateGroups on Groups {
         replyMessage: replyMessage,
         decryptSecret: decryptSecret);
 
-    MessageDB messageDB = MessageDB(
+    MessageDBISAR messageDB = MessageDBISAR(
         messageId: event!.id,
         sender: event.pubkey,
         receiver: '',
@@ -112,7 +113,7 @@ extension PrivateGroups on Groups {
         replyId: replyMessage ?? '',
         content: event.content,
         decryptContent: content,
-        type: MessageDB.messageTypeToString(type),
+        type: MessageDBISAR.messageTypeToString(type),
         createTime: event.createdAt,
         status: 0,
         plaintEvent: jsonEncode(event),

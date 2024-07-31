@@ -232,9 +232,8 @@ extension SecretChat on Contacts {
 
   Future<void> handleSecretSession(
       Event event, String relay, String giftWrapEventId) async {
-    MessageDB messageDB = MessageDB(messageId: giftWrapEventId);
-    await DB.sharedInstance.insertBatch<MessageDB>(messageDB,
-        conflictAlgorithm: ConflictAlgorithm.ignore);
+    MessageDBISAR messageDB = MessageDBISAR(messageId: giftWrapEventId);
+    await Messages.saveMessageToDB(messageDB);
     switch (event.kind) {
       case 10100:
         handleRequest(event, relay);
@@ -363,8 +362,8 @@ extension SecretChat on Contacts {
 
   Future<void> _handleSecretMessage(
       String sessionId, Event event, String giftWrapEventId) async {
-    MessageDB? messageDB =
-        await MessageDB.fromPrivateMessage(event, pubkey, privkey, chatType: 3);
+    MessageDBISAR? messageDB =
+        await MessageDBISAR.fromPrivateMessage(event, pubkey, privkey, chatType: 3);
     if (messageDB != null) {
       messageDB.sessionId = sessionId;
       messageDB.giftWrappedId = giftWrapEventId;
@@ -385,13 +384,13 @@ extension SecretChat on Contacts {
         sessionDB.shareSecretKey!.isNotEmpty) {
       return await Nip17.encodeSealedGossipDM(
           toPubkey,
-          MessageDB.getContent(type, content, source),
+          MessageDBISAR.getContent(type, content, source),
           replayId,
           pubkey,
           privkey,
           sealedPrivkey: sessionDB.shareSecretKey!,
           sealedReceiver: sessionDB.sharePubkey!,
-          subContent: MessageDB.getSubContent(type, content,
+          subContent: MessageDBISAR.getSubContent(type, content,
               decryptSecret: decryptSecret),
           expiration: expiration);
     }
@@ -417,7 +416,7 @@ extension SecretChat on Contacts {
       expiration = expiration != null
           ? (expiration + currentUnixTimestampSeconds())
           : null;
-      MessageDB messageDB = MessageDB(
+      MessageDBISAR messageDB = MessageDBISAR(
           messageId: event?.innerEvent?.id ?? event!.id,
           sender: pubkey,
           receiver: toPubkey,
@@ -428,7 +427,7 @@ extension SecretChat on Contacts {
           content: event.content,
           createTime: currentUnixTimestampSeconds(),
           decryptContent: content,
-          type: MessageDB.messageTypeToString(type),
+          type: MessageDBISAR.messageTypeToString(type),
           status: 0,
           plaintEvent: jsonEncode(event),
           chatType: 3,

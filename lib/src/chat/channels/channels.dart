@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/chat/messages/model/messageDB_isar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 typedef ChannelsUpdatedCallBack = void Function();
-typedef ChannelMessageCallBack = void Function(MessageDB);
+typedef ChannelMessageCallBack = void Function(MessageDBISAR);
 typedef OfflineChannelMessageFinishCallBack = void Function();
 
 class Channels {
@@ -133,7 +134,7 @@ class Channels {
   Future<void> _receiveChannelMessages(Event event, String relay) async {
     ChannelMessage channelMessage = Nip28.getChannelMessage(event);
     if (await _checkBlockedList(channelMessage.sender)) return;
-    MessageDB messageDB = MessageDB(
+    MessageDBISAR messageDB = MessageDBISAR(
         messageId: event.id,
         sender: channelMessage.sender,
         receiver: '',
@@ -145,7 +146,7 @@ class Channels {
         createTime: event.createdAt,
         plaintEvent: jsonEncode(event),
         chatType: 2);
-    var map = MessageDB.decodeContent(channelMessage.content);
+    var map = MessageDBISAR.decodeContent(channelMessage.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
 
@@ -454,13 +455,13 @@ class Channels {
       String? replyUserRelay,
       String? decryptSecret}) async {
     Event event = await Nip28.sendChannelMessage(
-        channelId, MessageDB.getContent(type, content, source), pubkey, privkey,
+        channelId, MessageDBISAR.getContent(type, content, source), pubkey, privkey,
         channelRelay: channelRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDB.getSubContent(type, content,
+        subContent: MessageDBISAR.getSubContent(type, content,
             decryptSecret: decryptSecret));
     return event;
   }
@@ -478,16 +479,16 @@ class Channels {
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= await Nip28.sendChannelMessage(
-        channelId, MessageDB.getContent(type, content, source), pubkey, privkey,
+        channelId, MessageDBISAR.getContent(type, content, source), pubkey, privkey,
         channelRelay: channelRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDB.getSubContent(type, content,
+        subContent: MessageDBISAR.getSubContent(type, content,
             decryptSecret: decryptSecret));
 
-    MessageDB messageDB = MessageDB(
+    MessageDBISAR messageDB = MessageDBISAR(
         messageId: event.id,
         sender: event.pubkey,
         receiver: '',
@@ -497,7 +498,7 @@ class Channels {
         replyId: replyMessage ?? '',
         content: event.content,
         decryptContent: content,
-        type: MessageDB.messageTypeToString(type),
+        type: MessageDBISAR.messageTypeToString(type),
         createTime: event.createdAt,
         status: 0,
         plaintEvent: jsonEncode(event),

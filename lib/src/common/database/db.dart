@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:chatcore/src/common/database/db_isar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:reflectable/reflectable.dart';
 import 'db_helper.dart';
 import 'db_object.dart';
+import 'package:chatcore/chat-core.dart';
 import 'package:path/path.dart' as p;
 
 // Annotate with this class to enable reflection.
@@ -50,7 +52,7 @@ class DB {
     }
   }
 
-  Future open(String dbPath, {int? version, String? password}) async {
+  Future open(String dbPath, {int? version, String? password, String? pubkey}) async {
     if (deleteDBIfNeedMirgration) {
       bool exists = await databaseExists(dbPath);
       if (exists) {
@@ -58,6 +60,7 @@ class DB {
         await deleteDatabase(dbPath);
       }
     }
+    await DBISAR.sharedInstance.open(pubkey);
     db = await openDatabase(dbPath, version: version, password: password,
         onCreate: (db, version) async {
       var batch = db.batch();
@@ -167,6 +170,16 @@ class DB {
       await deleteDatabase(dbPath);
       db = newDb;
       startHeartBeat();
+      if (!completer.isCompleted) completer.complete();
+    });
+    return completer.future;
+  }
+
+  Future<void> migrateToISAR(String newPath, int version, String password) async {
+    Completer<void> completer = Completer<void>();
+    await openDatabase(newPath, version: version, password: password,
+        onCreate: (newDb, version) async {
+      // await MessageDB.migrateToISAR();
       if (!completer.isCompleted) completer.complete();
     });
     return completer.future;

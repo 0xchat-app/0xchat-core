@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:chatcore/chat-core.dart';
+import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension Admin on Groups {
@@ -146,35 +147,40 @@ extension Admin on Groups {
     }
   }
 
-  Future<List<MessageDB>> getRequestList({String? groupId}) async {
-    String? where;
-    List<Object?>? whereArgs;
+  Future<List<MessageDBISAR>> getRequestList({String? groupId}) async {
+    List<MessageDBISAR> messages;
+    final isar = DBISAR.sharedInstance.isar;
     if (groupId == null) {
-      where = 'chatType = ? AND type = ? AND subType = ?';
-      whereArgs = [1, 'system', 'request'];
+      messages = await isar.messageDBISARs
+          .filter()
+          .chatTypeEqualTo(1)
+          .typeEqualTo('system')
+          .subTypeEqualTo('request')
+          .findAll();
     } else {
-      where = 'groupId = ? AND chatType = ? AND type = ? AND subType = ?';
-      whereArgs = [groupId, 1, 'system', 'request'];
+      messages = await isar.messageDBISARs
+          .filter()
+          .groupIdEqualTo(groupId)
+          .chatTypeEqualTo(1)
+          .typeEqualTo('system')
+          .subTypeEqualTo('request')
+          .findAll();
     }
-    List<Object?> maps = await DB.sharedInstance
-        .objects<MessageDB>(whereArgs: whereArgs, where: where);
-    return maps.map((e) => e as MessageDB).toList();
+    return messages;
   }
 
-  Future<void> ignoreRequest(MessageDB messageDB) async {
-    await DB.sharedInstance.delete<MessageDB>(
-        where: 'messageId = ?', whereArgs: [messageDB.messageId]);
+  Future<void> ignoreRequest(MessageDBISAR messageDB) async {
+    await Messages.deleteMessagesFromDB(messageIds: [messageDB.messageId]);
   }
 
-  Future<void> acceptRequest(MessageDB messageDB, String content) async {
+  Future<void> acceptRequest(MessageDBISAR messageDB, String content) async {
     String groupId = messageDB.groupId;
     String sender = messageDB.sender;
     GroupDB? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
       await addGroupMembers(groupId, content, [sender]);
     }
-    await DB.sharedInstance.delete<MessageDB>(
-        where: 'messageId = ?', whereArgs: [messageDB.messageId]);
+    await Messages.deleteMessagesFromDB(messageIds: [messageDB.messageId]);
   }
 
   Future<OKEvent> deleteAndLeave(String groupId, String content) async {
