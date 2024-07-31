@@ -208,7 +208,7 @@ class Zaps {
             break;
           case ZapType.privateChat:
           case ZapType.privateGroup:
-            UserDB? toUser =
+            UserDBISAR? toUser =
                 await Account.sharedInstance.getUserInfo(recipient);
             toRelays.addAll(
                 Connect.sharedInstance.relays(relayKind: RelayKind.general));

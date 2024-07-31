@@ -41,7 +41,7 @@ extension AccountRelay on Account {
   }
 
   Future<List<String>> getUserDMRelayList(String pubkey) async {
-    UserDB? userDB = await getUserInfo(pubkey);
+    UserDBISAR? userDB = await getUserInfo(pubkey);
     if (userDB != null) {
       return userDB.dmRelayList ?? [];
     }
@@ -49,7 +49,7 @@ extension AccountRelay on Account {
   }
 
   Future<List<String>> getUserGeneralRelayList(String pubkey) async {
-    UserDB? userDB = await getUserInfo(pubkey);
+    UserDBISAR? userDB = await getUserInfo(pubkey);
     if (userDB != null) {
       return userDB.relayList ?? [];
     }

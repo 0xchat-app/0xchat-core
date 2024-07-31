@@ -83,12 +83,12 @@ extension Member on Groups {
     }
   }
 
-  Future<List<UserDB>> getAllGroupMembers(String groupId) async {
+  Future<List<UserDBISAR>> getAllGroupMembers(String groupId) async {
     GroupDB? groupDB = groups[groupId];
-    List<UserDB> result = [];
+    List<UserDBISAR> result = [];
     if (groupDB != null && groupDB.members != null) {
       await Future.forEach(groupDB.members!, (member) async {
-        UserDB? userDB = await Account.sharedInstance.getUserInfo(member);
+        UserDBISAR? userDB = await Account.sharedInstance.getUserInfo(member);
         if (userDB != null) {
           if (groupDB.owner == member) {
             result.insert(0, userDB);

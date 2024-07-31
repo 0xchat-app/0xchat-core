@@ -60,7 +60,7 @@ extension PrivateGroups on Groups {
     if (groupDB != null) {
       groupDB.name = name;
       syncGroupToDB(groupDB);
-      UserDB? user = await Account.sharedInstance.getUserInfo(sender);
+      UserDBISAR? user = await Account.sharedInstance.getUserInfo(sender);
       sendGroupMessage(groupId, MessageType.system,
           "${user?.name} update group name to $name",
           actionsType: 'updateName');

@@ -143,7 +143,21 @@ const MessageDBISARSchema = CollectionSchema(
   deserialize: _messageDBISARDeserialize,
   deserializeProp: _messageDBISARDeserializeProp,
   idName: r'id',
-  indexes: {},
+  indexes: {
+    r'messageId': IndexSchema(
+      id: -635287409172016016,
+      name: r'messageId',
+      unique: true,
+      replace: true,
+      properties: [
+        IndexPropertySchema(
+          name: r'messageId',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
+    )
+  },
   links: {},
   embeddedSchemas: {},
   getId: _messageDBISARGetId,
@@ -368,6 +382,61 @@ void _messageDBISARAttach(
   object.id = id;
 }
 
+extension MessageDBISARByIndex on IsarCollection<MessageDBISAR> {
+  Future<MessageDBISAR?> getByMessageId(String messageId) {
+    return getByIndex(r'messageId', [messageId]);
+  }
+
+  MessageDBISAR? getByMessageIdSync(String messageId) {
+    return getByIndexSync(r'messageId', [messageId]);
+  }
+
+  Future<bool> deleteByMessageId(String messageId) {
+    return deleteByIndex(r'messageId', [messageId]);
+  }
+
+  bool deleteByMessageIdSync(String messageId) {
+    return deleteByIndexSync(r'messageId', [messageId]);
+  }
+
+  Future<List<MessageDBISAR?>> getAllByMessageId(List<String> messageIdValues) {
+    final values = messageIdValues.map((e) => [e]).toList();
+    return getAllByIndex(r'messageId', values);
+  }
+
+  List<MessageDBISAR?> getAllByMessageIdSync(List<String> messageIdValues) {
+    final values = messageIdValues.map((e) => [e]).toList();
+    return getAllByIndexSync(r'messageId', values);
+  }
+
+  Future<int> deleteAllByMessageId(List<String> messageIdValues) {
+    final values = messageIdValues.map((e) => [e]).toList();
+    return deleteAllByIndex(r'messageId', values);
+  }
+
+  int deleteAllByMessageIdSync(List<String> messageIdValues) {
+    final values = messageIdValues.map((e) => [e]).toList();
+    return deleteAllByIndexSync(r'messageId', values);
+  }
+
+  Future<Id> putByMessageId(MessageDBISAR object) {
+    return putByIndex(r'messageId', object);
+  }
+
+  Id putByMessageIdSync(MessageDBISAR object, {bool saveLinks = true}) {
+    return putByIndexSync(r'messageId', object, saveLinks: saveLinks);
+  }
+
+  Future<List<Id>> putAllByMessageId(List<MessageDBISAR> objects) {
+    return putAllByIndex(r'messageId', objects);
+  }
+
+  List<Id> putAllByMessageIdSync(List<MessageDBISAR> objects,
+      {bool saveLinks = true}) {
+    return putAllByIndexSync(r'messageId', objects, saveLinks: saveLinks);
+  }
+}
+
 extension MessageDBISARQueryWhereSort
     on QueryBuilder<MessageDBISAR, MessageDBISAR, QWhere> {
   QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterWhere> anyId() {
@@ -445,6 +514,51 @@ extension MessageDBISARQueryWhere
         upper: upperId,
         includeUpper: includeUpper,
       ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterWhereClause>
+      messageIdEqualTo(String messageId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'messageId',
+        value: [messageId],
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterWhereClause>
+      messageIdNotEqualTo(String messageId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'messageId',
+              lower: [],
+              upper: [messageId],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'messageId',
+              lower: [messageId],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'messageId',
+              lower: [messageId],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'messageId',
+              lower: [],
+              upper: [messageId],
+              includeUpper: false,
+            ));
+      }
     });
   }
 }

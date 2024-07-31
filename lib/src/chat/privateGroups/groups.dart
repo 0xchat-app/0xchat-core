@@ -79,7 +79,7 @@ class Groups {
 
   Map<String, GroupDB> _myGroups() {
     Map<String, GroupDB> result = {};
-    UserDB? me = Account.sharedInstance.me;
+    UserDBISAR? me = Account.sharedInstance.me;
     if (me != null && me.groupsList != null && me.groupsList!.isNotEmpty) {
       List<String> groupList = me.groupsList!;
       for (String groupId in groupList) {
@@ -217,9 +217,9 @@ class Groups {
 
   Future<void> syncMyGroupListToDB() async {
     List<String> list = myGroups.keys.toList();
-    UserDB? me = Account.sharedInstance.me;
+    UserDBISAR? me = Account.sharedInstance.me;
     me!.groupsList = list;
-    await DB.sharedInstance.insertBatch<UserDB>(me);
+    await Account.sharedInstance.syncMe();
   }
 
   Future<OKEvent> syncMyGroupListToRelay() async {
@@ -381,7 +381,7 @@ class Groups {
       receivePort.listen((message) async {
         String receiver = message['receiver'];
         Event e = await Event.fromJson(message['event']);
-        UserDB? user = await Account.sharedInstance.getUserInfo(receiver);
+        UserDBISAR? user = await Account.sharedInstance.getUserInfo(receiver);
         Connect.sharedInstance.sendEvent(e, toRelays: user?.relayList);
       });
       for (var receiver in receivers) {

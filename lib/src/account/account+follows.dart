@@ -8,11 +8,11 @@ extension AccountFollows on Account {
     return me?.followingList?.contains(pubkey) == true;
   }
 
-  Future<List<UserDB>> syncFollowingListFromDB(String pubkey) async {
-    UserDB? user = pubkey == currentPubkey ? me : await getUserInfo(pubkey);
-    List<UserDB> result = [];
+  Future<List<UserDBISAR>> syncFollowingListFromDB(String pubkey) async {
+    UserDBISAR? user = pubkey == currentPubkey ? me : await getUserInfo(pubkey);
+    List<UserDBISAR> result = [];
     for (var p in user?.followingList ?? []) {
-      UserDB? userDB = await getUserInfo(p);
+      UserDBISAR? userDB = await getUserInfo(p);
       if (userDB != null) {
         result.add(userDB);
       }
@@ -43,11 +43,11 @@ extension AccountFollows on Account {
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        UserDB? user =
+        UserDBISAR? user =
             (pubkey == currentPubkey) ? me : await getUserInfo(pubkey);
         if (user != null && profiles.isNotEmpty) {
           user.followingList = profiles.map((e) => e.key).toList();
-          await DB.sharedInstance.insertBatch<UserDB>(user);
+          await Account.saveUserToDB(user);
         }
         if (!completer.isCompleted) completer.complete();
       }

@@ -13,6 +13,7 @@ export 'src/account/relays.dart';
 export 'src/account/npub-cash.dart';
 export 'src/account/notification.dart';
 export 'src/account/model/userDB.dart';
+export 'src/account/model/userDB_isar.dart';
 export 'src/account/model/relayDB.dart';
 export 'src/account/model/badgeDB.dart';
 export 'src/account/model/badgeAwardDB.dart';

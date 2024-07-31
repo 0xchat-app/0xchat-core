@@ -1,12 +1,17 @@
 import 'dart:convert';
-
-import 'package:chatcore/src/account/model/userDB_isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
+import 'package:isar/isar.dart';
 
-@reflector
-class UserDB extends DBObject {
+part 'userDB_isar.g.dart';
+
+@collection
+class UserDBISAR {
+  Id id = Isar.autoIncrement;
+
+  @Index(unique: true, replace: true)
   String pubKey;
+
   String? encryptedPrivKey;
   String? privkey;
   String? defaultPassword;
@@ -71,7 +76,7 @@ class UserDB extends DBObject {
 
   String? settings;
 
-  UserDB({
+  UserDBISAR({
     this.pubKey = '',
     this.encryptedPrivKey = '',
     this.privkey = '',
@@ -116,38 +121,8 @@ class UserDB extends DBObject {
     this.settings,
   });
 
-  @override
-  //Map
-  Map<String, Object?> toMap() {
-    return _userInfoToMap(this);
-  }
-
-  static UserDB fromMap(Map<String, Object?> map) {
+  static UserDBISAR fromMap(Map<String, Object?> map) {
     return _userInfoFromMap(map);
-  }
-
-  static String? tableName() {
-    return "userDB";
-  }
-
-  //primaryKey
-  static List<String?> primaryKey() {
-    return ['pubKey'];
-  }
-
-  //'ALTER TABLE Company ADD description TEXT'
-  static Map<String, String?> updateTable() {
-    return {
-      "1": '''alter table userDB add otherField TEXT;''',
-      "3":
-          '''alter table userDB add lastBadgesListUpdatedTime INT; alter table userDB add lastBlockListUpdatedTime INT; alter table userDB add lastChannelsListUpdatedTime INT; alter table userDB add lastFriendsListUpdatedTime INT; alter table userDB add lastGroupsListUpdatedTime INT;''',
-      "5": '''alter table userDB add nwcURI TEXT;''',
-      "6":
-          '''alter table userDB add banner TEXT; alter table userDB add followingList TEXT; alter table userDB add followersList TEXT; alter table userDB add relayList TEXT; alter table userDB add relayGroupsList TEXT; alter table userDB add lastRelayListUpdatedTime INT;''',
-      "8":
-          '''alter table userDB add lastFollowingListUpdatedTime INT; alter table userDB add dmRelayList TEXT; alter table userDB add lastDMRelayListUpdatedTime INT; alter table userDB add lastRelayGroupsListUpdatedTime INT;''',
-      "9": '''alter table userDB add settings TEXT;''',
-    };
   }
 
   static String? decodePubkey(String pubkey) {
@@ -167,10 +142,12 @@ class UserDB extends DBObject {
   }
 
   /// nip19 encode
+  @ignore
   String get encodedPubkey {
     return Nip19.encodePubkey(pubKey);
   }
 
+  @ignore
   String get encodedPrivkey {
     if (pubKey == Account.sharedInstance.currentPubkey) {
       return Nip19.encodePrivkey(Account.sharedInstance.currentPrivkey);
@@ -178,6 +155,7 @@ class UserDB extends DBObject {
     return '';
   }
 
+  @ignore
   String get shortEncodedPubkey {
     String k = encodedPubkey;
     final String start = k.substring(0, 6);
@@ -186,10 +164,12 @@ class UserDB extends DBObject {
     return '$start:$end';
   }
 
+  @ignore
   String get lnAddress {
     return lnurl?.isNotEmpty == true ? lnurl! : NpubCash.address(pubKey);
   }
 
+  @ignore
   NostrWalletConnection? get nwc {
     return NostrWalletConnection.fromURI(nwcURI);
   }
@@ -205,20 +185,32 @@ class UserDB extends DBObject {
     }
     return [];
   }
+}
 
-  static Future<void> migrateToISAR() async {
-    List<UserDB> users = await DB.sharedInstance.objects<UserDB>();
-    await Future.forEach(users, (user) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.userDBISARs
-            .put(UserDBISAR.fromMap(user.toMap()));
-      });
-    });
+class NostrWalletConnection {
+  String server; // server pubkey
+  List<String> relays;
+  String secret;
+  String? lud16;
+
+  NostrWalletConnection(this.server, this.relays, this.secret, this.lud16);
+
+  static NostrWalletConnection? fromURI(String? uri) {
+    if (uri != null && uri.startsWith('nostr+walletconnect://')) {
+      var decodedUri = Uri.parse(uri);
+      var server = decodedUri.host;
+      var queryParams = decodedUri.queryParametersAll;
+      var relays = queryParams['relay'] ?? [];
+      var secret = queryParams['secret']?.first ?? '';
+      var lud16 = queryParams['lud16']?.first;
+      return NostrWalletConnection(server, relays, secret, lud16);
+    }
+    return null;
   }
 }
 
-UserDB _userInfoFromMap(Map<String, dynamic> map) {
-  return UserDB(
+UserDBISAR _userInfoFromMap(Map<String, dynamic> map) {
+  return UserDBISAR(
     pubKey: map['pubKey'].toString(),
     encryptedPrivKey: map['encryptedPrivKey'].toString(),
     defaultPassword: map['defaultPassword'].toString(),
@@ -234,17 +226,17 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     picture: map['picture'].toString(),
     banner: map['banner'].toString(),
     friendsList: map['friendsList'].toString(),
-    channelsList: UserDB.decodeStringList(map['channelsList'].toString()),
-    groupsList: UserDB.decodeStringList(map['groupsList'].toString()),
-    relayGroupsList: UserDB.decodeStringList(map['relayGroupsList'].toString()),
-    badgesList: UserDB.decodeStringList(map['badgesList'].toString()),
-    blockedList: UserDB.decodeStringList(map['blockedList'].toString()),
-    followingList: UserDB.decodeStringList(map['followingList'].toString()),
-    followersList: UserDB.decodeStringList(map['followersList'].toString()),
-    relayList: UserDB.decodeStringList(map['relayList'].toString()),
-    dmRelayList: UserDB.decodeStringList(map['dmRelayList'].toString()),
+    channelsList: UserDBISAR.decodeStringList(map['channelsList'].toString()),
+    groupsList: UserDBISAR.decodeStringList(map['groupsList'].toString()),
+    relayGroupsList: UserDBISAR.decodeStringList(map['relayGroupsList'].toString()),
+    badgesList: UserDBISAR.decodeStringList(map['badgesList'].toString()),
+    blockedList: UserDBISAR.decodeStringList(map['blockedList'].toString()),
+    followingList: UserDBISAR.decodeStringList(map['followingList'].toString()),
+    followersList: UserDBISAR.decodeStringList(map['followersList'].toString()),
+    relayList: UserDBISAR.decodeStringList(map['relayList'].toString()),
+    dmRelayList: UserDBISAR.decodeStringList(map['dmRelayList'].toString()),
     aliasPubkey: map['aliasPubkey'],
-    mute: map['mute'] > 0 ? true : false,
+    mute: map['mute'],
     lastUpdatedTime: map['lastUpdatedTime'],
     lastBadgesListUpdatedTime: map['lastBadgesListUpdatedTime'] ?? 0,
     lastBlockListUpdatedTime: map['lastBlockListUpdatedTime'] ?? 0,
@@ -260,45 +252,3 @@ UserDB _userInfoFromMap(Map<String, dynamic> map) {
     settings: map['settings']?.toString(),
   );
 }
-
-Map<String, dynamic> _userInfoToMap(UserDB instance) => <String, dynamic>{
-      'pubKey': instance.pubKey,
-      'encryptedPrivKey': instance.encryptedPrivKey,
-      'defaultPassword': instance.defaultPassword,
-      'name': instance.name,
-      'nickName': instance.nickName,
-      'mainRelay': instance.mainRelay,
-      'dns': instance.dns,
-      'lnurl': instance.lnurl,
-      'badges': instance.badges,
-      'gender': instance.gender,
-      'area': instance.area,
-      'about': instance.about,
-      'picture': instance.picture,
-      'banner': instance.banner,
-      'friendsList': instance.friendsList,
-      'channelsList': jsonEncode(instance.channelsList),
-      'groupsList': jsonEncode(instance.groupsList),
-      'relayGroupsList': jsonEncode(instance.relayGroupsList),
-      'badgesList': jsonEncode(instance.badgesList),
-      'blockedList': jsonEncode(instance.blockedList),
-      'followersList': jsonEncode(instance.followersList),
-      'followingList': jsonEncode(instance.followingList),
-      'relayList': jsonEncode(instance.relayList),
-      'dmRelayList': jsonEncode(instance.dmRelayList),
-      'aliasPubkey': instance.aliasPubkey,
-      'mute': instance.mute,
-      'lastUpdatedTime': instance.lastUpdatedTime,
-      'lastBadgesListUpdatedTime': instance.lastBadgesListUpdatedTime,
-      'lastBlockListUpdatedTime': instance.lastBlockListUpdatedTime,
-      'lastChannelsListUpdatedTime': instance.lastChannelsListUpdatedTime,
-      'lastFriendsListUpdatedTime': instance.lastFriendsListUpdatedTime,
-      'lastGroupsListUpdatedTime': instance.lastGroupsListUpdatedTime,
-      'lastRelayGroupsListUpdatedTime': instance.lastRelayGroupsListUpdatedTime,
-      'lastRelayListUpdatedTime': instance.lastRelayListUpdatedTime,
-      'lastFollowingListUpdatedTime': instance.lastFollowingListUpdatedTime,
-      'lastDMRelayListUpdatedTime': instance.lastDMRelayListUpdatedTime,
-      'otherField': instance.otherField,
-      'nwcURI': instance.nwcURI,
-      'settings': instance.settings
-    };

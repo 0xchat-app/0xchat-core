@@ -127,8 +127,8 @@ RelayGroupDB _groupInfoFromMap(Map<String, dynamic> map) {
     name: map['name'].toString(),
     about: map['about'].toString(),
     picture: map['picture'].toString(),
-    pinned: UserDB.decodeStringList(map['pinned'].toString()),
-    members: UserDB.decodeStringList(map['members'].toString()),
+    pinned: UserDBISAR.decodeStringList(map['pinned'].toString()),
+    members: UserDBISAR.decodeStringList(map['members'].toString()),
     level: map['level'],
     point: map['point'],
   );

@@ -95,10 +95,6 @@ class MessageDBISAR {
     this.giftWrappedId = '',
   });
 
-  // Map<String, Object?> toMap() {
-  //   return _messageInfoToMap(this);
-  // }
-
   static MessageDBISAR fromMap(Map<String, Object?> map) {
     return _messageInfoFromMap(map);
   }
@@ -368,33 +364,6 @@ class MessageDBISAR {
   }
 }
 
-// Map<String, dynamic> _messageInfoToMap(MessageDBISAR instance) =>
-//     <String, dynamic>{
-//       'messageId': instance.messageId,
-//       'sender': instance.sender,
-//       'receiver': instance.receiver,
-//       'groupId': instance.groupId,
-//       'sessionId': instance.sessionId,
-//       'kind': instance.kind,
-//       'tags': instance.tags,
-//       'content': instance.content,
-//       'createTime': instance.createTime,
-//       'read': instance.read,
-//       'replyId': instance.replyId,
-//       'decryptContent': instance.decryptContent,
-//       'type': instance.type,
-//       'status': instance.status,
-//       'plaintEvent': instance.plaintEvent,
-//       'subType': instance.subType,
-//       'chatType': instance.chatType,
-//       'previewData': instance.previewData,
-//       'expiration': instance.expiration,
-//       'decryptSecret': instance.decryptSecret,
-//       'reactionEventIds': jsonEncode(instance.reactionEventIds),
-//       'zapEventIds': jsonEncode(instance.zapEventIds),
-//       'giftWrappedId': instance.giftWrappedId,
-//     };
-
 MessageDBISAR _messageInfoFromMap(Map<String, dynamic> map) {
   return MessageDBISAR(
     messageId: map['messageId'].toString(),
@@ -418,8 +387,8 @@ MessageDBISAR _messageInfoFromMap(Map<String, dynamic> map) {
     expiration: map['expiration'],
     decryptSecret: map['decryptSecret']?.toString(),
     reactionEventIds:
-        UserDB.decodeStringList(map['reactionEventIds'].toString()),
-    zapEventIds: UserDB.decodeStringList(map['zapEventIds'].toString()),
+        UserDBISAR.decodeStringList(map['reactionEventIds'].toString()),
+    zapEventIds: UserDBISAR.decodeStringList(map['zapEventIds'].toString()),
     giftWrappedId: map['giftWrappedId'].toString(),
   );
 }

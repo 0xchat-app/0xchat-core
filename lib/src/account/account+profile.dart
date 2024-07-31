@@ -19,8 +19,8 @@ extension AccountProfile on Account {
     reloadMyProfileFromRelay();
   }
 
-  Future<UserDB> reloadMyProfileFromRelay({String? relay}) async {
-    Completer<UserDB> completer = Completer<UserDB>();
+  Future<UserDBISAR> reloadMyProfileFromRelay({String? relay}) async {
+    Completer<UserDBISAR> completer = Completer<UserDBISAR>();
     Filter f = Filter(kinds: [
       0,
       3,
@@ -81,7 +81,7 @@ extension AccountProfile on Account {
               break;
           }
         }
-        userCache[currentPubkey] = ValueNotifier<UserDB>(me!);
+        userCache[currentPubkey] = ValueNotifier<UserDBISAR>(me!);
         syncMe();
         if (!completer.isCompleted) completer.complete(me);
       }
@@ -89,10 +89,10 @@ extension AccountProfile on Account {
     return completer.future;
   }
 
-  Future<UserDB> reloadProfileFromRelay(String pubkey) async {
-    if (!isValidPubKey(pubkey)) return UserDB(pubKey: pubkey);
-    Completer<UserDB> completer = Completer<UserDB>();
-    UserDB? db = await getUserInfo(pubkey);
+  Future<UserDBISAR> reloadProfileFromRelay(String pubkey) async {
+    if (!isValidPubKey(pubkey)) return UserDBISAR(pubKey: pubkey);
+    Completer<UserDBISAR> completer = Completer<UserDBISAR>();
+    UserDBISAR? db = await getUserInfo(pubkey);
     Filter f = Filter(kinds: [0, 10050, 30008], authors: [pubkey]);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
@@ -110,9 +110,9 @@ extension AccountProfile on Account {
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        userCache[pubkey] = ValueNotifier<UserDB>(db!);
+        userCache[pubkey] = ValueNotifier<UserDBISAR>(db!);
         if (pubkey == currentPubkey) me = db;
-        DB.sharedInstance.update<UserDB>(db!);
+        Account.saveUserToDB(db!);
         if (!completer.isCompleted) completer.complete(db);
       }
     });
@@ -124,18 +124,18 @@ extension AccountProfile on Account {
     if (pQueue.isEmpty) return;
     Completer<void> completer = Completer<void>();
 
-    Map<String, UserDB> users = {};
+    Map<String, UserDBISAR> users = {};
     // init users from cache & DB
     List<String> pQueueTemp = List.from(pQueue);
     for (var key in pQueueTemp) {
-      UserDB? db = userCache[key]?.value;
+      UserDBISAR? db = userCache[key]?.value;
       db ??= await getUserFromDB(pubkey: key);
       if (db != null && db.lastUpdatedTime > 0) {
         pQueue.remove(db.pubKey);
         continue;
       }
       if (db == null) {
-        db = UserDB();
+        db = UserDBISAR();
         db.pubKey = key;
       }
       if (db.name == null || db.name!.isEmpty) {
@@ -151,7 +151,7 @@ extension AccountProfile on Account {
 
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      UserDB? db = users[event.pubkey];
+          UserDBISAR? db = users[event.pubkey];
       if(db == null) return;
       if (event.kind == 0) {
         users[event.pubkey] = _handleKind0Event(db, event)!;
@@ -166,7 +166,7 @@ extension AccountProfile on Account {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         for (var db in users.values) {
-          await DB.sharedInstance.insertBatch<UserDB>(db);
+          await Account.saveUserToDB(db);
           userCache[db.pubKey]?.value = db;
           userCache[db.pubKey]?.notifyListeners();
           pQueue.remove(db.pubKey);
@@ -177,10 +177,10 @@ extension AccountProfile on Account {
     return completer.future;
   }
 
-  Future<UserDB?> updateProfile(UserDB updateDB) async {
-    Completer<UserDB?> completer = Completer<UserDB?>();
+  Future<UserDBISAR?> updateProfile(UserDBISAR updateDB) async {
+    Completer<UserDBISAR?> completer = Completer<UserDBISAR?>();
 
-    UserDB db = await getUserFromDB(pubkey: currentPubkey) ?? UserDB();
+    UserDBISAR db = await getUserFromDB(pubkey: currentPubkey) ?? UserDBISAR();
     db.name = updateDB.name;
     db.gender = updateDB.gender;
     db.area = updateDB.area;
@@ -190,7 +190,7 @@ extension AccountProfile on Account {
     db.dns = updateDB.dns;
     db.lnurl = updateDB.lnurl;
     db.mute = updateDB.mute;
-    await DB.sharedInstance.update<UserDB>(db);
+    await Account.saveUserToDB(db);
 
     /// send metadata event
     Map map = {
@@ -217,7 +217,7 @@ extension AccountProfile on Account {
     return completer.future;
   }
 
-  UserDB? _handleKind0Event(UserDB? db, Event event) {
+  UserDBISAR? _handleKind0Event(UserDBISAR? db, Event event) {
     Map map = jsonDecode(event.content);
     if (db != null && db.lastUpdatedTime < event.createdAt) {
       db.name = map['name']?.toString();
@@ -271,7 +271,7 @@ extension AccountProfile on Account {
   }
 
   // following list
-  UserDB? _handleKind3Event(UserDB? db, Event event) {
+  UserDBISAR? _handleKind3Event(UserDBISAR? db, Event event) {
     if (db != null && db.lastFollowingListUpdatedTime < event.createdAt) {
       db.lastFollowingListUpdatedTime = event.createdAt;
       // following list
@@ -291,7 +291,7 @@ extension AccountProfile on Account {
   }
 
   // mute&block list
-  Future<UserDB?> _handleKind10000Event(UserDB? db, Event event) async {
+  Future<UserDBISAR?> _handleKind10000Event(UserDBISAR? db, Event event) async {
     if (db != null && db.lastBlockListUpdatedTime < event.createdAt) {
       db.lastBlockListUpdatedTime = event.createdAt;
       Lists result = await Nip51.getLists(event, currentPubkey, currentPrivkey);
@@ -303,7 +303,7 @@ extension AccountProfile on Account {
   }
 
   // relay list
-  UserDB? _handleKind10002Event(UserDB? db, Event event) {
+  UserDBISAR? _handleKind10002Event(UserDBISAR? db, Event event) {
     if (db != null && db.lastRelayListUpdatedTime < event.createdAt) {
       db.lastRelayListUpdatedTime = event.createdAt;
       List<Relay> result = Nip65.decode(event);
@@ -318,7 +318,7 @@ extension AccountProfile on Account {
   }
 
   // channel list
-  Future<UserDB?> _handleKind10005Event(UserDB? db, Event event) async {
+  Future<UserDBISAR?> _handleKind10005Event(UserDBISAR? db, Event event) async {
     if (db != null && db.lastChannelsListUpdatedTime < event.createdAt) {
       db.lastChannelsListUpdatedTime = event.createdAt;
       Lists result = await Nip51.getLists(event, currentPubkey, currentPrivkey);
@@ -329,7 +329,7 @@ extension AccountProfile on Account {
   }
 
   // relay group list
-  Future<UserDB?> _handleKind10009Event(UserDB? db, Event event) async {
+  Future<UserDBISAR?> _handleKind10009Event(UserDBISAR? db, Event event) async {
     if (db != null && db.lastRelayGroupsListUpdatedTime < event.createdAt) {
       db.lastRelayGroupsListUpdatedTime = event.createdAt;
       Lists result = await Nip51.getLists(event, currentPubkey, currentPrivkey);
@@ -344,7 +344,7 @@ extension AccountProfile on Account {
   }
 
   // dm relay list
-  UserDB? _handleKind10050Event(UserDB? db, Event event) {
+  UserDBISAR? _handleKind10050Event(UserDBISAR? db, Event event) {
     if (db != null && db.lastDMRelayListUpdatedTime < event.createdAt) {
       db.lastDMRelayListUpdatedTime = event.createdAt;
       List<String> relayList = Nip17.decodeDMRelays(event);
@@ -356,7 +356,7 @@ extension AccountProfile on Account {
   }
 
   // contact list
-  Future<UserDB?> _handleKind30000Event(UserDB? db, Event event) async {
+  Future<UserDBISAR?> _handleKind30000Event(UserDBISAR? db, Event event) async {
     if (db == null) return null;
     Lists result = await Nip51.getLists(event, currentPubkey, currentPrivkey);
     if (result.identifier == Contacts.identifier &&
@@ -372,7 +372,7 @@ extension AccountProfile on Account {
   }
 
   // old list
-  Future<UserDB?> _handleKind30001Event(UserDB? db, Event event) async {
+  Future<UserDBISAR?> _handleKind30001Event(UserDBISAR? db, Event event) async {
     if (db == null) return null;
     Lists result = await Nip51.getLists(event, currentPubkey, currentPrivkey);
     if (result.identifier == Channels.identifier &&
@@ -385,7 +385,7 @@ extension AccountProfile on Account {
   }
 
   // bookmark list
-  Future<UserDB?> _handleKind30003Event(UserDB? db, Event event) async {
+  Future<UserDBISAR?> _handleKind30003Event(UserDBISAR? db, Event event) async {
     if (db == null) return null;
     Lists result = await Nip51.getLists(event, currentPubkey, currentPrivkey);
     if (result.identifier == Groups.identifier &&
@@ -399,7 +399,7 @@ extension AccountProfile on Account {
   }
 
   // profile badge
-  UserDB? _handleKind30008Event(UserDB? db, Event event) {
+  UserDBISAR? _handleKind30008Event(UserDBISAR? db, Event event) {
     if (db != null && db.lastUpdatedTime < event.createdAt) {
       List<BadgeAward> profileBadges = Nip58.getProfileBadges(event);
       db.badges = jsonEncode(profileBadges.map((e) => e.awardId).toList());

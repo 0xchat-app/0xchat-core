@@ -60,7 +60,6 @@ class DB {
         await deleteDatabase(dbPath);
       }
     }
-    await DBISAR.sharedInstance.open(pubkey);
     db = await openDatabase(dbPath, version: version, password: password,
         onCreate: (db, version) async {
       var batch = db.batch();
@@ -122,6 +121,8 @@ class DB {
         await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'");
     allTablenames = tables.map((item) => item["name"].toString()).toList();
     startHeartBeat();
+    await DBISAR.sharedInstance.open(pubkey);
+    await UserDB.migrateToISAR();
   }
 
   Future<void> batchApply() async {

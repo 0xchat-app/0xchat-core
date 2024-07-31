@@ -1,7 +1,5 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:chatcore/chat-core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 @reflector
@@ -178,8 +176,8 @@ MessageDB _messageInfoFromMap(Map<String, dynamic> map) {
     expiration: map['expiration'],
     decryptSecret: map['decryptSecret']?.toString(),
     reactionEventIds:
-        UserDB.decodeStringList(map['reactionEventIds'].toString()),
-    zapEventIds: UserDB.decodeStringList(map['zapEventIds'].toString()),
+        UserDBISAR.decodeStringList(map['reactionEventIds'].toString()),
+    zapEventIds: UserDBISAR.decodeStringList(map['zapEventIds'].toString()),
     giftWrappedId: map['giftWrappedId'].toString(),
   );
 }

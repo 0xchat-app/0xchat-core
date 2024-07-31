@@ -107,7 +107,7 @@ class RelayGroup {
 
   Map<String, RelayGroupDB> _myGroups() {
     Map<String, RelayGroupDB> result = {};
-    UserDB? me = Account.sharedInstance.me;
+    UserDBISAR? me = Account.sharedInstance.me;
     if (me != null &&
         me.relayGroupsList != null &&
         me.relayGroupsList!.isNotEmpty) {
@@ -295,10 +295,10 @@ class RelayGroup {
   }
 
   Future<void> _syncMyGroupListToDB() async {
-    UserDB? me = Account.sharedInstance.me;
+    UserDBISAR? me = Account.sharedInstance.me;
     me!.relayGroupsList =
         myGroups.values.map((e) => '${e.relay}\'${e.groupId}').toList();
-    await DB.sharedInstance.insertBatch<UserDB>(me);
+    await Account.sharedInstance.syncMe();
     groupListUpdated();
   }
 

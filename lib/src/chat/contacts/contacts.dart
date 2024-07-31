@@ -52,7 +52,7 @@ class Contacts {
   /// memory storage
   String pubkey = '';
   String privkey = '';
-  Map<String, UserDB> allContacts = {};
+  Map<String, UserDBISAR> allContacts = {};
   Map<String, SecretSessionDB> secretSessionMap = {};
   String secretSessionSubscription = '';
   String friendMessageSubscription = '';
@@ -122,7 +122,7 @@ class Contacts {
 
   Future<void> _syncContactsToRelay({OKCallBack? okCallBack}) async {
     List<People> friendList = [];
-    for (UserDB user in allContacts.values) {
+    for (UserDBISAR user in allContacts.values) {
       People p =
           People(user.pubKey, user.mainRelay, user.nickName, user.aliasPubkey);
       friendList.add(p);
@@ -147,7 +147,7 @@ class Contacts {
   Future<void> syncContactsProfiles(List<People> peoples) async {
     await _syncContactsProfilesFromDB(peoples);
     List<People> friendList = [];
-    for (UserDB user in allContacts.values) {
+    for (UserDBISAR user in allContacts.values) {
       People p =
           People(user.pubKey, user.mainRelay, user.nickName, user.aliasPubkey);
       friendList.add(p);
@@ -164,7 +164,7 @@ class Contacts {
   Future<void> _syncContactsProfilesFromDB(List<People> peoples) async {
     allContacts.clear();
     await Future.forEach(peoples, (p) async {
-      UserDB? user = await Account.sharedInstance.getUserInfo(p.pubkey);
+      UserDBISAR? user = await Account.sharedInstance.getUserInfo(p.pubkey);
       if (user != null) {
         user.nickName = p.petName;
         allContacts[user.pubKey] = user;
@@ -176,8 +176,8 @@ class Contacts {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     await Future.forEach(pubkeys, (friendPubkey) async {
-      UserDB? friend = await Account.sharedInstance.getUserInfo(friendPubkey);
-      friend ??= UserDB(pubKey: friendPubkey);
+      UserDBISAR? friend = await Account.sharedInstance.getUserInfo(friendPubkey);
+      friend ??= UserDBISAR(pubKey: friendPubkey);
       allContacts[friendPubkey] = friend;
     });
     _syncContactsToRelay(okCallBack: (OKEvent ok, String relay) {
@@ -192,7 +192,7 @@ class Contacts {
   Future<OKEvent> removeContact(String friendPubkey) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
-    UserDB? friend = allContacts.remove(friendPubkey);
+    UserDBISAR? friend = allContacts.remove(friendPubkey);
     if (friend != null) {
       _syncContactsToRelay(okCallBack: (OKEvent ok, String relay) {
         if (!completer.isCompleted) completer.complete(ok);
@@ -207,10 +207,10 @@ class Contacts {
       String friendPubkey, String nickName) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
-    UserDB? friend = allContacts[friendPubkey];
+    UserDBISAR? friend = allContacts[friendPubkey];
     if (friend != null) {
       friend.nickName = nickName;
-      await DB.sharedInstance.update<UserDB>(friend);
+      await Account.saveUserToDB(friend);
       _syncContactsToRelay(okCallBack: (ok, relay) {
         if (!completer.isCompleted) completer.complete(ok);
       });
@@ -220,10 +220,10 @@ class Contacts {
     return completer.future;
   }
 
-  List<UserDB>? fuzzySearch(String keyword) {
+  List<UserDBISAR>? fuzzySearch(String keyword) {
     if (keyword.isNotEmpty) {
       RegExp regex = RegExp(keyword, caseSensitive: false);
-      List<UserDB> filteredFriends = allContacts.values
+      List<UserDBISAR> filteredFriends = allContacts.values
           .where((person) =>
               regex.hasMatch(person.name ?? '') ||
               regex.hasMatch(person.dns ?? '') ||
@@ -271,9 +271,9 @@ class Contacts {
 
   Future<void> _setMuteFriend(String friendPubkey, bool mute) async {
     if (allContacts.containsKey(friendPubkey)) {
-      UserDB friend = allContacts[friendPubkey]!;
+      UserDBISAR friend = allContacts[friendPubkey]!;
       friend.mute = mute;
-      await DB.sharedInstance.insertBatch<UserDB>(friend);
+      await Account.saveUserToDB(friend);
     }
   }
 
@@ -289,7 +289,7 @@ class Contacts {
       if (map != null) {
         List<People> friendsList = map['people'];
         await Future.forEach(friendsList, (p) async {
-          UserDB? user = await Account.sharedInstance.getUserInfo(p.pubkey);
+          UserDBISAR? user = await Account.sharedInstance.getUserInfo(p.pubkey);
           if (user != null) {
             user.nickName = p.petName;
             allContacts[user.pubKey] = user;
@@ -523,7 +523,7 @@ class Contacts {
         completer.complete(OKEvent(event.innerEvent?.id ?? event.id, true, ''));
       }
     } else {
-      UserDB? toUser = await Account.sharedInstance.getUserInfo(toPubkey);
+      UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(toPubkey);
       List<String>? dmRelays = toUser?.dmRelayList;
       Connect.sharedInstance.sendEvent(event, toRelays: dmRelays,
           sendCallBack: (ok, relay) async {
@@ -576,7 +576,7 @@ class Contacts {
         completer.complete(OKEvent(innerEvent.id, true, ''));
       }
     } else {
-      UserDB? toUser = await Account.sharedInstance.getUserInfo(pubkey);
+      UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(pubkey);
       List<String>? dmRelays = toUser?.dmRelayList;
       Connect.sharedInstance.sendEvent(event, toRelays: dmRelays,
           sendCallBack: (ok, relay) async {
@@ -587,7 +587,7 @@ class Contacts {
   }
 
   Future<bool> connectUserDMRelays(String pubkey) async {
-    UserDB? toUser = await Account.sharedInstance.getUserInfo(pubkey);
+    UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(pubkey);
     List<String>? relays = toUser?.dmRelayList;
     if (relays?.isNotEmpty == true) {
       return await Connect.sharedInstance
@@ -597,7 +597,7 @@ class Contacts {
   }
 
   Future<void> closeUserDMRelays(String pubkey) async {
-    UserDB? toUser = await Account.sharedInstance.getUserInfo(pubkey);
+    UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(pubkey);
     List<String>? relays = toUser?.dmRelayList;
     if (relays?.isNotEmpty == true) {
       await Connect.sharedInstance.closeTempConnects(relays!);

@@ -161,7 +161,7 @@ extension EMember on RelayGroup {
     await DB.sharedInstance.insertBatch<ModerationDB>(db,
         conflictAlgorithm: ConflictAlgorithm.ignore);
     String content = '';
-    Map<String, UserDB> users =
+    Map<String, UserDBISAR> users =
         await Account.sharedInstance.getUserInfos(moderation.users);
     switch (moderation.actionKind) {
       case GroupActionKind.addUser:

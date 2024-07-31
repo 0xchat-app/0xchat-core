@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:isar/isar.dart';
 import 'package:pointycastle/export.dart';
 import 'package:convert/convert.dart';
 
@@ -19,13 +20,13 @@ class Account {
   factory Account() => sharedInstance;
   static final Account sharedInstance = Account._internal();
 
-  UserDB? me;
+  UserDBISAR? me;
   String currentPubkey = '';
   String currentPrivkey = '';
   Timer? timer;
 
   // Map<String, UserDB> userCache = {};
-  Map<String, ValueNotifier<UserDB>> userCache = {};
+  Map<String, ValueNotifier<UserDBISAR>> userCache = {};
 
   List<String> pQueue = [];
 
@@ -45,16 +46,24 @@ class Account {
   }
 
   Future<void> _loadAllUsers() async {
-    List<UserDB?> maps = await DB.sharedInstance.objects<UserDB>();
-    for (UserDB? user in maps) {
+    var queryBuilder = DBISAR.sharedInstance.isar.userDBISARs.where();
+    List<UserDBISAR?> maps = await queryBuilder.findAll();
+    for (UserDBISAR? user in maps) {
       if (user != null) {
-        userCache[user.pubKey] = ValueNotifier<UserDB>(user);
+        userCache[user.pubKey] = ValueNotifier<UserDBISAR>(user);
       }
     }
   }
 
   Future<void> syncMe() async {
-    await DB.sharedInstance.update<UserDB>(me!);
+    await saveUserToDB(me!);
+  }
+
+  static Future<void> saveUserToDB(UserDBISAR user) async {
+    final isar = DBISAR.sharedInstance.isar;
+    await isar.writeTxn(() async {
+      await isar.userDBISARs.put(user);
+    });
   }
 
   bool isValidPubKey(String pubKey) {
@@ -62,17 +71,17 @@ class Account {
     return pattern.hasMatch(pubKey);
   }
 
-  FutureOr<UserDB?> getUserInfo(String pubkey) {
-    UserDB? user = userCache[pubkey]?.value;
+  FutureOr<UserDBISAR?> getUserInfo(String pubkey) {
+    UserDBISAR? user = userCache[pubkey]?.value;
     if (user != null) {
       _addToPQueue(user);
       return user;
     }
 
-    Completer<UserDB?> completer = Completer();
+    Completer<UserDBISAR?> completer = Completer();
     getUserFromDB(pubkey: pubkey).then((user) {
       if (user != null) {
-        userCache[pubkey] = ValueNotifier<UserDB>(user);
+        userCache[pubkey] = ValueNotifier<UserDBISAR>(user);
         _addToPQueue(user);
       }
       completer.complete(user);
@@ -80,22 +89,22 @@ class Account {
     return completer.future;
   }
 
-  Future<Map<String, UserDB>> getUserInfos(List<String> pubkeys) async {
-    Map<String, UserDB> result = {};
+  Future<Map<String, UserDBISAR>> getUserInfos(List<String> pubkeys) async {
+    Map<String, UserDBISAR> result = {};
     for (var p in pubkeys) {
-      UserDB? user = await getUserInfo(p);
+      UserDBISAR? user = await getUserInfo(p);
       if (user != null) result[p] = user;
     }
     return result;
   }
 
-  ValueNotifier<UserDB> getUserNotifier(String pubkey) {
+  ValueNotifier<UserDBISAR> getUserNotifier(String pubkey) {
     if (userCache.containsKey(pubkey)) return userCache[pubkey]!;
-    userCache[pubkey] = ValueNotifier(UserDB(pubKey: pubkey));
+    userCache[pubkey] = ValueNotifier(UserDBISAR(pubKey: pubkey));
     return userCache[pubkey]!;
   }
 
-  void _addToPQueue(UserDB user) {
+  void _addToPQueue(UserDBISAR user) {
     if (user.lastUpdatedTime != 0) return;
     final pubkey = user.pubKey;
     if (pubkey.isNotEmpty &&
@@ -105,91 +114,87 @@ class Account {
     }
   }
 
-  Future<UserDB?> getUserFromDB(
+  Future<UserDBISAR?> _searchUserFromDB(String pubkey) async {
+    UserDBISAR? user = await DBISAR.sharedInstance.isar.userDBISARs
+        .filter()
+        .pubKeyEqualTo(pubkey)
+        .findFirst();
+    if (user != null) {
+      userCache[user.pubKey] = ValueNotifier<UserDBISAR>(user);
+    }
+    return user;
+  }
+
+  Future<UserDBISAR?> getUserFromDB(
       {String pubkey = '', String privkey = ''}) async {
     if (privkey.isNotEmpty) {
       pubkey = Keychain.getPublicKey(privkey);
     }
     if (pubkey.isNotEmpty) {
-      List<Object?> maps = await DB.sharedInstance
-          .objects<UserDB>(where: 'pubKey = ?', whereArgs: [pubkey]);
-      UserDB? db;
-      if (maps.isNotEmpty) {
-        db = maps.first as UserDB?;
-        if (db != null) {
-          return db;
-        }
+      UserDBISAR? db = await _searchUserFromDB(pubkey);
+      if (db != null) {
+        return db;
       } else {
-        db = UserDB(pubKey: pubkey);
+        db = UserDBISAR(pubKey: pubkey);
         db.name = db.shortEncodedPubkey;
-        await DB.sharedInstance.insertBatch<UserDB>(db);
+        await saveUserToDB(db);
         return db;
       }
     }
     return null;
   }
 
-  Future<UserDB?> loginWithPubKey(String pubkey) async {
-    UserDB? userDB = await getUserFromDB(pubkey: pubkey);
+  Future<UserDBISAR?> loginWithPubKey(String pubkey) async {
+    UserDBISAR? userDB = await getUserFromDB(pubkey: pubkey);
     if (userDB != null) {
       me = userDB;
       currentPubkey = userDB.pubKey;
       currentPrivkey = '';
-      userCache[currentPubkey] = ValueNotifier<UserDB>(userDB);
+      userCache[currentPubkey] = ValueNotifier<UserDBISAR>(userDB);
       loginSuccess();
     }
     return userDB;
   }
 
-  Future<UserDB?> loginWithPubKeyAndPassword(String pubkey) async {
-    List<Object?> maps = await DB.sharedInstance
-        .objects<UserDB>(where: 'pubKey = ?', whereArgs: [pubkey]);
-    UserDB? db;
-    if (maps.isNotEmpty) {
-      db = maps.first as UserDB?;
-      if (db != null &&
-          db.encryptedPrivKey != null &&
-          db.encryptedPrivKey!.isNotEmpty &&
-          db.defaultPassword != null &&
-          db.defaultPassword!.isNotEmpty) {
-        String encryptedPrivKey = db.encryptedPrivKey!;
-        Uint8List privkey = decryptPrivateKey(
-            hexToBytes(encryptedPrivKey), db.defaultPassword!);
-        if (Keychain.getPublicKey(bytesToHex(privkey)) == pubkey) {
-          me = db;
-          currentPrivkey = bytesToHex(privkey);
-          currentPubkey = db.pubKey;
-          userCache[currentPubkey] = ValueNotifier<UserDB>(db);
-          loginSuccess();
-          return db;
-        }
+  Future<UserDBISAR?> loginWithPubKeyAndPassword(String pubkey) async {
+    UserDBISAR? db = await _searchUserFromDB(pubkey);
+    if (db != null &&
+        db.encryptedPrivKey != null &&
+        db.encryptedPrivKey!.isNotEmpty &&
+        db.defaultPassword != null &&
+        db.defaultPassword!.isNotEmpty) {
+      String encryptedPrivKey = db.encryptedPrivKey!;
+      Uint8List privkey =
+          decryptPrivateKey(hexToBytes(encryptedPrivKey), db.defaultPassword!);
+      if (Keychain.getPublicKey(bytesToHex(privkey)) == pubkey) {
+        me = db;
+        currentPrivkey = bytesToHex(privkey);
+        currentPubkey = db.pubKey;
+        userCache[currentPubkey] = ValueNotifier<UserDBISAR>(db);
+        loginSuccess();
+        return db;
       }
     }
     return null;
   }
 
-  Future<UserDB?> loginWithPriKey(String privkey) async {
+  Future<UserDBISAR?> loginWithPriKey(String privkey) async {
     String pubkey = Keychain.getPublicKey(privkey);
-    List<Object?> maps = await DB.sharedInstance
-        .objects<UserDB>(where: 'pubKey = ?', whereArgs: [pubkey]);
-    UserDB? db;
-    if (maps.isNotEmpty) {
-      db = maps.first as UserDB?;
-    }
+    UserDBISAR? db = await _searchUserFromDB(pubkey);
 
     /// insert a new account
-    db ??= UserDB();
+    db ??= UserDBISAR();
     db.pubKey = pubkey;
     String defaultPassword = generateStrongPassword(16);
     Uint8List enPrivkey =
         encryptPrivateKey(hexToBytes(privkey), defaultPassword);
     db.encryptedPrivKey = bytesToHex(enPrivkey);
     db.defaultPassword = defaultPassword;
-    await DB.sharedInstance.insertBatch<UserDB>(db);
+    await saveUserToDB(db);
     me = db;
     currentPrivkey = privkey;
     currentPubkey = db.pubKey;
-    userCache[currentPubkey] = ValueNotifier<UserDB>(db);
+    userCache[currentPubkey] = ValueNotifier<UserDBISAR>(db);
     loginSuccess();
     return db;
   }
@@ -232,16 +237,16 @@ class Account {
     return Keychain.getPublicKey(privkey);
   }
 
-  static Future<UserDB> newAccount({Keychain? user}) async {
+  static Future<UserDBISAR> newAccount({Keychain? user}) async {
     user ?? Keychain.generate();
     String defaultPassword = generateStrongPassword(16);
     Uint8List enPrivkey = await compute(encryptPrivateKeyWithMap,
         {'privkey': user!.private, 'password': defaultPassword});
-    UserDB db = UserDB();
+    UserDBISAR db = UserDBISAR();
     db.pubKey = user.public;
     db.encryptedPrivKey = bytesToHex(enPrivkey);
     db.defaultPassword = defaultPassword;
-    await DB.sharedInstance.insertBatch<UserDB>(db);
+    await Account.saveUserToDB(db);
     return db;
   }
 
@@ -249,14 +254,14 @@ class Account {
     return decryptPrivateKey(hexToBytes(map['privkey']), map['password']);
   }
 
-  Future<UserDB> newAccountWithPassword(String password) async {
+  Future<UserDBISAR> newAccountWithPassword(String password) async {
     var user = Keychain.generate();
     Uint8List enPrivkey = await compute(decryptPrivateKeyWithMap,
         {'privkey': user.private, 'password': password});
-    UserDB db = UserDB();
+    UserDBISAR db = UserDBISAR();
     db.pubKey = user.public;
     db.encryptedPrivKey = bytesToHex(enPrivkey);
-    await DB.sharedInstance.insertBatch<UserDB>(db);
+    await saveUserToDB(db);
     return db;
   }
 
@@ -268,14 +273,14 @@ class Account {
     return result;
   }
 
-  Future<UserDB?> updatePassword(String password) async {
-    UserDB? db = await getUserFromDB(privkey: currentPrivkey);
+  Future<UserDBISAR?> updatePassword(String password) async {
+    UserDBISAR? db = await getUserFromDB(privkey: currentPrivkey);
     if (db != null) {
       Uint8List enPrivkey =
           encryptPrivateKey(hexToBytes(currentPrivkey), password);
       db.encryptedPrivKey = bytesToHex(enPrivkey);
       db.defaultPassword = password;
-      await DB.sharedInstance.update<UserDB>(db);
+      await saveUserToDB(db);
       return db;
     }
     return null;
@@ -294,11 +299,6 @@ class Account {
     currentPubkey = '';
     currentPrivkey = '';
     userCache.remove(currentPubkey);
-  }
-
-  Future<int> _delete() async {
-    return await DB.sharedInstance
-        .delete<UserDB>(where: 'pubKey = ?', whereArgs: [currentPubkey]);
   }
 
   static Future<Event?> loadAddress(String d, String pubkey) async {

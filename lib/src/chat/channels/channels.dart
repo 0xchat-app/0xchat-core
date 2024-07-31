@@ -124,11 +124,11 @@ class Channels {
   }
 
   Future<void> handleMuteUser(String user) async {
-    UserDB? me = Account.sharedInstance.me;
+    UserDBISAR? me = Account.sharedInstance.me;
     if (me!.blockedList != null && me.blockedList!.contains(user) == false) {
       me.blockedList!.add(user);
     }
-    await DB.sharedInstance.insertBatch<UserDB>(me);
+    await Account.sharedInstance.syncMe();
   }
 
   Future<void> _receiveChannelMessages(Event event, String relay) async {
@@ -174,7 +174,7 @@ class Channels {
 
   Map<String, ChannelDB> _myChannels() {
     Map<String, ChannelDB> result = {};
-    UserDB? me = Account.sharedInstance.me;
+    UserDBISAR? me = Account.sharedInstance.me;
     if (me != null && me.channelsList != null && me.channelsList!.isNotEmpty) {
       List<String> channelList = me.channelsList!;
       for (String channelId in channelList) {
@@ -287,7 +287,7 @@ class Channels {
 
   Future<void> _syncMyChannelListToDB() async {
     List<String> list = myChannels.keys.toList();
-    UserDB? me = Account.sharedInstance.me;
+    UserDBISAR? me = Account.sharedInstance.me;
     me!.channelsList = list;
     await Account.sharedInstance.syncMe();
   }
