@@ -5,7 +5,7 @@ import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension Admin on Groups {
-  Future<GroupDB?> createGroup(
+  Future<GroupDBISAR?> createGroup(
       String name, List<String> members, String content,
       {String? about, String? picture, String? relay}) async {
     members = members.toSet().toList();
@@ -14,7 +14,7 @@ extension Admin on Groups {
     OKEvent ok = await sendMessageEvent(members, event);
     if (ok.status == true) {
       // update group
-      GroupDB groupDB = GroupDB(
+      GroupDBISAR groupDB = GroupDBISAR(
           groupId: event.id,
           updateTime: event.createdAt,
           owner: pubkey,
@@ -38,7 +38,7 @@ extension Admin on Groups {
     return null;
   }
 
-  Future<OKEvent> updateGroup(GroupDB groupDB,
+  Future<OKEvent> updateGroup(GroupDBISAR groupDB,
       {List<String>? removedMembers}) async {
     Event event = await Nip28.setChannelMetaData(
         groupDB.name,
@@ -63,7 +63,7 @@ extension Admin on Groups {
   Future<OKEvent> addGroupMembers(
       String groupId, String content, List<String> members) async {
     members = members.toSet().toList();
-    GroupDB? groupDB = myGroups[groupId];
+    GroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
       List<String>? groupMembers = groupDB.members;
       if (groupMembers != null) {
@@ -88,7 +88,7 @@ extension Admin on Groups {
   Future<OKEvent> removeGroupMembers(
       String groupId, String content, List<String> members) async {
     members = members.toSet().toList();
-    GroupDB? groupDB = myGroups[groupId];
+    GroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
       if (groupDB.members != null) {
         OKEvent okEvent = await sendGroupMessage(
@@ -117,7 +117,7 @@ extension Admin on Groups {
 
   Future<OKEvent> updateGroupName(
       String groupId, String content, String name) async {
-    GroupDB? groupDB = myGroups[groupId];
+    GroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
       groupDB.name = name;
       OKEvent okEvent = await updateGroup(groupDB);
@@ -133,7 +133,7 @@ extension Admin on Groups {
 
   Future<OKEvent> updateGroupPinned(
       String groupId, String content, String pinned) async {
-    GroupDB? groupDB = myGroups[groupId];
+    GroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
       groupDB.pinned = [pinned];
       OKEvent okEvent = await updateGroup(groupDB);
@@ -176,7 +176,7 @@ extension Admin on Groups {
   Future<void> acceptRequest(MessageDBISAR messageDB, String content) async {
     String groupId = messageDB.groupId;
     String sender = messageDB.sender;
-    GroupDB? groupDB = myGroups[groupId];
+    GroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
       await addGroupMembers(groupId, content, [sender]);
     }
@@ -184,7 +184,7 @@ extension Admin on Groups {
   }
 
   Future<OKEvent> deleteAndLeave(String groupId, String content) async {
-    GroupDB? groupDB = myGroups[groupId];
+    GroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB != null && groupDB.owner == pubkey) {
       OKEvent okEvent =
           await removeGroupMembers(groupId, content, groupDB.members ?? []);

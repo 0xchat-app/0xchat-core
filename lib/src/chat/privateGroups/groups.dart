@@ -5,6 +5,7 @@ import 'package:chatcore/chat-core.dart';
 import 'package:chatcore/src/chat/messages/model/messageDB_isar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
@@ -24,8 +25,8 @@ class Groups {
   // memory storage
   String pubkey = '';
   String privkey = '';
-  Map<String, GroupDB> groups = {};
-  Map<String, GroupDB> myGroups = {};
+  Map<String, GroupDBISAR> groups = {};
+  Map<String, GroupDBISAR> myGroups = {};
 
   Map<String, List<String>> currentGroupRelays = {};
 
@@ -68,23 +69,24 @@ class Groups {
   }
 
   Future<void> _loadAllGroupsFromDB() async {
-    List<Object?> maps = await DB.sharedInstance.objects<GroupDB>();
+    List<Object?> maps =
+        await DBISAR.sharedInstance.isar.groupDBISARs.where().findAll();
     for (var e in maps) {
-      GroupDB groupDB = e as GroupDB;
+      GroupDBISAR groupDB = e as GroupDBISAR;
       if (groupDB.name.isEmpty) groupDB.name = _shortGroupId(groupDB.groupId);
       groups[groupDB.groupId] = groupDB;
     }
     myGroups = _myGroups();
   }
 
-  Map<String, GroupDB> _myGroups() {
-    Map<String, GroupDB> result = {};
+  Map<String, GroupDBISAR> _myGroups() {
+    Map<String, GroupDBISAR> result = {};
     UserDBISAR? me = Account.sharedInstance.me;
     if (me != null && me.groupsList != null && me.groupsList!.isNotEmpty) {
       List<String> groupList = me.groupsList!;
       for (String groupId in groupList) {
         if (!groups.containsKey(groupId)) {
-          groups[groupId] = GroupDB(groupId: groupId);
+          groups[groupId] = GroupDBISAR(groupId: groupId);
         }
         result[groupId] = groups[groupId]!;
       }
@@ -97,7 +99,7 @@ class Groups {
         (groups.containsKey(event.id) &&
             groups[event.id]?.owner != event.pubkey)) {
       Channel group = Nip28.getChannelCreation(event);
-      GroupDB groupDB = _channelToGroupDB(group, event.createdAt);
+      GroupDBISAR groupDB = _channelToGroupDB(group, event.createdAt);
       await syncGroupToDB(groupDB);
     }
   }
@@ -109,7 +111,7 @@ class Groups {
         groups[group.channelId]?.owner != group.owner) {
       return;
     }
-    GroupDB groupDB = _channelToGroupDB(group, event.createdAt);
+    GroupDBISAR groupDB = _channelToGroupDB(group, event.createdAt);
     await syncGroupToDB(groupDB);
   }
 
@@ -118,7 +120,7 @@ class Groups {
     String subType = groupMessage.actionsType != null
         ? Nip28.actionToType(groupMessage.actionsType!)
         : '';
-    GroupDB? groupDB = myGroups[groupMessage.channelId];
+    GroupDBISAR? groupDB = myGroups[groupMessage.channelId];
     if (groupDB == null) return;
     switch (subType) {
       case 'invite':
@@ -182,8 +184,8 @@ class Groups {
     }
   }
 
-  GroupDB _channelToGroupDB(Channel group, int updateTime) {
-    GroupDB? groupDB = groups[group.channelId];
+  GroupDBISAR _channelToGroupDB(Channel group, int updateTime) {
+    GroupDBISAR? groupDB = groups[group.channelId];
     if (groupDB != null && groupDB.updateTime < updateTime) {
       groupDB.name = group.name;
       groupDB.about = group.about;
@@ -194,7 +196,7 @@ class Groups {
       groupDB.members = group.members;
       groupDB.updateTime = updateTime;
     }
-    groupDB ??= GroupDB(
+    groupDB ??= GroupDBISAR(
         groupId: group.channelId,
         owner: group.owner,
         name: group.name,
@@ -207,12 +209,19 @@ class Groups {
     return groupDB;
   }
 
-  Future<void> syncGroupToDB(GroupDB groupDB) async {
+  Future<void> syncGroupToDB(GroupDBISAR groupDB) async {
     groups[groupDB.groupId] = groupDB;
     if (myGroups.containsKey(groupDB.groupId)) {
       myGroups[groupDB.groupId] = groupDB;
     }
-    await DB.sharedInstance.insertBatch<GroupDB>(groupDB);
+    await saveGroupToDB(groupDB);
+  }
+
+  static Future<void> saveGroupToDB(GroupDBISAR groupDB) async {
+    final isar = DBISAR.sharedInstance.isar;
+    await isar.writeTxn(() async {
+      await isar.groupDBISARs.put(groupDB);
+    });
   }
 
   Future<void> syncMyGroupListToDB() async {
@@ -237,10 +246,10 @@ class Groups {
     return completer.future;
   }
 
-  List<GroupDB>? fuzzySearch(String keyword) {
+  List<GroupDBISAR>? fuzzySearch(String keyword) {
     if (keyword.isNotEmpty) {
       RegExp regex = RegExp(keyword, caseSensitive: false);
-      List<GroupDB> filteredFriends = myGroups.values
+      List<GroupDBISAR> filteredFriends = myGroups.values
           .where((channel) =>
               regex.hasMatch(channel.name) ||
               regex.hasMatch(channel.about ?? ''))
@@ -267,8 +276,8 @@ class Groups {
       String? replyUserRelay,
       String? actionsType,
       String? decryptSecret}) async {
-    Event event = await Nip28.sendChannelMessage(
-        groupId, MessageDBISAR.getContent(type, content, source), pubkey, privkey,
+    Event event = await Nip28.sendChannelMessage(groupId,
+        MessageDBISAR.getContent(type, content, source), pubkey, privkey,
         channelRelay: groupRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
@@ -294,8 +303,8 @@ class Groups {
       List<String>? inviteUsers,
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    event ??= await Nip28.sendChannelMessage(
-        groupId, MessageDBISAR.getContent(type, content, source), pubkey, privkey,
+    event ??= await Nip28.sendChannelMessage(groupId,
+        MessageDBISAR.getContent(type, content, source), pubkey, privkey,
         channelRelay: groupRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
@@ -357,7 +366,7 @@ class Groups {
   }
 
   Future<OKEvent> sendToGroup(String groupId, Event event) async {
-    GroupDB? groupDB = groups[groupId];
+    GroupDBISAR? groupDB = groups[groupId];
     if (groupDB != null) {
       return await sendMessageEvent(groupDB.members, event);
     } else {
@@ -366,7 +375,7 @@ class Groups {
   }
 
   Future<OKEvent> sendToOwner(String groupId, Event event) async {
-    GroupDB? groupDB = groups[groupId];
+    GroupDBISAR? groupDB = groups[groupId];
     if (groupDB != null) {
       return await sendMessageEvent([groupDB.owner], event);
     } else {

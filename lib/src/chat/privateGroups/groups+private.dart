@@ -27,7 +27,7 @@ extension PrivateGroups on Groups {
         .closeConnects(currentGroupRelays[groupId] ?? [], RelayKind.relayGroup);
   }
 
-  Future<GroupDB?> createPrivateGroup(String sender, String groupId,
+  Future<GroupDBISAR?> createPrivateGroup(String sender, String groupId,
       String? name, List<String>? members) async {
     if (members == null || members.isEmpty) return null;
     members = members.toSet().toList();
@@ -39,7 +39,7 @@ extension PrivateGroups on Groups {
       }
     } else {
       // add group
-      GroupDB groupDB = GroupDB(
+      GroupDBISAR groupDB = GroupDBISAR(
           groupId: groupId,
           updateTime: currentUnixTimestampSeconds(),
           name: name ?? '',
@@ -56,7 +56,7 @@ extension PrivateGroups on Groups {
 
   Future<OKEvent> updatePrivateGroupName(
       String sender, String groupId, String name) async {
-    GroupDB? groupDB = myGroups[groupId];
+    GroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB != null) {
       groupDB.name = name;
       syncGroupToDB(groupDB);
@@ -73,7 +73,7 @@ extension PrivateGroups on Groups {
   Future<Event?> getSendPrivateGroupMessageEvent(
       String groupId, MessageType type, String content,
       {String? source, String? replyMessage, String? decryptSecret}) async {
-    GroupDB? groupDB = myGroups[groupId];
+    GroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB == null) return null;
     List<String>? members = groupDB.members;
     if (members == null) return null;

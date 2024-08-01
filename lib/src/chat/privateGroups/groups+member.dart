@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:chatcore/chat-core.dart';
+import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
@@ -19,12 +20,12 @@ extension Member on Groups {
   Future<OKEvent> requestGroup(String groupId, String groupOwner,
       String groupName, String content) async {
     content = "${Account.sharedInstance.me?.name} request to join the group";
-    GroupDB? groupDB = groups[groupId];
-    groupDB ??= GroupDB(groupId: groupId, owner: groupOwner, name: groupName);
+    GroupDBISAR? groupDB = groups[groupId];
+    groupDB ??=
+        GroupDBISAR(groupId: groupId, owner: groupOwner, name: groupName);
     if (groupDB.owner.isEmpty) groupDB.owner = groupOwner;
     if (groupDB.name.isEmpty) groupDB.name = groupName;
-    await DB.sharedInstance
-        .insertBatch<GroupDB>(groupDB, conflictAlgorithm: ConflictAlgorithm.ignore);
+    await Groups.saveGroupToDB(groupDB);
     OKEvent? okEvent;
     if (!checkInGroup(groupId)) {
       groups[groupId] = groupDB;
@@ -63,8 +64,8 @@ extension Member on Groups {
   }
 
   Future<void> deleteGroup(String groupId) async {
-    await DB.sharedInstance
-        .delete<GroupDB>(where: 'groupId = ?', whereArgs: [groupId]);
+    final isar = DBISAR.sharedInstance.isar;
+    await isar.groupDBISARs.deleteByGroupId(groupId);
   }
 
   Future<void> muteGroup(String groupId) async {
@@ -77,14 +78,14 @@ extension Member on Groups {
 
   Future<void> _setMuteGroup(String groupId, bool mute) async {
     if (myGroups.containsKey(groupId)) {
-      GroupDB groupDB = myGroups[groupId]!;
+      GroupDBISAR groupDB = myGroups[groupId]!;
       groupDB.mute = mute;
       await syncGroupToDB(groupDB);
     }
   }
 
   Future<List<UserDBISAR>> getAllGroupMembers(String groupId) async {
-    GroupDB? groupDB = groups[groupId];
+    GroupDBISAR? groupDB = groups[groupId];
     List<UserDBISAR> result = [];
     if (groupDB != null && groupDB.members != null) {
       await Future.forEach(groupDB.members!, (member) async {

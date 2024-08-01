@@ -34,6 +34,7 @@ export 'src/account/model/zapRecordsDB_isar.dart';
 export 'src/chat/contacts/contacts.dart';
 export 'src/chat/messages/messages.dart';
 export 'src/chat/privateGroups/model/groupDB.dart';
+export 'src/chat/privateGroups/model/groupDB_isar.dart';
 export 'src/chat/privateGroups/groups.dart';
 export 'src/chat/privateGroups/groups+admin.dart';
 export 'src/chat/privateGroups/groups+member.dart';
