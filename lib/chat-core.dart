@@ -16,7 +16,7 @@ export 'src/account/model/userDB.dart';
 export 'src/account/model/userDB_isar.dart';
 export 'src/account/model/relayDB.dart';
 export 'src/account/model/badgeDB.dart';
-// export 'src/account/model/badgeAwardDB.dart';
+export 'src/account/model/badgeAwardDB.dart';
 export 'src/account/model/badgeAwardDB_isar.dart';
 export 'src/account/model/zapsDB.dart';
 export 'src/chat/messages/model/messageDB.dart';
