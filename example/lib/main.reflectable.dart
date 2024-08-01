@@ -218,14 +218,14 @@ final _data = <r.Reflectable, r.ReflectorData>{
             const <int>[260, 261, 262, 263, 264, 265, 266, 267],
             14,
             {
-              r'fromMap': () => prefix1.UserDB.fromMap,
-              r'tableName': () => prefix1.UserDB.tableName,
-              r'primaryKey': () => prefix1.UserDB.primaryKey,
-              r'updateTable': () => prefix1.UserDB.updateTable,
-              r'decodePubkey': () => prefix1.UserDB.decodePubkey,
-              r'decodePrivkey': () => prefix1.UserDB.decodePrivkey,
-              r'decodeStringList': () => prefix1.UserDB.decodeStringList,
-              r'migrateToISAR': () => prefix1.UserDB.migrateToISAR
+              r'fromMap': () => prefix1.UserDBIASR.fromMap,
+              r'tableName': () => prefix1.UserDBIASR.tableName,
+              r'primaryKey': () => prefix1.UserDBIASR.primaryKey,
+              r'updateTable': () => prefix1.UserDBIASR.updateTable,
+              r'decodePubkey': () => prefix1.UserDBIASR.decodePubkey,
+              r'decodePrivkey': () => prefix1.UserDBIASR.decodePrivkey,
+              r'decodeStringList': () => prefix1.UserDBIASR.decodeStringList,
+              r'migrateToISAR': () => prefix1.UserDBIASR.migrateToISAR
             },
             {},
             {
@@ -273,7 +273,7 @@ final _data = <r.Reflectable, r.ReflectorData>{
                       nwcURI,
                       settings}) =>
                   b
-                      ? prefix1.UserDB(
+                      ? prefix1.UserDBIASR(
                           about: about,
                           aliasPubkey: aliasPubkey,
                           area: area,
@@ -11163,7 +11163,7 @@ final _data = <r.Reflectable, r.ReflectorData>{
             null)
       ],
       <Type>[
-        prefix1.UserDB,
+        prefix1.UserDBIASR,
         prefix2.RelayDB,
         prefix3.BadgeDB,
         prefix4.BadgeAwardDB,

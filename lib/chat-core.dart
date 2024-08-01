@@ -28,6 +28,7 @@ export 'src/chat/channels/model/channelDB.dart';
 export 'src/chat/channels/model/channelDB_isar.dart';
 export 'src/chat/contacts/model/friendRequestDB.dart';
 export 'src/chat/contacts/model/secretSessionDB.dart';
+export 'src/chat/contacts/model/secretSessionDB_isar.dart';
 export 'src/account/model/zapRecordsDB.dart';
 export 'src/account/model/zapRecordsDB_isar.dart';
 export 'src/chat/contacts/contacts.dart';

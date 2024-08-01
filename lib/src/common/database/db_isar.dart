@@ -29,6 +29,7 @@ class DBISAR {
         ZapRecordsDBISARSchema,
         ZapsDBISARSchema,
         ChannelDBISARSchema,
+        SecretSessionDBISARSchema,
         ...additionalSchemas ?? []
       ],
       directory: dbPath,

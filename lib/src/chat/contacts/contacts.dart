@@ -7,11 +7,11 @@ import 'package:flutter/services.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
-typedef SecretChatRequestCallBack = void Function(SecretSessionDB);
-typedef SecretChatAcceptCallBack = void Function(SecretSessionDB);
-typedef SecretChatRejectCallBack = void Function(SecretSessionDB);
-typedef SecretChatUpdateCallBack = void Function(SecretSessionDB);
-typedef SecretChatCloseCallBack = void Function(SecretSessionDB);
+typedef SecretChatRequestCallBack = void Function(SecretSessionDBISAR);
+typedef SecretChatAcceptCallBack = void Function(SecretSessionDBISAR);
+typedef SecretChatRejectCallBack = void Function(SecretSessionDBISAR);
+typedef SecretChatUpdateCallBack = void Function(SecretSessionDBISAR);
+typedef SecretChatCloseCallBack = void Function(SecretSessionDBISAR);
 typedef PrivateChatMessageCallBack = void Function(MessageDBISAR);
 typedef SecretChatMessageCallBack = void Function(MessageDBISAR);
 typedef ContactUpdatedCallBack = void Function();
@@ -53,7 +53,7 @@ class Contacts {
   String pubkey = '';
   String privkey = '';
   Map<String, UserDBISAR> allContacts = {};
-  Map<String, SecretSessionDB> secretSessionMap = {};
+  Map<String, SecretSessionDBISAR> secretSessionMap = {};
   String secretSessionSubscription = '';
   String friendMessageSubscription = '';
   int lastFriendListUpdateTime = 0;

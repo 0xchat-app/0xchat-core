@@ -7,13 +7,13 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
 initDB() async {
-  DB.sharedInstance.schemes.add(UserDB);
+  DB.sharedInstance.schemes.add(UserDBIASR);
   DB.sharedInstance.deleteDBIfNeedMirgration = false;
   await DB.sharedInstance.open("chat1.db", version: 1);
 }
 
 Future<void> testAccount() async {
-  UserDB db = await Account.newAccount();
+  UserDBIASR db = await Account.newAccount();
   print(db.toMap());
   // UserDB db2 = await Account.newAccountWithPassword("password");
   // print(db2.toMap());
