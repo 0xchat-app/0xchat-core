@@ -28,6 +28,7 @@ class DBISAR {
         RelayDBISARSchema,
         ZapRecordsDBISARSchema,
         ZapsDBISARSchema,
+        ChannelDBISARSchema,
         ...additionalSchemas ?? []
       ],
       directory: dbPath,

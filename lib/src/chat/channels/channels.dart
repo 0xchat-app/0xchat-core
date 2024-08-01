@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
@@ -22,8 +23,8 @@ class Channels {
   // memory storage
   String pubkey = '';
   String privkey = '';
-  Map<String, ChannelDB> channels = {};
-  Map<String, ChannelDB> myChannels = {};
+  Map<String, ChannelDBISAR> channels = {};
+  Map<String, ChannelDBISAR> myChannels = {};
   int maxLimit = 500;
 
   ChannelsUpdatedCallBack? myChannelsUpdatedCallBack;
@@ -60,9 +61,11 @@ class Channels {
   }
 
   Future<void> _loadAllChannelsFromDB() async {
-    List<Object?> maps = await DB.sharedInstance.objects<ChannelDB>();
+    final isar = DBISAR.sharedInstance.isar;
+    List<Object?> maps = await isar.channelDBISARs.where().findAll();
     channels = {
-      for (var channelDB in maps) (channelDB as ChannelDB).channelId: channelDB
+      for (var channelDB in maps)
+        (channelDB as ChannelDBISAR).channelId: channelDB
     };
     myChannels = _myChannels();
     myChannelsUpdatedCallBack?.call();
@@ -171,8 +174,8 @@ class Channels {
     }
   }
 
-  Map<String, ChannelDB> _myChannels() {
-    Map<String, ChannelDB> result = {};
+  Map<String, ChannelDBISAR> _myChannels() {
+    Map<String, ChannelDBISAR> result = {};
     UserDBISAR? me = Account.sharedInstance.me;
     if (me != null && me.channelsList != null && me.channelsList!.isNotEmpty) {
       List<String> channelList = me.channelsList!;
@@ -180,7 +183,7 @@ class Channels {
         if (channels.containsKey(channelId)) {
           result[channelId] = channels[channelId]!;
         } else {
-          ChannelDB channelDB = ChannelDB(channelId: channelId);
+          ChannelDBISAR channelDB = ChannelDBISAR(channelId: channelId);
           channelDB.name = channelDB.shortChannelId;
           channels[channelId] = channelDB;
           result[channelId] = channels[channelId]!;
@@ -190,8 +193,8 @@ class Channels {
     return result;
   }
 
-  static ChannelDB channelToChannelDB(Channel channel) {
-    return ChannelDB(
+  static ChannelDBISAR channelToChannelDB(Channel channel) {
+    return ChannelDBISAR(
         channelId: channel.channelId,
         creator: channel.owner,
         name: channel.name,
@@ -199,10 +202,10 @@ class Channels {
         picture: channel.picture);
   }
 
-  ChannelDB getChannelDBFromChannel(Channel channel) {
-    ChannelDB? channelDB = channels[channel.channelId];
+  ChannelDBISAR getChannelDBFromChannel(Channel channel) {
+    ChannelDBISAR? channelDB = channels[channel.channelId];
     if (channelDB == null) {
-      channelDB = ChannelDB(
+      channelDB = ChannelDBISAR(
           channelId: channel.channelId,
           creator: channel.owner,
           name: channel.name,
@@ -237,7 +240,7 @@ class Channels {
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) async {
       Channel channel = Nip28.getChannelCreation(event);
-      ChannelDB channelDB = getChannelDBFromChannel(channel);
+      ChannelDBISAR channelDB = getChannelDBFromChannel(channel);
       _syncChannelToDB(channelDB);
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
       Connect.sharedInstance.closeSubscription(requestId, relay);
@@ -263,7 +266,7 @@ class Channels {
       if (channels.containsKey(event.id) &&
           channels[event.id]!.updateTime < event.createdAt) {
         Channel channel = Nip28.getChannelMetadata(event);
-        ChannelDB channelDB = getChannelDBFromChannel(channel);
+        ChannelDBISAR channelDB = getChannelDBFromChannel(channel);
         _syncChannelToDB(channelDB);
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
@@ -276,12 +279,15 @@ class Channels {
     return completer.future;
   }
 
-  Future<void> _syncChannelToDB(ChannelDB channelDB) async {
+  Future<void> _syncChannelToDB(ChannelDBISAR channelDB) async {
     channels[channelDB.channelId] = channelDB;
     if (myChannels.containsKey(channelDB.channelId)) {
       myChannels[channelDB.channelId] = channelDB;
     }
-    await DB.sharedInstance.insertBatch<ChannelDB>(channelDB);
+    final isar = DBISAR.sharedInstance.isar;
+    await isar.writeTxn(() async {
+      await isar.channelDBISARs.put(channelDB);
+    });
   }
 
   Future<void> _syncMyChannelListToDB() async {
@@ -333,17 +339,17 @@ class Channels {
     _updateChannelSubscription(relay: relay);
   }
 
-  Future<ChannelDB?> createChannel(String name, String about, String picture,
-      List<String> badges, String relay,
+  Future<ChannelDBISAR?> createChannel(String name, String about,
+      String picture, List<String> badges, String relay,
       {OKCallBack? callBack}) async {
-    Completer<ChannelDB?> completer = Completer<ChannelDB?>();
+    Completer<ChannelDBISAR?> completer = Completer<ChannelDBISAR?>();
     Map<String, String> additional = {'badges': jsonEncode(badges)};
     Event event = await Nip28.createChannel(
         name, about, picture, additional, pubkey, privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (ok.status == true) {
         // update channel
-        ChannelDB channelDB = ChannelDB(
+        ChannelDBISAR channelDB = ChannelDBISAR(
           channelId: event.id,
           createTime: event.createdAt,
           creator: pubkey,
@@ -372,10 +378,10 @@ class Channels {
     return completer.future;
   }
 
-  Future<ChannelDB?> updateChannelMetadataFromRelay(
+  Future<ChannelDBISAR?> updateChannelMetadataFromRelay(
       String owner, String channelId,
       {List<String>? relays}) async {
-    Completer<ChannelDB?> completer = Completer<ChannelDB?>();
+    Completer<ChannelDBISAR?> completer = Completer<ChannelDBISAR?>();
     Filter f = Filter(
       authors: owner.isNotEmpty ? [owner] : null,
       kinds: [41],
@@ -388,7 +394,7 @@ class Channels {
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) {
       Channel channel = Nip28.getChannelMetadata(event);
-      ChannelDB channelDB = getChannelDBFromChannel(channel);
+      ChannelDBISAR channelDB = getChannelDBFromChannel(channel);
       _syncChannelToDB(channelDB);
       if (!completer.isCompleted) completer.complete(channelDB);
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
@@ -405,7 +411,7 @@ class Channels {
     for (var channelId in channelIds) {
       if (!keys.contains(channelId) || channels[channelId]?.createTime == 0) {
         unknownChannels.add(channelId);
-        ChannelDB channelDB = ChannelDB(channelId: channelId);
+        ChannelDBISAR channelDB = ChannelDBISAR(channelId: channelId);
         channelDB.name = channelDB.shortChannelId;
         channels[channelId] = channelDB;
       }
@@ -419,7 +425,7 @@ class Channels {
     myChannelsUpdatedCallBack?.call();
   }
 
-  Future<OKEvent> setChannel(ChannelDB channelDB,
+  Future<OKEvent> setChannel(ChannelDBISAR channelDB,
       {OKCallBack? callBack}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = await Nip28.setChannelMetaData(
@@ -545,7 +551,7 @@ class Channels {
   Future<OKEvent> joinChannel(String channelId) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (channels[channelId] == null) {
-      channels[channelId] = ChannelDB(channelId: channelId);
+      channels[channelId] = ChannelDBISAR(channelId: channelId);
     }
     myChannels[channelId] = channels[channelId]!;
     _loadChannelPreMessages(channelId, currentUnixTimestampSeconds(), 100);
@@ -566,10 +572,10 @@ class Channels {
     return completer.future;
   }
 
-  List<ChannelDB>? fuzzySearch(String keyword) {
+  List<ChannelDBISAR>? fuzzySearch(String keyword) {
     if (keyword.isNotEmpty) {
       RegExp regex = RegExp(keyword, caseSensitive: false);
-      List<ChannelDB> filteredFriends = myChannels.values
+      List<ChannelDBISAR> filteredFriends = myChannels.values
           .where((channel) =>
               regex.hasMatch(channel.name!) || regex.hasMatch(channel.about!))
           .toList();
@@ -578,7 +584,7 @@ class Channels {
     return null;
   }
 
-  Future<ChannelDB?> searchChannel(
+  Future<ChannelDBISAR?> searchChannel(
       String channelId, List<String>? relays) async {
     if (channels[channelId] == null) {
       await syncChannelsCreationFromRelay([channelId], relays);
@@ -589,14 +595,14 @@ class Channels {
   }
 
   // get 20 latest channels
-  Future<List<ChannelDB>> getChannelsFromRelay(
+  Future<List<ChannelDBISAR>> getChannelsFromRelay(
       {List<String>? channelIds}) async {
-    Completer<List<ChannelDB>> completer = Completer<List<ChannelDB>>();
+    Completer<List<ChannelDBISAR>> completer = Completer<List<ChannelDBISAR>>();
 
     Filter f = channelIds == null
         ? Filter(kinds: [40], limit: 20)
         : Filter(ids: channelIds, kinds: [40]);
-    Map<String, ChannelDB> result = {};
+    Map<String, ChannelDBISAR> result = {};
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       Channel channel = Nip28.getChannelCreation(event);
@@ -604,7 +610,7 @@ class Channels {
           !result.containsKey(channel.channelId)) {
         result[channel.channelId] = (channels[channel.channelId]!);
       } else {
-        ChannelDB channelDB = getChannelDBFromChannel(channel);
+        ChannelDBISAR channelDB = getChannelDBFromChannel(channel);
         _syncChannelToDB(channelDB);
         result[channel.channelId] = channelDB;
       }
@@ -638,7 +644,7 @@ class Channels {
 
   Future<void> _setMuteChannel(String channelId, bool mute) async {
     if (myChannels.containsKey(channelId)) {
-      ChannelDB channelDB = myChannels[channelId]!;
+      ChannelDBISAR channelDB = myChannels[channelId]!;
       channelDB.mute = mute;
       await _syncChannelToDB(channelDB);
     }
