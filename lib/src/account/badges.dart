@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
@@ -62,10 +63,9 @@ class BadgesHelper {
         BadgeDB? badgeDB = _get0xchatBadgeInfo(badgeAward.identifies);
         if (badgeDB != null) {
           // save to DB
-          BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
+          BadgeAwardDBISAR badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
           badgeAwardDB.badgeId = badgeDB.id;
-          await DB.sharedInstance.insertBatch<BadgeAwardDB>(badgeAwardDB,
-              conflictAlgorithm: ConflictAlgorithm.ignore);
+          await saveBadgeAwardDB(badgeAwardDB);
           // cache to user DB
           await _addUserBadgeToDB(badgeAwardDB.badgeOwner, badgeDB.id);
         }
@@ -195,13 +195,13 @@ class BadgesHelper {
     return result;
   }
 
-  static Future<List<BadgeAwardDB?>> getBadgeAwardInfosFromDB(
+  static Future<List<BadgeAwardDBISAR?>> getBadgeAwardInfosFromDB(
       List<String> badgeIds, String owner) async {
-    List<BadgeAwardDB?> result = [];
+    List<BadgeAwardDBISAR?> result = [];
     for (var badgeId in badgeIds) {
-      List<BadgeAwardDB?> maps = await DB.sharedInstance.objects<BadgeAwardDB>(
-          where: 'badgeId = ? AND badgeOwner = ?', whereArgs: [badgeId, owner]);
-      if (maps.isNotEmpty) result.add(maps.first);
+      final badgeAwardDB =
+          await searchBadgeAwardDB(badgeId: badgeId, badgeOwner: owner);
+      if (badgeAwardDB != null) result.add(badgeAwardDB);
     }
     return result;
   }
@@ -221,12 +221,12 @@ class BadgesHelper {
   }
 
   /// badge award
-  Future<List<BadgeAwardDB?>?> getUserBadgeAwardsFromRelay(
+  Future<List<BadgeAwardDBISAR?>?> getUserBadgeAwardsFromRelay(
       String userPubkey) async {
-    Completer<List<BadgeAwardDB?>?> completer =
-        Completer<List<BadgeAwardDB?>?>();
+    Completer<List<BadgeAwardDBISAR?>?> completer =
+        Completer<List<BadgeAwardDBISAR?>?>();
     Map<String, Event> badgeAwardEvents = {};
-    List<BadgeAwardDB> badgeAwardsDB = [];
+    List<BadgeAwardDBISAR> badgeAwardsDB = [];
     Filter f = Filter(kinds: [8], p: [userPubkey]);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
@@ -240,9 +240,10 @@ class BadgesHelper {
             BadgeDB? badgeDB = _get0xchatBadgeInfo(badgeAward.identifies);
             if (badgeDB != null) {
               // save to DB
-              BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
+              BadgeAwardDBISAR badgeAwardDB =
+                  badgeAwardToBadgeAwardDB(badgeAward);
               badgeAwardDB.badgeId = badgeDB.id;
-              await DB.sharedInstance.insertBatch<BadgeAwardDB>(badgeAwardDB);
+              await saveBadgeAwardDB(badgeAwardDB);
               var exists = badgeAwardsDB.any(
                   (badgeAward) => badgeAward.badgeId == badgeAwardDB.badgeId);
               if (!exists) {
@@ -260,12 +261,10 @@ class BadgesHelper {
     return completer.future;
   }
 
-  static Future<List<BadgeAwardDB?>> getBadgeAwardFromDB(
+  static Future<BadgeAwardDBISAR?> getBadgeAwardFromDB(
       String identifies, String creator, String badgeOwner) async {
-    List<BadgeAwardDB?> maps = await DB.sharedInstance.objects<BadgeAwardDB>(
-        where: 'identifies = ? AND creator = ? AND badgeOwner = ?',
-        whereArgs: [identifies, creator, badgeOwner]);
-    return maps;
+    return await searchBadgeAwardDB(
+        identifies: identifies, creator: creator, badgeOwner: badgeOwner);
   }
 
   // return badge id list
@@ -286,7 +285,7 @@ class BadgesHelper {
     }
   }
 
-  static Future<List<BadgeAwardDB?>?> getUserBadgesFromDB(
+  static Future<List<BadgeAwardDBISAR?>?> getUserBadgesFromDB(
       String userPubkey) async {
     UserDBISAR? userDB = await Account.sharedInstance.getUserInfo(userPubkey);
     if (userDB != null &&
@@ -298,8 +297,8 @@ class BadgesHelper {
     }
   }
 
-  static BadgeAwardDB badgeAwardToBadgeAwardDB(BadgeAward award) {
-    return BadgeAwardDB(
+  static BadgeAwardDBISAR badgeAwardToBadgeAwardDB(BadgeAward award) {
+    return BadgeAwardDBISAR(
         awardId: award.awardId,
         awardTime: award.awardTime ?? 0,
         identifies: award.identifies ?? '',
@@ -338,12 +337,11 @@ class BadgesHelper {
     List<BadgeAward> badgeAwards = [];
     for (BadgeDB? badgeDB in badges) {
       if (badgeDB != null) {
-        List<BadgeAwardDB?> map = await getBadgeAwardFromDB(
+        BadgeAwardDBISAR? db = await getBadgeAwardFromDB(
             badgeDB.d, badgeDB.creator, Account.sharedInstance.currentPubkey);
-        if (map.isNotEmpty && map[0] != null) {
-          BadgeAwardDB? db = map[0];
+        if (db != null) {
           BadgeAward badgeAward = BadgeAward(
-              db!.awardId,
+              db.awardId,
               db.awardTime,
               db.identifies,
               db.creator,
@@ -354,7 +352,9 @@ class BadgesHelper {
     }
     if (badgeAwards.isNotEmpty) {
       Event event = await Nip58.setProfileBadges(
-          badgeAwards, Account.sharedInstance.currentPubkey, Account.sharedInstance.currentPrivkey);
+          badgeAwards,
+          Account.sharedInstance.currentPubkey,
+          Account.sharedInstance.currentPrivkey);
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         if (ok.status) {
           UserDBISAR? userDB = Account.sharedInstance.me;
@@ -387,13 +387,14 @@ class BadgesHelper {
             badgeAward.creator!, badgeAward.identifies!);
         if (badgeDB != null) {
           // save to DB
-          BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
+          BadgeAwardDBISAR badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
           badgeAwardDB.badgeId = badgeDB.id;
-          await DB.sharedInstance.insertBatch<BadgeAwardDB>(badgeAwardDB);
+          await saveBadgeAwardDB(badgeAwardDB);
           result.add(badgeDB);
         }
         if (profileBadges.last == badgeAward) {
-          UserDBISAR? userDB = await Account.sharedInstance.getUserInfo(userPubkey);
+          UserDBISAR? userDB =
+              await Account.sharedInstance.getUserInfo(userPubkey);
           if (userDB != null) {
             userDB.badges = jsonEncode(result.map((e) => e?.id).toList());
             await Account.saveUserToDB(userDB);
@@ -419,15 +420,16 @@ class BadgesHelper {
       BadgeAward? badgeAward = Nip58.getBadgeAward(event);
       if (badgeAward != null) {
         // cache to DB
-        BadgeAwardDB badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
-        await DB.sharedInstance.insertBatch<BadgeAwardDB>(badgeAwardDB);
+        BadgeAwardDBISAR badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
+        await saveBadgeAwardDB(badgeAwardDB);
         List<BadgeDB> badges = await searchBadgeInfosFromDB([badgeAward]);
         if (badges.isEmpty) {
           badges = await searchBadgesInfoFromRelay([badgeAward]);
         }
         if (badges.isNotEmpty) {
           for (var p in badgeAward.users!) {
-            UserDBISAR? userDB = await Account.sharedInstance.getUserInfo(p.pubkey);
+            UserDBISAR? userDB =
+                await Account.sharedInstance.getUserInfo(p.pubkey);
             String badgeId = badges[0].id;
             if (userDB != null && !userDB.badgesList!.contains(badgeId)) {
               userDB.badgesList!.add(badgeId);
@@ -438,5 +440,26 @@ class BadgesHelper {
         }
       }
     }, eoseCallBack: (requestId, status, relay, unRelays) async {});
+  }
+
+  static Future<void> saveBadgeAwardDB(BadgeAwardDBISAR badgeAwardDB) async {
+    final isar = DBISAR.sharedInstance.isar;
+    await isar.writeTxn(() async {
+      await isar.badgeAwardDBISARs.put(badgeAwardDB);
+    });
+  }
+
+  static Future<BadgeAwardDBISAR?> searchBadgeAwardDB(
+      {String? badgeId,
+      String? badgeOwner,
+      String? identifies,
+      String? creator}) async {
+    final isar = DBISAR.sharedInstance.isar;
+    var query =
+        isar.badgeAwardDBISARs.filter().creatorEqualTo(badgeOwner ?? '');
+    if (badgeId != null) query = query.badgeIdEqualTo(badgeId);
+    if (identifies != null) query = query.identifiesEqualTo(identifies);
+    if (creator != null) query = query.creatorEqualTo(creator);
+    return await query.findFirst();
   }
 }

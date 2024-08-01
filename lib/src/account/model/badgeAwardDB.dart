@@ -1,4 +1,5 @@
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/account/model/badgeAwardDB_isar.dart';
 
 @reflector
 class BadgeAwardDB extends DBObject {
@@ -33,6 +34,17 @@ class BadgeAwardDB extends DBObject {
   //primaryKey
   static List<String?> primaryKey() {
     return ['awardId'];
+  }
+
+  static Future<void> migrateToISAR() async {
+    List<BadgeAwardDB> badgeAwardDBs =
+        await DB.sharedInstance.objects<BadgeAwardDB>();
+    await Future.forEach(badgeAwardDBs, (badgeAwardDB) async {
+      await DBISAR.sharedInstance.isar.writeTxn(() async {
+        await DBISAR.sharedInstance.isar.badgeAwardDBISARs
+            .put(BadgeAwardDBISAR.fromMap(badgeAwardDB.toMap()));
+      });
+    });
   }
 }
 

@@ -176,16 +176,6 @@ class DB {
     return completer.future;
   }
 
-  Future<void> migrateToISAR(String newPath, int version, String password) async {
-    Completer<void> completer = Completer<void>();
-    await openDatabase(newPath, version: version, password: password,
-        onCreate: (newDb, version) async {
-      // await MessageDB.migrateToISAR();
-      if (!completer.isCompleted) completer.complete();
-    });
-    return completer.future;
-  }
-
   Future<void> closDatabase() async {
     allTablenames.clear();
     await db.close();
