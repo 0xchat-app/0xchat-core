@@ -145,6 +145,7 @@ class Messages {
 
     final reactedMessageDB = await loadMessageDBFromDB(zapRecordsDB.eventId);
     if (reactedMessageDB == null) return;
+    reactedMessageDB.zapEventIds ??= [];
     if (!reactedMessageDB.zapEventIds!.contains(zapRecordsDB.bolt11)) {
       reactedMessageDB.zapEventIds!.add(zapRecordsDB.bolt11);
       await saveMessageToDB(reactedMessageDB);

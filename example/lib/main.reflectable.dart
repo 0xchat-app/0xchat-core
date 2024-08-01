@@ -1288,8 +1288,8 @@ final _data = <r.Reflectable, r.ReflectorData>{
             const <Object>[prefix0.reflector],
             null),
         r.NonGenericClassMirrorImpl(
-            r'GroupDBISAR',
-            r'.GroupDBISAR',
+            r'GroupDB',
+            r'.GroupDB',
             134217735,
             10,
             const prefix0.Reflector(),
@@ -1343,9 +1343,9 @@ final _data = <r.Reflectable, r.ReflectorData>{
             const <int>[664, 665, 666],
             14,
             {
-              r'fromMap': () => prefix11.GroupDBISAR.fromMap,
-              r'tableName': () => prefix11.GroupDBISAR.tableName,
-              r'primaryKey': () => prefix11.GroupDBISAR.primaryKey
+              r'fromMap': () => prefix11.GroupDB.fromMap,
+              r'tableName': () => prefix11.GroupDB.tableName,
+              r'primaryKey': () => prefix11.GroupDB.primaryKey
             },
             {},
             {
@@ -1361,7 +1361,7 @@ final _data = <r.Reflectable, r.ReflectorData>{
                       picture,
                       relay}) =>
                   b
-                      ? prefix11.GroupDBISAR(
+                      ? prefix11.GroupDB(
                           about: about,
                           groupId: groupId,
                           members: members,
@@ -11112,7 +11112,7 @@ final _data = <r.Reflectable, r.ReflectorData>{
         prefix8.FriendRequestDB,
         prefix9.SecretSessionDB,
         prefix10.ZapRecordsDB,
-        prefix11.GroupDBISAR,
+        prefix11.GroupDB,
         prefix12.RelayGroupDB,
         prefix13.JoinRequestDB,
         prefix14.ModerationDB,

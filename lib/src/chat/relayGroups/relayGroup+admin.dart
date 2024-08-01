@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:chatcore/chat-core.dart';
+import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:flutter/foundation.dart';
@@ -15,25 +16,30 @@ extension EAdmin on RelayGroup {
     return false;
   }
 
+  Future<void> saveJoinRequestDBToDB(JoinRequestDBISAR joinRequestDB) async {
+    final isar = DBISAR.sharedInstance.isar;
+    await isar.writeTxn(() async {
+      await isar.joinRequestDBISARs.put(joinRequestDB);
+    });
+  }
+
   Future<void> handleJoinRequest(Event event, String relay) async {
     GroupJoinRequest joinRequest = Nip29.decodeJoinRequest(event);
     RelayGroupDB? groupDB = groups[joinRequest.groupId];
     if (groupDB == null || !groupDB.private || groupDB.admins == null) return;
     if (hasPermissions(groupDB.admins!, pubkey, [GroupActionKind.addUser])) {
-      JoinRequestDB joinRequestDB = JoinRequestDB.toJoinRequestDB(joinRequest);
-      await DB.sharedInstance.insertBatch<JoinRequestDB>(joinRequestDB,
-          conflictAlgorithm: ConflictAlgorithm.ignore);
+      JoinRequestDBISAR joinRequestDB = JoinRequestDBISAR.toJoinRequestDB(joinRequest);
+      await saveJoinRequestDBToDB(joinRequestDB);
       joinRequestCallBack?.call(joinRequestDB);
     }
   }
 
-  Future<List<JoinRequestDB>> getRequestList(String groupId) async {
-    List<Object?> maps = await DB.sharedInstance
-        .objects<JoinRequestDB>(whereArgs: [groupId], where: 'groupId = ?');
-    return maps.map((e) => e as JoinRequestDB).toList();
+  Future<List<JoinRequestDBISAR>> getRequestList(String groupId) async {
+    final isar = DBISAR.sharedInstance.isar;
+    return await isar.joinRequestDBISARs.filter().groupIdEqualTo(groupId).findAll();
   }
 
-  Future<OKEvent> acceptJoinRequest(JoinRequestDB joinRequest) async {
+  Future<OKEvent> acceptJoinRequest(JoinRequestDBISAR joinRequest) async {
     RelayGroupDB? groupDB = groups[joinRequest.groupId];
     if (groupDB == null || !groupDB.private || groupDB.admins == null) {
       return OKEvent(joinRequest.groupId, false, 'group not exit');
@@ -45,9 +51,9 @@ extension EAdmin on RelayGroup {
     }
   }
 
-  Future<int> ignoreJoinRequest(JoinRequestDB joinRequest) async {
-    return await DB.sharedInstance.delete<JoinRequestDB>(
-        where: 'requestId = ?', whereArgs: [joinRequest.requestId]);
+  Future<bool> ignoreJoinRequest(JoinRequestDBISAR joinRequest) async {
+    final isar = DBISAR.sharedInstance.isar;
+    return await isar.joinRequestDBISARs.deleteByRequestId(joinRequest.requestId);
   }
 
   Future<OKEvent> sendModeration(GroupModeration moderation) async {

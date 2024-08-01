@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
-typedef GroupsJoinRequestCallBack = void Function(JoinRequestDB);
+typedef GroupsJoinRequestCallBack = void Function(JoinRequestDBISAR);
 typedef GroupsModerationCallBack = void Function(ModerationDB);
 typedef GroupsNoteCallBack = void Function(NoteDB);
 typedef GroupMetadataUpdatedCallBack = void Function(RelayGroupDB);
