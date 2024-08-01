@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/chat/messages/model/messageDB_isar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
@@ -162,10 +161,10 @@ class Channels {
       Relays.sharedInstance.setChannelMessageUntil(eventTime, relay);
       Relays.sharedInstance.setChannelMessageSince(eventTime, relay);
     } else {
-      Relays.sharedInstance.relays[relay] = RelayDB(
+      Relays.sharedInstance.relays[relay] = RelayDBISAR(
           url: relay,
-          channelMessageUntil: {relay: eventTime},
-          channelMessageSince: {relay: eventTime});
+          channelMessageUntilString: jsonEncode({relay: eventTime}),
+          channelMessageSinceString: jsonEncode({relay: eventTime}));
     }
     if (offlineChannelMessageFinish[relay] == true) {
       Relays.sharedInstance.syncRelaysToDB(r: relay);
@@ -454,8 +453,8 @@ class Channels {
       String? replyUser,
       String? replyUserRelay,
       String? decryptSecret}) async {
-    Event event = await Nip28.sendChannelMessage(
-        channelId, MessageDBISAR.getContent(type, content, source), pubkey, privkey,
+    Event event = await Nip28.sendChannelMessage(channelId,
+        MessageDBISAR.getContent(type, content, source), pubkey, privkey,
         channelRelay: channelRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
@@ -478,8 +477,8 @@ class Channels {
       bool local = false,
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    event ??= await Nip28.sendChannelMessage(
-        channelId, MessageDBISAR.getContent(type, content, source), pubkey, privkey,
+    event ??= await Nip28.sendChannelMessage(channelId,
+        MessageDBISAR.getContent(type, content, source), pubkey, privkey,
         channelRelay: channelRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,

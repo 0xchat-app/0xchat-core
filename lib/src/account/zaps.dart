@@ -125,10 +125,10 @@ class Zaps {
       Relays.sharedInstance.setZapRecordSince(eventTime, relay);
       Relays.sharedInstance.setZapRecordUntil(eventTime, relay);
     } else {
-      Relays.sharedInstance.relays[relay] = RelayDB(
+      Relays.sharedInstance.relays[relay] = RelayDBISAR(
           url: relay,
-          zapRecordSince: {relay: eventTime},
-          zapRecordUntil: {relay: eventTime});
+          zapRecordSinceString: jsonEncode({relay: eventTime}),
+          zapRecordUntilString: jsonEncode({relay: eventTime}));
     }
     if (offlineZapRecordFinish[relay] == true) {
       Relays.sharedInstance.syncRelaysToDB(r: relay);

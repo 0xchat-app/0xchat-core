@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
@@ -276,10 +277,10 @@ class RelayGroup {
       Relays.sharedInstance.setGroupMessageUntil(eventTime, relay);
       Relays.sharedInstance.setGroupMessageSince(eventTime, relay);
     } else {
-      Relays.sharedInstance.relays[relay] = RelayDB(
+      Relays.sharedInstance.relays[relay] = RelayDBISAR(
           url: relay,
-          groupMessageUntil: {relay: eventTime},
-          groupMessageSince: {relay: eventTime});
+          groupMessageUntilString: jsonEncode({relay: eventTime}),
+          groupMessageSinceString: jsonEncode({relay: eventTime}));
     }
     if (offlineGroupMessageFinish[relay] == true) {
       Relays.sharedInstance.syncRelaysToDB(r: relay);

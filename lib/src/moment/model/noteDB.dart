@@ -333,6 +333,6 @@ NoteDB _noteInfoFromMap(Map<String, dynamic> map) {
     reactionEventIds:
         NoteDB.decodeStringList(map['reactionEventIds']?.toString()),
     zapEventIds: NoteDB.decodeStringList(map['zapEventIds']?.toString()),
-    lastUpdatedTime: RelayDB.decodeMap(map['lastUpdatedTime'].toString()),
+    lastUpdatedTime: RelayDBISAR.decodeMap(map['lastUpdatedTime'].toString()),
   );
 }

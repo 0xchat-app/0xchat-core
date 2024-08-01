@@ -4,38 +4,38 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
 extension AccountRelay on Account {
-  List<RelayDB> getMyDMRelayList() {
+  List<RelayDBISAR> getMyDMRelayList() {
     List<String> dmRelays = me?.dmRelayList ?? [];
-    List<RelayDB> result = [];
+    List<RelayDBISAR> result = [];
     for (var relay in dmRelays) {
-      result.add(Relays.sharedInstance.relays[relay] ?? RelayDB(url: relay));
+      result.add(Relays.sharedInstance.relays[relay] ?? RelayDBISAR(url: relay));
     }
     return result;
   }
 
-  List<RelayDB> getMyGeneralRelayList() {
+  List<RelayDBISAR> getMyGeneralRelayList() {
     List<String> generalRelays = me?.relayList ?? [];
-    List<RelayDB> result = [];
+    List<RelayDBISAR> result = [];
     for (var relay in generalRelays) {
-      result.add(Relays.sharedInstance.relays[relay] ?? RelayDB(url: relay));
+      result.add(Relays.sharedInstance.relays[relay] ?? RelayDBISAR(url: relay));
     }
     return result;
   }
 
-  List<RelayDB> getMyRecommendGeneralRelaysList() {
+  List<RelayDBISAR> getMyRecommendGeneralRelaysList() {
     List<String> dmRelays = Relays.sharedInstance.recommendGeneralRelays;
-    List<RelayDB> result = [];
+    List<RelayDBISAR> result = [];
     for (var relay in dmRelays) {
-      result.add(Relays.sharedInstance.relays[relay] ?? RelayDB(url: relay));
+      result.add(Relays.sharedInstance.relays[relay] ?? RelayDBISAR(url: relay));
     }
     return result;
   }
 
-  List<RelayDB> getMyRecommendDMRelaysList() {
+  List<RelayDBISAR> getMyRecommendDMRelaysList() {
     List<String> dmRelays = Relays.sharedInstance.recommendDMRelays;
-    List<RelayDB> result = [];
+    List<RelayDBISAR> result = [];
     for (var relay in dmRelays) {
-      result.add(Relays.sharedInstance.relays[relay] ?? RelayDB(url: relay));
+      result.add(Relays.sharedInstance.relays[relay] ?? RelayDBISAR(url: relay));
     }
     return result;
   }
@@ -120,7 +120,7 @@ extension AccountRelay on Account {
   }
 
   int getConnectedRelaysCount() {
-    List<RelayDB> myRelays = getMyGeneralRelayList();
+    List<RelayDBISAR> myRelays = getMyGeneralRelayList();
     myRelays.addAll(getMyDMRelayList());
     int connected = 0;
     for (var relay in myRelays) {
@@ -130,8 +130,8 @@ extension AccountRelay on Account {
   }
 
   int getAllRelaysCount() {
-    List<RelayDB> general = getMyGeneralRelayList();
-    List<RelayDB> dm = getMyDMRelayList();
+    List<RelayDBISAR> general = getMyGeneralRelayList();
+    List<RelayDBISAR> dm = getMyDMRelayList();
     return general.length + dm.length;
   }
 

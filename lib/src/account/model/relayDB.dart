@@ -239,6 +239,16 @@ class RelayDB extends DBObject {
 
     return relayDB;
   }
+
+  static Future<void> migrateToISAR() async {
+    List<RelayDB> relayDBs = await DB.sharedInstance.objects<RelayDB>();
+    await Future.forEach(relayDBs, (relayDB) async {
+      await DBISAR.sharedInstance.isar.writeTxn(() async {
+        await DBISAR.sharedInstance.isar.relayDBISARs
+            .put(RelayDBISAR.fromMap(relayDB.toMap()));
+      });
+    });
+  }
 }
 
 RelayDB _relayDBInfoFromMap(Map<String, dynamic> map) {

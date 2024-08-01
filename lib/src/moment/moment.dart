@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
@@ -103,10 +105,10 @@ class Moment {
       Relays.sharedInstance.setMomentSince(eventTime, relay);
       Relays.sharedInstance.setMomentUntil(eventTime, relay);
     } else {
-      Relays.sharedInstance.relays[relay] = RelayDB(
+      Relays.sharedInstance.relays[relay] = RelayDBISAR(
           url: relay,
-          momentSince: {relay: eventTime},
-          momentUntil: {relay: eventTime});
+          momentSinceString: jsonEncode({relay: eventTime}),
+          momentUntilString: jsonEncode({relay: eventTime}));
     }
     if (offlineMomentFinish[relay] == true &&
         offlineMomentFinish[relay] == true) {

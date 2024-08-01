@@ -176,7 +176,8 @@ class Contacts {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     await Future.forEach(pubkeys, (friendPubkey) async {
-      UserDBISAR? friend = await Account.sharedInstance.getUserInfo(friendPubkey);
+      UserDBISAR? friend =
+          await Account.sharedInstance.getUserInfo(friendPubkey);
       friend ??= UserDBISAR(pubKey: friendPubkey);
       allContacts[friendPubkey] = friend;
     });
@@ -245,8 +246,12 @@ class Contacts {
     expiration = expiration != null
         ? (expiration + currentUnixTimestampSeconds())
         : null;
-    event ??= await Nip17.encodeSealedGossipDM(friendPubkey,
-        MessageDBISAR.getContent(type, content, source), replayId, pubkey, privkey,
+    event ??= await Nip17.encodeSealedGossipDM(
+        friendPubkey,
+        MessageDBISAR.getContent(type, content, source),
+        replayId,
+        pubkey,
+        privkey,
         sealedReceiver: sealedReceiver,
         subContent: MessageDBISAR.getSubContent(type, content,
             decryptSecret: decryptSecret),
@@ -561,8 +566,12 @@ class Contacts {
       Event? innerEvent}) async {
     if (innerEvent == null) return OKEvent('', false, 'innerEvent == null');
     Completer<OKEvent> completer = Completer<OKEvent>();
-    event ??= await Nip17.encodeSealedGossipDM(toPubkey,
-        MessageDBISAR.getContent(type, content, source), replyId, pubkey, privkey,
+    event ??= await Nip17.encodeSealedGossipDM(
+        toPubkey,
+        MessageDBISAR.getContent(type, content, source),
+        replyId,
+        pubkey,
+        privkey,
         sealedReceiver: pubkey,
         subContent: MessageDBISAR.getSubContent(type, content,
             decryptSecret: decryptSecret),
@@ -610,10 +619,10 @@ class Contacts {
       Relays.sharedInstance.setFriendMessageUntil(eventTime, relay);
       Relays.sharedInstance.setFriendMessageSince(eventTime, relay);
     } else {
-      Relays.sharedInstance.relays[relay] = RelayDB(
+      Relays.sharedInstance.relays[relay] = RelayDBISAR(
           url: relay,
-          friendMessageUntil: {relay: eventTime},
-          friendMessageSince: {relay: eventTime});
+          friendMessageUntilString: jsonEncode({relay: eventTime}),
+          friendMessageSinceString: jsonEncode({relay: eventTime}));
     }
     if (offlinePrivateMessageFinish[relay] == true &&
         offlineSecretMessageFinish[relay] == true) {

@@ -1,6 +1,7 @@
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:isar/isar.dart';
 
 class Relays {
   /// singleton
@@ -8,7 +9,7 @@ class Relays {
   factory Relays() => sharedInstance;
   static final Relays sharedInstance = Relays._internal();
   // ALL relays list
-  Map<String, RelayDB> relays = {};
+  Map<String, RelayDBISAR> relays = {};
 
   List<String> recommendGeneralRelays = [
     'wss://relay.0xchat.com',
@@ -39,7 +40,7 @@ class Relays {
 
   Future<void> init() async {
     await Config.sharedInstance.initConfig();
-    List<RelayDB> result = await _loadRelaysFromDB() ?? [];
+    List<RelayDBISAR> result = await _loadRelaysFromDB() ?? [];
     if (result.isNotEmpty) {
       relays = {for (var item in result) item.url: item};
     }
@@ -79,23 +80,31 @@ class Relays {
     Connect.sharedInstance.connectRelays(dmRelays, relayKind: RelayKind.dm);
   }
 
-  Future<List<RelayDB>?> _loadRelaysFromDB() async {
-    return await DB.sharedInstance.objects<RelayDB>();
+  Future<List<RelayDBISAR>?> _loadRelaysFromDB() async {
+    final isar = DBISAR.sharedInstance.isar;
+    return await isar.relayDBISARs.where().findAll();
   }
 
   Future<void> syncRelaysToDB({String? r}) async {
+    final isar = DBISAR.sharedInstance.isar;
     if (r != null && relays[r] != null) {
-      await DB.sharedInstance.insertBatch(relays[r]!);
+      await isar.writeTxn(() async {
+        await isar.relayDBISARs.put(relays[r]!);
+      });
     } else {
       await Future.forEach(relays.values, (relay) async {
-        await DB.sharedInstance.insertBatch(relay);
+        await isar.writeTxn(() async {
+          await isar.relayDBISARs.put(relay);
+        });
       });
     }
   }
 
-  Future<void> _syncRelayToDB(String url) async {
-    var relay = relays[url];
-    if (relay != null) await DB.sharedInstance.insertBatch(relay);
+  Future<void> syncRelayToDB(RelayDBISAR db) async {
+    final isar = DBISAR.sharedInstance.isar;
+    await isar.writeTxn(() async {
+      await isar.relayDBISARs.put(db);
+    });
   }
 
   int getFriendMessageUntil(String relayURL) {
@@ -131,18 +140,6 @@ class Relays {
   int getGroupMessageUntil(String relayURL) {
     return relays.containsKey(relayURL)
         ? relays[relayURL]!.getGroupMessageUntil(relayURL)
-        : 0;
-  }
-
-  int getContactsNotesSince(String relayURL) {
-    return relays.containsKey(relayURL)
-        ? relays[relayURL]!.getContactsNotesSince(relayURL)
-        : 0;
-  }
-
-  int getContactsNotesUntil(String relayURL) {
-    return relays.containsKey(relayURL)
-        ? relays[relayURL]!.getContactsNotesUntil(relayURL)
         : 0;
   }
 
@@ -184,133 +181,111 @@ class Relays {
 
   void setCommonMessageUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.getCommonMessageUntil(relay);
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
     relays[relay]!.commonMessagesUntil =
         updateTime > until ? updateTime : until;
   }
 
   void setFriendMessageUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.getFriendMessageUntil(relay);
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
-    Relays.sharedInstance.relays[relay]!.friendMessageUntil![relay] =
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
+    Relays.sharedInstance.relays[relay]!.friendMessageUntil[relay] =
         updateTime > until ? updateTime : until;
   }
 
   void setFriendRequestUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.relays[relay]!.friendRequestUntil;
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
     Relays.sharedInstance.relays[relay]!.friendRequestUntil =
         updateTime > until ? updateTime : until;
   }
 
   void setChannelMessageUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.getChannelMessageUntil(relay);
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
-    Relays.sharedInstance.relays[relay]!.channelMessageUntil![relay] =
-        updateTime > until ? updateTime : until;
-  }
-
-  void setContactsNotesUntil(int updateTime, String relay) {
-    int until = Relays.sharedInstance.getContactsNotesUntil(relay);
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
-    Relays.sharedInstance.relays[relay]!.contactsNotesUntil![relay] =
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
+    Relays.sharedInstance.relays[relay]!.channelMessageUntil[relay] =
         updateTime > until ? updateTime : until;
   }
 
   void setMomentUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.getMomentUntil(relay);
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
-    Relays.sharedInstance.relays[relay]!.momentUntil![relay] =
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
+    Relays.sharedInstance.relays[relay]!.momentUntil[relay] =
         updateTime > until ? updateTime : until;
   }
 
   void setZapRecordUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.getZapRecordUntil(relay);
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
-    Relays.sharedInstance.relays[relay]!.zapRecordUntil![relay] =
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
+    Relays.sharedInstance.relays[relay]!.zapRecordUntil[relay] =
         updateTime > until ? updateTime : until;
   }
 
   void setGroupMessageUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.getGroupMessageUntil(relay);
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
-    Relays.sharedInstance.relays[relay]!.groupMessageUntil![relay] =
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
+    Relays.sharedInstance.relays[relay]!.groupMessageUntil[relay] =
         updateTime > until ? updateTime : until;
   }
 
   void setCommonMessageSince(int updateTime, String relay) {
     int since = Relays.sharedInstance.getCommonMessageSince(relay);
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
     relays[relay]!.commonMessagesSince =
         updateTime < since ? updateTime : since;
   }
 
   void setFriendMessageSince(int updateTime, String relay) {
     int since = Relays.sharedInstance.getFriendMessageSince(relay);
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
-    Relays.sharedInstance.relays[relay]!.friendMessageSince![relay] =
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
+    Relays.sharedInstance.relays[relay]!.friendMessageSince[relay] =
         updateTime < since ? updateTime : since;
   }
 
   void setFriendRequestSince(int updateTime, String relay) {
     int since = Relays.sharedInstance.relays[relay]!.friendRequestSince;
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
     Relays.sharedInstance.relays[relay]!.friendRequestSince =
         updateTime < since ? updateTime : since;
   }
 
   void setChannelMessageSince(int updateTime, String relay) {
     int since = Relays.sharedInstance.getChannelMessageSince(relay);
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
-    Relays.sharedInstance.relays[relay]!.channelMessageSince![relay] =
-        updateTime < since ? updateTime : since;
-  }
-
-  void setContactsNotesSince(int updateTime, String relay) {
-    int since = Relays.sharedInstance.getContactsNotesSince(relay);
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
-    Relays.sharedInstance.relays[relay]!.contactsNotesSince![relay] =
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
+    Relays.sharedInstance.relays[relay]!.channelMessageSince[relay] =
         updateTime < since ? updateTime : since;
   }
 
   void setMomentSince(int updateTime, String relay) {
     int since = Relays.sharedInstance.getMomentSince(relay);
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
-    Relays.sharedInstance.relays[relay]!.momentSince![relay] =
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
+    Relays.sharedInstance.relays[relay]!.momentSince[relay] =
         updateTime < since ? updateTime : since;
   }
 
   void setZapRecordSince(int updateTime, String relay) {
     int since = Relays.sharedInstance.getZapRecordSince(relay);
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
-    Relays.sharedInstance.relays[relay]!.zapRecordSince![relay] =
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
+    Relays.sharedInstance.relays[relay]!.zapRecordSince[relay] =
         updateTime < since ? updateTime : since;
   }
 
   void setGroupMessageSince(int updateTime, String relay) {
     int since = Relays.sharedInstance.getGroupMessageSince(relay);
-    if (!relays.containsKey(relay)) relays[relay] = RelayDB(url: relay);
-    Relays.sharedInstance.relays[relay]!.groupMessageSince![relay] =
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
+    Relays.sharedInstance.relays[relay]!.groupMessageSince[relay] =
         updateTime < since ? updateTime : since;
   }
 
-  static Future<RelayDB?> getRelayDetailsFromDB(String relayURL) async {
-    List<Object?> maps = await DB.sharedInstance
-        .objects<RelayDB>(where: 'url = ?', whereArgs: [relayURL]);
-    RelayDB? db;
-    if (maps.isNotEmpty) {
-      db = maps.first as RelayDB?;
-      if (db != null) {
-        return db;
-      }
-    }
-    return null;
+  static Future<RelayDBISAR?> getRelayDetailsFromDB(String relayURL) async {
+    final isar = DBISAR.sharedInstance.isar;
+    return await isar.relayDBISARs.filter().urlEqualTo(relayURL).findFirst();
   }
 
-  static Future<RelayDB?> getRelayDetails(String relayURL,
+  static Future<RelayDBISAR?> getRelayDetails(String relayURL,
       {bool? refresh}) async {
     if (refresh != true) {
-      RelayDB? relayDB = await getRelayDetailsFromDB(relayURL);
+      RelayDBISAR? relayDB = await getRelayDetailsFromDB(relayURL);
       if (relayDB != null) return relayDB;
     }
 
@@ -319,11 +294,11 @@ class Relays {
         await http.get(url, headers: {'Accept': 'application/nostr+json'});
 
     if (response.statusCode == 200) {
-      RelayDB? relayDB = Relays.sharedInstance.relays.containsKey(relayURL)
+      RelayDBISAR? relayDB = Relays.sharedInstance.relays.containsKey(relayURL)
           ? Relays.sharedInstance.relays[relayURL]
-          : RelayDB(url: relayURL);
-      relayDB = RelayDB.relayDBInfoFromJSON(response.body, relayDB!);
-      await DB.sharedInstance.insertBatch(relayDB);
+          : RelayDBISAR(url: relayURL);
+      relayDB = RelayDBISAR.relayDBInfoFromJSON(response.body, relayDB!);
+      await Relays.sharedInstance.syncRelayToDB(relayDB);
       return relayDB;
     } else {
       debugPrint('Request failed with status: ${response.statusCode}.');
