@@ -58,8 +58,6 @@ export 'src/common/network/connect.dart';
 export 'src/common/thread/threadPoolManager.dart';
 export 'src/common/config/config.dart';
 export 'src/common/config/configDB.dart';
-export 'src/common/cache/eventCache.dart';
-export 'src/common/cache/eventCacheDB.dart';
 export 'src/moment/moment.dart';
 export 'src/moment/moment+load.dart';
 export 'src/moment/moment+notification.dart';
