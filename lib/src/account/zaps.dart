@@ -153,18 +153,13 @@ class Zaps {
     }
   }
 
-  static Future<ZapsDB?> getZapsInfoFromDB(String lnurl) async {
-    List<ZapsDB?> maps = await DB.sharedInstance
-        .objects<ZapsDB>(where: 'lnURL = ?', whereArgs: [lnurl]);
-    if (maps.isNotEmpty) {
-      return maps.first;
-    } else {
-      return null;
-    }
+  static Future<ZapsDBISAR?> getZapsInfoFromDB(String lnurl) async {
+    final isar = DBISAR.sharedInstance.isar;
+    return await isar.zapsDBISARs.filter().lnURLEqualTo(lnurl).findFirst();
   }
 
-  static Future<ZapsDB?> getZapsInfoFromLnurl(String lnurl) async {
-    ZapsDB? zapsDB = await getZapsInfoFromDB(lnurl);
+  static Future<ZapsDBISAR?> getZapsInfoFromLnurl(String lnurl) async {
+    ZapsDBISAR? zapsDB = await getZapsInfoFromDB(lnurl);
     if (zapsDB != null) return zapsDB;
     Map map = bech32Decode(lnurl, maxLength: lnurl.length);
     if (map['prefix'] == 'lnurl') {
@@ -172,10 +167,13 @@ class Zaps {
       String url = utf8.decode(hexToBytes(hexURL));
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
-        zapsDB = ZapsDB.fromMap(jsonDecode(response.body));
+        zapsDB = ZapsDBISAR.fromMap(jsonDecode(response.body));
         zapsDB.lnURL = lnurl;
         // cache to DB
-        await DB.sharedInstance.insertBatch<ZapsDB>(zapsDB);
+        final isar = DBISAR.sharedInstance.isar;
+        await isar.writeTxn(() async {
+          await isar.zapsDBISARs.put(zapsDB!);
+        });
         return zapsDB;
       } else {
         throw Exception(response.toString());
@@ -195,7 +193,7 @@ class Zaps {
       String? groupId}) async {
     Completer<Map<String, dynamic>> completer =
         Completer<Map<String, dynamic>>();
-    ZapsDB? zapsDB = await getZapsInfoFromLnurl(lnurl);
+    ZapsDBISAR? zapsDB = await getZapsInfoFromLnurl(lnurl);
     if (zapsDB != null) {
       String url =
           '${zapsDB.callback}?amount=${sats * 1000}&lnurl=${zapsDB.lnURL}';
@@ -278,7 +276,8 @@ class Zaps {
       return [db!];
     } else {
       // load from db
-      List<ZapRecordsDBISAR?> maps = await Zaps.searchZapRecordsFromDB(bolt11: invoice);
+      List<ZapRecordsDBISAR?> maps =
+          await Zaps.searchZapRecordsFromDB(bolt11: invoice);
       if (maps.isNotEmpty) {
         var db = maps.first;
         if (db != null) {
@@ -299,7 +298,8 @@ class Zaps {
         return [db!];
       } else {
         // load from db
-        List<ZapRecordsDBISAR?> maps = await Zaps.searchZapRecordsFromDB(bolt11: invoice);
+        List<ZapRecordsDBISAR?> maps =
+            await Zaps.searchZapRecordsFromDB(bolt11: invoice);
         if (maps.isNotEmpty) {
           var db = maps.first;
           if (db != null) {
@@ -368,7 +368,6 @@ class Zaps {
     }
     return maps;
   }
-
 
   static Future<void> saveZapRecordToDB(ZapRecordsDBISAR zapRecordsDB) async {
     final isar = DBISAR.sharedInstance.isar;

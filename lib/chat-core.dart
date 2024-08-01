@@ -21,6 +21,7 @@ export 'src/account/model/badgeDB_isar.dart';
 export 'src/account/model/badgeAwardDB.dart';
 export 'src/account/model/badgeAwardDB_isar.dart';
 export 'src/account/model/zapsDB.dart';
+export 'src/account/model/zapsDB_isar.dart';
 export 'src/chat/messages/model/messageDB.dart';
 export 'src/chat/messages/model/messageDB_isar.dart';
 export 'src/chat/channels/model/channelDB.dart';

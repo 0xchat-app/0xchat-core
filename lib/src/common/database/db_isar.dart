@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:chatcore/chat-core.dart';
@@ -10,8 +12,12 @@ class DBISAR {
 
   late Isar isar;
 
-  Future open(String? pubkey) async {
-    var dbPath = (await getLibraryDirectory()).path;
+  Future open(String? pubkey,
+      {List<CollectionSchema<dynamic>>? additionalSchemas}) async {
+    Directory directory = Platform.isAndroid
+        ? await getApplicationDocumentsDirectory()
+        : await getLibraryDirectory();
+    var dbPath = directory.path;
     debugPrint('DBISAR open: $dbPath');
     isar = await Isar.open(
       [
@@ -21,6 +27,8 @@ class DBISAR {
         BadgeDBISARSchema,
         RelayDBISARSchema,
         ZapRecordsDBISARSchema,
+        ZapsDBISARSchema,
+        ...additionalSchemas ?? []
       ],
       directory: dbPath,
       name: pubkey ?? 'db',
