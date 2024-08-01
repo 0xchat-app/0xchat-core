@@ -1,8 +1,8 @@
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/account/model/badgeDB_isar.dart';
 
 @reflector
 class BadgeDB extends DBObject {
-
   String id;
   String d;
   String name;
@@ -12,16 +12,15 @@ class BadgeDB extends DBObject {
   String creator;
   int createTime;
 
-  BadgeDB({
-    this.id = '',
-    this.d = '',
-    this.name = '',
-    this.description = '',
-    this.image = '',
-    this.thumb = '',
-    this.creator = '',
-    this.createTime = 0
-  });
+  BadgeDB(
+      {this.id = '',
+      this.d = '',
+      this.name = '',
+      this.description = '',
+      this.image = '',
+      this.thumb = '',
+      this.creator = '',
+      this.createTime = 0});
 
   @override
   //Map
@@ -36,6 +35,16 @@ class BadgeDB extends DBObject {
   //primaryKey
   static List<String?> primaryKey() {
     return ['id'];
+  }
+
+  static Future<void> migrateToISAR() async {
+    List<BadgeDB> badgeDBs = await DB.sharedInstance.objects<BadgeDB>();
+    await Future.forEach(badgeDBs, (badgeDB) async {
+      await DBISAR.sharedInstance.isar.writeTxn(() async {
+        await DBISAR.sharedInstance.isar.badgeDBISARs
+            .put(BadgeDBISAR.fromMap(badgeDB.toMap()));
+      });
+    });
   }
 }
 
@@ -53,12 +62,12 @@ BadgeDB _badgeInfoFromMap(Map<String, dynamic> map) {
 }
 
 Map<String, dynamic> _badgeInfoToMap(BadgeDB instance) => <String, dynamic>{
-  'id': instance.id,
-  'd': instance.d,
-  'name': instance.name,
-  'description': instance.description,
-  'image': instance.image,
-  'thumb': instance.thumb,
-  'creator': instance.creator,
-  'createTime': instance.createTime,
-};
+      'id': instance.id,
+      'd': instance.d,
+      'name': instance.name,
+      'description': instance.description,
+      'image': instance.image,
+      'thumb': instance.thumb,
+      'creator': instance.creator,
+      'createTime': instance.createTime,
+    };

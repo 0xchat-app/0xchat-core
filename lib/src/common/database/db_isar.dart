@@ -14,7 +14,12 @@ class DBISAR {
     var dbPath = (await getLibraryDirectory()).path;
     debugPrint('DBISAR open: $dbPath');
     isar = await Isar.open(
-      [MessageDBISARSchema, UserDBISARSchema, BadgeAwardDBISARSchema],
+      [
+        MessageDBISARSchema,
+        UserDBISARSchema,
+        BadgeAwardDBISARSchema,
+        BadgeDBISARSchema
+      ],
       directory: dbPath,
       name: pubkey ?? 'db',
     );
