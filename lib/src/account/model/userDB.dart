@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:chatcore/src/account/model/userDB_isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 

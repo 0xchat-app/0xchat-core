@@ -19,7 +19,8 @@ class DBISAR {
         UserDBISARSchema,
         BadgeAwardDBISARSchema,
         BadgeDBISARSchema,
-        RelayDBISARSchema
+        RelayDBISARSchema,
+        ZapRecordsDBISARSchema,
       ],
       directory: dbPath,
       name: pubkey ?? 'db',

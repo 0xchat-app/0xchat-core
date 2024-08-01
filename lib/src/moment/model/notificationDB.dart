@@ -38,7 +38,7 @@ class NotificationDB extends DBObject {
   }
 
   static NotificationDB notificationDBFromZapRecordsDB(
-      ZapRecordsDB zapRecordsDB, String eventId) {
+      ZapRecordsDBISAR zapRecordsDB, String eventId) {
     final requestInfo = Zaps.getPaymentRequestInfo(zapRecordsDB.bolt11);
     int amount = (requestInfo.amount.toDouble() * 100000000).toInt();
     return NotificationDB(

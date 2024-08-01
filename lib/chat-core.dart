@@ -27,6 +27,7 @@ export 'src/chat/channels/model/channelDB.dart';
 export 'src/chat/contacts/model/friendRequestDB.dart';
 export 'src/chat/contacts/model/secretSessionDB.dart';
 export 'src/account/model/zapRecordsDB.dart';
+export 'src/account/model/zapRecordsDB_isar.dart';
 export 'src/chat/contacts/contacts.dart';
 export 'src/chat/messages/messages.dart';
 export 'src/chat/privateGroups/model/groupDB.dart';

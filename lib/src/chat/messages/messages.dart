@@ -137,11 +137,10 @@ class Messages {
         event,
         Account.sharedInstance.currentPubkey,
         Account.sharedInstance.currentPrivkey);
-    ZapRecordsDB zapRecordsDB =
-        ZapRecordsDB.zapReceiptToZapRecordsDB(zapReceipt);
+    ZapRecordsDBISAR zapRecordsDB =
+        ZapRecordsDBISAR.zapReceiptToZapRecordsDB(zapReceipt);
     //add to zap records
-    await DB.sharedInstance.insertBatch<ZapRecordsDB>(zapRecordsDB,
-        conflictAlgorithm: ConflictAlgorithm.ignore);
+    await Zaps.saveZapRecordToDB(zapRecordsDB);
     Zaps.sharedInstance.zapRecords[zapRecordsDB.bolt11] = zapRecordsDB;
 
     final reactedMessageDB = await loadMessageDBFromDB(zapRecordsDB.eventId);

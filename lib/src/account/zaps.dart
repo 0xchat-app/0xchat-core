@@ -2,13 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:bolt11_decoder/bolt11_decoder.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:decimal/decimal.dart';
 
-typedef ZapRecordsCallBack = void Function(ZapRecordsDB);
+typedef ZapRecordsCallBack = void Function(ZapRecordsDBISAR);
 
 enum ZapType {
   normal,
@@ -24,7 +25,7 @@ class Zaps {
   factory Zaps() => sharedInstance;
   static final Zaps sharedInstance = Zaps._internal();
 
-  Map<String, ZapRecordsDB> zapRecords = {};
+  Map<String, ZapRecordsDBISAR> zapRecords = {};
   ZapRecordsCallBack? zapRecordsCallBack;
   Map<String, bool> offlineZapRecordFinish = {};
   NostrWalletConnection? nwc;
@@ -269,7 +270,7 @@ class Zaps {
     return Bolt11PaymentRequest(invoice);
   }
 
-  static Future<List<ZapRecordsDB>> getZapReceiptFromLocal(
+  static Future<List<ZapRecordsDBISAR>> getZapReceiptFromLocal(
       String invoice) async {
     // load from cache
     if (Zaps.sharedInstance.zapRecords.containsKey(invoice)) {
@@ -277,8 +278,7 @@ class Zaps {
       return [db!];
     } else {
       // load from db
-      List<ZapRecordsDB?> maps = await Zaps.loadZapRecordsFromDB(
-          where: 'bolt11 = ?', whereArgs: [invoice]);
+      List<ZapRecordsDBISAR?> maps = await Zaps.searchZapRecordsFromDB(bolt11: invoice);
       if (maps.isNotEmpty) {
         var db = maps.first;
         if (db != null) {
@@ -290,7 +290,7 @@ class Zaps {
     return [];
   }
 
-  static Future<List<ZapRecordsDB>> getZapReceipt(String zapper,
+  static Future<List<ZapRecordsDBISAR>> getZapReceipt(String zapper,
       {String? recipient, String? eventId, String? invoice}) async {
     if (invoice != null) {
       // load from cache
@@ -299,8 +299,7 @@ class Zaps {
         return [db!];
       } else {
         // load from db
-        List<ZapRecordsDB?> maps = await Zaps.loadZapRecordsFromDB(
-            where: 'bolt11 = ?', whereArgs: [invoice]);
+        List<ZapRecordsDBISAR?> maps = await Zaps.searchZapRecordsFromDB(bolt11: invoice);
         if (maps.isNotEmpty) {
           var db = maps.first;
           if (db != null) {
@@ -311,7 +310,8 @@ class Zaps {
       }
     }
     // load from relay
-    Completer<List<ZapRecordsDB>> completer = Completer<List<ZapRecordsDB>>();
+    Completer<List<ZapRecordsDBISAR>> completer =
+        Completer<List<ZapRecordsDBISAR>>();
     Filter f = Filter(kinds: [9735], authors: [zapper]);
     if (recipient != null) {
       f = Filter(kinds: [9735], authors: [zapper], p: [recipient]);
@@ -329,9 +329,9 @@ class Zaps {
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (zapReceiptList.isNotEmpty) {
-        List<ZapRecordsDB> result = [];
+        List<ZapRecordsDBISAR> result = [];
         for (var event in zapReceiptList) {
-          ZapRecordsDB zapRecordsDB = await handleZapRecordEvent(event);
+          ZapRecordsDBISAR zapRecordsDB = await handleZapRecordEvent(event);
           result.add(zapRecordsDB);
         }
         if (!completer.isCompleted) completer.complete(result);
@@ -341,19 +341,27 @@ class Zaps {
     return completer.future;
   }
 
-  static Future<List<ZapRecordsDB?>> loadZapRecordsFromDB(
-      {String? where,
-      List<Object?>? whereArgs,
-      String? orderBy,
-      int? limit,
-      int? offset}) async {
-    List<ZapRecordsDB?> maps = await DB.sharedInstance.objects<ZapRecordsDB>(
-        where: where,
-        whereArgs: whereArgs,
-        orderBy: orderBy,
-        limit: limit,
-        offset: offset);
-    for (ZapRecordsDB? records in maps) {
+  static Future<List<ZapRecordsDBISAR?>> searchZapRecordsFromDB(
+      {String? bolt11,
+      String? sender,
+      String? recipient,
+      int limit = 1000}) async {
+    if (bolt11 == null && sender == null && recipient == null) return [];
+    final isar = DBISAR.sharedInstance.isar;
+    var queryBuilder = isar.zapRecordsDBISARs.filter();
+    List<ZapRecordsDBISAR?> maps = [];
+    if (bolt11 != null) {
+      maps = await queryBuilder.bolt11EqualTo(bolt11).limit(limit).findAll();
+    }
+    if (sender != null) {
+      maps = await queryBuilder.senderEqualTo(sender).limit(limit).findAll();
+    }
+    if (recipient != null) {
+      maps =
+          await queryBuilder.recipientEqualTo(recipient).limit(limit).findAll();
+    }
+
+    for (ZapRecordsDBISAR? records in maps) {
       if (records != null) {
         Zaps.sharedInstance.zapRecords[records.bolt11] = records;
       }
@@ -361,16 +369,23 @@ class Zaps {
     return maps;
   }
 
-  static Future<ZapRecordsDB> handleZapRecordEvent(Event event) async {
+
+  static Future<void> saveZapRecordToDB(ZapRecordsDBISAR zapRecordsDB) async {
+    final isar = DBISAR.sharedInstance.isar;
+    await isar.writeTxn(() async {
+      await isar.zapRecordsDBISARs.put(zapRecordsDB);
+    });
+  }
+
+  static Future<ZapRecordsDBISAR> handleZapRecordEvent(Event event) async {
     ZapReceipt zapReceipt = await Nip57.getZapReceipt(
         event,
         Account.sharedInstance.currentPubkey,
         Account.sharedInstance.currentPrivkey);
-    ZapRecordsDB zapRecordsDB =
-        ZapRecordsDB.zapReceiptToZapRecordsDB(zapReceipt);
+    ZapRecordsDBISAR zapRecordsDB =
+        ZapRecordsDBISAR.zapReceiptToZapRecordsDB(zapReceipt);
     //add to zap records
-    await DB.sharedInstance.insertBatch<ZapRecordsDB>(zapRecordsDB,
-        conflictAlgorithm: ConflictAlgorithm.ignore);
+    await saveZapRecordToDB(zapRecordsDB);
     Zaps.sharedInstance.zapRecords[zapRecordsDB.bolt11] = zapRecordsDB;
     Zaps.sharedInstance.zapRecordsCallBack?.call(zapRecordsDB);
     //add to moment notifications

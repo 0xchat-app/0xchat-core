@@ -16,7 +16,7 @@ extension Notification on Moment {
   }
 
   Future<void> handleZapNotification(
-      ZapRecordsDB zapRecordsDB, Event zapEvent) async {
+      ZapRecordsDBISAR zapRecordsDB, Event zapEvent) async {
     final reactedMessageDB =
         await Messages.sharedInstance.loadMessageDBFromDB(zapRecordsDB.eventId);
     if (reactedMessageDB != null) {

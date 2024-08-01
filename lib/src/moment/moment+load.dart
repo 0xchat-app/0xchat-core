@@ -50,13 +50,13 @@ extension Load on Moment {
     List<String> authors = [pubkey];
     List<NoteDB>? reactedNotes = await loadUserNotesFromDB(authors,
         limit: limit, until: until, private: private, isReacted: true);
-    List<ZapRecordsDB?> zapRecords = await Zaps.loadZapRecordsFromDB(
-        where: 'sender = ?', whereArgs: authors);
+    List<ZapRecordsDBISAR?> zapRecords =
+        await Zaps.searchZapRecordsFromDB(sender: pubkey);
     List<String> reactedIds = [];
     for (NoteDB note in reactedNotes ?? []) {
       if (note.reactedId != null) reactedIds.add(note.reactedId!);
     }
-    for (ZapRecordsDB? zapRecordsDB in zapRecords) {
+    for (ZapRecordsDBISAR? zapRecordsDB in zapRecords) {
       if (zapRecordsDB != null && zapRecordsDB.eventId.isNotEmpty) {
         reactedIds.add(zapRecordsDB.eventId);
       }
@@ -336,17 +336,17 @@ extension Load on Moment {
         zapEvent,
         Account.sharedInstance.currentPubkey,
         Account.sharedInstance.currentPrivkey);
-    ZapRecordsDB zapRecordsDB =
-        ZapRecordsDB.zapReceiptToZapRecordsDB(zapReceipt);
+    ZapRecordsDBISAR zapRecordsDB =
+        ZapRecordsDBISAR.zapReceiptToZapRecordsDB(zapReceipt);
     if (noteDB.zapEventIds?.contains(zapRecordsDB.bolt11) == true) return;
-    DB.sharedInstance.insertBatch<ZapRecordsDB>(zapRecordsDB,
-        conflictAlgorithm: ConflictAlgorithm.ignore);
+    Zaps.saveZapRecordToDB(zapRecordsDB);
     noteDB.zapEventIds?.add(zapRecordsDB.bolt11);
     noteDB.zapCount++;
-    noteDB.zapAmount += ZapRecordsDB.getZapAmount(zapRecordsDB.bolt11);
+    noteDB.zapAmount += ZapRecordsDBISAR.getZapAmount(zapRecordsDB.bolt11);
     if (zapRecordsDB.sender == pubkey) {
       noteDB.zapCountByMe++;
-      noteDB.zapAmountByMe += ZapRecordsDB.getZapAmount(zapRecordsDB.bolt11);
+      noteDB.zapAmountByMe +=
+          ZapRecordsDBISAR.getZapAmount(zapRecordsDB.bolt11);
     }
     saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
@@ -518,11 +518,11 @@ extension Load on Moment {
     return result;
   }
 
-  static Future<List<ZapRecordsDB>> loadInvoicesToZapRecords(
+  static Future<List<ZapRecordsDBISAR>> loadInvoicesToZapRecords(
       List<String> invoices, bool private) async {
-    List<ZapRecordsDB> result = [];
+    List<ZapRecordsDBISAR> result = [];
     for (var invoice in invoices) {
-      List<ZapRecordsDB> zapRecords =
+      List<ZapRecordsDBISAR> zapRecords =
           await Zaps.getZapReceipt('', invoice: invoice);
       if (zapRecords.isNotEmpty) result.add(zapRecords.first);
     }
