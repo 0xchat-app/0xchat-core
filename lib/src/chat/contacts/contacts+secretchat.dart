@@ -81,7 +81,10 @@ extension SecretChat on Contacts {
 
   static Future<bool> deleteSecretSessionFromDB(String sessionId) async {
     final isar = DBISAR.sharedInstance.isar;
-    return await isar.secretSessionDBISARs.deleteBySessionId(sessionId);
+    await isar.writeTxn(() async{
+      await isar.secretSessionDBISARs.deleteBySessionId(sessionId);
+    });
+    return true;
   }
 
   Future<OKEvent> accept(String sessionId) async {

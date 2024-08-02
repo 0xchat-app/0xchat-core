@@ -65,7 +65,9 @@ extension Member on Groups {
 
   Future<void> deleteGroup(String groupId) async {
     final isar = DBISAR.sharedInstance.isar;
-    await isar.groupDBISARs.deleteByGroupId(groupId);
+    await isar.writeTxn(() async{
+      await isar.groupDBISARs.deleteByGroupId(groupId);
+    });
   }
 
   Future<void> muteGroup(String groupId) async {

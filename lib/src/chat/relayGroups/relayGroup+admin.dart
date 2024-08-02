@@ -57,8 +57,11 @@ extension EAdmin on RelayGroup {
 
   Future<bool> ignoreJoinRequest(JoinRequestDBISAR joinRequest) async {
     final isar = DBISAR.sharedInstance.isar;
-    return await isar.joinRequestDBISARs
-        .deleteByRequestId(joinRequest.requestId);
+    await isar.writeTxn(() async{
+      await isar.joinRequestDBISARs
+          .deleteByRequestId(joinRequest.requestId);
+    });
+    return true;
   }
 
   Future<OKEvent> sendModeration(GroupModeration moderation) async {
@@ -247,8 +250,10 @@ extension EAdmin on RelayGroup {
 
   Future<OKEvent> deleteNoteFromLocal(String noteId) async {
     final isar = DBISAR.sharedInstance.isar;
-    bool result = await isar.noteDBISARs.deleteByNoteId(noteId);
-    return OKEvent(noteId, result, '');
+    await isar.writeTxn(() async {
+       await isar.noteDBISARs.deleteByNoteId(noteId);
+    });
+    return OKEvent(noteId, true, '');
   }
 
   Future<OKEvent> deleteEvent(

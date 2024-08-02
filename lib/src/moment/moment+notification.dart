@@ -49,6 +49,8 @@ extension Notification on Moment {
   Future<void> deleteAllNotifications() async {
     newNotifications.clear();
     final isar = DBISAR.sharedInstance.isar;
-    isar.notificationDBISARs.clear();
+    await isar.writeTxn(() async {
+      await isar.notificationDBISARs.clear();
+    });
   }
 }
