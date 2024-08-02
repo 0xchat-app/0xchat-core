@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 typedef NewNotesCallBack = void Function(List<NoteDBISAR>);
-typedef NewNotificationCallBack = void Function(List<NotificationDB>);
+typedef NewNotificationCallBack = void Function(List<NotificationDBISAR>);
 
 class Moment {
   /// singleton
@@ -18,7 +18,7 @@ class Moment {
   String privkey = '';
   Map<String, NoteDBISAR> notesCache = {};
   List<NoteDBISAR> newNotes = [];
-  List<NotificationDB> newNotifications = [];
+  List<NotificationDBISAR> newNotifications = [];
   NewNotesCallBack? newNotesCallBack;
   NewNotificationCallBack? newNotificationCallBack;
   NewNotificationCallBack? myZapNotificationCallBack;

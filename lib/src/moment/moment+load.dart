@@ -1,7 +1,4 @@
 import 'dart:async';
-import 'dart:ffi';
-import 'dart:math';
-
 import 'package:chatcore/chat-core.dart';
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
@@ -625,10 +622,9 @@ extension Load on Moment {
       newNotesCallBack?.call(newNotes);
     }
     if (noteDB.pTags?.contains(pubkey) == true) {
-      NotificationDB notificationDB =
-          NotificationDB.notificationDBFromNoteDB(noteDB);
-      await DB.sharedInstance.insertBatch<NotificationDB>(notificationDB,
-          conflictAlgorithm: ConflictAlgorithm.ignore);
+      NotificationDBISAR notificationDB =
+          NotificationDBISAR.notificationDBFromNoteDB(noteDB);
+      await saveNotificationToDB(notificationDB);
       if (notificationDB.author != pubkey &&
           notificationDB.createAt > latestNotificationTime) {
         newNotifications.add(notificationDB);

@@ -1,16 +1,17 @@
+import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension Notification on Moment {
-  Future<List<NotificationDB>?> loadNotificationsFromDB(int until,
+  Future<List<NotificationDBISAR>?> loadNotificationsFromDB(int until,
       {int limit = 50}) async {
-    List<NotificationDB> notifications = await DB.sharedInstance
-        .objects<NotificationDB>(
-            where: 'createAt < ?',
-            whereArgs: [until],
-            orderBy: 'createAt desc',
-            limit: limit);
+    final isar = DBISAR.sharedInstance.isar;
+    List<NotificationDBISAR> notifications = await isar.notificationDBISARs
+        .filter()
+        .createAtLessThan(until)
+        .limit(limit)
+        .findAll();
     latestNotificationTime = notifications.first.createAt;
     return notifications;
   }
@@ -23,11 +24,10 @@ extension Notification on Moment {
       await Messages.sharedInstance.handleZapRecordEvent(zapEvent);
     } else {
       await addZapRecordToNote(zapEvent, zapRecordsDB.eventId);
-      NotificationDB notificationDB =
-          NotificationDB.notificationDBFromZapRecordsDB(
+      NotificationDBISAR notificationDB =
+          NotificationDBISAR.notificationDBFromZapRecordsDB(
               zapRecordsDB, zapEvent.id);
-      await DB.sharedInstance.insertBatch<NotificationDB>(notificationDB,
-          conflictAlgorithm: ConflictAlgorithm.ignore);
+      await saveNotificationToDB(notificationDB);
       if (notificationDB.author != pubkey &&
           notificationDB.createAt > latestNotificationTime) {
         newNotifications.add(notificationDB);
@@ -38,8 +38,17 @@ extension Notification on Moment {
     }
   }
 
+  Future<void> saveNotificationToDB(NotificationDBISAR notificationDB,
+      {ConflictAlgorithm? conflictAlgorithm}) async {
+    final isar = DBISAR.sharedInstance.isar;
+    await isar.writeTxn(() async {
+      await isar.notificationDBISARs.put(notificationDB);
+    });
+  }
+
   Future<void> deleteAllNotifications() async {
     newNotifications.clear();
-    await DB.sharedInstance.delete<NotificationDB>();
+    final isar = DBISAR.sharedInstance.isar;
+    isar.notificationDBISARs.clear();
   }
 }
