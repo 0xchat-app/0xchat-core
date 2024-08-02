@@ -6,7 +6,7 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension EMember on RelayGroup {
-  Future<RelayGroupDB?> createGroup(String relay,
+  Future<RelayGroupDBISAR?> createGroup(String relay,
       {String name = '',
       bool closed = false,
       String picture = '',
@@ -18,25 +18,26 @@ extension EMember on RelayGroup {
 
     await Connect.sharedInstance
         .connectRelays([relay], relayKind: RelayKind.relayGroup);
-    Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
+    Completer<RelayGroupDBISAR?> completer = Completer<RelayGroupDBISAR?>();
     String groupId = generate64RandomHexChars();
     Event event = await Nip29.encodeCreateGroup(groupId, pubkey, privkey);
     Connect.sharedInstance.sendEvent(event, toRelays: [relay],
         sendCallBack: (ok, relay) async {
       if (ok.status) {
         String id = '$relay\'$groupId';
-        RelayGroupDB relayGroupDB = RelayGroupDB(
+        RelayGroupDBISAR relayGroupDB = RelayGroupDBISAR(
             groupId: groupId,
             relay: relay,
             author: pubkey,
             members: [pubkey],
-            admins: [GroupAdmin(pubkey, 'Admin', GroupActionKind.all())],
+            adminsString: RelayGroupDB.groupAdminsToString(
+                [GroupAdmin(pubkey, 'Admin', GroupActionKind.all())]),
             closed: closed,
             private: closed,
             name: name,
             picture: picture,
             about: about,
-            id: id,
+            identifier: id,
             lastUpdatedTime: event.createdAt);
         myGroups[groupId] = relayGroupDB;
         await syncGroupToDB(relayGroupDB);
@@ -51,12 +52,12 @@ extension EMember on RelayGroup {
     return completer.future;
   }
 
-  Future<RelayGroupDB?> createGroup2(String relay,
+  Future<RelayGroupDBISAR?> createGroup2(String relay,
       {String name = '',
       bool closed = false,
       String picture = '',
       String about = ''}) async {
-    Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
+    Completer<RelayGroupDBISAR?> completer = Completer<RelayGroupDBISAR?>();
     var uri = Uri.parse(relay);
     var hostWithPort = uri.hasPort ? '${uri.host}:${uri.port}' : uri.host;
     final url = Uri.parse('https://$hostWithPort/create');
@@ -75,18 +76,19 @@ extension EMember on RelayGroup {
           String relay = naddr['relays']?.first;
           String author = naddr['author'];
           String id = '$relay\'$groupId';
-          RelayGroupDB relayGroupDB = RelayGroupDB(
+          RelayGroupDBISAR relayGroupDB = RelayGroupDBISAR(
               groupId: groupId,
               relay: relay,
               author: author,
               members: [author],
-              admins: [GroupAdmin(author, 'Admin', GroupActionKind.all())],
+              adminsString: RelayGroupDB.groupAdminsToString(
+                  [GroupAdmin(author, 'Admin', GroupActionKind.all())]),
               closed: closed,
               private: closed,
               name: name,
               picture: picture,
               about: about,
-              id: id,
+              identifier: id,
               lastUpdatedTime: currentUnixTimestampSeconds());
           myGroups[groupId] = relayGroupDB;
           await syncGroupToDB(relayGroupDB);
@@ -105,7 +107,7 @@ extension EMember on RelayGroup {
   }
 
   Future<OKEvent> leaveGroup(String groupId) async {
-    RelayGroupDB? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     removeUser(groupId, [pubkey], '');
     groupDB.members?.remove(pubkey);
@@ -127,11 +129,12 @@ extension EMember on RelayGroup {
     SimpleGroups simpleGroups = getHostAndGroupId(input);
     String groupId = simpleGroups.groupId;
     String relay = simpleGroups.relay;
-    RelayGroupDB? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId];
     if (groupDB != null) relay = groupDB.relay;
     if (relay.isEmpty) return OKEvent(input, false, 'empty relay');
     if (groupDB == null) {
-      groupDB = RelayGroupDB(groupId: groupId, relay: relay, id: input);
+      groupDB =
+          RelayGroupDBISAR(groupId: groupId, relay: relay, identifier: input);
       groups[groupId] = groupDB;
       syncGroupToDB(groupDB);
     }
@@ -176,7 +179,7 @@ extension EMember on RelayGroup {
         }
         content = '${content}join the group';
 
-        RelayGroupDB? groupDB = groups[db.groupId];
+        RelayGroupDBISAR? groupDB = groups[db.groupId];
         if (groupDB != null) {
           groupDB.members ??= [];
           if (!groupDB.members!.contains(pubkey) &&
@@ -192,7 +195,7 @@ extension EMember on RelayGroup {
         }
         content = '${content}leave the group';
 
-        RelayGroupDB? groupDB = groups[db.groupId];
+        RelayGroupDBISAR? groupDB = groups[db.groupId];
         if (groupDB != null) {
           groupDB.members ??= [];
           if (groupDB.members!.contains(pubkey) &&
@@ -232,7 +235,7 @@ extension EMember on RelayGroup {
 
   Future<void> _setMuteGroup(String groupId, bool mute) async {
     if (myGroups.containsKey(groupId)) {
-      RelayGroupDB groupDB = myGroups[groupId]!;
+      RelayGroupDBISAR groupDB = myGroups[groupId]!;
       groupDB.mute = mute;
       await syncGroupToDB(groupDB);
     }
@@ -242,9 +245,9 @@ extension EMember on RelayGroup {
     SimpleGroups simpleGroups = getHostAndGroupId(groupId);
     groupId = simpleGroups.groupId;
     String relay = simpleGroups.relay;
-    RelayGroupDB? relayGroupDB = groups[groupId];
-    relayGroupDB ??=
-        RelayGroupDB(groupId: groupId, relay: relay, id: '$relay\'$groupId');
+    RelayGroupDBISAR? relayGroupDB = groups[groupId];
+    relayGroupDB ??= RelayGroupDBISAR(
+        groupId: groupId, relay: relay, identifier: '$relay\'$groupId');
 
     Filter f = Filter(kinds: [9000, 9001], p: [user], limit: 1);
 

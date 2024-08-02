@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/chat/relayGroups/model/relayGroupDB_isar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
@@ -75,17 +76,27 @@ class RelayGroupDB extends DBObject {
   }
 
   static List<GroupAdmin> stringToGroupAdmins(String json) {
-    if(json.isEmpty || json == 'null') return [];
+    if (json.isEmpty || json == 'null') return [];
     try {
       List<dynamic> groupAdminsJson = [];
       groupAdminsJson = jsonDecode(json);
       List<GroupAdmin> admins =
-      groupAdminsJson.map((json) => GroupAdmin.fromJson(json)).toList();
+          groupAdminsJson.map((json) => GroupAdmin.fromJson(json)).toList();
       return admins;
     } catch (e) {
       debugPrint('stringToGroupAdmins error: $e');
       return [];
     }
+  }
+
+  static Future<void> migrateToISAR() async {
+    List<RelayGroupDB> groups = await DB.sharedInstance.objects<RelayGroupDB>();
+    await Future.forEach(groups, (group) async {
+      await DBISAR.sharedInstance.isar.writeTxn(() async {
+        await DBISAR.sharedInstance.isar.relayGroupDBISARs
+            .put(RelayGroupDBISAR.fromMap(group.toMap()));
+      });
+    });
   }
 }
 
@@ -97,7 +108,7 @@ Map<String, dynamic> _groupInfoToMap(RelayGroupDB instance) =>
       'relay': instance.relay,
       'relayPubkey': instance.relayPubkey,
       'private': instance.private,
-      'private': instance.closed,
+      'closed': instance.closed,
       'lastUpdatedTime': instance.lastUpdatedTime,
       'mute': instance.mute,
       'admins': instance.admins == null
@@ -119,8 +130,16 @@ RelayGroupDB _groupInfoFromMap(Map<String, dynamic> map) {
     author: map['author'].toString(),
     relay: map['relay'].toString(),
     relayPubkey: map['relayPubkey'].toString(),
-    private: map['private'] == null ? false : map['private'] > 0 ? true : false,
-    closed: map['closed'] == null ? false : map['private'] > 0 ? true : false,
+    private: map['private'] == null
+        ? false
+        : map['private'] > 0
+            ? true
+            : false,
+    closed: map['closed'] == null
+        ? false
+        : map['private'] > 0
+            ? true
+            : false,
     lastUpdatedTime: map['lastUpdatedTime'],
     mute: map['mute'] > 0 ? true : false,
     admins: RelayGroupDB.stringToGroupAdmins(map['admins'].toString()),

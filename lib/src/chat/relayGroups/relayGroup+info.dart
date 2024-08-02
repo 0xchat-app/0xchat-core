@@ -4,7 +4,7 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension EInfo on RelayGroup {
-  Future<RelayGroupDB?> getGroupMetadataFromRelay(String groupId,
+  Future<RelayGroupDBISAR?> getGroupMetadataFromRelay(String groupId,
       {String? relay, String? author}) async {
     if (groupId.isEmpty) return null;
     SimpleGroups simpleGroups = getHostAndGroupId(groupId);
@@ -17,13 +17,13 @@ extension EInfo on RelayGroup {
           .connectRelays([relay], relayKind: RelayKind.temp);
       tempRelays.add(relay);
     }
-    RelayGroupDB? groupDB = groups[groupId];
-    groupDB ??= RelayGroupDB(
+    RelayGroupDBISAR? groupDB = groups[groupId];
+    groupDB ??= RelayGroupDBISAR(
         groupId: groupId,
-        relay: relay ?? '',
+        relay: relay,
         author: author ?? '',
-        id: '$relay\'$groupId');
-    Completer<RelayGroupDB?> completer = Completer<RelayGroupDB?>();
+        identifier: '$relay\'$groupId');
+    Completer<RelayGroupDBISAR?> completer = Completer<RelayGroupDBISAR?>();
     Filter f = Filter(kinds: [39000, 39001, 39002], d: [groupId]);
     Map<String, List<Filter>> subscriptions = {};
     subscriptions[groupDB.relay] = [f];
@@ -49,8 +49,7 @@ extension EInfo on RelayGroup {
             groupDB!.members = members;
             await syncGroupToDB(groupDB);
             updateGroupSubscription();
-          }
-          else{
+          } else {
             groupDB!.members = members;
           }
           break;
@@ -68,11 +67,11 @@ extension EInfo on RelayGroup {
 
   Future<void> handleGroupMetadata(Event event, String relay) async {
     Group group = Nip29.decodeMetadata(event, relay);
-    RelayGroupDB? groupDB = groups[group.groupId];
-    groupDB ??= RelayGroupDB(
+    RelayGroupDBISAR? groupDB = groups[group.groupId];
+    groupDB ??= RelayGroupDBISAR(
         groupId: group.groupId,
-        relay: relay ?? '',
-        id: '$relay\'${group.groupId}');
+        relay: relay,
+        identifier: '$relay\'${group.groupId}');
     if (event.createdAt < groupDB.lastUpdatedTime) return;
     groupDB.name = group.name;
     groupDB.picture = group.picture;
@@ -86,11 +85,11 @@ extension EInfo on RelayGroup {
 
   Future<void> handleGroupMetadataFromModeration(
       GroupModeration moderation, String relay) async {
-    RelayGroupDB? groupDB = groups[moderation.groupId];
-    groupDB ??= RelayGroupDB(
+    RelayGroupDBISAR? groupDB = groups[moderation.groupId];
+    groupDB ??= RelayGroupDBISAR(
         groupId: moderation.groupId,
-        relay: relay ?? '',
-        id: '$relay\'${moderation.groupId}');
+        relay: relay,
+        identifier: '$relay\'${moderation.groupId}');
     if (moderation.createdAt < groupDB.lastUpdatedTime) return;
     groupDB.name = moderation.name;
     groupDB.picture = moderation.picture;
@@ -103,9 +102,9 @@ extension EInfo on RelayGroup {
   Future<void> handleGroupAdmins(Event event, String relay) async {
     String groupId = Nip29.getGroupIdFromEvent(event) ?? '';
     List<GroupAdmin> admins = Nip29.decodeGroupAdmins(event);
-    RelayGroupDB? groupDB = groups[groupId];
-    groupDB ??= RelayGroupDB(
-        groupId: groupId, relay: relay ?? '', id: '$relay\'$groupId');
+    RelayGroupDBISAR? groupDB = groups[groupId];
+    groupDB ??= RelayGroupDBISAR(
+        groupId: groupId, relay: relay, identifier: '$relay\'$groupId');
     if (event.createdAt < groupDB.lastUpdatedTime) return;
     groupDB.admins = admins;
     groupDB.lastUpdatedTime = event.createdAt;
@@ -116,9 +115,9 @@ extension EInfo on RelayGroup {
   Future<void> handleGroupMembers(Event event, String relay) async {
     String groupId = Nip29.getGroupIdFromEvent(event) ?? '';
     List<String> members = Nip29.decodeGroupMembers(event);
-    RelayGroupDB? groupDB = groups[groupId];
-    groupDB ??= RelayGroupDB(
-        groupId: groupId, relay: relay ?? '', id: '$relay\'$groupId');
+    RelayGroupDBISAR? groupDB = groups[groupId];
+    groupDB ??= RelayGroupDBISAR(
+        groupId: groupId, relay: relay, identifier: '$relay\'$groupId');
     if (event.createdAt < groupDB.lastUpdatedTime) return;
     groupDB.members = members;
     groupDB.lastUpdatedTime = event.createdAt;
@@ -131,7 +130,7 @@ extension EInfo on RelayGroup {
   }
 
   Future<List<UserDBISAR>> getGroupMembersFromLocal(String groupId) async {
-    RelayGroupDB? groupDB = myGroups[groupId];
+    RelayGroupDBISAR? groupDB = myGroups[groupId];
     List<UserDBISAR> result = [];
     if (groupDB != null && groupDB.members != null) {
       await Future.forEach(groupDB.members!, (member) async {

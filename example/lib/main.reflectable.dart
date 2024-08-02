@@ -1568,8 +1568,8 @@ final _data = <r.Reflectable, r.ReflectorData>{
             const <Object>[prefix0.reflector],
             null),
         r.NonGenericClassMirrorImpl(
-            r'ModerationDBISAR',
-            r'.ModerationDBISAR',
+            r'ModerationDB',
+            r'.ModerationDB',
             134217735,
             13,
             const prefix0.Reflector(),
@@ -1644,11 +1644,11 @@ final _data = <r.Reflectable, r.ReflectorData>{
             const <int>[748, 749, 750, 751, 752],
             14,
             {
-              r'fromMap': () => prefix14.ModerationDBISAR.fromMap,
-              r'tableName': () => prefix14.ModerationDBISAR.tableName,
-              r'primaryKey': () => prefix14.ModerationDBISAR.primaryKey,
-              r'updateTable': () => prefix14.ModerationDBISAR.updateTable,
-              r'toModerationDB': () => prefix14.ModerationDBISAR.toModerationDB
+              r'fromMap': () => prefix14.ModerationDB.fromMap,
+              r'tableName': () => prefix14.ModerationDB.tableName,
+              r'primaryKey': () => prefix14.ModerationDB.primaryKey,
+              r'updateTable': () => prefix14.ModerationDB.updateTable,
+              r'toModerationDB': () => prefix14.ModerationDB.toModerationDB
             },
             {},
             {
@@ -1671,7 +1671,7 @@ final _data = <r.Reflectable, r.ReflectorData>{
                       picture = '',
                       pinned = ''}) =>
                   b
-                      ? prefix14.ModerationDBISAR(
+                      ? prefix14.ModerationDB(
                           about: about,
                           actionKind: actionKind,
                           author: author,
@@ -11115,7 +11115,7 @@ final _data = <r.Reflectable, r.ReflectorData>{
         prefix11.GroupDB,
         prefix12.RelayGroupDB,
         prefix13.JoinRequestDB,
-        prefix14.ModerationDBISAR,
+        prefix14.ModerationDB,
         prefix15.DBObject,
         prefix16.ConfigDB,
         prefix17.NoteDB,

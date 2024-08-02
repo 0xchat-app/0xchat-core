@@ -64,10 +64,10 @@ class BadgesHelper {
         if (badgeDB != null) {
           // save to DB
           BadgeAwardDBISAR badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
-          badgeAwardDB.badgeId = badgeDB.id;
+          badgeAwardDB.badgeId = badgeDB.badgeID;
           await saveBadgeAwardDB(badgeAwardDB);
           // cache to user DB
-          await _addUserBadgeToDB(badgeAwardDB.badgeOwner, badgeDB.id);
+          await _addUserBadgeToDB(badgeAwardDB.badgeOwner, badgeDB.badgeID);
         }
       }
     });
@@ -83,7 +83,7 @@ class BadgesHelper {
     final List datas = json.decode(jsonString)['data'];
     for (var data in datas) {
       BadgeDBISAR badgeDB = BadgeDBISAR(
-          id: data['badgeId'],
+          badgeID: data['badgeId'],
           name: data['badgeName'],
           description: data['description'],
           image: data['badgeImageUrl'],
@@ -91,14 +91,14 @@ class BadgesHelper {
           creator: serverPubkey,
           d: data['identifies']);
       chatBadges[badgeDB.d] = badgeDB;
-      badgeInfos[badgeDB.id] = badgeDB;
+      badgeInfos[badgeDB.badgeID] = badgeDB;
       saveBadgeToDB(badgeDB);
     }
   }
 
   static BadgeDBISAR _badgeToBadgeDB(Badge badge) {
     return BadgeDBISAR(
-        id: badge.badgeId,
+        badgeID: badge.badgeId,
         d: badge.identifies,
         name: badge.name,
         description: badge.description,
@@ -176,7 +176,7 @@ class BadgesHelper {
     await isar.writeTxn(() async {
       await isar.badgeDBISARs.put(badgeDB);
     });
-    BadgesHelper.sharedInstance.badgeInfos[badgeDB.id] = badgeDB;
+    BadgesHelper.sharedInstance.badgeInfos[badgeDB.badgeID] = badgeDB;
   }
 
   static Future<List<BadgeDBISAR?>> getBadgeInfosFromDB(
@@ -188,7 +188,7 @@ class BadgesHelper {
       } else {
         final isar = DBISAR.sharedInstance.isar;
         BadgeDBISAR? badgeDBISAR =
-            await isar.badgeDBISARs.filter().idEqualTo(badgeId).findFirst();
+            await isar.badgeDBISARs.filter().badgeIDEqualTo(badgeId).findFirst();
         if (badgeDBISAR != null) {
           BadgesHelper.sharedInstance.badgeInfos[badgeId] = badgeDBISAR;
           result.add(badgeDBISAR);
@@ -248,7 +248,7 @@ class BadgesHelper {
               // save to DB
               BadgeAwardDBISAR badgeAwardDB =
                   badgeAwardToBadgeAwardDB(badgeAward);
-              badgeAwardDB.badgeId = badgeDB.id;
+              badgeAwardDB.badgeId = badgeDB.badgeID;
               await saveBadgeAwardDB(badgeAwardDB);
               var exists = badgeAwardsDB.any(
                   (badgeAward) => badgeAward.badgeId == badgeAwardDB.badgeId);
@@ -394,7 +394,7 @@ class BadgesHelper {
         if (badgeDB != null) {
           // save to DB
           BadgeAwardDBISAR badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
-          badgeAwardDB.badgeId = badgeDB.id;
+          badgeAwardDB.badgeId = badgeDB.badgeID;
           await saveBadgeAwardDB(badgeAwardDB);
           result.add(badgeDB);
         }
@@ -402,7 +402,7 @@ class BadgesHelper {
           UserDBISAR? userDB =
               await Account.sharedInstance.getUserInfo(userPubkey);
           if (userDB != null) {
-            userDB.badges = jsonEncode(result.map((e) => e?.id).toList());
+            userDB.badges = jsonEncode(result.map((e) => e?.badgeID).toList());
             await Account.saveUserToDB(userDB);
           }
           if (!completer.isCompleted) completer.complete(result);
@@ -436,7 +436,7 @@ class BadgesHelper {
           for (var p in badgeAward.users!) {
             UserDBISAR? userDB =
                 await Account.sharedInstance.getUserInfo(p.pubkey);
-            String badgeId = badges[0].id;
+            String badgeId = badges[0].badgeID;
             if (userDB != null && !userDB.badgesList!.contains(badgeId)) {
               userDB.badgesList!.add(badgeId);
               await Account.saveUserToDB(userDB);

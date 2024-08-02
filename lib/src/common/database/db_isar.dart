@@ -33,6 +33,7 @@ class DBISAR {
         GroupDBISARSchema,
         JoinRequestDBISARSchema,
         ModerationDBISARSchema,
+        RelayGroupDBISARSchema,
         ...additionalSchemas ?? []
       ],
       directory: dbPath,

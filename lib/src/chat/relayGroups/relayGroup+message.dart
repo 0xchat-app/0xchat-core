@@ -8,7 +8,7 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 extension EMessage on RelayGroup {
   Future<void> handleGroupMessage(Event event, String relay) async {
     GroupMessage groupMessage = Nip29.decodeGroupMessage(event);
-    RelayGroupDB? groupDB = myGroups[groupMessage.groupId];
+    RelayGroupDBISAR? groupDB = myGroups[groupMessage.groupId];
     if (groupDB == null) return;
 
     MessageDBISAR messageDB = MessageDBISAR(
@@ -68,7 +68,7 @@ extension EMessage on RelayGroup {
       bool local = false,
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    RelayGroupDB? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     event ??= await Nip29.encodeGroupMessageReply(groupId,
         MessageDBISAR.getContent(type, content, source), previous, pubkey, privkey,
@@ -114,7 +114,7 @@ extension EMessage on RelayGroup {
   }
 
   Future<OKEvent> sendToGroup(String groupId, Event event) async {
-    RelayGroupDB? groupDB = myGroups[groupId];
+    RelayGroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],

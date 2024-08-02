@@ -17,29 +17,29 @@ const BadgeDBISARSchema = CollectionSchema(
   name: r'BadgeDBISAR',
   id: -7171445093192353757,
   properties: {
-    r'createTime': PropertySchema(
+    r'badgeID': PropertySchema(
       id: 0,
+      name: r'badgeID',
+      type: IsarType.string,
+    ),
+    r'createTime': PropertySchema(
+      id: 1,
       name: r'createTime',
       type: IsarType.long,
     ),
     r'creator': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'creator',
       type: IsarType.string,
     ),
     r'd': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'd',
       type: IsarType.string,
     ),
     r'description': PropertySchema(
-      id: 3,
-      name: r'description',
-      type: IsarType.string,
-    ),
-    r'id': PropertySchema(
       id: 4,
-      name: r'id',
+      name: r'description',
       type: IsarType.string,
     ),
     r'image': PropertySchema(
@@ -62,16 +62,16 @@ const BadgeDBISARSchema = CollectionSchema(
   serialize: _badgeDBISARSerialize,
   deserialize: _badgeDBISARDeserialize,
   deserializeProp: _badgeDBISARDeserializeProp,
-  idName: r'idISAR',
+  idName: r'id',
   indexes: {
-    r'id': IndexSchema(
-      id: -3268401673993471357,
-      name: r'id',
+    r'badgeID': IndexSchema(
+      id: -7260633278049832157,
+      name: r'badgeID',
       unique: true,
       replace: true,
       properties: [
         IndexPropertySchema(
-          name: r'id',
+          name: r'badgeID',
           type: IndexType.hash,
           caseSensitive: true,
         )
@@ -92,10 +92,10 @@ int _badgeDBISAREstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  bytesCount += 3 + object.badgeID.length * 3;
   bytesCount += 3 + object.creator.length * 3;
   bytesCount += 3 + object.d.length * 3;
   bytesCount += 3 + object.description.length * 3;
-  bytesCount += 3 + object.id.length * 3;
   bytesCount += 3 + object.image.length * 3;
   bytesCount += 3 + object.name.length * 3;
   bytesCount += 3 + object.thumb.length * 3;
@@ -108,11 +108,11 @@ void _badgeDBISARSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeLong(offsets[0], object.createTime);
-  writer.writeString(offsets[1], object.creator);
-  writer.writeString(offsets[2], object.d);
-  writer.writeString(offsets[3], object.description);
-  writer.writeString(offsets[4], object.id);
+  writer.writeString(offsets[0], object.badgeID);
+  writer.writeLong(offsets[1], object.createTime);
+  writer.writeString(offsets[2], object.creator);
+  writer.writeString(offsets[3], object.d);
+  writer.writeString(offsets[4], object.description);
   writer.writeString(offsets[5], object.image);
   writer.writeString(offsets[6], object.name);
   writer.writeString(offsets[7], object.thumb);
@@ -125,16 +125,16 @@ BadgeDBISAR _badgeDBISARDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = BadgeDBISAR(
-    createTime: reader.readLongOrNull(offsets[0]) ?? 0,
-    creator: reader.readStringOrNull(offsets[1]) ?? '',
-    d: reader.readStringOrNull(offsets[2]) ?? '',
-    description: reader.readStringOrNull(offsets[3]) ?? '',
-    id: reader.readStringOrNull(offsets[4]) ?? '',
+    badgeID: reader.readStringOrNull(offsets[0]) ?? '',
+    createTime: reader.readLongOrNull(offsets[1]) ?? 0,
+    creator: reader.readStringOrNull(offsets[2]) ?? '',
+    d: reader.readStringOrNull(offsets[3]) ?? '',
+    description: reader.readStringOrNull(offsets[4]) ?? '',
     image: reader.readStringOrNull(offsets[5]) ?? '',
     name: reader.readStringOrNull(offsets[6]) ?? '',
     thumb: reader.readStringOrNull(offsets[7]) ?? '',
   );
-  object.idISAR = id;
+  object.id = id;
   return object;
 }
 
@@ -146,9 +146,9 @@ P _badgeDBISARDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
-    case 1:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 1:
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 2:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 3:
@@ -167,7 +167,7 @@ P _badgeDBISARDeserializeProp<P>(
 }
 
 Id _badgeDBISARGetId(BadgeDBISAR object) {
-  return object.idISAR;
+  return object.id;
 }
 
 List<IsarLinkBase<dynamic>> _badgeDBISARGetLinks(BadgeDBISAR object) {
@@ -176,66 +176,67 @@ List<IsarLinkBase<dynamic>> _badgeDBISARGetLinks(BadgeDBISAR object) {
 
 void _badgeDBISARAttach(
     IsarCollection<dynamic> col, Id id, BadgeDBISAR object) {
-  object.idISAR = id;
+  object.id = id;
 }
 
 extension BadgeDBISARByIndex on IsarCollection<BadgeDBISAR> {
-  Future<BadgeDBISAR?> getById(String id) {
-    return getByIndex(r'id', [id]);
+  Future<BadgeDBISAR?> getByBadgeID(String badgeID) {
+    return getByIndex(r'badgeID', [badgeID]);
   }
 
-  BadgeDBISAR? getByIdSync(String id) {
-    return getByIndexSync(r'id', [id]);
+  BadgeDBISAR? getByBadgeIDSync(String badgeID) {
+    return getByIndexSync(r'badgeID', [badgeID]);
   }
 
-  Future<bool> deleteById(String id) {
-    return deleteByIndex(r'id', [id]);
+  Future<bool> deleteByBadgeID(String badgeID) {
+    return deleteByIndex(r'badgeID', [badgeID]);
   }
 
-  bool deleteByIdSync(String id) {
-    return deleteByIndexSync(r'id', [id]);
+  bool deleteByBadgeIDSync(String badgeID) {
+    return deleteByIndexSync(r'badgeID', [badgeID]);
   }
 
-  Future<List<BadgeDBISAR?>> getAllById(List<String> idValues) {
-    final values = idValues.map((e) => [e]).toList();
-    return getAllByIndex(r'id', values);
+  Future<List<BadgeDBISAR?>> getAllByBadgeID(List<String> badgeIDValues) {
+    final values = badgeIDValues.map((e) => [e]).toList();
+    return getAllByIndex(r'badgeID', values);
   }
 
-  List<BadgeDBISAR?> getAllByIdSync(List<String> idValues) {
-    final values = idValues.map((e) => [e]).toList();
-    return getAllByIndexSync(r'id', values);
+  List<BadgeDBISAR?> getAllByBadgeIDSync(List<String> badgeIDValues) {
+    final values = badgeIDValues.map((e) => [e]).toList();
+    return getAllByIndexSync(r'badgeID', values);
   }
 
-  Future<int> deleteAllById(List<String> idValues) {
-    final values = idValues.map((e) => [e]).toList();
-    return deleteAllByIndex(r'id', values);
+  Future<int> deleteAllByBadgeID(List<String> badgeIDValues) {
+    final values = badgeIDValues.map((e) => [e]).toList();
+    return deleteAllByIndex(r'badgeID', values);
   }
 
-  int deleteAllByIdSync(List<String> idValues) {
-    final values = idValues.map((e) => [e]).toList();
-    return deleteAllByIndexSync(r'id', values);
+  int deleteAllByBadgeIDSync(List<String> badgeIDValues) {
+    final values = badgeIDValues.map((e) => [e]).toList();
+    return deleteAllByIndexSync(r'badgeID', values);
   }
 
-  Future<Id> putById(BadgeDBISAR object) {
-    return putByIndex(r'id', object);
+  Future<Id> putByBadgeID(BadgeDBISAR object) {
+    return putByIndex(r'badgeID', object);
   }
 
-  Id putByIdSync(BadgeDBISAR object, {bool saveLinks = true}) {
-    return putByIndexSync(r'id', object, saveLinks: saveLinks);
+  Id putByBadgeIDSync(BadgeDBISAR object, {bool saveLinks = true}) {
+    return putByIndexSync(r'badgeID', object, saveLinks: saveLinks);
   }
 
-  Future<List<Id>> putAllById(List<BadgeDBISAR> objects) {
-    return putAllByIndex(r'id', objects);
+  Future<List<Id>> putAllByBadgeID(List<BadgeDBISAR> objects) {
+    return putAllByIndex(r'badgeID', objects);
   }
 
-  List<Id> putAllByIdSync(List<BadgeDBISAR> objects, {bool saveLinks = true}) {
-    return putAllByIndexSync(r'id', objects, saveLinks: saveLinks);
+  List<Id> putAllByBadgeIDSync(List<BadgeDBISAR> objects,
+      {bool saveLinks = true}) {
+    return putAllByIndexSync(r'badgeID', objects, saveLinks: saveLinks);
   }
 }
 
 extension BadgeDBISARQueryWhereSort
     on QueryBuilder<BadgeDBISAR, BadgeDBISAR, QWhere> {
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterWhere> anyIdISAR() {
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterWhere> anyId() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(const IdWhereClause.any());
     });
@@ -244,114 +245,111 @@ extension BadgeDBISARQueryWhereSort
 
 extension BadgeDBISARQueryWhere
     on QueryBuilder<BadgeDBISAR, BadgeDBISAR, QWhereClause> {
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterWhereClause> idISAREqualTo(
-      Id idISAR) {
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterWhereClause> idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IdWhereClause.between(
-        lower: idISAR,
-        upper: idISAR,
-      ));
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterWhereClause> idISARNotEqualTo(
-      Id idISAR) {
-    return QueryBuilder.apply(this, (query) {
-      if (query.whereSort == Sort.asc) {
-        return query
-            .addWhereClause(
-              IdWhereClause.lessThan(upper: idISAR, includeUpper: false),
-            )
-            .addWhereClause(
-              IdWhereClause.greaterThan(lower: idISAR, includeLower: false),
-            );
-      } else {
-        return query
-            .addWhereClause(
-              IdWhereClause.greaterThan(lower: idISAR, includeLower: false),
-            )
-            .addWhereClause(
-              IdWhereClause.lessThan(upper: idISAR, includeUpper: false),
-            );
-      }
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterWhereClause> idISARGreaterThan(
-      Id idISAR,
-      {bool include = false}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IdWhereClause.greaterThan(lower: idISAR, includeLower: include),
-      );
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterWhereClause> idISARLessThan(
-      Id idISAR,
-      {bool include = false}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IdWhereClause.lessThan(upper: idISAR, includeUpper: include),
-      );
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterWhereClause> idISARBetween(
-    Id lowerIdISAR,
-    Id upperIdISAR, {
-    bool includeLower = true,
-    bool includeUpper = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: lowerIdISAR,
-        includeLower: includeLower,
-        upper: upperIdISAR,
-        includeUpper: includeUpper,
-      ));
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterWhereClause> idEqualTo(
-      String id) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'id',
-        value: [id],
+        lower: id,
+        upper: id,
       ));
     });
   }
 
   QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterWhereClause> idNotEqualTo(
-      String id) {
+      Id id) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
+            )
+            .addWhereClause(
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
+            )
+            .addWhereClause(
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterWhereClause> idGreaterThan(Id id,
+      {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.greaterThan(lower: id, includeLower: include),
+      );
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterWhereClause> idLessThan(Id id,
+      {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.lessThan(upper: id, includeUpper: include),
+      );
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterWhereClause> idBetween(
+    Id lowerId,
+    Id upperId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IdWhereClause.between(
+        lower: lowerId,
+        includeLower: includeLower,
+        upper: upperId,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterWhereClause> badgeIDEqualTo(
+      String badgeID) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'badgeID',
+        value: [badgeID],
+      ));
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterWhereClause> badgeIDNotEqualTo(
+      String badgeID) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'id',
+              indexName: r'badgeID',
               lower: [],
-              upper: [id],
+              upper: [badgeID],
               includeUpper: false,
             ))
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'id',
-              lower: [id],
+              indexName: r'badgeID',
+              lower: [badgeID],
               includeLower: false,
               upper: [],
             ));
       } else {
         return query
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'id',
-              lower: [id],
+              indexName: r'badgeID',
+              lower: [badgeID],
               includeLower: false,
               upper: [],
             ))
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'id',
+              indexName: r'badgeID',
               lower: [],
-              upper: [id],
+              upper: [badgeID],
               includeUpper: false,
             ));
       }
@@ -361,6 +359,140 @@ extension BadgeDBISARQueryWhere
 
 extension BadgeDBISARQueryFilter
     on QueryBuilder<BadgeDBISAR, BadgeDBISAR, QFilterCondition> {
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> badgeIDEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'badgeID',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition>
+      badgeIDGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'badgeID',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> badgeIDLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'badgeID',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> badgeIDBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'badgeID',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition>
+      badgeIDStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'badgeID',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> badgeIDEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'badgeID',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> badgeIDContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'badgeID',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> badgeIDMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'badgeID',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition>
+      badgeIDIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'badgeID',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition>
+      badgeIDIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'badgeID',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition>
       createTimeEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
@@ -818,173 +950,42 @@ extension BadgeDBISARQueryFilter
   }
 
   QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> idEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+      Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'id',
         value: value,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
   QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> idGreaterThan(
-    String value, {
+    Id value, {
     bool include = false,
-    bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
         property: r'id',
         value: value,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
   QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> idLessThan(
-    String value, {
+    Id value, {
     bool include = false,
-    bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
         property: r'id',
         value: value,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
   QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> idBetween(
-    String lower,
-    String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'id',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> idStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'id',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> idEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'id',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> idContains(
-      String value,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'id',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> idMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'id',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> idIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'id',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> idIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'id',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> idISAREqualTo(
-      Id value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'idISAR',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition>
-      idISARGreaterThan(
-    Id value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'idISAR',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> idISARLessThan(
-    Id value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'idISAR',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterFilterCondition> idISARBetween(
     Id lower,
     Id upper, {
     bool includeLower = true,
@@ -992,7 +993,7 @@ extension BadgeDBISARQueryFilter
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
-        property: r'idISAR',
+        property: r'id',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -1405,6 +1406,18 @@ extension BadgeDBISARQueryLinks
 
 extension BadgeDBISARQuerySortBy
     on QueryBuilder<BadgeDBISAR, BadgeDBISAR, QSortBy> {
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterSortBy> sortByBadgeID() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'badgeID', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterSortBy> sortByBadgeIDDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'badgeID', Sort.desc);
+    });
+  }
+
   QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterSortBy> sortByCreateTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createTime', Sort.asc);
@@ -1453,18 +1466,6 @@ extension BadgeDBISARQuerySortBy
     });
   }
 
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterSortBy> sortById() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'id', Sort.asc);
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterSortBy> sortByIdDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'id', Sort.desc);
-    });
-  }
-
   QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterSortBy> sortByImage() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'image', Sort.asc);
@@ -1504,6 +1505,18 @@ extension BadgeDBISARQuerySortBy
 
 extension BadgeDBISARQuerySortThenBy
     on QueryBuilder<BadgeDBISAR, BadgeDBISAR, QSortThenBy> {
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterSortBy> thenByBadgeID() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'badgeID', Sort.asc);
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterSortBy> thenByBadgeIDDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'badgeID', Sort.desc);
+    });
+  }
+
   QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterSortBy> thenByCreateTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createTime', Sort.asc);
@@ -1564,18 +1577,6 @@ extension BadgeDBISARQuerySortThenBy
     });
   }
 
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterSortBy> thenByIdISAR() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'idISAR', Sort.asc);
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterSortBy> thenByIdISARDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'idISAR', Sort.desc);
-    });
-  }
-
   QueryBuilder<BadgeDBISAR, BadgeDBISAR, QAfterSortBy> thenByImage() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'image', Sort.asc);
@@ -1615,6 +1616,13 @@ extension BadgeDBISARQuerySortThenBy
 
 extension BadgeDBISARQueryWhereDistinct
     on QueryBuilder<BadgeDBISAR, BadgeDBISAR, QDistinct> {
+  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QDistinct> distinctByBadgeID(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'badgeID', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<BadgeDBISAR, BadgeDBISAR, QDistinct> distinctByCreateTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'createTime');
@@ -1642,13 +1650,6 @@ extension BadgeDBISARQueryWhereDistinct
     });
   }
 
-  QueryBuilder<BadgeDBISAR, BadgeDBISAR, QDistinct> distinctById(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'id', caseSensitive: caseSensitive);
-    });
-  }
-
   QueryBuilder<BadgeDBISAR, BadgeDBISAR, QDistinct> distinctByImage(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1673,9 +1674,15 @@ extension BadgeDBISARQueryWhereDistinct
 
 extension BadgeDBISARQueryProperty
     on QueryBuilder<BadgeDBISAR, BadgeDBISAR, QQueryProperty> {
-  QueryBuilder<BadgeDBISAR, int, QQueryOperations> idISARProperty() {
+  QueryBuilder<BadgeDBISAR, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'idISAR');
+      return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<BadgeDBISAR, String, QQueryOperations> badgeIDProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'badgeID');
     });
   }
 
@@ -1700,12 +1707,6 @@ extension BadgeDBISARQueryProperty
   QueryBuilder<BadgeDBISAR, String, QQueryOperations> descriptionProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'description');
-    });
-  }
-
-  QueryBuilder<BadgeDBISAR, String, QQueryOperations> idProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'id');
     });
   }
 

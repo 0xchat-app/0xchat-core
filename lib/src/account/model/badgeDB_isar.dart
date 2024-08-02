@@ -4,10 +4,10 @@ part 'badgeDB_isar.g.dart';
 
 @collection
 class BadgeDBISAR  {
-  Id idISAR = Isar.autoIncrement;
+  Id id = Isar.autoIncrement;
 
   @Index(unique: true, replace: true)
-  String id;
+  String badgeID;
 
   String d;
   String name;
@@ -18,7 +18,7 @@ class BadgeDBISAR  {
   int createTime;
 
   BadgeDBISAR({
-    this.id = '',
+    this.badgeID = '',
     this.d = '',
     this.name = '',
     this.description = '',
@@ -35,7 +35,7 @@ class BadgeDBISAR  {
 
 BadgeDBISAR _badgeInfoFromMap(Map<String, dynamic> map) {
   return BadgeDBISAR(
-    id: map['id'].toString(),
+    badgeID: map['id'].toString(),
     d: map['d'].toString(),
     name: map['name'].toString(),
     description: map['description'].toString(),

@@ -8,7 +8,7 @@ import 'package:nostr_core_dart/nostr.dart';
 typedef GroupsJoinRequestCallBack = void Function(JoinRequestDBISAR);
 typedef GroupsModerationCallBack = void Function(ModerationDBISAR);
 typedef GroupsNoteCallBack = void Function(NoteDB);
-typedef GroupMetadataUpdatedCallBack = void Function(RelayGroupDB);
+typedef GroupMetadataUpdatedCallBack = void Function(RelayGroupDBISAR);
 
 class RelayGroup {
   /// singleton
@@ -21,8 +21,8 @@ class RelayGroup {
   // memory storage
   String pubkey = '';
   String privkey = '';
-  Map<String, RelayGroupDB> groups = {};
-  Map<String, RelayGroupDB> myGroups = {};
+  Map<String, RelayGroupDBISAR> groups = {};
+  Map<String, RelayGroupDBISAR> myGroups = {};
   Map<String, bool> offlineGroupMessageFinish = {};
   List<String> groupRelays = [];
 
@@ -80,9 +80,10 @@ class RelayGroup {
   }
 
   Future<void> _loadAllGroupsFromDB() async {
-    List<Object?> maps = await DB.sharedInstance.objects<RelayGroupDB>();
+    final isar = DBISAR.sharedInstance.isar;
+    List<Object?> maps = await isar.relayGroupDBISARs.where().findAll();
     for (var e in maps) {
-      RelayGroupDB groupDB = e as RelayGroupDB;
+      RelayGroupDBISAR groupDB = e as RelayGroupDBISAR;
       if (groupDB.groupId.isNotEmpty) {
         if (groupDB.name.isEmpty) groupDB.name = groupDB.groupId;
         groups[groupDB.groupId] = groupDB;
@@ -106,8 +107,8 @@ class RelayGroup {
     }
   }
 
-  Map<String, RelayGroupDB> _myGroups() {
-    Map<String, RelayGroupDB> result = {};
+  Map<String, RelayGroupDBISAR> _myGroups() {
+    Map<String, RelayGroupDBISAR> result = {};
     UserDBISAR? me = Account.sharedInstance.me;
     if (me != null &&
         me.relayGroupsList != null &&
@@ -119,8 +120,8 @@ class RelayGroup {
         String groupId = simpleGroups.groupId;
         if (groupId.isEmpty) continue;
         if (!groups.containsKey(groupId)) {
-          groups[groupId] =
-              RelayGroupDB(groupId: groupId, relay: simpleGroups.relay, id: id);
+          groups[groupId] = RelayGroupDBISAR(
+              groupId: groupId, relay: simpleGroups.relay, identifier: id);
           getGroupMetadataFromRelay(groupId);
         }
         result[groupId] = groups[groupId]!;
@@ -139,11 +140,11 @@ class RelayGroup {
 
   Future<void> _udpateGroupInfos({String? relay}) async {
     if (myGroups.isEmpty) return;
-    List<RelayGroupDB> values = List.from(myGroups.values);
+    List<RelayGroupDBISAR> values = List.from(myGroups.values);
     for (var group in values) {
       if (group.lastUpdatedTime == 0 &&
           (relay == null || group.relay == relay)) {
-        RelayGroupDB? relayGroupDB =
+        RelayGroupDBISAR? relayGroupDB =
             await getGroupMetadataFromRelay(group.groupId);
         if (relayGroupDB != null) myGroups[group.groupId] = relayGroupDB;
       }
@@ -287,12 +288,19 @@ class RelayGroup {
     }
   }
 
-  Future<void> syncGroupToDB(RelayGroupDB groupDB) async {
+  Future<void> saveGroupToDB(RelayGroupDBISAR groupDB) async {
+    final isar = DBISAR.sharedInstance.isar;
+    await isar.writeTxn(() async {
+      await isar.relayGroupDBISARs.put(groupDB);
+    });
+  }
+
+  Future<void> syncGroupToDB(RelayGroupDBISAR groupDB) async {
     groups[groupDB.groupId] = groupDB;
     if (myGroups.containsKey(groupDB.groupId)) {
       myGroups[groupDB.groupId] = groupDB;
     }
-    await DB.sharedInstance.insertBatch<RelayGroupDB>(groupDB);
+    await saveGroupToDB(groupDB);
   }
 
   Future<void> _syncMyGroupListToDB() async {
@@ -320,10 +328,10 @@ class RelayGroup {
     return completer.future;
   }
 
-  List<RelayGroupDB>? fuzzySearch(String keyword) {
+  List<RelayGroupDBISAR>? fuzzySearch(String keyword) {
     if (keyword.isNotEmpty) {
       RegExp regex = RegExp(keyword, caseSensitive: false);
-      List<RelayGroupDB> groups = myGroups.values
+      List<RelayGroupDBISAR> groups = myGroups.values
           .where((group) =>
               regex.hasMatch(group.name) || regex.hasMatch(group.about))
           .toList();
@@ -355,7 +363,7 @@ class RelayGroup {
   }
 
   String? encodeGroup(String groupId) {
-    RelayGroupDB? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId];
     if (groupDB == null) return null;
     String nevent = Nip19.encodeShareableEntity(
         'nevent', groupId, [groupDB.relay], groupDB.author, 39000);

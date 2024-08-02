@@ -9,6 +9,7 @@ class JoinRequestDBISAR {
 
   @Index(unique: true, replace: true)
   String requestId;
+
   String groupId;
   String author;
   int createdAt;

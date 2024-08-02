@@ -214,7 +214,7 @@ class Zaps {
             toRelays.addAll(toUser?.dmRelayList ?? []);
             break;
           case ZapType.relayGroup:
-            RelayGroupDB? relayGroupDB =
+            RelayGroupDBISAR? relayGroupDB =
                 RelayGroup.sharedInstance.groups[groupId];
             if (relayGroupDB != null) {
               toRelays.addAll(
