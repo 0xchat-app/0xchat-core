@@ -49,6 +49,7 @@ export 'src/chat/relayGroups/model/relayGroupDB.dart';
 export 'src/chat/relayGroups/model/joinRequestDB.dart';
 export 'src/chat/relayGroups/model/joinRequestDB_isar.dart';
 export 'src/chat/relayGroups/model/moderationDB.dart';
+export 'src/chat/relayGroups/model/moderationDB_isar.dart';
 export 'src/chat/contacts/contacts+calling.dart';
 export 'src/chat/contacts/contacts+blocklist.dart';
 export 'src/chat/contacts/contacts+secretchat.dart';

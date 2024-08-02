@@ -80,9 +80,8 @@ extension EAdmin on RelayGroup {
         sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
       if (ok.status == true) {
-        ModerationDB moderationDB = ModerationDB.toModerationDB(moderation);
-        await DB.sharedInstance.insertBatch<ModerationDB>(moderationDB,
-            conflictAlgorithm: ConflictAlgorithm.ignore);
+        ModerationDBISAR moderationDB = ModerationDBISAR.toModerationDB(moderation);
+        await saveModerationToDB(moderationDB);
       }
     });
     return completer.future;

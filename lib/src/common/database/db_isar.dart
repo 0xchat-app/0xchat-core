@@ -32,6 +32,7 @@ class DBISAR {
         SecretSessionDBISARSchema,
         GroupDBISARSchema,
         JoinRequestDBISARSchema,
+        ModerationDBISARSchema,
         ...additionalSchemas ?? []
       ],
       directory: dbPath,

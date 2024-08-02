@@ -155,11 +155,17 @@ extension EMember on RelayGroup {
     return completer.future;
   }
 
+  Future<void> saveModerationToDB(ModerationDBISAR moderationDB) async {
+    final isar = DBISAR.sharedInstance.isar;
+    await isar.writeTxn(() async {
+      await isar.moderationDBISARs.put(moderationDB);
+    });
+  }
+
   Future<void> handleModeration(Event event, String relay) async {
     GroupModeration moderation = Nip29.decodeModeration(event);
-    ModerationDB db = ModerationDB.toModerationDB(moderation);
-    await DB.sharedInstance.insertBatch<ModerationDB>(db,
-        conflictAlgorithm: ConflictAlgorithm.ignore);
+    ModerationDBISAR db = ModerationDBISAR.toModerationDB(moderation);
+    await saveModerationToDB(db);
     String content = '';
     Map<String, UserDBISAR> users =
         await Account.sharedInstance.getUserInfos(moderation.users);
