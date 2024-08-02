@@ -36,6 +36,24 @@ class DB {
   List<BatchOperation> insertOperations = [];
   Timer? timer;
 
+  List<Function> migrationFunctions = [
+    MessageDB.migrateToISAR,
+    UserDB.migrateToISAR,
+    BadgeAwardDB.migrateToISAR,
+    BadgeDB.migrateToISAR,
+    RelayDB.migrateToISAR,
+    ZapRecordsDB.migrateToISAR,
+    ChannelDB.migrateToISAR,
+    SecretSessionDB.migrateToISAR,
+    GroupDB.migrateToISAR,
+    JoinRequestDB.migrateToISAR,
+    ModerationDB.migrateToISAR,
+    RelayGroupDB.migrateToISAR,
+    NoteDB.migrateToISAR,
+    NotificationDB.migrateToISAR,
+    ConfigDB.migrateToISAR
+  ];
+
   static final DB sharedInstance = DB._internal();
 
   DB._internal();
@@ -52,7 +70,7 @@ class DB {
     }
   }
 
-  Future open(String dbPath, {int? version, String? password, String? pubkey}) async {
+  Future open(String dbPath, {int? version, String? password}) async {
     if (deleteDBIfNeedMirgration) {
       bool exists = await databaseExists(dbPath);
       if (exists) {
@@ -120,9 +138,6 @@ class DB {
     List<Map<String, dynamic>> tables =
         await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'");
     allTablenames = tables.map((item) => item["name"].toString()).toList();
-    startHeartBeat();
-    await DBISAR.sharedInstance.open(pubkey);
-    await UserDB.migrateToISAR();
   }
 
   Future<void> batchApply() async {
@@ -170,10 +185,17 @@ class DB {
       await db.close();
       await deleteDatabase(dbPath);
       db = newDb;
-      startHeartBeat();
       if (!completer.isCompleted) completer.complete();
     });
     return completer.future;
+  }
+
+  Future migrateToISAR() async {
+    //migrate
+    List<Function> functions = migrationFunctions;
+    await Future.forEach(functions, (function) async {
+      await function.call();
+    });
   }
 
   Future<void> closDatabase() async {
@@ -194,61 +216,61 @@ class DB {
     await db.execute(sql, arguments);
   }
 
-  Future<int> insert<T extends DBObject>(T object,
-      {ConflictAlgorithm? conflictAlgorithm}) async {
-    String tableName = DBHelper.getTableName(T);
-    await createTableForDBObject<T>(tableName);
-    return await db.insert(tableName, object.toMap(),
-        conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.replace);
-  }
-
-  Future<void> insertBatch<T extends DBObject>(T object,
-      {ConflictAlgorithm? conflictAlgorithm}) async {
-    String tableName = DBHelper.getTableName(T);
-    await createTableForDBObject<T>(tableName);
-    insertOperations.add(BatchOperation(tableName, object.toMap(), null,
-        conflictAlgorithm ?? ConflictAlgorithm.replace));
-  }
-
-  Future<int> insertObjects<T extends DBObject>(List<T> objects) async {
-    String tableName = DBHelper.getTableName(T);
-    await createTableForDBObject<T>(tableName);
-    int successCount = 0;
-    db.transaction((txn) async {
-      for (int i = 0; i < objects.length; i++) {
-        successCount += await txn.insert(tableName, objects[i].toMap(),
-            conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-    });
-    return successCount;
-  }
-
-  Future<int> rawInsert(String sql, [List<Object?>? arguments]) async {
-    return await db.rawInsert(sql, arguments);
-  }
-
-  Future<int> update<T extends DBObject>(T object) async {
-    String tableName = DBHelper.getTableName(T);
-    await createTableForDBObject<T>(tableName);
-    return await db.update(tableName, object.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.ignore);
-  }
-
-  Future<int> rawUpdate(String sql, [List<Object?>? arguments]) async {
-    return await db.rawUpdate(sql, arguments);
-  }
-
-  Future<int> delete<T extends DBObject>(
-      {String? where, List<Object?>? whereArgs}) async {
-    debugPrint('db delete: $where, ${jsonEncode(whereArgs)}');
-    String tableName = DBHelper.getTableName(T);
-    await createTableForDBObject<T>(tableName);
-    return await db.delete(tableName, where: where, whereArgs: whereArgs);
-  }
-
-  Future<int> rawDelete(String sql, [List<Object?>? arguments]) async {
-    return await db.rawDelete(sql, arguments);
-  }
+  // Future<int> insert<T extends DBObject>(T object,
+  //     {ConflictAlgorithm? conflictAlgorithm}) async {
+  //   String tableName = DBHelper.getTableName(T);
+  //   await createTableForDBObject<T>(tableName);
+  //   return await db.insert(tableName, object.toMap(),
+  //       conflictAlgorithm: conflictAlgorithm ?? ConflictAlgorithm.replace);
+  // }
+  //
+  // Future<void> insertBatch<T extends DBObject>(T object,
+  //     {ConflictAlgorithm? conflictAlgorithm}) async {
+  //   String tableName = DBHelper.getTableName(T);
+  //   await createTableForDBObject<T>(tableName);
+  //   insertOperations.add(BatchOperation(tableName, object.toMap(), null,
+  //       conflictAlgorithm ?? ConflictAlgorithm.replace));
+  // }
+  //
+  // Future<int> insertObjects<T extends DBObject>(List<T> objects) async {
+  //   String tableName = DBHelper.getTableName(T);
+  //   await createTableForDBObject<T>(tableName);
+  //   int successCount = 0;
+  //   db.transaction((txn) async {
+  //     for (int i = 0; i < objects.length; i++) {
+  //       successCount += await txn.insert(tableName, objects[i].toMap(),
+  //           conflictAlgorithm: ConflictAlgorithm.replace);
+  //     }
+  //   });
+  //   return successCount;
+  // }
+  //
+  // Future<int> rawInsert(String sql, [List<Object?>? arguments]) async {
+  //   return await db.rawInsert(sql, arguments);
+  // }
+  //
+  // Future<int> update<T extends DBObject>(T object) async {
+  //   String tableName = DBHelper.getTableName(T);
+  //   await createTableForDBObject<T>(tableName);
+  //   return await db.update(tableName, object.toMap(),
+  //       conflictAlgorithm: ConflictAlgorithm.ignore);
+  // }
+  //
+  // Future<int> rawUpdate(String sql, [List<Object?>? arguments]) async {
+  //   return await db.rawUpdate(sql, arguments);
+  // }
+  //
+  // Future<int> delete<T extends DBObject>(
+  //     {String? where, List<Object?>? whereArgs}) async {
+  //   debugPrint('db delete: $where, ${jsonEncode(whereArgs)}');
+  //   String tableName = DBHelper.getTableName(T);
+  //   await createTableForDBObject<T>(tableName);
+  //   return await db.delete(tableName, where: where, whereArgs: whereArgs);
+  // }
+  //
+  // Future<int> rawDelete(String sql, [List<Object?>? arguments]) async {
+  //   return await db.rawDelete(sql, arguments);
+  // }
 
   Future<List<Object?>> rawObjects(
       {required String table,

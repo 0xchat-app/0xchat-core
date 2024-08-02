@@ -338,7 +338,7 @@ class MessageDBISAR {
         plaintEvent: jsonEncode(event),
         chatType: chatType,
         expiration:
-        message.expiration == null ? null : int.parse(message.expiration!));
+            message.expiration == null ? null : int.parse(message.expiration!));
     var map = decodeContent(message.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
@@ -348,9 +348,19 @@ class MessageDBISAR {
 
   static Future<void> savePreviewData(
       String messageId, String previewData) async {
-    await DB.sharedInstance.rawUpdate(
-        'UPDATE MessageDB SET previewData = ? WHERE messageId = ?',
-        [previewData, messageId]);
+    final isar = DBISAR.sharedInstance.isar;
+
+    await isar.writeTxn(() async {
+      final message = await isar.messageDBISARs
+          .filter()
+          .messageIdEqualTo(messageId)
+          .findFirst();
+
+      if (message != null) {
+        message.previewData = previewData;
+        await isar.messageDBISARs.put(message);
+      }
+    });
   }
 
   static String? getNostrScheme(String content) {

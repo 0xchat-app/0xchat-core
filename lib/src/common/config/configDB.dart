@@ -1,4 +1,5 @@
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/common/config/configDB_isar.dart';
 
 @reflector
 class ConfigDB extends DBObject {
@@ -27,6 +28,16 @@ class ConfigDB extends DBObject {
   //primaryKey
   static List<String?> primaryKey() {
     return ['d'];
+  }
+
+  static Future<void> migrateToISAR() async {
+    List<ConfigDB> configs = await DB.sharedInstance.objects<ConfigDB>();
+    await Future.forEach(configs, (config) async {
+      await DBISAR.sharedInstance.isar.writeTxn(() async {
+        await DBISAR.sharedInstance.isar.configDBISARs
+            .put(ConfigDBISAR.fromMap(config.toMap()));
+      });
+    });
   }
 }
 

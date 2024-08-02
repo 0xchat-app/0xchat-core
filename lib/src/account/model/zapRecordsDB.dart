@@ -1,4 +1,5 @@
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/account/model/zapRecordsDB_isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 @reflector
@@ -55,6 +56,17 @@ class ZapRecordsDB extends DBObject {
   static int getZapAmount(String bolt11) {
     final requestInfo = Zaps.getPaymentRequestInfo(bolt11);
     return (requestInfo.amount.toDouble() * 100000000).toInt();
+  }
+
+  static Future<void> migrateToISAR() async {
+    List<ZapRecordsDB> zapRecords =
+        await DB.sharedInstance.objects<ZapRecordsDB>();
+    await Future.forEach(zapRecords, (zapRecord) async {
+      await DBISAR.sharedInstance.isar.writeTxn(() async {
+        await DBISAR.sharedInstance.isar.zapRecordsDBISARs
+            .put(ZapRecordsDBISAR.fromMap(zapRecord.toMap()));
+      });
+    });
   }
 }
 

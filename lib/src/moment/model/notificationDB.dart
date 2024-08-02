@@ -1,4 +1,5 @@
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/moment/model/notificationDB_isar.dart';
 
 @reflector
 class NotificationDB extends DBObject {
@@ -78,6 +79,17 @@ class NotificationDB extends DBObject {
         content: note.content,
         zapAmount: 0,
         associatedNoteId: associatedNoteId);
+  }
+
+  static Future<void> migrateToISAR() async {
+    List<NotificationDB> notifications =
+        await DB.sharedInstance.objects<NotificationDB>();
+    await Future.forEach(notifications, (notification) async {
+      await DBISAR.sharedInstance.isar.writeTxn(() async {
+        await DBISAR.sharedInstance.isar.notificationDBISARs
+            .put(NotificationDBISAR.fromMap(notification.toMap()));
+      });
+    });
   }
 }
 

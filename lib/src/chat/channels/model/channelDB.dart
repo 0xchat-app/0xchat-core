@@ -1,4 +1,5 @@
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/chat/channels/model/channelDB_isar.dart';
 
 @reflector
 class ChannelDB extends DBObject {
@@ -53,10 +54,20 @@ class ChannelDB extends DBObject {
 
   String get shortChannelId {
     String k = channelId;
-    if(k.length < 12) return k;
+    if (k.length < 12) return k;
     final String start = k.substring(0, 6);
     final String end = k.substring(k.length - 6);
     return '$start:$end';
+  }
+
+  static Future<void> migrateToISAR() async {
+    List<ChannelDB> channels = await DB.sharedInstance.objects<ChannelDB>();
+    await Future.forEach(channels, (channel) async {
+      await DBISAR.sharedInstance.isar.writeTxn(() async {
+        await DBISAR.sharedInstance.isar.channelDBISARs
+            .put(ChannelDBISAR.fromMap(channel.toMap()));
+      });
+    });
   }
 }
 

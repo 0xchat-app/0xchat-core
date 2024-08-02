@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/chat/relayGroups/model/moderationDB_isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 @reflector
@@ -86,6 +87,17 @@ class ModerationDB extends DBObject {
         about: moderation.about,
         picture: moderation.picture,
         pinned: moderation.pinned);
+  }
+
+  static Future<void> migrateToISAR() async {
+    List<ModerationDB> moderations =
+        await DB.sharedInstance.objects<ModerationDB>();
+    await Future.forEach(moderations, (moderation) async {
+      await DBISAR.sharedInstance.isar.writeTxn(() async {
+        await DBISAR.sharedInstance.isar.moderationDBISARs
+            .put(ModerationDBISAR.fromMap(moderation.toMap()));
+      });
+    });
   }
 }
 

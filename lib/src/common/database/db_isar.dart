@@ -14,34 +14,35 @@ class DBISAR {
 
   late Isar isar;
 
-  Future open(String? pubkey,
-      {List<CollectionSchema<dynamic>>? additionalSchemas}) async {
+  List<CollectionSchema<dynamic>> schemas = [
+    MessageDBISARSchema,
+    UserDBISARSchema,
+    BadgeAwardDBISARSchema,
+    BadgeDBISARSchema,
+    RelayDBISARSchema,
+    ZapRecordsDBISARSchema,
+    ZapsDBISARSchema,
+    ChannelDBISARSchema,
+    SecretSessionDBISARSchema,
+    GroupDBISARSchema,
+    JoinRequestDBISARSchema,
+    ModerationDBISARSchema,
+    RelayGroupDBISARSchema,
+    NoteDBISARSchema,
+    NotificationDBISARSchema,
+    ConfigDBISARSchema
+  ];
+
+  Future open(String pubkey) async {
     Directory directory = Platform.isAndroid
         ? await getApplicationDocumentsDirectory()
         : await getLibraryDirectory();
     var dbPath = directory.path;
     debugPrint('DBISAR open: $dbPath');
     isar = await Isar.open(
-      [
-        MessageDBISARSchema,
-        UserDBISARSchema,
-        BadgeAwardDBISARSchema,
-        BadgeDBISARSchema,
-        RelayDBISARSchema,
-        ZapRecordsDBISARSchema,
-        ZapsDBISARSchema,
-        ChannelDBISARSchema,
-        SecretSessionDBISARSchema,
-        GroupDBISARSchema,
-        JoinRequestDBISARSchema,
-        ModerationDBISARSchema,
-        RelayGroupDBISARSchema,
-        NoteDBISARSchema,
-        NotificationDBISARSchema,
-        ...additionalSchemas ?? []
-      ],
+      schemas,
       directory: dbPath,
-      name: pubkey ?? 'db',
+      name: pubkey,
     );
   }
 }

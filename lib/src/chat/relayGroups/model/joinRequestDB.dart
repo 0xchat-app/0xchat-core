@@ -1,4 +1,5 @@
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/chat/relayGroups/model/joinRequestDB_isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 @reflector
@@ -42,6 +43,17 @@ class JoinRequestDB extends DBObject {
         author: joinRequest.pubkey,
         createdAt: joinRequest.createdAt,
         content: joinRequest.content);
+  }
+
+  static Future<void> migrateToISAR() async {
+    List<JoinRequestDB> joinRequests =
+        await DB.sharedInstance.objects<JoinRequestDB>();
+    await Future.forEach(joinRequests, (joinRequest) async {
+      await DBISAR.sharedInstance.isar.writeTxn(() async {
+        await DBISAR.sharedInstance.isar.joinRequestDBISARs
+            .put(JoinRequestDBISAR.fromMap(joinRequest.toMap()));
+      });
+    });
   }
 }
 

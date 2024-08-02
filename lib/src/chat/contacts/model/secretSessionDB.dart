@@ -1,4 +1,5 @@
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/chat/contacts/model/secretSessionDB_isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 @reflector
@@ -71,6 +72,17 @@ class SecretSessionDB extends DBObject {
   //primaryKey
   static List<String?> primaryKey() {
     return ['sessionId'];
+  }
+
+  static Future<void> migrateToISAR() async {
+    List<SecretSessionDB> secretSessions =
+        await DB.sharedInstance.objects<SecretSessionDB>();
+    await Future.forEach(secretSessions, (secretSession) async {
+      await DBISAR.sharedInstance.isar.writeTxn(() async {
+        await DBISAR.sharedInstance.isar.secretSessionDBISARs
+            .put(SecretSessionDBISAR.fromMap(secretSession.toMap()));
+      });
+    });
   }
 }
 

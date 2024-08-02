@@ -106,7 +106,9 @@ class Config {
     configs[configDB.d] = configDB;
     _setConfig();
     final isar = DBISAR.sharedInstance.isar;
-    isar.configDBISARs.put(configDB);
+    await isar.writeTxn(() async {
+      await isar.configDBISARs.put(configDB);
+    });
   }
 
   void _setConfig() {
