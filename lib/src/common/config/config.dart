@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 class Config {
@@ -14,7 +15,7 @@ class Config {
   factory Config() => sharedInstance;
   static final Config sharedInstance = Config._internal();
 
-  Map<String, ConfigDB> configs = {};
+  Map<String, ConfigDBISAR> configs = {};
 
   // recommendChannels config
   List<String> recommendChannels = [
@@ -56,8 +57,9 @@ class Config {
   }
 
   Future<void> _loadConfigFromDB() async {
-    List<Object?> maps = await DB.sharedInstance.objects<ConfigDB>();
-    configs = {for (var configDB in maps) (configDB as ConfigDB).d: configDB};
+    final isar = DBISAR.sharedInstance.isar;
+    List<Object?> maps = await isar.configDBISARs.where().findAll();
+    configs = {for (var configDB in maps) (configDB as ConfigDBISAR).d: configDB};
     _setConfig();
   }
 
@@ -96,14 +98,15 @@ class Config {
     AppData appData = Nip78.decodeAppData(event);
     // if (appData.d == null) return;
     // if (event.createdAt <= (configs[appData.d]?.time ?? 0)) return;
-    ConfigDB configDB = ConfigDB(
+    ConfigDBISAR configDB = ConfigDBISAR(
         d: appData.d ?? '',
         eventId: event.id,
         time: appData.createAt,
         configJson: appData.content);
     configs[configDB.d] = configDB;
     _setConfig();
-    DB.sharedInstance.insert<ConfigDB>(configDB);
+    final isar = DBISAR.sharedInstance.isar;
+    isar.configDBISARs.put(configDB);
   }
 
   void _setConfig() {
