@@ -67,4 +67,5 @@ export 'src/moment/moment+load.dart';
 export 'src/moment/moment+notification.dart';
 export 'src/moment/moment+send.dart';
 export 'src/moment/model/noteDB.dart';
+export 'src/moment/model/noteDB_isar.dart';
 export 'src/moment/model/notificationDB.dart';

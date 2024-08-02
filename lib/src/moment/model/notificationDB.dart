@@ -51,7 +51,7 @@ class NotificationDB extends DBObject {
         associatedNoteId: zapRecordsDB.eventId);
   }
 
-  static NotificationDB notificationDBFromNoteDB(NoteDB note) {
+  static NotificationDB notificationDBFromNoteDB(NoteDBISAR note) {
     int kind = 0;
     String associatedNoteId = '';
     if (note.repostId != null && note.repostId!.isNotEmpty) {

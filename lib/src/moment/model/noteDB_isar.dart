@@ -1,11 +1,17 @@
 import 'dart:convert';
-import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/moment/model/noteDB_isar.dart';
+
+import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
-@reflector
-class NoteDB extends DBObject {
+part 'noteDB_isar.g.dart';
+
+@collection
+class NoteDBISAR {
+  Id id = Isar.autoIncrement;
+
+  @Index(unique: true, replace: true)
   String noteId; //event id
+
   String groupId; // group/community note
   String author;
   int createAt;
@@ -58,9 +64,9 @@ class NoteDB extends DBObject {
   List<String>? reactionEventIds;
   List<String>? zapEventIds;
 
-  Map<String, int>? lastUpdatedTime;
+  String? lastUpdatedTimeString;
 
-  NoteDB({
+  NoteDBISAR({
     this.noteId = '',
     this.groupId = '',
     this.author = '',
@@ -100,13 +106,8 @@ class NoteDB extends DBObject {
     this.quoteRepostEventIds,
     this.reactionEventIds,
     this.zapEventIds,
-    this.lastUpdatedTime,
+    this.lastUpdatedTimeString,
   });
-
-  @override
-  Map<String, Object?> toMap() {
-    return _noteInfoToMap(this);
-  }
 
   int getNoteKind() {
     if (repostId != null && repostId!.isNotEmpty) return 6;
@@ -130,17 +131,19 @@ class NoteDB extends DBObject {
     return Nip19.encodeNote(noteId);
   }
 
-  static NoteDB fromMap(Map<String, Object?> map) {
+  set lastUpdatedTime(Map<String, int> attributes) {
+    lastUpdatedTimeString = jsonEncode(attributes);
+  }
+
+  @ignore
+  Map<String, int> get lastUpdatedTime {
+    return lastUpdatedTimeString != null
+        ? Map<String, int>.from(jsonDecode(lastUpdatedTimeString!))
+        : {};
+  }
+
+  static NoteDBISAR fromMap(Map<String, Object?> map) {
     return _noteInfoFromMap(map);
-  }
-
-  static String? tableName() {
-    return "NoteDB";
-  }
-
-  //primaryKey
-  static List<String?> primaryKey() {
-    return ['noteId'];
   }
 
   static List<String>? decodeStringList(String? list) {
@@ -178,7 +181,7 @@ class NoteDB extends DBObject {
     return null;
   }
 
-  static NoteDB noteDBFromNote(Note note) {
+  static NoteDBISAR noteDBFromNote(Note note) {
     Thread? thread = note.thread;
     String root = thread?.root.eventId ?? '';
     String rootRelay = thread?.root.relayURL ?? '';
@@ -186,7 +189,7 @@ class NoteDB extends DBObject {
     String? replyRelay = thread?.reply?.relayURL;
     List<String>? mentions = thread?.mentions?.map((e) => e.eventId).toList();
     List<String>? pTags = thread?.ptags?.map((e) => e.pubkey).toList();
-    return NoteDB(
+    return NoteDBISAR(
         noteId: note.nodeId,
         author: note.pubkey,
         createAt: note.createdAt,
@@ -201,9 +204,9 @@ class NoteDB extends DBObject {
         quoteRepostId: note.quoteRepostId);
   }
 
-  static NoteDB noteDBFromReposts(Reposts reposts) {
+  static NoteDBISAR noteDBFromReposts(Reposts reposts) {
     List<String>? pTags = reposts.thread.ptags?.map((e) => e.pubkey).toList();
-    return NoteDB(
+    return NoteDBISAR(
         noteId: reposts.eventId,
         author: reposts.pubkey,
         createAt: reposts.createAt,
@@ -212,10 +215,10 @@ class NoteDB extends DBObject {
         pTags: pTags);
   }
 
-  static NoteDB noteDBFromQuoteReposts(QuoteReposts quoteReposts) {
+  static NoteDBISAR noteDBFromQuoteReposts(QuoteReposts quoteReposts) {
     List<String>? pTags =
         quoteReposts.thread.ptags?.map((e) => e.pubkey).toList();
-    return NoteDB(
+    return NoteDBISAR(
         noteId: quoteReposts.eventId,
         author: quoteReposts.pubkey,
         createAt: quoteReposts.createAt,
@@ -225,9 +228,9 @@ class NoteDB extends DBObject {
         hashTags: quoteReposts.hashTags);
   }
 
-  static NoteDB noteDBFromReactions(Reactions reactions) {
+  static NoteDBISAR noteDBFromReactions(Reactions reactions) {
     List<String>? pTags = reactions.thread.ptags?.map((e) => e.pubkey).toList();
-    return NoteDB(
+    return NoteDBISAR(
         noteId: reactions.id,
         author: reactions.pubkey,
         createAt: reactions.createAt,
@@ -240,69 +243,15 @@ class NoteDB extends DBObject {
   }
 
   int getLastUpdatedTime(String relay) {
-    lastUpdatedTime ??= {};
-    if (lastUpdatedTime!.containsKey(relay)) {
-      return lastUpdatedTime![relay]!;
+    if (lastUpdatedTime.containsKey(relay)) {
+      return lastUpdatedTime[relay]!;
     }
     return 0;
   }
-
-  static Future<void> migrateToISAR() async {
-    List<NoteDB> notes = await DB.sharedInstance.objects<NoteDB>();
-    await Future.forEach(notes, (note) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.noteDBISARs
-            .put(NoteDBISAR.fromMap(note.toMap()));
-      });
-    });
-  }
 }
 
-Map<String, dynamic> _noteInfoToMap(NoteDB instance) => <String, dynamic>{
-      'noteId': instance.noteId,
-      'groupId': instance.groupId,
-      'author': instance.author,
-      'createAt': instance.createAt,
-      'content': instance.content,
-      'root': instance.root,
-      'rootRelay': instance.rootRelay,
-      'reply': instance.reply,
-      'replyRelay': instance.replyRelay,
-      'mentions': jsonEncode(instance.mentions),
-      'pTags': jsonEncode(instance.pTags),
-      'hashTags': jsonEncode(instance.hashTags),
-      'private': instance.private,
-      'read': instance.read,
-      'warning': instance.warning,
-      'repostId': instance.repostId,
-      'quoteRepostId': instance.quoteRepostId,
-      'reactedId': instance.reactedId,
-      'reactedKind': instance.reactedKind,
-      'emojiShortcode': instance.emojiShortcode,
-      'emojiURL': instance.emojiURL,
-      'replyCount': instance.replyCount,
-      'repostCount': instance.repostCount,
-      'quoteRepostCount': instance.quoteRepostCount,
-      'reactionCount': instance.reactionCount,
-      'zapCount': instance.zapCount,
-      'zapAmount': instance.zapAmount,
-      'replyCountByMe': instance.replyCountByMe,
-      'repostCountByMe': instance.repostCountByMe,
-      'quoteRepostCountByMe': instance.quoteRepostCountByMe,
-      'reactionCountByMe': instance.reactionCountByMe,
-      'zapCountByMe': instance.zapCountByMe,
-      'zapAmountByMe': instance.zapAmountByMe,
-      'rawEvent': instance.rawEvent,
-      'replyEventIds': jsonEncode(instance.replyEventIds),
-      'repostEventIds': jsonEncode(instance.repostEventIds),
-      'quoteRepostEventIds': jsonEncode(instance.quoteRepostEventIds),
-      'reactionEventIds': jsonEncode(instance.reactionEventIds),
-      'zapEventIds': jsonEncode(instance.zapEventIds),
-      'lastUpdatedTime': jsonEncode(instance.lastUpdatedTime),
-    };
-
-NoteDB _noteInfoFromMap(Map<String, dynamic> map) {
-  return NoteDB(
+NoteDBISAR _noteInfoFromMap(Map<String, dynamic> map) {
+  return NoteDBISAR(
     noteId: map['noteId'].toString(),
     groupId: map['groupId'].toString(),
     author: map['author'].toString(),
@@ -312,9 +261,9 @@ NoteDB _noteInfoFromMap(Map<String, dynamic> map) {
     rootRelay: map['rootRelay']?.toString(),
     reply: map['reply']?.toString(),
     replyRelay: map['replyRelay']?.toString(),
-    mentions: NoteDB.decodeStringList(map['mentions']?.toString()),
-    pTags: NoteDB.decodeStringList(map['pTags']?.toString()),
-    hashTags: NoteDB.decodeStringList(map['hashTags']?.toString()),
+    mentions: NoteDBISAR.decodeStringList(map['mentions']?.toString()),
+    pTags: NoteDBISAR.decodeStringList(map['pTags']?.toString()),
+    hashTags: NoteDBISAR.decodeStringList(map['hashTags']?.toString()),
     private: (map['private'] ?? 0) > 0 ? true : false,
     read: (map['read'] ?? 0) > 0 ? true : false,
     warning: map['warning']?.toString(),
@@ -337,13 +286,15 @@ NoteDB _noteInfoFromMap(Map<String, dynamic> map) {
     zapCountByMe: map['zapCountByMe'],
     zapAmountByMe: map['zapAmountByMe'],
     rawEvent: map['rawEvent']?.toString(),
-    replyEventIds: NoteDB.decodeStringList(map['replyEventIds']?.toString()),
-    repostEventIds: NoteDB.decodeStringList(map['repostEventIds']?.toString()),
+    replyEventIds:
+        NoteDBISAR.decodeStringList(map['replyEventIds']?.toString()),
+    repostEventIds:
+        NoteDBISAR.decodeStringList(map['repostEventIds']?.toString()),
     quoteRepostEventIds:
-        NoteDB.decodeStringList(map['quoteRepostEventIds']?.toString()),
+        NoteDBISAR.decodeStringList(map['quoteRepostEventIds']?.toString()),
     reactionEventIds:
-        NoteDB.decodeStringList(map['reactionEventIds']?.toString()),
-    zapEventIds: NoteDB.decodeStringList(map['zapEventIds']?.toString()),
-    lastUpdatedTime: RelayDBISAR.decodeMap(map['lastUpdatedTime'].toString()),
+        NoteDBISAR.decodeStringList(map['reactionEventIds']?.toString()),
+    zapEventIds: NoteDBISAR.decodeStringList(map['zapEventIds']?.toString()),
+    lastUpdatedTimeString: map['lastUpdatedTime'].toString(),
   );
 }

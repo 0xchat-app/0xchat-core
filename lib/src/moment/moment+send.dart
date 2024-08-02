@@ -168,7 +168,7 @@ extension Send on Moment {
 
   Future<OKEvent> sendReply(String replyNoteId, String content,
       {List<String>? hashTags, List<String>? mentions}) async {
-    NoteDB? note = await loadNoteWithNoteId(replyNoteId);
+    NoteDBISAR? note = await loadNoteWithNoteId(replyNoteId);
     if (note != null) {
       String? rootEventId = note.root;
       note.pTags ??= [];
@@ -189,7 +189,7 @@ extension Send on Moment {
                 mentions: note.pTags,
                 hashTags: hashTags);
       } else {
-        NoteDB? rootNote = await loadNoteWithNoteId(rootEventId);
+        NoteDBISAR? rootNote = await loadNoteWithNoteId(rootEventId);
         if (rootNote?.author.isNotEmpty == true &&
             !note.pTags!.contains(rootNote?.author)) {
           note.pTags!.add(rootNote!.author);
@@ -214,7 +214,7 @@ extension Send on Moment {
 
   Future<OKEvent> sendReaction(String reactedNoteId,
       {bool like = true, String? emojiShotCode, String? emojiURL}) async {
-    NoteDB? note = await loadNoteWithNoteId(reactedNoteId);
+    NoteDBISAR? note = await loadNoteWithNoteId(reactedNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
@@ -222,7 +222,7 @@ extension Send on Moment {
           reactedNoteId, note.pTags ?? [], '1', like, pubkey, privkey,
           emojiShotCode: emojiShotCode, emojiURL: emojiURL);
 
-      NoteDB noteDB = NoteDB.noteDBFromReactions(Nip25.decode(event));
+      NoteDBISAR noteDB = NoteDBISAR.noteDBFromReactions(Nip25.decode(event));
       saveNoteToDB(noteDB, null);
 
       note.reactionEventIds ??= [];
@@ -248,14 +248,14 @@ extension Send on Moment {
 
   Future<OKEvent> sendRepost(
       String repostNoteId, String? repostNoteRelay) async {
-    NoteDB? note = await loadNoteWithNoteId(repostNoteId);
+    NoteDBISAR? note = await loadNoteWithNoteId(repostNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
       Event event = await Nip18.encodeReposts(repostNoteId, repostNoteRelay,
           note.pTags ?? [], note.rawEvent, pubkey, privkey);
       Reposts r = await Nip18.decodeReposts(event);
-      NoteDB noteDB = NoteDB.noteDBFromReposts(r);
+      NoteDBISAR noteDB = NoteDBISAR.noteDBFromReposts(r);
       await saveNoteToDB(noteDB, null);
 
       note.repostEventIds ??= [];
@@ -282,7 +282,7 @@ extension Send on Moment {
 
   Future<OKEvent> sendQuoteRepost(String quoteRepostNoteId, String content,
       {List<String>? hashTags, List<String>? mentions}) async {
-    NoteDB? note = await loadNoteWithNoteId(quoteRepostNoteId);
+    NoteDBISAR? note = await loadNoteWithNoteId(quoteRepostNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
@@ -295,8 +295,8 @@ extension Send on Moment {
           note.pTags!.add(mention);
         }
       }
-      NoteDB noteDB =
-          NoteDB.noteDBFromQuoteReposts(Nip18.decodeQuoteReposts(event));
+      NoteDBISAR noteDB =
+          NoteDBISAR.noteDBFromQuoteReposts(Nip18.decodeQuoteReposts(event));
       await saveNoteToDB(noteDB, null);
 
       note.quoteRepostEventIds ??= [];

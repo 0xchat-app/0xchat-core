@@ -34,6 +34,7 @@ class DBISAR {
         JoinRequestDBISARSchema,
         ModerationDBISARSchema,
         RelayGroupDBISARSchema,
+        NoteDBISARSchema,
         ...additionalSchemas ?? []
       ],
       directory: dbPath,

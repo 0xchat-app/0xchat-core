@@ -7,7 +7,7 @@ import 'package:nostr_core_dart/nostr.dart';
 
 typedef GroupsJoinRequestCallBack = void Function(JoinRequestDBISAR);
 typedef GroupsModerationCallBack = void Function(ModerationDBISAR);
-typedef GroupsNoteCallBack = void Function(NoteDB);
+typedef GroupsNoteCallBack = void Function(NoteDBISAR);
 typedef GroupMetadataUpdatedCallBack = void Function(RelayGroupDBISAR);
 
 class RelayGroup {

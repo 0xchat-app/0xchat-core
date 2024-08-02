@@ -4,7 +4,7 @@ import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
-typedef NewNotesCallBack = void Function(List<NoteDB>);
+typedef NewNotesCallBack = void Function(List<NoteDBISAR>);
 typedef NewNotificationCallBack = void Function(List<NotificationDB>);
 
 class Moment {
@@ -16,8 +16,8 @@ class Moment {
   /// memory storage
   String pubkey = '';
   String privkey = '';
-  Map<String, NoteDB> notesCache = {};
-  List<NoteDB> newNotes = [];
+  Map<String, NoteDBISAR> notesCache = {};
+  List<NoteDBISAR> newNotes = [];
   List<NotificationDB> newNotifications = [];
   NewNotesCallBack? newNotesCallBack;
   NewNotificationCallBack? newNotificationCallBack;

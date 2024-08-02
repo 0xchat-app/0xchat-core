@@ -28,7 +28,8 @@ extension EAdmin on RelayGroup {
     RelayGroupDBISAR? groupDB = groups[joinRequest.groupId];
     if (groupDB == null || !groupDB.private || groupDB.admins == null) return;
     if (hasPermissions(groupDB.admins!, pubkey, [GroupActionKind.addUser])) {
-      JoinRequestDBISAR joinRequestDB = JoinRequestDBISAR.toJoinRequestDB(joinRequest);
+      JoinRequestDBISAR joinRequestDB =
+          JoinRequestDBISAR.toJoinRequestDB(joinRequest);
       await saveJoinRequestDBToDB(joinRequestDB);
       joinRequestCallBack?.call(joinRequestDB);
     }
@@ -36,7 +37,10 @@ extension EAdmin on RelayGroup {
 
   Future<List<JoinRequestDBISAR>> getRequestList(String groupId) async {
     final isar = DBISAR.sharedInstance.isar;
-    return await isar.joinRequestDBISARs.filter().groupIdEqualTo(groupId).findAll();
+    return await isar.joinRequestDBISARs
+        .filter()
+        .groupIdEqualTo(groupId)
+        .findAll();
   }
 
   Future<OKEvent> acceptJoinRequest(JoinRequestDBISAR joinRequest) async {
@@ -53,7 +57,8 @@ extension EAdmin on RelayGroup {
 
   Future<bool> ignoreJoinRequest(JoinRequestDBISAR joinRequest) async {
     final isar = DBISAR.sharedInstance.isar;
-    return await isar.joinRequestDBISARs.deleteByRequestId(joinRequest.requestId);
+    return await isar.joinRequestDBISARs
+        .deleteByRequestId(joinRequest.requestId);
   }
 
   Future<OKEvent> sendModeration(GroupModeration moderation) async {
@@ -80,7 +85,8 @@ extension EAdmin on RelayGroup {
         sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
       if (ok.status == true) {
-        ModerationDBISAR moderationDB = ModerationDBISAR.toModerationDB(moderation);
+        ModerationDBISAR moderationDB =
+            ModerationDBISAR.toModerationDB(moderation);
         await saveModerationToDB(moderationDB);
       }
     });
@@ -240,8 +246,9 @@ extension EAdmin on RelayGroup {
   }
 
   Future<OKEvent> deleteNoteFromLocal(String noteId) async {
-    await deleteNotesFromDB(noteIds: [noteId]);
-    return OKEvent(noteId, true, '');
+    final isar = DBISAR.sharedInstance.isar;
+    bool result = await isar.noteDBISARs.deleteByNoteId(noteId);
+    return OKEvent(noteId, result, '');
   }
 
   Future<OKEvent> deleteEvent(

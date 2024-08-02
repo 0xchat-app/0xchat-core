@@ -118,9 +118,8 @@ class Messages {
 
   Future<void> handleReactionEvent(Event event) async {
     Reactions reactions = Nip25.decode(event);
-    NoteDB reactionsNoteDB = NoteDB.noteDBFromReactions(reactions);
-    await DB.sharedInstance.insertBatch<NoteDB>(reactionsNoteDB,
-        conflictAlgorithm: ConflictAlgorithm.ignore);
+    NoteDBISAR reactionsNoteDB = NoteDBISAR.noteDBFromReactions(reactions);
+    Moment.sharedInstance.saveNoteToDB(reactionsNoteDB, ConflictAlgorithm.ignore);
     final reactedMessageDB =
         await loadMessageDBFromDB(reactions.reactedEventId);
     if (reactedMessageDB == null) return;
@@ -165,7 +164,7 @@ class Messages {
           emojiURL: emojiURL,
           relayGroupId: groupId);
 
-      NoteDB noteDB = NoteDB.noteDBFromReactions(Nip25.decode(event));
+      NoteDBISAR noteDB = NoteDBISAR.noteDBFromReactions(Nip25.decode(event));
       Moment.sharedInstance.saveNoteToDB(noteDB, null);
 
       // messageDB.reactionEventIds ??= [];
