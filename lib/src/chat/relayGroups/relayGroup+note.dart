@@ -46,7 +46,8 @@ extension ENote on RelayGroup {
   Future<OKEvent> sendGroupNoteReply(
       String replyNoteId, String content, List<String> previous,
       {List<String>? hashTags, List<String>? mentions}) async {
-    NoteDBISAR? note = await Moment.sharedInstance.loadNoteWithNoteId(replyNoteId);
+    NoteDBISAR? note =
+        await Moment.sharedInstance.loadNoteWithNoteId(replyNoteId);
     if (note == null) {
       return OKEvent(replyNoteId, false, 'reacted note DB == null');
     }
@@ -127,7 +128,8 @@ extension ENote on RelayGroup {
 
   Future<OKEvent> sendRepost(
       String repostNoteId, String? repostNoteRelay) async {
-    NoteDBISAR? note = await Moment.sharedInstance.loadNoteWithNoteId(repostNoteId);
+    NoteDBISAR? note =
+        await Moment.sharedInstance.loadNoteWithNoteId(repostNoteId);
     if (note == null) {
       return OKEvent(repostNoteId, false, 'reacted note DB == null');
     }
@@ -213,11 +215,8 @@ extension ENote on RelayGroup {
   Future<List<NoteDBISAR>?> loadGroupNotesFromDB(String id,
       {int limit = 50, int? until}) async {
     until ??= currentUnixTimestampSeconds() + 1;
-    List<NoteDBISAR>? notes = await Moment.sharedInstance.loadNotesFromDB(
-        where: 'groupId = ? AND createAt < ?',
-        whereArgs: [id, until],
-        orderBy: 'createAt desc',
-        limit: limit);
+    List<NoteDBISAR>? notes = await Moment.sharedInstance
+        .searchNotesFromDB(groupId: id, until: until, limit: limit);
     for (var note in notes) {
       Moment.sharedInstance.notesCache[note.noteId] = note;
     }

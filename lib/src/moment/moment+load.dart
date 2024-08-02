@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:ffi';
+import 'dart:math';
 
 import 'package:chatcore/chat-core.dart';
+import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
@@ -82,27 +85,13 @@ extension Load on Moment {
         .where((pubkey) => !Contacts.sharedInstance.inBlockList(pubkey))
         .toList();
     until ??= currentUnixTimestampSeconds() + 1;
-    String inClause = List.filled(userPubkeys.length, '?').join(',');
 
-    String whereClause = 'author IN ($inClause) AND createAt < ?';
-    List<dynamic> whereArgs = [...userPubkeys, until];
-
-    if (private != null) {
-      whereClause += ' AND private = ?';
-      whereArgs.add(private ? 1 : 0);
-    }
-
-    whereClause += " AND (groupId = '' OR groupId IS NULL)";
-
-    if (isReacted != null) {
-      whereClause += " AND reactedId IS NOT NULL AND reactedId != ''";
-    }
-
-    List<NoteDBISAR>? notes = await loadNotesFromDB(
-        where: whereClause,
-        whereArgs: whereArgs,
-        orderBy: 'createAt desc',
-        limit: limit);
+    List<NoteDBISAR>? notes = await searchNotesFromDB(
+        authors: userPubkeys,
+        until: until,
+        limit: limit,
+        isReacted: isReacted,
+        private: private);
 
     for (var note in notes) {
       notesCache[note.noteId] = note;
@@ -116,8 +105,7 @@ extension Load on Moment {
   }
 
   Future<NoteDBISAR?> loadNoteFromDBWithNoteId(String noteId) async {
-    List<NoteDBISAR>? result =
-        await loadNotesFromDB(where: 'noteId = ?', whereArgs: [noteId]);
+    List<NoteDBISAR>? result = await searchNotesFromDB(noteId: noteId);
     return result.isEmpty ? null : result[0];
   }
 
@@ -220,20 +208,19 @@ extension Load on Moment {
 
   Future<NoteDBISAR> loadPublicNoteActionsFromDB(NoteDBISAR noteDB,
       {NoteCallBack? noteCallBack}) async {
-    String whereClause =
-        'root = ? OR reply = ? OR repostId = ? OR quoteRepostId = ? OR reactedId = ?';
-    List<Object?> whereArgs = [
-      noteDB.noteId,
-      noteDB.noteId,
-      noteDB.noteId,
-      noteDB.noteId,
-      noteDB.noteId
-    ];
+    List<NoteDBISAR> notes1 = await searchNotesFromDB(root: noteDB.noteId);
+    List<NoteDBISAR> notes2 = await searchNotesFromDB(reply: noteDB.noteId);
+    List<NoteDBISAR> notes3 = await searchNotesFromDB(repostId: noteDB.noteId);
+    List<NoteDBISAR> notes4 =
+        await searchNotesFromDB(quoteRepostId: noteDB.noteId);
+    List<NoteDBISAR> notes5 = await searchNotesFromDB(reactedId: noteDB.noteId);
 
-    List<NoteDBISAR> notes = await loadNotesFromDB(
-      where: whereClause,
-      whereArgs: whereArgs,
-    );
+    List<NoteDBISAR> notes = [];
+    notes.addAll(notes1);
+    notes.addAll(notes2);
+    notes.addAll(notes3);
+    notes.addAll(notes4);
+    notes.addAll(notes5);
 
     noteDB.replyEventIds ??= [];
     noteDB.repostEventIds ??= [];
@@ -566,20 +553,69 @@ extension Load on Moment {
     return result;
   }
 
-  Future<List<NoteDBISAR>> loadNotesFromDB({
-    String? where,
-    List<Object?>? whereArgs,
-    String? orderBy,
+  Future<List<NoteDBISAR>> searchNotesFromDB({
+    String? noteId,
+    String? groupId,
+    List<String>? authors,
+    String? root,
+    String? reply,
+    String? repostId,
+    String? quoteRepostId,
+    String? reactedId,
+    bool? isReacted,
+    bool? private,
+    int? until,
     int? limit,
-    int? offset,
   }) async {
-    return [];
-    // return await DB.sharedInstance.objects<NoteDBISAR>(
-    //     where: where,
-    //     whereArgs: whereArgs,
-    //     orderBy: orderBy,
-    //     limit: limit,
-    //     offset: offset);
+    final isar = DBISAR.sharedInstance.isar;
+    var queryBuilder = isar.noteDBISARs.filter();
+    if (noteId != null) {
+      queryBuilder = queryBuilder.noteIdEqualTo(noteId);
+    }
+    if (groupId != null) {
+      queryBuilder = queryBuilder.groupIdEqualTo(groupId);
+    }
+    if (authors != null) {
+      queryBuilder =
+          queryBuilder.anyOf(authors, (q, author) => q.authorEqualTo(author));
+    }
+    if (root != null) {
+      queryBuilder = queryBuilder.rootEqualTo(root);
+    }
+    if (reply != null) {
+      queryBuilder = queryBuilder.replyEqualTo(reply);
+    }
+    if (repostId != null) {
+      queryBuilder = queryBuilder.repostIdEqualTo(repostId);
+    }
+    if (quoteRepostId != null) {
+      queryBuilder = queryBuilder.quoteRepostIdEqualTo(quoteRepostId);
+    }
+    if (reactedId != null) {
+      queryBuilder = queryBuilder.reactedIdEqualTo(reactedId);
+    }
+    if (until != null) {
+      queryBuilder = queryBuilder.createAtLessThan(until);
+    }
+    if (isReacted != null) {
+      queryBuilder = isReacted
+          ? queryBuilder.reactedIdIsNotEmpty()
+          : queryBuilder.reactedIdIsEmpty();
+    }
+    if (private != null) {
+      queryBuilder = queryBuilder.privateEqualTo(private);
+    }
+    if (limit != null) {
+      return await queryBuilder
+          .idBetween(0, intMaxValue)
+          .sortByCreateAtDesc()
+          .limit(limit)
+          .findAll();
+    }
+    return await queryBuilder
+        .idBetween(0, intMaxValue)
+        .sortByCreateAtDesc()
+        .findAll();
   }
 
   Future<void> handleNewNotes(NoteDBISAR noteDB) async {

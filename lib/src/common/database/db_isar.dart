@@ -5,6 +5,8 @@ import 'package:isar/isar.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:path_provider/path_provider.dart';
 
+const int intMaxValue = 9223372036854775807; // 64-bit signed integer max value
+
 class DBISAR {
   static final DBISAR sharedInstance = DBISAR._internal();
   DBISAR._internal();
