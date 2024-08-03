@@ -140,17 +140,17 @@ extension EMember on RelayGroup {
       groupDB =
           RelayGroupDBISAR(groupId: groupId, relay: relay, identifier: input);
       groups[groupId] = groupDB;
-      syncGroupToDB(groupDB);
     }
-    myGroups[groupId] = groups[groupId]!;
     if (groupDB.closed == false) {
       //open group, auto join
       groupDB.members ??= [];
-      if (!groupDB.members!.contains(pubkey)){
+      if (!groupDB.members!.contains(pubkey)) {
         groupDB.members = List.from(groupDB.members!);
         groupDB.members!.add(pubkey);
       }
     }
+    myGroups[groupId] = groupDB;
+    syncGroupToDB(groupDB);
     syncMyGroupListToRelay();
 
     await Connect.sharedInstance
