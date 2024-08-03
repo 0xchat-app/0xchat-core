@@ -48,8 +48,12 @@ extension EMessage on RelayGroup {
       Event? event,
       bool local = false,
       String? decryptSecret}) async {
-    Event event = await Nip29.encodeGroupMessageReply(id,
-        MessageDBISAR.getContent(type, content, source), previous, pubkey, privkey,
+    Event event = await Nip29.encodeGroupMessageReply(
+        id,
+        MessageDBISAR.getContent(type, content, source),
+        previous,
+        pubkey,
+        privkey,
         rootEvent: rootEvent,
         replyEvent: replyEvent,
         replyUsers: replyUsers,
@@ -66,17 +70,23 @@ extension EMessage on RelayGroup {
       List<String>? replyUsers,
       Event? event,
       bool local = false,
-      String? decryptSecret}) async {
+      String? decryptSecret,
+      int createAt = 0}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     RelayGroupDBISAR? groupDB = groups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
-    event ??= await Nip29.encodeGroupMessageReply(groupId,
-        MessageDBISAR.getContent(type, content, source), previous, pubkey, privkey,
+    event ??= await Nip29.encodeGroupMessageReply(
+        groupId,
+        MessageDBISAR.getContent(type, content, source),
+        previous,
+        pubkey,
+        privkey,
         rootEvent: rootEvent,
         replyEvent: replyEvent,
         replyUsers: replyUsers,
         subContent: MessageDBISAR.getSubContent(type, content,
-            decryptSecret: decryptSecret));
+            decryptSecret: decryptSecret),
+        createAt: createAt);
 
     MessageDBISAR messageDB = MessageDBISAR(
         messageId: event.id,

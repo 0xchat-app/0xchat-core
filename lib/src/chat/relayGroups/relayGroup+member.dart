@@ -110,7 +110,7 @@ extension EMember on RelayGroup {
     RelayGroupDBISAR? groupDB = groups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     removeUser(groupId, [pubkey], '');
-    if(groupDB.members?.isNotEmpty == true) {
+    if (groupDB.members?.isNotEmpty == true) {
       groupDB.members?.remove(pubkey);
     }
     myGroups.remove(groupId);
@@ -223,7 +223,7 @@ extension EMember on RelayGroup {
         return;
     }
     sendGroupMessage(moderation.groupId, MessageType.system, content, [],
-        local: true);
+        local: true, createAt: event.createdAt);
     moderationCallBack?.call(db);
   }
 
