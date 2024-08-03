@@ -122,7 +122,9 @@ extension EMember on RelayGroup {
     String groupId = simpleGroups.groupId;
     if (groups.containsKey(groupId) && !myGroups.containsKey(groupId)) {
       myGroups[groupId] = groups[groupId]!;
-      return await syncMyGroupListToRelay();
+      OKEvent okEvent = await syncMyGroupListToRelay();
+      preloadGroupMessages(groupId, simpleGroups.relay);
+      return okEvent;
     }
     return OKEvent(groupId, false, 'group not found');
   }
@@ -144,7 +146,10 @@ extension EMember on RelayGroup {
     if (groupDB.closed == false) {
       //open group, auto join
       groupDB.members ??= [];
-      if (!groupDB.members!.contains(pubkey)) groupDB.members!.add(pubkey);
+      if (!groupDB.members!.contains(pubkey)){
+        groupDB.members = List.from(groupDB.members!);
+        groupDB.members!.add(pubkey);
+      }
     }
     syncMyGroupListToRelay();
 
@@ -155,6 +160,9 @@ extension EMember on RelayGroup {
         await Nip29.encodeJoinRequest(groupId, content, pubkey, privkey);
     Connect.sharedInstance.sendEvent(event, toRelays: [relay],
         sendCallBack: (ok, relay) async {
+      if (groupDB!.closed == false && ok.status) {
+        preloadGroupMessages(groupId, relay);
+      }
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
@@ -188,6 +196,10 @@ extension EMember on RelayGroup {
               moderation.users.contains(pubkey)) {
             groupDB.members!.add(pubkey);
             syncGroupToDB(groupDB);
+            if (myGroups.keys.contains(groupDB.groupId)) {
+              //join a group
+              preloadGroupMessages(groupDB.groupId, relay);
+            }
           }
         }
         break;

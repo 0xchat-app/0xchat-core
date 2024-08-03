@@ -94,6 +94,9 @@ class Moment {
         }
       }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
         offlineMomentFinish[relay] = true;
+        if(ok.status){
+          updateMomentTime(currentUnixTimestampSeconds(), relay);
+        }
         Relays.sharedInstance.syncRelaysToDB(r: relay);
       });
     }
