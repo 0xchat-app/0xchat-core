@@ -110,7 +110,9 @@ extension EMember on RelayGroup {
     RelayGroupDBISAR? groupDB = groups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     removeUser(groupId, [pubkey], '');
-    groupDB.members?.remove(pubkey);
+    if(groupDB.members?.isNotEmpty == true) {
+      groupDB.members?.remove(pubkey);
+    }
     myGroups.remove(groupId);
     return await syncMyGroupListToRelay();
   }
