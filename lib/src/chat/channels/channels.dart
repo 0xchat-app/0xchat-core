@@ -114,7 +114,9 @@ class Channels {
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
       offlineChannelMessageFinish[relay] = true;
-      _updateChannelMessageTime(currentUnixTimestampSeconds(), relay);
+      if(ok.status) {
+        _updateChannelMessageTime(currentUnixTimestampSeconds(), relay);
+      }
       if (unCompletedRelays.isEmpty) {
         offlineChannelMessageFinishCallBack?.call();
       }

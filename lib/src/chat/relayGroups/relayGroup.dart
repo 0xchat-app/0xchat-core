@@ -263,8 +263,10 @@ class RelayGroup {
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       offlineGroupMessageFinish[relay] = true;
-      _updateGroupMessageTime(currentUnixTimestampSeconds(), relay);
-      if (!ok.status && Nip29.restricted(ok.message)) {
+      if(ok.status) {
+        _updateGroupMessageTime(currentUnixTimestampSeconds(), relay);
+      }
+      else if (Nip29.restricted(ok.message)) {
         await Future.forEach(groupList, (g) async {
           await getGroupMetadataFromRelay(g);
         });
