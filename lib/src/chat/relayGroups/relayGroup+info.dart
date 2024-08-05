@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:chatcore/chat-core.dart';
+import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension EInfo on RelayGroup {
@@ -65,14 +66,14 @@ extension EInfo on RelayGroup {
     return completer.future;
   }
 
-  Future<void> handleGroupMetadata(Event event, String relay) async {
+  RelayGroupDBISAR handleGroupMetadata(Event event, String relay) {
     Group group = Nip29.decodeMetadata(event, relay);
     RelayGroupDBISAR? groupDB = groups[group.groupId];
     groupDB ??= RelayGroupDBISAR(
         groupId: group.groupId,
         relay: relay,
         identifier: '$relay\'${group.groupId}');
-    if (event.createdAt < groupDB.lastUpdatedTime) return;
+    if (event.createdAt < groupDB.lastUpdatedTime) return groupDB;
     groupDB.name = group.name;
     groupDB.picture = group.picture;
     groupDB.about = group.about;
@@ -80,7 +81,8 @@ extension EInfo on RelayGroup {
     groupDB.closed = group.closed;
     groupDB.lastUpdatedTime = event.createdAt;
     groupMetadataUpdatedCallBack?.call(groupDB);
-    await syncGroupToDB(groupDB);
+    syncGroupToDB(groupDB);
+    return groupDB;
   }
 
   Future<void> handleGroupMetadataFromModeration(
@@ -145,5 +147,39 @@ extension EInfo on RelayGroup {
       });
     }
     return result;
+  }
+
+  Future<List<RelayGroupDBISAR>> searchGroupsFromDB(List<String> relays) async {
+    return await DBISAR.sharedInstance.isar.relayGroupDBISARs
+        .filter()
+        .anyOf(relays, (q, relay) => q.relayEqualTo(relay))
+        .findAll();
+  }
+
+  Future<List<RelayGroupDBISAR>> searchGroupsFromRelays(
+      List<String> relays) async {
+    if (relays.isEmpty) return [];
+    Map<String, RelayGroupDBISAR> result = {};
+    List<RelayGroupDBISAR> resultFromDB = await searchGroupsFromDB(relays);
+    for (var db in resultFromDB) {
+      result[db.groupId] = db;
+    }
+    await Connect.sharedInstance
+        .connectRelays(relays, relayKind: RelayKind.temp);
+    Completer<List<RelayGroupDBISAR>> completer =
+        Completer<List<RelayGroupDBISAR>>();
+    Filter f = Filter(kinds: [39000]);
+    Connect.sharedInstance.addSubscription([f], relays: relays,
+        eventCallBack: (event, relay) async {
+      RelayGroupDBISAR groupDB = handleGroupMetadata(event, relay);
+      result[groupDB.groupId] = groupDB;
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+      if (unCompletedRelays.isEmpty && !completer.isCompleted) {
+        Connect.sharedInstance.closeConnects(relays, RelayKind.temp);
+        completer.complete(result.values.toList());
+      }
+    });
+    return completer.future;
   }
 }
