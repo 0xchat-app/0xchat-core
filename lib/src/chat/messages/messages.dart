@@ -124,6 +124,7 @@ class Messages {
         await loadMessageDBFromDB(reactions.reactedEventId);
     if (reactedMessageDB == null) return;
     reactedMessageDB.reactionEventIds ??= [];
+    reactedMessageDB.reactionEventIds = List.from(reactedMessageDB.reactionEventIds!);
     if (!reactedMessageDB.reactionEventIds!.contains(reactions.id)) {
       reactedMessageDB.reactionEventIds!.add(reactions.id);
       await saveMessageToDB(reactedMessageDB);

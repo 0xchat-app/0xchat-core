@@ -319,6 +319,7 @@ extension Load on Moment {
     NoteDBISAR? noteDB = await loadNoteWithNoteId(noteId, reload: false);
     if (noteDB == null) return;
     noteDB.zapEventIds ??= [];
+    noteDB.zapEventIds = List.from(noteDB.zapEventIds!);
     ZapReceipt zapReceipt = await Nip57.getZapReceipt(
         zapEvent,
         Account.sharedInstance.currentPubkey,
@@ -398,6 +399,7 @@ extension Load on Moment {
     NoteDBISAR? noteDB = await loadNoteWithNoteId(noteId);
     if (noteDB == null) return;
     noteDB.reactionEventIds ??= [];
+    noteDB.reactionEventIds = List.from(noteDB.reactionEventIds!);
     if (noteDB.reactionEventIds?.contains(reactionEvent.id) == true) return;
 
     Reactions reactions = Nip25.decode(reactionEvent);

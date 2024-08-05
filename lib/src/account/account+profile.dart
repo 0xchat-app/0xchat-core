@@ -151,8 +151,8 @@ extension AccountProfile on Account {
 
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-          UserDBISAR? db = users[event.pubkey];
-      if(db == null) return;
+      UserDBISAR? db = users[event.pubkey];
+      if (db == null) return;
       if (event.kind == 0) {
         users[event.pubkey] = _handleKind0Event(db, event)!;
       }
@@ -278,7 +278,7 @@ extension AccountProfile on Account {
       List<Profile> profiles = Nip2.decode(event);
       db.followingList = profiles.map((e) => e.key).toList();
       // relay list
-      if (db.lastRelayListUpdatedTime == 0){
+      if (db.lastRelayListUpdatedTime == 0) {
         Map map = jsonDecode(event.content);
         db.relayList ??= [];
         Set<String> relaySet = Set.from(db.relayList!);
@@ -358,9 +358,9 @@ extension AccountProfile on Account {
   // contact list
   Future<UserDBISAR?> _handleKind30000Event(UserDBISAR? db, Event event) async {
     if (db == null) return null;
+    if (db.lastFriendsListUpdatedTime >= event.createdAt) return db;
     Lists result = await Nip51.getLists(event, currentPubkey, currentPrivkey);
-    if (result.identifier == Contacts.identifier &&
-        db.lastFriendsListUpdatedTime < event.createdAt) {
+    if (result.identifier == Contacts.identifier) {
       // contact list
       db.lastFriendsListUpdatedTime = event.createdAt;
       Event e = await Nip51.createCategorizedPeople(Contacts.identifier, [],
@@ -374,9 +374,9 @@ extension AccountProfile on Account {
   // old list
   Future<UserDBISAR?> _handleKind30001Event(UserDBISAR? db, Event event) async {
     if (db == null) return null;
+    if (db.lastChannelsListUpdatedTime >= event.createdAt) return db;
     Lists result = await Nip51.getLists(event, currentPubkey, currentPrivkey);
-    if (result.identifier == Channels.identifier &&
-        db.lastChannelsListUpdatedTime < event.createdAt) {
+    if (result.identifier == Channels.identifier) {
       db.lastChannelsListUpdatedTime = event.createdAt;
       db.channelsList = result.bookmarks;
       channelListUpdateCallback?.call();
@@ -387,9 +387,9 @@ extension AccountProfile on Account {
   // bookmark list
   Future<UserDBISAR?> _handleKind30003Event(UserDBISAR? db, Event event) async {
     if (db == null) return null;
+    if (db.lastGroupsListUpdatedTime >= event.createdAt) return db;
     Lists result = await Nip51.getLists(event, currentPubkey, currentPrivkey);
-    if (result.identifier == Groups.identifier &&
-        db.lastGroupsListUpdatedTime < event.createdAt) {
+    if (result.identifier == Groups.identifier) {
       // private group list
       db.lastGroupsListUpdatedTime = event.createdAt;
       db.groupsList = result.bookmarks;
