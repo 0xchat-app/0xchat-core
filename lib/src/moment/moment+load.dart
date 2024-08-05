@@ -94,9 +94,6 @@ extension Load on Moment {
       notesCache[note.noteId] = note;
       latestNoteTime =
           note.createAt > latestNoteTime ? note.createAt : latestNoteTime;
-      if (!Connect.sharedInstance.eventCache.contains(note.noteId)) {
-        Connect.sharedInstance.eventCache.add(note.noteId);
-      }
     }
     return notes;
   }
@@ -305,7 +302,7 @@ extension Load on Moment {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (ok.status) {
         NoteDBISAR? noteDB = notesCache[noteId];
-        noteDB?.lastUpdatedTime?[relay] = currentUnixTimestampSeconds();
+        noteDB?.lastUpdatedTime[relay] = currentUnixTimestampSeconds();
       }
       if (unRelays.isEmpty) {
         NoteDBISAR? noteDB = await loadNoteWithNoteId(noteId);
@@ -348,6 +345,7 @@ extension Load on Moment {
     NoteDBISAR? noteDB = await loadNoteWithNoteId(noteId);
     if (noteDB == null) return;
     noteDB.replyEventIds ??= [];
+    noteDB.replyEventIds = List.from(noteDB.replyEventIds!);
     if (noteDB.replyEventIds?.contains(replyEvent.id) == true) return;
     saveNoteToDB(replyNoteDB, ConflictAlgorithm.ignore);
     noteDB.replyEventIds?.add(replyNoteDB.noteId);

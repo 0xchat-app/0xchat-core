@@ -28,7 +28,6 @@ extension Send on Moment {
         hashTags: hashTags);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) {
-        Connect.sharedInstance.eventCache.add(event.id);
         await handleNoteEvent(event, relay, false);
         completer.complete(ok);
       }

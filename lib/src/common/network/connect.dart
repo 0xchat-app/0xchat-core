@@ -105,8 +105,6 @@ class Connect {
   // relay AUTH
   Map<String, AuthData> auths = {};
 
-  List<String> eventCache = [];
-
   Map<String, List<Future<bool>>> eventCheckerFutures = {};
 
   void startHeartBeat() {
@@ -491,9 +489,11 @@ class Connect {
   Future<void> _handleEvent(Event event, String relay) async {
     debugPrint(
         'Received event, subscriptionId: ${event.subscriptionId}, ${event.toJson()}');
-    if (eventCache.contains(event.id)) return;
-    // add to cache
-    eventCache.add(event.id);
+    if (EventCache.sharedInstance.cacheIds.contains(event.id)) {
+      EventCache.sharedInstance.receiveEvent(event, relay);
+      return;
+    }
+    EventCache.sharedInstance.receiveEvent(event, relay);
     // ignore the expired event
     if (Nip40.expired(event)) return;
 
@@ -590,6 +590,7 @@ class Connect {
         _sendAuth(relay);
         return;
       }
+      // callback
       if (sendsMap[ok.eventId]!.okCallBack != null) {
         var relays = sendsMap[ok.eventId]!.relays;
         relays.remove(relay);

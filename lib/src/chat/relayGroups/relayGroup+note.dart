@@ -34,7 +34,6 @@ extension ENote on RelayGroup {
           replyUsers: mentions,
           hashTags: hashTags);
     }
-    Connect.sharedInstance.eventCache.add(event.id);
     handleGroupNotes(event, groupDB.relay);
     Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
         sendCallBack: (ok, relay) async {

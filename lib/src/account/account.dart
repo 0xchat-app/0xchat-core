@@ -318,7 +318,9 @@ class Account {
 
   static Future<Event?> loadEvent(String eventId,
       {List<String>? relays}) async {
-    Connect.sharedInstance.eventCache.remove(eventId);
+    EventDBISAR? eventDB =
+        await EventCache.sharedInstance.loadEventFromDB(eventId);
+    if (eventDB != null) return Event.deserialize(jsonDecode(eventDB.rawData), verify: false);
     Completer<Event?> completer = Completer<Event?>();
     Timer(Duration(seconds: 15), () {
       if (!completer.isCompleted) {
@@ -337,7 +339,6 @@ class Account {
     }, eoseCallBack: (requestId, status, relay, unRelays) {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        Connect.sharedInstance.eventCache.remove(eventId);
         if (!completer.isCompleted) completer.complete(null);
       }
     });

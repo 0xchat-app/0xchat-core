@@ -329,13 +329,6 @@ class Messages {
         message.decryptContent = map['content'];
         message.type = map['contentType'];
       }
-      if (!Connect.sharedInstance.eventCache.contains(message.messageId)) {
-        Connect.sharedInstance.eventCache.add(message.messageId);
-      }
-      if (message.giftWrappedId.isNotEmpty &&
-          !Connect.sharedInstance.eventCache.contains(message.giftWrappedId)) {
-        Connect.sharedInstance.eventCache.add(message.giftWrappedId);
-      }
     }
     return {'theLastTime': theLastTime, 'messages': messages};
   }
@@ -370,13 +363,6 @@ class Messages {
         var map = MessageDBISAR.decodeContent(message.content);
         message.decryptContent = map['content'];
         message.type = map['contentType'];
-      }
-      if (!Connect.sharedInstance.eventCache.contains(message.messageId)) {
-        Connect.sharedInstance.eventCache.add(message.messageId);
-      }
-      if (message.giftWrappedId.isNotEmpty &&
-          !Connect.sharedInstance.eventCache.contains(message.giftWrappedId)) {
-        Connect.sharedInstance.eventCache.add(message.giftWrappedId);
       }
     }
     return {'theLastTime': theLastTime, 'messages': messages};
@@ -419,13 +405,6 @@ class Messages {
         var map = MessageDBISAR.decodeContent(message.content);
         message.decryptContent = map['content'];
         message.type = map['contentType'];
-      }
-      if (!Connect.sharedInstance.eventCache.contains(message.messageId)) {
-        Connect.sharedInstance.eventCache.add(message.messageId);
-      }
-      if (message.giftWrappedId.isNotEmpty &&
-          !Connect.sharedInstance.eventCache.contains(message.giftWrappedId)) {
-        Connect.sharedInstance.eventCache.add(message.giftWrappedId);
       }
     }
     return {'theLastTime': theLastTime, 'messages': messages};

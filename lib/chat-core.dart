@@ -59,6 +59,8 @@ export 'src/common/database/db.dart';
 export 'src/common/database/db_isar.dart';
 export 'src/common/database/db_object.dart';
 export 'src/common/network/connect.dart';
+export 'src/common/network/eventCache.dart';
+export 'src/common/network/eventDB_isar.dart';
 export 'src/common/thread/threadPoolManager.dart';
 export 'src/common/config/config.dart';
 export 'src/common/config/configDB.dart';

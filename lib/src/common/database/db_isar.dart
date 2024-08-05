@@ -30,7 +30,8 @@ class DBISAR {
     RelayGroupDBISARSchema,
     NoteDBISARSchema,
     NotificationDBISARSchema,
-    ConfigDBISARSchema
+    ConfigDBISARSchema,
+    EventDBISARSchema
   ];
 
   Future open(String pubkey) async {
