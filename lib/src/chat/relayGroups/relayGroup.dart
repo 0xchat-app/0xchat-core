@@ -9,6 +9,7 @@ typedef GroupsJoinRequestCallBack = void Function(JoinRequestDBISAR);
 typedef GroupsModerationCallBack = void Function(ModerationDBISAR);
 typedef GroupsNoteCallBack = void Function(NoteDBISAR);
 typedef GroupMetadataUpdatedCallBack = void Function(RelayGroupDBISAR);
+typedef OfflineGroupMessageFinishCallBack = void Function();
 
 class RelayGroup {
   /// singleton
@@ -32,6 +33,7 @@ class RelayGroup {
   GroupsJoinRequestCallBack? joinRequestCallBack;
   GroupsModerationCallBack? moderationCallBack;
   GroupsNoteCallBack? noteCallBack;
+  OfflineGroupMessageFinishCallBack? offlineGroupMessageFinishCallBack;
 
   Future<void> init({GroupsUpdatedCallBack? callBack}) async {
     privkey = Account.sharedInstance.currentPrivkey;
@@ -270,6 +272,9 @@ class RelayGroup {
           await getGroupMetadataFromRelay(g);
         });
         updateGroupSubscription(relay: relay);
+      }
+      if (unCompletedRelays.isEmpty) {
+        offlineGroupMessageFinishCallBack?.call();
       }
     });
   }

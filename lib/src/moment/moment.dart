@@ -6,6 +6,7 @@ import 'package:nostr_core_dart/nostr.dart';
 
 typedef NewNotesCallBack = void Function(List<NoteDBISAR>);
 typedef NewNotificationCallBack = void Function(List<NotificationDBISAR>);
+typedef OfflineMomentFinishCallBack = void Function();
 
 class Moment {
   /// singleton
@@ -22,6 +23,7 @@ class Moment {
   NewNotesCallBack? newNotesCallBack;
   NewNotificationCallBack? newNotificationCallBack;
   NewNotificationCallBack? myZapNotificationCallBack;
+  OfflineMomentFinishCallBack? offlineMomentFinishCallBack;
 
   String notesSubscription = '';
   Map<String, bool> offlineMomentFinish = {};
@@ -98,6 +100,9 @@ class Moment {
           updateMomentTime(currentUnixTimestampSeconds(), relay);
         }
         Relays.sharedInstance.syncRelaysToDB(r: relay);
+        if (unCompletedRelays.isEmpty) {
+          offlineMomentFinishCallBack?.call();
+        }
       });
     }
   }

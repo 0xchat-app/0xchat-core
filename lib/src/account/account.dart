@@ -39,7 +39,7 @@ class Account {
 
   void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
-      timer = Timer.periodic(Duration(seconds: 10), (Timer t) async {
+      timer = Timer.periodic(Duration(seconds: 15), (Timer t) async {
         await syncProfilesFromRelay();
       });
     }
