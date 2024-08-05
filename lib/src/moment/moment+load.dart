@@ -196,7 +196,7 @@ extension Load on Moment {
         if (!completer.isCompleted) {
           NoteDBISAR? note = await loadNoteWithNoteId(noteId, reload: false);
           Connect.sharedInstance.closeConnects(tempRelays, RelayKind.temp);
-          completer.complete(note);
+          if(!completer.isCompleted) completer.complete(note);
         }
       }
     });
