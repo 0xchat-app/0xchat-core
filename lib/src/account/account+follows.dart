@@ -75,7 +75,7 @@ extension AccountFollows on Account {
     }
     me?.followingList = followingList;
     syncMe();
-    Moment.sharedInstance.updateSubscriptions();
+    // Moment.sharedInstance.updateSubscriptions();
     return await _syncFollowListToRelay(followingList);
   }
 
@@ -86,7 +86,7 @@ extension AccountFollows on Account {
     }
     me?.followingList = followingList;
     syncMe();
-    Moment.sharedInstance.updateSubscriptions();
+    // Moment.sharedInstance.updateSubscriptions();
     return await _syncFollowListToRelay(followingList);
   }
 }

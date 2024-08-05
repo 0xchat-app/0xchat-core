@@ -366,7 +366,7 @@ class Contacts {
   }
 
   Future<void> _subscriptMoment({String? relay}) async {
-    await Moment.sharedInstance.updateSubscriptions(relay: relay);
+    // await Moment.sharedInstance.updateSubscriptions(relay: relay);
   }
 
   Future<void> _subscriptMessages({String? relay}) async {
