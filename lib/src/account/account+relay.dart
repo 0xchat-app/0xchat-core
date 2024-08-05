@@ -83,7 +83,7 @@ extension AccountRelay on Account {
 
   Future<OKEvent> removeGeneralRelay(String relay) async {
     if (relay.isEmpty) return OKEvent(relay, false, 'empty relay');
-    List<String> relays = me?.relayList ?? [];
+    List<String> relays = List.from(me!.relayList ?? []);
     if (!relays.contains(relay)) return OKEvent(relay, false, 'not exit');
     relays.remove(relay);
     Connect.sharedInstance.closeConnects([relay], RelayKind.general);
@@ -92,7 +92,7 @@ extension AccountRelay on Account {
 
   Future<OKEvent> addDMRelay(String relay) async {
     if (relay.isEmpty) return OKEvent(relay, false, 'empty relay');
-    List<String> relays = me?.dmRelayList ?? [];
+    List<String> relays = List.from(me?.dmRelayList ?? []) ;
     if (relays.contains(relay)) return OKEvent(relay, false, 'already exit');
     relays.add(relay);
     Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.dm);
