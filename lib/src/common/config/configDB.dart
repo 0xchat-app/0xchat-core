@@ -1,5 +1,4 @@
 import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/common/config/configDB_isar.dart';
 
 @reflector
 class ConfigDB extends DBObject {

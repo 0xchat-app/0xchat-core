@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/moment/model/noteDB_isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 @reflector

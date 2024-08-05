@@ -1,5 +1,4 @@
 import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/chat/relayGroups/model/joinRequestDB_isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 @reflector

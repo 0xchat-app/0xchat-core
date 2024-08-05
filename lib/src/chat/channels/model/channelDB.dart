@@ -1,5 +1,4 @@
 import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/chat/channels/model/channelDB_isar.dart';
 
 @reflector
 class ChannelDB extends DBObject {

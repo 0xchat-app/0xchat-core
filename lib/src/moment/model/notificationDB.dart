@@ -1,5 +1,4 @@
 import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/moment/model/notificationDB_isar.dart';
 
 @reflector
 class NotificationDB extends DBObject {

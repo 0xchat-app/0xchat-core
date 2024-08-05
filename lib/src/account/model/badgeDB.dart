@@ -1,5 +1,4 @@
 import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/account/model/badgeDB_isar.dart';
 
 @reflector
 class BadgeDB extends DBObject {
