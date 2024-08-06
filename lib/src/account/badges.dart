@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
 
 typedef BadgeAwardsCallBack = void Function(List<BadgeAward?>?);
 
@@ -16,6 +15,8 @@ class BadgesHelper {
   String badgeSubscription = '';
   final String serverPubkey =
       '093dff31a87bbf838c54fd39ff755e72b38bd6b7975c670c0f2633fa7c54ddd0';
+  final String defaultBadgesString =
+      '{\"code\":\"000000\",\"message\":\"Success\",\"data\":[{\"identifies\":\"aa330e14a58c5ada40ee0cea7f4c3121\",\"badgeId\":\"00003f2b93a5a3888fff0d251d270ca82f757a0d5efd556070a036ca8be8e820\",\"badgeName\":\"Egg\",\"badgeImageUrl\":\"https://www.0xchat.com/ipfs/QmWvaqDS5m35577sXZDae7m6fEU6SidznSwdbWndAEmUPe\",\"thumbUrl\":\"https://www.0xchat.com/ipfs/QmXgDVHfUcK5dXeQDKyX7R4DggTTkL9snEc61SXMqSNy4e\",\"creator\":\"0xchat\",\"description\":\"Earn the 0xchat Egg badge with cumulative donations of 2.1k sats. Your humble beginning sets the stage for a journey of a thousand miles.\",\"benefits\":[\"4-digit 0xchat DNS\"],\"benefitsIcon\":[\"https://www.0xchat.com/ipfs/QmU1CAcYjoVJq1DeeN66Yn4T2WSH8n1e1piHJ9BbQ1giyK\"],\"creatorAbout\":\"0xchat is a decentralized chatting app built on Nostr protocol. It prioritizes privacy with features like private key login, encrypted private chats and contacts, coupled with an open communication platform through public channels.\",\"howToGet\":\"Cumulative donations of 2.1k sats\"},{\"identifies\":\"fafec3cd6d8c04ad424ca82ed54e9afb\",\"badgeId\":\"00000f0951248ace7d69be0ed136a069f1d1021443b03e81ffbabda4e53bda9e\",\"badgeName\":\"Hatchling\",\"badgeImageUrl\":\"https://www.0xchat.com/ipfs/QmUTQT3djB92u4UEBtcjup7dhRhPAsGc3uLeEhRcforuDH\",\"thumbUrl\":\"https://www.0xchat.com/ipfs/QmTchyNpgxC4gFZ2P3UEHDKBwMrta9WV8Xp9uy4rwdyWNC\",\"creator\":\"0xchat\",\"description\":\"Garner the 0xchat Hatchling badge with cumulative donations of 4.2k sats. Your continued support hatches new opportunities and fosters breakthroughs.\",\"benefits\":[\"4-digit 0xchat DNS\"],\"benefitsIcon\":[\"https://www.0xchat.com/ipfs/QmU1CAcYjoVJq1DeeN66Yn4T2WSH8n1e1piHJ9BbQ1giyK\"],\"creatorAbout\":\"0xchat is a decentralized chatting app built on Nostr protocol. It prioritizes privacy with features like private key login, encrypted private chats and contacts, coupled with an open communication platform through public channels.\",\"howToGet\":\"Cumulative donations of 4.2k sats\"},{\"identifies\":\"115e7ac9cb28ccc172b9fde8b5ef4a50\",\"badgeId\":\"00002295d1ef76eee9a8d8d04cb2009483acedb452814e040a949555210f928e\",\"badgeName\":\"Chick\",\"badgeImageUrl\":\"https://www.0xchat.com/ipfs/QmaosfucQmDWt7hHnb1qgcgN8xREzwnHzYu9ysVeBweE4p\",\"thumbUrl\":\"https://www.0xchat.com/ipfs/QmWoyYV1DxK1A89M89YMSNSVgj2MgxipTL1ZASLyMJ7a8w\",\"creator\":\"0xchat\",\"description\":\"Attain the 0xchat Chick badge with cumulative donations of 21k sats. Like a chick learning to walk, your contributions enable steady progress.\",\"benefits\":[\"3-digit 0xchat DNS\"],\"benefitsIcon\":[\"https://www.0xchat.com/ipfs/QmU1CAcYjoVJq1DeeN66Yn4T2WSH8n1e1piHJ9BbQ1giyK\"],\"creatorAbout\":\"0xchat is a decentralized chatting app built on Nostr protocol. It prioritizes privacy with features like private key login, encrypted private chats and contacts, coupled with an open communication platform through public channels.\",\"howToGet\":\"Cumulative donations of 21k sats\"},{\"identifies\":\"8aeb9c5cd440dadbdeb6daa4fd97b763\",\"badgeId\":\"00001e93260c429660e39abd7cec733f9f3d9278bb7b2bbd8a3fff98d94a02bb\",\"badgeName\":\"Adolescent\",\"badgeImageUrl\":\"https://www.0xchat.com/ipfs/QmU5SUQu3dGrPE4jibkBYuXsE1YLjRJuFUPv894dkqDaVr\",\"thumbUrl\":\"https://www.0xchat.com/ipfs/QmXaP3fPLLtXS5a9iZrXgAvLmpjtY7FjdLj4VXRhKTgVCE\",\"creator\":\"0xchat\",\"description\":\"Acquire the 0xchat Adolescent badge with cumulative donations of 42k sats. Your speedy commitment propels us towards our mission.\",\"benefits\":[\"3-digit 0xchat DNS\"],\"benefitsIcon\":[\"https://www.0xchat.com/ipfs/QmU1CAcYjoVJq1DeeN66Yn4T2WSH8n1e1piHJ9BbQ1giyK\"],\"creatorAbout\":\"0xchat is a decentralized chatting app built on Nostr protocol. It prioritizes privacy with features like private key login, encrypted private chats and contacts, coupled with an open communication platform through public channels.\",\"howToGet\":\"Cumulative donations of 42k sats\"},{\"identifies\":\"ceba4defe16e22c5ca2d9bedcaec430e\",\"badgeId\":\"00000f7a835198691c5cd6f024fdfcf2ab82ef147160bf966ba5706271baa003\",\"badgeName\":\"Mature\",\"badgeImageUrl\":\"https://www.0xchat.com/ipfs/QmNuPsPojLxiBbPVEwYGCi8BqYQEkTemD9QLT4wWaBUP2u\",\"thumbUrl\":\"https://www.0xchat.com/ipfs/QmcKPMr6JX1ewUJzX6vPWPsuE9zDPg1ZiXhecryi57Tcgt\",\"creator\":\"0xchat\",\"description\":\"Receive the 0xchat Mature badge with cumulative donations of 210k sats. Your significant support, like a full-grown ostrich, matures into incredible growth.\",\"benefits\":[\"2-digit 0xchat DNS\"],\"benefitsIcon\":[\"https://www.0xchat.com/ipfs/QmU1CAcYjoVJq1DeeN66Yn4T2WSH8n1e1piHJ9BbQ1giyK\"],\"creatorAbout\":\"0xchat is a decentralized chatting app built on Nostr protocol. It prioritizes privacy with features like private key login, encrypted private chats and contacts, coupled with an open communication platform through public channels.\",\"howToGet\":\"Cumulative donations of 210k sats\"},{\"identifies\":\"1882297acefba82b14317c7c8e8fe28d\",\"badgeId\":\"000001a0ec0e7908caed173a82f68e93f8d791f7a045da0bf622c7bee0b72dee\",\"badgeName\":\"Geeky\",\"badgeImageUrl\":\"https://www.0xchat.com/ipfs/QmVKujbWMQCN6LfW2MvMo6B6XPrPAoA1nuwPf5YiCJeiuB\",\"thumbUrl\":\"https://www.0xchat.com/ipfs/Qme4TT55HCUbrx6SAZd9uwt5uotzekxFfmYJBNVhvFGEgN\",\"creator\":\"0xchat\",\"description\":\"Obtain the 0xchat Geeky badge with cumulative donations of 420k sats. You are not just a superhero, but a geeky one, powering innovation across our work.\",\"benefits\":[\"2-digit 0xchat DNS\"],\"benefitsIcon\":[\"https://www.0xchat.com/ipfs/QmU1CAcYjoVJq1DeeN66Yn4T2WSH8n1e1piHJ9BbQ1giyK\"],\"creatorAbout\":\"0xchat is a decentralized chatting app built on Nostr protocol. It prioritizes privacy with features like private key login, encrypted private chats and contacts, coupled with an open communication platform through public channels.\",\"howToGet\":\"Cumulative donations of 420k sats\"}]}';
 
   Map<String, BadgeDBISAR> badgeInfos = {};
   Map<String, BadgeDBISAR> chatBadges = {};
@@ -78,9 +79,7 @@ class BadgesHelper {
   }
 
   Future<void> _loadChatBadges() async {
-    String jsonString =
-        '{\"code\":\"000000\",\"message\":\"Success\",\"data\":[{\"identifies\":\"aa330e14a58c5ada40ee0cea7f4c3121\",\"badgeId\":\"00003f2b93a5a3888fff0d251d270ca82f757a0d5efd556070a036ca8be8e820\",\"badgeName\":\"Egg\",\"badgeImageUrl\":\"https://www.0xchat.com/ipfs/QmWvaqDS5m35577sXZDae7m6fEU6SidznSwdbWndAEmUPe\",\"thumbUrl\":\"https://www.0xchat.com/ipfs/QmXgDVHfUcK5dXeQDKyX7R4DggTTkL9snEc61SXMqSNy4e\",\"creator\":\"0xchat\",\"description\":\"Earn the 0xchat Egg badge with cumulative donations of 2.1k sats. Your humble beginning sets the stage for a journey of a thousand miles.\",\"benefits\":[\"4-digit 0xchat DNS\"],\"benefitsIcon\":[\"https://www.0xchat.com/ipfs/QmU1CAcYjoVJq1DeeN66Yn4T2WSH8n1e1piHJ9BbQ1giyK\"],\"creatorAbout\":\"0xchat is a decentralized chatting app built on Nostr protocol. It prioritizes privacy with features like private key login, encrypted private chats and contacts, coupled with an open communication platform through public channels.\",\"howToGet\":\"Cumulative donations of 2.1k sats\"},{\"identifies\":\"fafec3cd6d8c04ad424ca82ed54e9afb\",\"badgeId\":\"00000f0951248ace7d69be0ed136a069f1d1021443b03e81ffbabda4e53bda9e\",\"badgeName\":\"Hatchling\",\"badgeImageUrl\":\"https://www.0xchat.com/ipfs/QmUTQT3djB92u4UEBtcjup7dhRhPAsGc3uLeEhRcforuDH\",\"thumbUrl\":\"https://www.0xchat.com/ipfs/QmTchyNpgxC4gFZ2P3UEHDKBwMrta9WV8Xp9uy4rwdyWNC\",\"creator\":\"0xchat\",\"description\":\"Garner the 0xchat Hatchling badge with cumulative donations of 4.2k sats. Your continued support hatches new opportunities and fosters breakthroughs.\",\"benefits\":[\"4-digit 0xchat DNS\"],\"benefitsIcon\":[\"https://www.0xchat.com/ipfs/QmU1CAcYjoVJq1DeeN66Yn4T2WSH8n1e1piHJ9BbQ1giyK\"],\"creatorAbout\":\"0xchat is a decentralized chatting app built on Nostr protocol. It prioritizes privacy with features like private key login, encrypted private chats and contacts, coupled with an open communication platform through public channels.\",\"howToGet\":\"Cumulative donations of 4.2k sats\"},{\"identifies\":\"115e7ac9cb28ccc172b9fde8b5ef4a50\",\"badgeId\":\"00002295d1ef76eee9a8d8d04cb2009483acedb452814e040a949555210f928e\",\"badgeName\":\"Chick\",\"badgeImageUrl\":\"https://www.0xchat.com/ipfs/QmaosfucQmDWt7hHnb1qgcgN8xREzwnHzYu9ysVeBweE4p\",\"thumbUrl\":\"https://www.0xchat.com/ipfs/QmWoyYV1DxK1A89M89YMSNSVgj2MgxipTL1ZASLyMJ7a8w\",\"creator\":\"0xchat\",\"description\":\"Attain the 0xchat Chick badge with cumulative donations of 21k sats. Like a chick learning to walk, your contributions enable steady progress.\",\"benefits\":[\"3-digit 0xchat DNS\"],\"benefitsIcon\":[\"https://www.0xchat.com/ipfs/QmU1CAcYjoVJq1DeeN66Yn4T2WSH8n1e1piHJ9BbQ1giyK\"],\"creatorAbout\":\"0xchat is a decentralized chatting app built on Nostr protocol. It prioritizes privacy with features like private key login, encrypted private chats and contacts, coupled with an open communication platform through public channels.\",\"howToGet\":\"Cumulative donations of 21k sats\"},{\"identifies\":\"8aeb9c5cd440dadbdeb6daa4fd97b763\",\"badgeId\":\"00001e93260c429660e39abd7cec733f9f3d9278bb7b2bbd8a3fff98d94a02bb\",\"badgeName\":\"Adolescent\",\"badgeImageUrl\":\"https://www.0xchat.com/ipfs/QmU5SUQu3dGrPE4jibkBYuXsE1YLjRJuFUPv894dkqDaVr\",\"thumbUrl\":\"https://www.0xchat.com/ipfs/QmXaP3fPLLtXS5a9iZrXgAvLmpjtY7FjdLj4VXRhKTgVCE\",\"creator\":\"0xchat\",\"description\":\"Acquire the 0xchat Adolescent badge with cumulative donations of 42k sats. Your speedy commitment propels us towards our mission.\",\"benefits\":[\"3-digit 0xchat DNS\"],\"benefitsIcon\":[\"https://www.0xchat.com/ipfs/QmU1CAcYjoVJq1DeeN66Yn4T2WSH8n1e1piHJ9BbQ1giyK\"],\"creatorAbout\":\"0xchat is a decentralized chatting app built on Nostr protocol. It prioritizes privacy with features like private key login, encrypted private chats and contacts, coupled with an open communication platform through public channels.\",\"howToGet\":\"Cumulative donations of 42k sats\"},{\"identifies\":\"ceba4defe16e22c5ca2d9bedcaec430e\",\"badgeId\":\"00000f7a835198691c5cd6f024fdfcf2ab82ef147160bf966ba5706271baa003\",\"badgeName\":\"Mature\",\"badgeImageUrl\":\"https://www.0xchat.com/ipfs/QmNuPsPojLxiBbPVEwYGCi8BqYQEkTemD9QLT4wWaBUP2u\",\"thumbUrl\":\"https://www.0xchat.com/ipfs/QmcKPMr6JX1ewUJzX6vPWPsuE9zDPg1ZiXhecryi57Tcgt\",\"creator\":\"0xchat\",\"description\":\"Receive the 0xchat Mature badge with cumulative donations of 210k sats. Your significant support, like a full-grown ostrich, matures into incredible growth.\",\"benefits\":[\"2-digit 0xchat DNS\"],\"benefitsIcon\":[\"https://www.0xchat.com/ipfs/QmU1CAcYjoVJq1DeeN66Yn4T2WSH8n1e1piHJ9BbQ1giyK\"],\"creatorAbout\":\"0xchat is a decentralized chatting app built on Nostr protocol. It prioritizes privacy with features like private key login, encrypted private chats and contacts, coupled with an open communication platform through public channels.\",\"howToGet\":\"Cumulative donations of 210k sats\"},{\"identifies\":\"1882297acefba82b14317c7c8e8fe28d\",\"badgeId\":\"000001a0ec0e7908caed173a82f68e93f8d791f7a045da0bf622c7bee0b72dee\",\"badgeName\":\"Geeky\",\"badgeImageUrl\":\"https://www.0xchat.com/ipfs/QmVKujbWMQCN6LfW2MvMo6B6XPrPAoA1nuwPf5YiCJeiuB\",\"thumbUrl\":\"https://www.0xchat.com/ipfs/Qme4TT55HCUbrx6SAZd9uwt5uotzekxFfmYJBNVhvFGEgN\",\"creator\":\"0xchat\",\"description\":\"Obtain the 0xchat Geeky badge with cumulative donations of 420k sats. You are not just a superhero, but a geeky one, powering innovation across our work.\",\"benefits\":[\"2-digit 0xchat DNS\"],\"benefitsIcon\":[\"https://www.0xchat.com/ipfs/QmU1CAcYjoVJq1DeeN66Yn4T2WSH8n1e1piHJ9BbQ1giyK\"],\"creatorAbout\":\"0xchat is a decentralized chatting app built on Nostr protocol. It prioritizes privacy with features like private key login, encrypted private chats and contacts, coupled with an open communication platform through public channels.\",\"howToGet\":\"Cumulative donations of 420k sats\"}]}';
-    final List datas = json.decode(jsonString)['data'];
+    final List datas = json.decode(defaultBadgesString)['data'];
     for (var data in datas) {
       BadgeDBISAR badgeDB = BadgeDBISAR(
           badgeID: data['badgeId'],
@@ -187,8 +186,10 @@ class BadgesHelper {
         result.add(BadgesHelper.sharedInstance.badgeInfos[badgeId]);
       } else {
         final isar = DBISAR.sharedInstance.isar;
-        BadgeDBISAR? badgeDBISAR =
-            await isar.badgeDBISARs.filter().badgeIDEqualTo(badgeId).findFirst();
+        BadgeDBISAR? badgeDBISAR = await isar.badgeDBISARs
+            .filter()
+            .badgeIDEqualTo(badgeId)
+            .findFirst();
         if (badgeDBISAR != null) {
           BadgesHelper.sharedInstance.badgeInfos[badgeId] = badgeDBISAR;
           result.add(badgeDBISAR);
@@ -232,7 +233,8 @@ class BadgesHelper {
     Completer<List<BadgeAwardDBISAR?>?> completer =
         Completer<List<BadgeAwardDBISAR?>?>();
     Map<String, Event> badgeAwardEvents = {};
-    List<BadgeAwardDBISAR> badgeAwardsDB = [];
+    List<BadgeAwardDBISAR> badgeAwardsDB =
+        await getUserBadgesFromDB(userPubkey);
     Filter f = Filter(kinds: [8], p: [userPubkey]);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
@@ -291,16 +293,11 @@ class BadgesHelper {
     }
   }
 
-  static Future<List<BadgeAwardDBISAR?>?> getUserBadgesFromDB(
+  static Future<List<BadgeAwardDBISAR>> getUserBadgesFromDB(
       String userPubkey) async {
-    UserDBISAR? userDB = await Account.sharedInstance.getUserInfo(userPubkey);
-    if (userDB != null &&
-        userDB.badgesList != null &&
-        userDB.badgesList!.isNotEmpty) {
-      return await getBadgeAwardInfosFromDB(userDB.badgesList!, userPubkey);
-    } else {
-      return null;
-    }
+    final isar = DBISAR.sharedInstance.isar;
+    var query = isar.badgeAwardDBISARs.filter().badgeOwnerEqualTo(userPubkey);
+    return await query.findAll();
   }
 
   static BadgeAwardDBISAR badgeAwardToBadgeAwardDB(BadgeAward award) {
@@ -380,6 +377,7 @@ class BadgesHelper {
       String userPubkey) async {
     Completer<List<BadgeDBISAR?>?> completer = Completer<List<BadgeDBISAR?>?>();
     List<BadgeDBISAR?> result = [];
+
     Filter f =
         Filter(kinds: [30008], d: ['profile_badges'], authors: [userPubkey]);
     Connect.sharedInstance.addSubscription([f],
