@@ -193,7 +193,7 @@ extension Load on Moment {
         if (!completer.isCompleted) {
           NoteDBISAR? note = await loadNoteWithNoteId(noteId, reload: false);
           Connect.sharedInstance.closeConnects(tempRelays, RelayKind.temp);
-          if(!completer.isCompleted) completer.complete(note);
+          if (!completer.isCompleted) completer.complete(note);
         }
       }
     });
@@ -466,6 +466,10 @@ extension Load on Moment {
 
   Future<List<NoteDBISAR>?> loadHashTagsFromRelay(List<String> hashTags,
       {int limit = 30, int? until}) async {
+    List<NoteDBISAR> r = await DBISAR.sharedInstance.isar.noteDBISARs
+        .filter()
+        .anyOf(hashTags, (q, hashTag) => q.hashTagsElementEqualTo(hashTag))
+        .findAll();
     Completer<List<NoteDBISAR>?> completer = Completer<List<NoteDBISAR>?>();
     Filter f = Filter(kinds: [1], t: hashTags, until: until, limit: limit);
     Map<String, Event> result = {};
@@ -475,7 +479,6 @@ extension Load on Moment {
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        List<NoteDBISAR> r = [];
         for (Event event in result.values) {
           NoteDBISAR? noteDB;
           Note note = Nip1.decodeNote(event);
@@ -483,6 +486,7 @@ extension Load on Moment {
           saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
           r.add(noteDB);
         }
+        r.sort((a, b) => b.createAt.compareTo(a.createAt));
         if (!completer.isCompleted) completer.complete(r);
       }
     });
