@@ -109,7 +109,7 @@ class Channels {
           _receiveChannelMessages(event, relay);
           break;
         default:
-          debugPrint('channel unhandled message ${event.toJson()}');
+          debugPrintSynchronously('channel unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
@@ -323,7 +323,7 @@ class Channels {
           _receiveChannelMessages(event, relay);
           break;
         default:
-          debugPrint('unhandled message $event');
+          debugPrintSynchronously('unhandled message $event');
           break;
       }
     }, eoseCallBack: (String requestId, OKEvent ok, String relay,

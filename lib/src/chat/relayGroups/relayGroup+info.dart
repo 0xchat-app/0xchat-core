@@ -168,7 +168,7 @@ extension EInfo on RelayGroup {
         .connectRelays(relays, relayKind: RelayKind.temp);
     Completer<List<RelayGroupDBISAR>> completer =
         Completer<List<RelayGroupDBISAR>>();
-    Filter f = Filter(kinds: [39000]);
+    Filter f = Filter(kinds: [39000], limit: 100);
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) async {
       RelayGroupDBISAR groupDB = handleGroupMetadata(event, relay);

@@ -39,7 +39,7 @@ class DBISAR {
         ? await getApplicationDocumentsDirectory()
         : await getLibraryDirectory();
     var dbPath = directory.path;
-    debugPrint('DBISAR open: $dbPath, pubkey: $pubkey');
+    debugPrintSynchronously('DBISAR open: $dbPath, pubkey: $pubkey');
     if(Isar.getInstance(pubkey) != null) return;
     isar = await Isar.open(
       schemas,

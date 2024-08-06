@@ -83,7 +83,7 @@ class RelayGroupDB extends DBObject {
           groupAdminsJson.map((json) => GroupAdmin.fromJson(json)).toList();
       return admins;
     } catch (e) {
-      debugPrint('stringToGroupAdmins error: $e');
+      debugPrintSynchronously('stringToGroupAdmins error: $e');
       return [];
     }
   }

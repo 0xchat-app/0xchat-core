@@ -453,7 +453,7 @@ class Contacts {
                   .handleReactionEvent(innerEvent, relay, true);
               break;
             default:
-              debugPrint('contacts unhandled message ${innerEvent.toJson()}');
+              debugPrintSynchronously('contacts unhandled message ${innerEvent.toJson()}');
               break;
           }
         }

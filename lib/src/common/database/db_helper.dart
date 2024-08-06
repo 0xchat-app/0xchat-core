@@ -68,7 +68,7 @@ class DBHelper {
       primaryKey = primaryKey.substring(0, primaryKey.length - 1);
       primaryKey = "$primaryKey)";
     }
-    debugPrint("primaryKey===>$primaryKey");
+    debugPrintSynchronously("primaryKey===>$primaryKey");
     List<String?> ignoreList = [];
     if (classMirror.staticMembers.keys.contains("ignoreKey")) {
       try {
@@ -109,7 +109,7 @@ class DBHelper {
     }
     sql = sql.substring(0, sql.length - 1);
     sql = "$sql)";
-    debugPrint("sql=====>$sql");
+    debugPrintSynchronously("sql=====>$sql");
     return sql;
   }
 
@@ -151,13 +151,13 @@ class DBHelper {
       return false;
     }
     String sql = DBHelper.generatorTableSql(type);
-    debugPrint("sql");
+    debugPrintSynchronously("sql");
     if (sql.isNotEmpty) {
       try {
         await db.execute(sql);
         return true;
       } catch (_) {
-        debugPrint("create ${objectMirror.simpleName} failure");
+        debugPrintSynchronously("create ${objectMirror.simpleName} failure");
         return false;
       }
     }

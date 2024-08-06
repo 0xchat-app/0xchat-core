@@ -30,7 +30,7 @@ class NpubCash {
         return token;
       }
     } else {
-      debugPrint('Request failed with status: ${response.statusCode}');
+      debugPrintSynchronously('Request failed with status: ${response.statusCode}');
     }
     return null;
   }

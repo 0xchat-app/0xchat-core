@@ -260,7 +260,7 @@ class RelayGroup {
           handleGroupMembers(event, relay);
           break;
         default:
-          debugPrint('relaygroup unhandled message ${event.toJson()}');
+          debugPrintSynchronously('relaygroup unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
@@ -337,7 +337,7 @@ class RelayGroup {
           handleGroupMembers(event, relay);
           break;
         default:
-          debugPrint('relaygroup unhandled message ${event.toJson()}');
+          debugPrintSynchronously('relaygroup unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {

@@ -215,7 +215,7 @@ class Connect {
 
   Future<void> connect(String relay,
       {RelayKind relayKind = RelayKind.general}) async {
-    debugPrint('connect to $relay, kind: ${relayKind.name}');
+    debugPrintSynchronously('connect to $relay, kind: ${relayKind.name}');
     if (relay.isEmpty) return;
 
     List<RelayKind> relayKinds = webSockets[relay]?.relayKinds ?? [relayKind];
@@ -227,7 +227,7 @@ class Connect {
     if (webSockets[relay]?.connectStatus == 0 ||
         webSockets[relay]?.connectStatus == 1) return;
 
-    debugPrint("connecting... $relay");
+    debugPrintSynchronously("connecting... $relay");
     webSockets[relay] = ISocket(null, 0, relayKinds);
     try {
       WebSocket? socket;
@@ -236,7 +236,7 @@ class Connect {
         socket.done.then((dynamic _) => _onDisconnected(relay, relayKind));
         _listenEvent(socket, relay, relayKind);
         webSockets[relay] = ISocket(socket, 1, relayKinds);
-        debugPrint("$relay connection initialized");
+        debugPrintSynchronously("$relay connection initialized");
         _setConnectStatus(relay, 1);
       }
     } catch (_) {
@@ -285,7 +285,7 @@ class Connect {
   }
 
   Future closeConnect(String relay) async {
-    debugPrint('closeConnect ${webSockets[relay]?.socket}');
+    debugPrintSynchronously('closeConnect ${webSockets[relay]?.socket}');
     final socket = webSockets[relay]?.socket;
     webSockets.remove(relay);
     await socket?.close();
@@ -343,13 +343,13 @@ class Connect {
       /// Send a request message to the WebSocket server
       _send(subscriptionString, toRelays: [relay]);
 
-      debugPrint('$subscriptionString, $relay');
+      debugPrintSynchronously('$subscriptionString, $relay');
     }
     return requestsId;
   }
 
   Future closeSubscription(String subscriptionId, String relay) async {
-    debugPrint(Close(subscriptionId).serialize());
+    debugPrintSynchronously(Close(subscriptionId).serialize());
     if (subscriptionId.isNotEmpty) {
       _send(Close(subscriptionId).serialize(), toRelays: [relay]);
 
@@ -388,7 +388,7 @@ class Connect {
     List<String> rs = (toRelays == null || toRelays.isEmpty)
         ? relays(relayKind: relayKind)
         : List.from(toRelays);
-    debugPrint(
+    debugPrintSynchronously(
         'send event toRelays: ${jsonEncode(rs)}, eventString: $eventString');
     Sends sends = Sends(
         generate64RandomHexChars(),
@@ -460,7 +460,7 @@ class Connect {
         _handleAuth(m.message, relay);
         break;
       default:
-        debugPrint('Received message not supported: $message');
+        debugPrintSynchronously('Received message not supported: $message');
         break;
     }
   }
@@ -487,7 +487,7 @@ class Connect {
   }
 
   Future<void> _handleEvent(Event event, String relay) async {
-    debugPrint(
+    debugPrintSynchronously(
         'Received event, subscriptionId: ${event.subscriptionId}, ${event.toJson()}');
     if (EventCache.sharedInstance.cacheIds.contains(event.id)) {
       EventCache.sharedInstance.receiveEvent(event, relay);
@@ -505,7 +505,7 @@ class Connect {
   }
 
   Future<void> _handleEOSE(String eose, String relay) async {
-    debugPrint('receive EOSE: $eose, $relay');
+    debugPrintSynchronously('receive EOSE: $eose, $relay');
     String subscriptionId = jsonDecode(eose)[0];
     String requestsMapKey = subscriptionId + relay;
     if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
@@ -525,7 +525,7 @@ class Connect {
   }
 
   void _handleCLOSED(Closed closed, String relay) {
-    debugPrint('receive closed: ${closed.serialize()}, $relay');
+    debugPrintSynchronously('receive closed: ${closed.serialize()}, $relay');
     String subscriptionId = closed.subscriptionId;
     String requestsMapKey = subscriptionId + relay;
     if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
@@ -549,7 +549,7 @@ class Connect {
   }
 
   void _handleNotice(String notice, String relay) {
-    debugPrint('receive notice: $notice, $relay');
+    debugPrintSynchronously('receive notice: $notice, $relay');
     String n = jsonDecode(notice)[0];
 
     List<String> requestsMapKeys =
@@ -568,12 +568,12 @@ class Connect {
   }
 
   Future<void> _handleOk(OKEvent ok, String relay) async {
-    debugPrint('receive ok: ${ok.serialize()}, $relay');
+    debugPrintSynchronously('receive ok: ${ok.serialize()}, $relay');
     // check auth response
     if (auths[relay]?.eventId == ok.eventId) {
       if (ok.status) {
         for (var data in auths[relay]?.resendDatas ?? []) {
-          debugPrint('re-send: $data');
+          debugPrintSynchronously('re-send: $data');
           _send(data, toRelays: [relay]);
         }
       }
@@ -619,7 +619,7 @@ class Connect {
   }
 
   void _handleAuth(Auth auth, String relay) {
-    debugPrint('receive auth: ${auth.challenge}');
+    debugPrintSynchronously('receive auth: ${auth.challenge}');
     if (!auths.containsKey(relay)) {
       auths[relay] = AuthData(auth.challenge, '', []);
     } else if (auths[relay]?.challenge != auth.challenge) {
@@ -652,7 +652,7 @@ class Connect {
         Account.sharedInstance.currentPrivkey);
     var authJson = Nip42.authString(event);
     auths[relay]!.eventId = event.id;
-    debugPrint('send auth: $authJson');
+    debugPrintSynchronously('send auth: $authJson');
     _send(authJson, toRelays: [relay]);
   }
 
@@ -668,10 +668,10 @@ class Connect {
     socket.listen((message) async {
       await _handleMessage(message, relay);
     }, onDone: () async {
-      debugPrint("connect aborted");
+      debugPrintSynchronously("connect aborted");
       await _reConnectToRelay(relay, relayKind);
     }, onError: (e) async {
-      debugPrint('Server error: $e');
+      debugPrintSynchronously('Server error: $e');
       await _reConnectToRelay(relay, relayKind);
     });
   }
@@ -685,7 +685,7 @@ class Connect {
       }
       return await WebSocket.connect(relay);
     } catch (e) {
-      debugPrint("Error! can not connect WS connectWs $e relay:$relay");
+      debugPrintSynchronously("Error! can not connect WS connectWs $e relay:$relay");
       _setConnectStatus(relay, 3); // closed
       // await Future.delayed(Duration(milliseconds: 30000));
       // if (webSockets.containsKey(relay)) {
@@ -695,7 +695,7 @@ class Connect {
   }
 
   Future<void> _onDisconnected(String relay, RelayKind relayKind) async {
-    debugPrint("_onDisconnected");
+    debugPrintSynchronously("_onDisconnected");
     return await _reConnectToRelay(relay, relayKind);
   }
 }

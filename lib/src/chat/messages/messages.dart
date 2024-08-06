@@ -58,7 +58,7 @@ class Messages {
           _handleMuteUserEvent(event);
           break;
         default:
-          debugPrint('messages unhandled message ${event.toJson()}');
+          debugPrintSynchronously('messages unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (String requestId, OKEvent ok, String relay,
@@ -97,7 +97,7 @@ class Messages {
           handleZapRecordEvent(event);
           break;
         default:
-          debugPrint('unhandled message $event');
+          debugPrintSynchronously('unhandled message $event');
           break;
       }
     },
