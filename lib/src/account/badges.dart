@@ -360,17 +360,21 @@ class BadgesHelper {
           Account.sharedInstance.currentPrivkey);
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         if (ok.status) {
-          UserDBISAR? userDB = Account.sharedInstance.me;
-          userDB!.badges = jsonEncode(badgeIds);
-          await Account.saveUserToDB(userDB);
+          addProfileBadgesToDB(badgeIds);
         }
         if (!completer.isCompleted) completer.complete(ok);
       });
-
-      /// SYNC TO DB
-      syncProfileBadgesToDB(Account.sharedInstance.currentPubkey, badgeIds);
     }
     return completer.future;
+  }
+
+  static Future<void> addProfileBadgesToDB(List<String> badgeIds) async {
+    UserDBISAR? userDB = Account.sharedInstance.me;
+    List<String> exitBadges = jsonDecode(userDB!.badges ?? '[]');
+    Set<String> exitBadgesSet = Set.from(exitBadges);
+    exitBadgesSet.addAll(badgeIds);
+    userDB.badges = jsonEncode(exitBadgesSet.toList());
+    await Account.saveUserToDB(userDB);
   }
 
   static Future<List<BadgeDBISAR?>?> getAllProfileBadgesFromRelay(
