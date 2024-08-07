@@ -243,7 +243,8 @@ class MessageDBISAR {
       }
       return {'contentType': 'text', 'content': content};
     } catch (e) {
-      debugPrintSynchronously('decodeContent fail: $content, error msg: ${e.toString()}');
+      debugPrintSynchronously(
+          'decodeContent fail: $content, error msg: ${e.toString()}');
       MessageType type = _identifyUrl(content);
       return {'contentType': messageTypeToString(type), 'content': content};
     }
@@ -319,8 +320,9 @@ class MessageDBISAR {
     } else if (event.kind == 14) {
       message = await Nip17.decodeSealedGossipDM(event, receiver);
       if (message?.groupId?.isNotEmpty == true) {
-        Groups.sharedInstance.createPrivateGroup(message!.sender,
-            message.groupId!, message.subject, message.members);
+        Groups.sharedInstance.createPrivateGroup(
+            message!.sender, message.groupId!, message.subject, message.members,
+            createAt: event.createdAt);
         chatType = 1;
       }
     }

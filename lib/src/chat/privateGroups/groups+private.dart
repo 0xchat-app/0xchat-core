@@ -27,15 +27,16 @@ extension PrivateGroups on Groups {
         .closeConnects(currentGroupRelays[groupId] ?? [], RelayKind.relayGroup);
   }
 
-  Future<GroupDBISAR?> createPrivateGroup(String sender, String groupId,
-      String? name, List<String>? members) async {
+  Future<GroupDBISAR?> createPrivateGroup(
+      String sender, String groupId, String? name, List<String>? members,
+      {int createAt = 0}) async {
     if (members == null || members.isEmpty) return null;
     members = members.toSet().toList();
     if (groupId.isEmpty) groupId = ChatRoom.generateChatRoomID(members);
     if (myGroups.containsKey(groupId)) {
       myGroups[groupId]?.members = members;
       if (name != null && name.isNotEmpty && name != myGroups[groupId]?.name) {
-        updatePrivateGroupName(sender, groupId, name ?? '');
+        updatePrivateGroupName(sender, groupId, name, createAt: createAt);
       }
     } else {
       // add group
@@ -55,15 +56,16 @@ extension PrivateGroups on Groups {
   }
 
   Future<OKEvent> updatePrivateGroupName(
-      String sender, String groupId, String name) async {
+      String sender, String groupId, String name,
+      {int createAt = 0}) async {
     GroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB != null) {
       groupDB.name = name;
       syncGroupToDB(groupDB);
       UserDBISAR? user = await Account.sharedInstance.getUserInfo(sender);
-      sendGroupMessage(groupId, MessageType.system,
+      sendPrivateGroupMessage(groupId, MessageType.system,
           "${user?.name} update group name to $name",
-          actionsType: 'updateName');
+          local: true, createAt: createAt);
       return OKEvent(groupId, true, '');
     } else {
       return OKEvent(groupId, false, 'group not exit');
@@ -72,7 +74,10 @@ extension PrivateGroups on Groups {
 
   Future<Event?> getSendPrivateGroupMessageEvent(
       String groupId, MessageType type, String content,
-      {String? source, String? replyMessage, String? decryptSecret}) async {
+      {String? source,
+      String? replyMessage,
+      String? decryptSecret,
+      int createAt = 0}) async {
     GroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB == null) return null;
     List<String>? members = groupDB.members;
@@ -86,7 +91,8 @@ extension PrivateGroups on Groups {
         subContent: MessageDBISAR.getSubContent(type, content,
             decryptSecret: decryptSecret),
         members: members,
-        subject: groupDB.name);
+        subject: groupDB.name,
+        createAt: createAt);
     return event;
   }
 
@@ -96,12 +102,14 @@ extension PrivateGroups on Groups {
       String? replyMessage,
       Event? event,
       bool local = false,
-      String? decryptSecret}) async {
+      String? decryptSecret,
+      int createAt = 0}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= await getSendPrivateGroupMessageEvent(groupId, type, content,
         source: source,
         replyMessage: replyMessage,
-        decryptSecret: decryptSecret);
+        decryptSecret: decryptSecret,
+        createAt: createAt);
 
     MessageDBISAR messageDB = MessageDBISAR(
         messageId: event!.id,
