@@ -8,6 +8,7 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 typedef MessageActionsCallBack = void Function(MessageDBISAR);
+typedef MessagesDeleteCallBack = void Function(List<String>);
 
 class Messages {
   /// singleton
@@ -22,6 +23,7 @@ class Messages {
   String messageRequestsId = '';
   String messagesActionsRequestsId = '';
   MessageActionsCallBack? actionsCallBack;
+  MessagesDeleteCallBack? deleteCallBack;
 
   Future<void> init() async {
     privkey = Account.sharedInstance.currentPrivkey;
@@ -58,7 +60,8 @@ class Messages {
           _handleMuteUserEvent(event);
           break;
         default:
-          debugPrintSynchronously('messages unhandled message ${event.toJson()}');
+          debugPrintSynchronously(
+              'messages unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (String requestId, OKEvent ok, String relay,
@@ -119,12 +122,14 @@ class Messages {
   Future<void> handleReactionEvent(Event event) async {
     Reactions reactions = Nip25.decode(event);
     NoteDBISAR reactionsNoteDB = NoteDBISAR.noteDBFromReactions(reactions);
-    Moment.sharedInstance.saveNoteToDB(reactionsNoteDB, ConflictAlgorithm.ignore);
+    Moment.sharedInstance
+        .saveNoteToDB(reactionsNoteDB, ConflictAlgorithm.ignore);
     final reactedMessageDB =
         await loadMessageDBFromDB(reactions.reactedEventId);
     if (reactedMessageDB == null) return;
     reactedMessageDB.reactionEventIds ??= [];
-    reactedMessageDB.reactionEventIds = List.from(reactedMessageDB.reactionEventIds!);
+    reactedMessageDB.reactionEventIds =
+        List.from(reactedMessageDB.reactionEventIds!);
     if (!reactedMessageDB.reactionEventIds!.contains(reactions.id)) {
       reactedMessageDB.reactionEventIds!.add(reactions.id);
       await saveMessageToDB(reactedMessageDB);
@@ -427,6 +432,7 @@ class Messages {
             .anyOf(messageIds, (q, messageId) => q.messageIdEqualTo(messageId))
             .deleteAll();
       });
+      Messages.sharedInstance.deleteCallBack?.call(messageIds);
     }
   }
 
