@@ -9,6 +9,8 @@ class EventCache {
   static final EventCache sharedInstance = EventCache._internal();
 
   Set<String> cacheIds = {};
+  //cache kinds
+  List<int> kinds = [4, 1059, 42, 1, 6, 7, 9, 10, 11, 12, 9735];
 
   Future<void> loadAllEventsFromDB() async {
     List<EventDBISAR> eventDBs =
@@ -40,7 +42,7 @@ class EventCache {
   Future<void> receiveEvent(Event event, String relay) async {
     if (cacheIds.contains(event.id)) return;
     cacheIds.add(event.id);
-    if (event.kind != 1059 && event.kind != 4) return;
+    if(!kinds.contains(event.kind)) return;
     EventDBISAR? eventDB = EventDBISAR(eventId: event.id);
     eventDB.eventReceiveStatus
         .add(EventStatusISAR(relay: relay, status: true, message: ''));

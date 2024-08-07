@@ -289,12 +289,13 @@ class Account {
   void logout() {
     Contacts.sharedInstance.allContacts.clear();
     Contacts.sharedInstance.secretSessionMap.clear();
-    Channels.sharedInstance.channels.clear();
     Channels.sharedInstance.myChannels.clear();
+    Groups.sharedInstance.myGroups.clear();
+    Groups.sharedInstance.currentGroupRelays.clear();
+    RelayGroup.sharedInstance.myGroups.clear();
+    RelayGroup.sharedInstance.groupRelays.clear();
     Relays.sharedInstance.relays.clear();
     NotificationHelper.sharedInstance.logout();
-    me?.defaultPassword = '';
-    syncMe();
     me = null;
     currentPubkey = '';
     currentPrivkey = '';
