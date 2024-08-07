@@ -156,6 +156,10 @@ extension EInfo on RelayGroup {
         .findAll();
   }
 
+  Future<List<RelayGroupDBISAR>> searchAllGroupsFromRelays() async {
+    return await searchGroupsFromRelays(groupRelays);
+  }
+
   Future<List<RelayGroupDBISAR>> searchGroupsFromRelays(
       List<String> relays) async {
     if (relays.isEmpty) return [];
