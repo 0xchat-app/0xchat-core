@@ -590,11 +590,11 @@ class Channels {
   List<ChannelDBISAR>? fuzzySearch(String keyword) {
     if (keyword.isNotEmpty) {
       RegExp regex = RegExp(keyword, caseSensitive: false);
-      List<ChannelDBISAR> filteredFriends = channels.values
+      List<ChannelDBISAR> filteredChannels = channels.values
           .where((channel) =>
               regex.hasMatch(channel.name!) || regex.hasMatch(channel.about!))
           .toList();
-      return filteredFriends;
+      return filteredChannels;
     }
     return null;
   }
