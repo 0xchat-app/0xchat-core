@@ -286,7 +286,8 @@ class Account {
     return null;
   }
 
-  void logout() {
+  Future<void> logout() async {
+    await Connect.sharedInstance.closeAllConnects();
     Contacts.sharedInstance.allContacts.clear();
     Contacts.sharedInstance.secretSessionMap.clear();
     Channels.sharedInstance.myChannels.clear();
