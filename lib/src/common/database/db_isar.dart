@@ -40,11 +40,11 @@ class DBISAR {
         : await getLibraryDirectory();
     var dbPath = directory.path;
     debugPrintSynchronously('DBISAR open: $dbPath, pubkey: $pubkey');
-    if(Isar.getInstance(pubkey) != null) return;
-    isar = await Isar.open(
-      schemas,
-      directory: dbPath,
-      name: pubkey,
-    );
+    isar = Isar.getInstance(pubkey) ??
+        await Isar.open(
+          schemas,
+          directory: dbPath,
+          name: pubkey,
+        );
   }
 }
