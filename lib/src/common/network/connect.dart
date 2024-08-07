@@ -279,7 +279,7 @@ class Connect {
   }
 
   Future closeAllConnects() async {
-    await Future.forEach(webSockets.keys, (relay) async {
+    await Future.forEach(List.from(webSockets.keys), (relay) async {
       await closeConnect(relay);
     });
   }
