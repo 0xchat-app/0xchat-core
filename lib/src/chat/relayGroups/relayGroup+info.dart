@@ -156,17 +156,21 @@ extension EInfo on RelayGroup {
         .findAll();
   }
 
-  Future<List<RelayGroupDBISAR>> searchAllGroupsFromRelays() async {
-    return await searchGroupsFromRelays(groupRelays);
+  Future<List<RelayGroupDBISAR>> searchAllGroupsFromRelays(
+      GroupMetadataUpdatedCallBack? groupCallback) async {
+    Set<String> relays = Set.from(groupRelays);
+    relays.addAll(Relays.sharedInstance.recommendGroupRelays);
+    return await searchGroupsFromRelays(relays.toList(), groupCallback);
   }
 
   Future<List<RelayGroupDBISAR>> searchGroupsFromRelays(
-      List<String> relays) async {
+      List<String> relays, GroupMetadataUpdatedCallBack? groupCallback) async {
     if (relays.isEmpty) return [];
     Map<String, RelayGroupDBISAR> result = {};
     List<RelayGroupDBISAR> resultFromDB = await searchGroupsFromDB(relays);
     for (var db in resultFromDB) {
       result[db.groupId] = db;
+      groupCallback?.call(db);
     }
     await Connect.sharedInstance
         .connectRelays(relays, relayKind: RelayKind.temp);
@@ -177,6 +181,7 @@ extension EInfo on RelayGroup {
         eventCallBack: (event, relay) async {
       RelayGroupDBISAR groupDB = handleGroupMetadata(event, relay);
       result[groupDB.groupId] = groupDB;
+      groupCallback?.call(groupDB);
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty && !completer.isCompleted) {
