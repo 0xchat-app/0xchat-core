@@ -38,10 +38,10 @@ class EventCache {
   }
 
   Future<void> receiveEvent(Event event, String relay) async {
-    if(cacheIds.contains(event.id)) return;
+    if (cacheIds.contains(event.id)) return;
     cacheIds.add(event.id);
-    EventDBISAR? eventDB = await loadEventFromDB(event.id);
-    eventDB ??= EventDBISAR(eventId: event.id, rawData: event.serialize());
+    if (event.kind != 1059 && event.kind != 4) return;
+    EventDBISAR? eventDB = EventDBISAR(eventId: event.id);
     eventDB.eventReceiveStatus
         .add(EventStatusISAR(relay: relay, status: true, message: ''));
     await saveEventToDB(eventDB);
@@ -49,8 +49,9 @@ class EventCache {
 
   Future<void> sendEvent(
       Event event, String relay, bool status, String message) async {
+    cacheIds.add(event.id);
     EventDBISAR? eventDB = await loadEventFromDB(event.id);
-    eventDB ??= EventDBISAR(eventId: event.id, rawData: event.serialize());
+    eventDB ??= EventDBISAR(eventId: event.id);
     eventDB.eventSendStatus
         .add(EventStatusISAR(relay: relay, status: status, message: message));
     await saveEventToDB(eventDB);

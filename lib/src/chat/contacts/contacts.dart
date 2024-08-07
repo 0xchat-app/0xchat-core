@@ -59,7 +59,7 @@ class Contacts {
   int lastFriendListUpdateTime = 0;
   List<String>? blockList;
   Map<String, CallMessage> callMessages = {};
-  int maxLimit = 1024;
+  int maxLimit = 2048;
   int offset2 = 24 * 60 * 60 * 2;
 
   /// callbacks
@@ -293,6 +293,10 @@ class Contacts {
       Map? map = await Nip51.fromContent(list, privkey, pubkey);
       if (map != null) {
         List<People> friendsList = map['people'];
+        for(var p in friendsList){
+          allContacts[p.pubkey] = UserDBISAR(pubKey: p.pubkey);
+        }
+        contactUpdatedCallBack?.call();
         await Future.forEach(friendsList, (p) async {
           UserDBISAR? user = await Account.sharedInstance.getUserInfo(p.pubkey);
           if (user != null) {
@@ -424,7 +428,6 @@ class Contacts {
         updateFriendMessageTime(event.createdAt, relay);
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       } else if (event.kind == 1059) {
-        await Messages.saveMessageToDB(MessageDBISAR(messageId: event.id));
         Event? innerEvent = await decodeNip24Event(event);
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
@@ -453,7 +456,8 @@ class Contacts {
                   .handleReactionEvent(innerEvent, relay, true);
               break;
             default:
-              debugPrintSynchronously('contacts unhandled message ${innerEvent.toJson()}');
+              debugPrintSynchronously(
+                  'contacts unhandled message ${innerEvent.toJson()}');
               break;
           }
         }

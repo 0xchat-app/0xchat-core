@@ -318,9 +318,7 @@ class Account {
 
   static Future<Event?> loadEvent(String eventId,
       {List<String>? relays}) async {
-    EventDBISAR? eventDB =
-        await EventCache.sharedInstance.loadEventFromDB(eventId);
-    if (eventDB != null) return Event.deserialize(jsonDecode(eventDB.rawData), verify: false);
+    EventCache.sharedInstance.cacheIds.remove(eventId);
     Completer<Event?> completer = Completer<Event?>();
     Timer(Duration(seconds: 15), () {
       if (!completer.isCompleted) {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:isar/isar.dart';
 
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
@@ -151,26 +152,24 @@ extension AccountProfile on Account {
 
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      UserDBISAR? db = users[event.pubkey];
-      if (db == null) return;
+      String p = event.pubkey;
+      UserDBISAR db = users[p] ?? UserDBISAR(pubKey: p);
       if (event.kind == 0) {
-        users[event.pubkey] = _handleKind0Event(db, event)!;
+        users[p] = _handleKind0Event(db, event)!;
       }
       if (event.kind == 10050) {
-        users[event.pubkey] = _handleKind10050Event(db, event)!;
+        users[p] = _handleKind10050Event(db, event)!;
       }
       if (event.kind == 30008) {
-        users[event.pubkey] = _handleKind30008Event(db, event)!;
+        users[p] = _handleKind30008Event(db, event)!;
       }
+      userCache[p]?.value = users[p]!;
+      userCache[p]?.notifyListeners();
+      pQueue.remove(p);
+      Account.saveUserToDB(users[p]!);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
-        for (var db in users.values) {
-          await Account.saveUserToDB(db);
-          userCache[db.pubKey]?.value = db;
-          userCache[db.pubKey]?.notifyListeners();
-          pQueue.remove(db.pubKey);
-        }
         if (!completer.isCompleted) completer.complete();
       }
     });
