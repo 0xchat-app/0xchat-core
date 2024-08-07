@@ -403,11 +403,11 @@ class RelayGroup {
   List<RelayGroupDBISAR>? fuzzySearch(String keyword) {
     if (keyword.isNotEmpty) {
       RegExp regex = RegExp(keyword, caseSensitive: false);
-      List<RelayGroupDBISAR> groups = myGroups.values
+      List<RelayGroupDBISAR> result = groups.values
           .where((group) =>
               regex.hasMatch(group.name) || regex.hasMatch(group.about))
           .toList();
-      return groups;
+      return result;
     }
     return null;
   }
