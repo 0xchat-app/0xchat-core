@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
 import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/chat/messages/model/messageDB_isar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:isar/isar.dart';
@@ -11,6 +10,7 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 
 typedef GroupsUpdatedCallBack = void Function();
 typedef GroupMessageCallBack = void Function(MessageDBISAR);
+typedef GroupMessageUpdateCallBack = void Function(MessageDBISAR, String);
 
 class Groups {
   /// singleton
@@ -32,6 +32,7 @@ class Groups {
 
   GroupsUpdatedCallBack? myGroupsUpdatedCallBack;
   GroupMessageCallBack? groupMessageCallBack;
+  GroupMessageUpdateCallBack? groupMessageUpdateCallBack;
 
   Future<void> init({GroupsUpdatedCallBack? callBack}) async {
     privkey = Account.sharedInstance.currentPrivkey;

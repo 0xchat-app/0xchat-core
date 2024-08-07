@@ -13,7 +13,9 @@ typedef SecretChatRejectCallBack = void Function(SecretSessionDBISAR);
 typedef SecretChatUpdateCallBack = void Function(SecretSessionDBISAR);
 typedef SecretChatCloseCallBack = void Function(SecretSessionDBISAR);
 typedef PrivateChatMessageCallBack = void Function(MessageDBISAR);
+typedef PrivateChatMessageUpdateCallBack = void Function(MessageDBISAR, String);
 typedef SecretChatMessageCallBack = void Function(MessageDBISAR);
+typedef SecretChatMessageUpdateCallBack = void Function(MessageDBISAR, String);
 typedef ContactUpdatedCallBack = void Function();
 typedef OfflinePrivateMessageFinishCallBack = void Function();
 
@@ -69,7 +71,9 @@ class Contacts {
   SecretChatUpdateCallBack? secretChatUpdateCallBack;
   SecretChatCloseCallBack? secretChatCloseCallBack;
   SecretChatMessageCallBack? secretChatMessageCallBack;
+  SecretChatMessageUpdateCallBack? secretChatMessageUpdateCallBack;
   PrivateChatMessageCallBack? privateChatMessageCallBack;
+  PrivateChatMessageUpdateCallBack? privateChatMessageUpdateCallBack;
   ContactUpdatedCallBack? contactUpdatedCallBack;
   OfflinePrivateMessageFinishCallBack? offlinePrivateMessageFinishCallBack;
   OfflinePrivateMessageFinishCallBack? offlineSecretMessageFinishCallBack;
@@ -293,7 +297,7 @@ class Contacts {
       Map? map = await Nip51.fromContent(list, privkey, pubkey);
       if (map != null) {
         List<People> friendsList = map['people'];
-        for(var p in friendsList){
+        for (var p in friendsList) {
           allContacts[p.pubkey] = UserDBISAR(pubKey: p.pubkey);
         }
         contactUpdatedCallBack?.call();
@@ -496,7 +500,8 @@ class Contacts {
       int? expiration,
       bool local = false,
       String? source,
-      String? decryptSecret}) async {
+      String? decryptSecret,
+      String? replaceMessageId}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= await getSendMessageEvent(toPubkey, replyId, type, content,
         kind: kind,
@@ -506,35 +511,45 @@ class Contacts {
     expiration = expiration != null
         ? (expiration + currentUnixTimestampSeconds())
         : null;
-    MessageDBISAR messageDB = MessageDBISAR(
-        messageId: event?.innerEvent?.id ?? event!.id,
-        sender: pubkey,
-        receiver: toPubkey,
-        groupId: '',
-        kind: event!.kind,
-        tags: jsonEncode(event.tags),
-        content: event.content,
-        replyId: replyId,
-        createTime: currentUnixTimestampSeconds(),
-        decryptContent: content,
-        type: MessageDBISAR.messageTypeToString(type),
-        status: 0,
-        plaintEvent: jsonEncode(event),
-        chatType: 0,
-        expiration: expiration,
-        decryptSecret: decryptSecret,
-        giftWrappedId: event.id);
-    privateChatMessageCallBack?.call(messageDB);
+    late MessageDBISAR messageDB;
+    if (replaceMessageId != null) {
+      messageDB =
+          await Messages.sharedInstance.loadMessageDBFromDB(replaceMessageId) ??
+              MessageDBISAR();
+      messageDB.messageId = event?.innerEvent?.id ?? event!.id;
+      privateChatMessageUpdateCallBack?.call(messageDB, replaceMessageId);
+    } else {
+      messageDB = MessageDBISAR(
+          messageId: event?.innerEvent?.id ?? event!.id,
+          sender: pubkey,
+          receiver: toPubkey,
+          groupId: '',
+          kind: event!.kind,
+          tags: jsonEncode(event.tags),
+          content: event.content,
+          replyId: replyId,
+          createTime: currentUnixTimestampSeconds(),
+          decryptContent: content,
+          type: MessageDBISAR.messageTypeToString(type),
+          status: 0,
+          plaintEvent: jsonEncode(event),
+          chatType: 0,
+          expiration: expiration,
+          decryptSecret: decryptSecret,
+          giftWrappedId: event.id);
+      privateChatMessageCallBack?.call(messageDB);
+    }
     await Messages.saveMessageToDB(messageDB);
 
     if (local) {
       if (!completer.isCompleted) {
-        completer.complete(OKEvent(event.innerEvent?.id ?? event.id, true, ''));
+        completer
+            .complete(OKEvent(event!.innerEvent?.id ?? event.id, true, ''));
       }
     } else {
       UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(toPubkey);
       List<String>? dmRelays = toUser?.dmRelayList;
-      Connect.sharedInstance.sendEvent(event, toRelays: dmRelays,
+      Connect.sharedInstance.sendEvent(event!, toRelays: dmRelays,
           sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
         await Messages.saveMessageToDB(messageDB,

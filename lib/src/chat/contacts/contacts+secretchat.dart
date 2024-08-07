@@ -81,7 +81,7 @@ extension SecretChat on Contacts {
 
   static Future<bool> deleteSecretSessionFromDB(String sessionId) async {
     final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async{
+    await isar.writeTxn(() async {
       await isar.secretSessionDBISARs.deleteBySessionId(sessionId);
     });
     return true;
@@ -413,7 +413,8 @@ extension SecretChat on Contacts {
       bool local = false,
       int? expiration,
       String? source,
-      String? decryptSecret}) async {
+      String? decryptSecret,
+      String? replaceMessageId}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     SecretSessionDBISAR? sessionDB = secretSessionMap[sessionId];
@@ -426,33 +427,43 @@ extension SecretChat on Contacts {
       expiration = expiration != null
           ? (expiration + currentUnixTimestampSeconds())
           : null;
-      MessageDBISAR messageDB = MessageDBISAR(
-          messageId: event?.innerEvent?.id ?? event!.id,
-          sender: pubkey,
-          receiver: toPubkey,
-          groupId: '',
-          sessionId: sessionId,
-          kind: event!.kind,
-          tags: jsonEncode(event.tags),
-          content: event.content,
-          createTime: currentUnixTimestampSeconds(),
-          decryptContent: content,
-          type: MessageDBISAR.messageTypeToString(type),
-          status: 0,
-          plaintEvent: jsonEncode(event),
-          chatType: 3,
-          expiration: expiration,
-          decryptSecret: decryptSecret,
-          giftWrappedId: event.id);
-      secretChatMessageCallBack?.call(messageDB);
+
+      late MessageDBISAR messageDB;
+      if (replaceMessageId != null) {
+        messageDB = await Messages.sharedInstance
+                .loadMessageDBFromDB(replaceMessageId) ??
+            MessageDBISAR();
+        messageDB.messageId = event?.innerEvent?.id ?? event!.id;
+        secretChatMessageUpdateCallBack?.call(messageDB, replaceMessageId);
+      } else {
+        messageDB = MessageDBISAR(
+            messageId: event?.innerEvent?.id ?? event!.id,
+            sender: pubkey,
+            receiver: toPubkey,
+            groupId: '',
+            sessionId: sessionId,
+            kind: event!.kind,
+            tags: jsonEncode(event.tags),
+            content: event.content,
+            createTime: currentUnixTimestampSeconds(),
+            decryptContent: content,
+            type: MessageDBISAR.messageTypeToString(type),
+            status: 0,
+            plaintEvent: jsonEncode(event),
+            chatType: 3,
+            expiration: expiration,
+            decryptSecret: decryptSecret,
+            giftWrappedId: event.id);
+        secretChatMessageCallBack?.call(messageDB);
+      }
       await Messages.saveMessageToDB(messageDB);
 
       if (local) {
         if (!completer.isCompleted) {
-          completer.complete(OKEvent(event.id, true, ''));
+          completer.complete(OKEvent(event!.id, true, ''));
         }
       } else {
-        Connect.sharedInstance.sendEvent(event,
+        Connect.sharedInstance.sendEvent(event!,
             toRelays: [sessionDB.relay ?? ''], sendCallBack: (ok, relay) async {
           messageDB.status = ok.status ? 1 : 2;
           await Messages.saveMessageToDB(messageDB,

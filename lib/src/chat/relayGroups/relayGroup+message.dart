@@ -71,7 +71,8 @@ extension EMessage on RelayGroup {
       Event? event,
       bool local = false,
       String? decryptSecret,
-      int createAt = 0}) async {
+      int createAt = 0,
+      String? replaceMessageId}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     RelayGroupDBISAR? groupDB = groups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
@@ -88,23 +89,32 @@ extension EMessage on RelayGroup {
             decryptSecret: decryptSecret),
         createAt: createAt);
 
-    MessageDBISAR messageDB = MessageDBISAR(
-        messageId: event.id,
-        sender: event.pubkey,
-        receiver: '',
-        groupId: groupId,
-        kind: event.kind,
-        tags: jsonEncode(event.tags),
-        replyId: rootEvent ?? '',
-        content: event.content,
-        decryptContent: content,
-        type: MessageDBISAR.messageTypeToString(type),
-        createTime: event.createdAt,
-        status: 0,
-        plaintEvent: jsonEncode(event),
-        chatType: 4,
-        decryptSecret: decryptSecret);
-    groupMessageCallBack?.call(messageDB);
+    late MessageDBISAR messageDB;
+    if (replaceMessageId != null) {
+      messageDB =
+          await Messages.sharedInstance.loadMessageDBFromDB(replaceMessageId) ??
+              MessageDBISAR();
+      messageDB.messageId = event.id;
+      groupMessageUpdateCallBack?.call(messageDB, replaceMessageId);
+    } else {
+      messageDB = MessageDBISAR(
+          messageId: event.id,
+          sender: event.pubkey,
+          receiver: '',
+          groupId: groupId,
+          kind: event.kind,
+          tags: jsonEncode(event.tags),
+          replyId: rootEvent ?? '',
+          content: event.content,
+          decryptContent: content,
+          type: MessageDBISAR.messageTypeToString(type),
+          createTime: event.createdAt,
+          status: 0,
+          plaintEvent: jsonEncode(event),
+          chatType: 4,
+          decryptSecret: decryptSecret);
+      groupMessageCallBack?.call(messageDB);
+    }
     await Messages.saveMessageToDB(messageDB);
 
     if (local) {

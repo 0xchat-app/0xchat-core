@@ -30,6 +30,7 @@ class RelayGroup {
   GroupsUpdatedCallBack? myGroupsUpdatedCallBack;
   GroupMetadataUpdatedCallBack? groupMetadataUpdatedCallBack;
   GroupMessageCallBack? groupMessageCallBack;
+  GroupMessageUpdateCallBack? groupMessageUpdateCallBack;
   GroupsJoinRequestCallBack? joinRequestCallBack;
   GroupsModerationCallBack? moderationCallBack;
   GroupsNoteCallBack? noteCallBack;

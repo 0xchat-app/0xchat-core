@@ -8,6 +8,7 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 
 typedef ChannelsUpdatedCallBack = void Function();
 typedef ChannelMessageCallBack = void Function(MessageDBISAR);
+typedef ChannelMessageUpdateCallBack = void Function(MessageDBISAR, String);
 typedef OfflineChannelMessageFinishCallBack = void Function();
 
 class Channels {
@@ -29,6 +30,7 @@ class Channels {
 
   ChannelsUpdatedCallBack? myChannelsUpdatedCallBack;
   ChannelMessageCallBack? channelMessageCallBack;
+  ChannelMessageUpdateCallBack? channelMessageUpdateCallBack;
   OfflineChannelMessageFinishCallBack? offlineChannelMessageFinishCallBack;
   Map<String, bool> offlineChannelMessageFinish = {};
 
@@ -109,12 +111,13 @@ class Channels {
           _receiveChannelMessages(event, relay);
           break;
         default:
-          debugPrintSynchronously('channel unhandled message ${event.toJson()}');
+          debugPrintSynchronously(
+              'channel unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
       offlineChannelMessageFinish[relay] = true;
-      if(ok.status) {
+      if (ok.status) {
         _updateChannelMessageTime(currentUnixTimestampSeconds(), relay);
       }
       if (unCompletedRelays.isEmpty) {
@@ -483,7 +486,8 @@ class Channels {
       String? replyUserRelay,
       Event? event,
       bool local = false,
-      String? decryptSecret}) async {
+      String? decryptSecret,
+      String? replaceMessageId}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= await Nip28.sendChannelMessage(channelId,
         MessageDBISAR.getContent(type, content, source), pubkey, privkey,
@@ -495,22 +499,31 @@ class Channels {
         subContent: MessageDBISAR.getSubContent(type, content,
             decryptSecret: decryptSecret));
 
-    MessageDBISAR messageDB = MessageDBISAR(
-        messageId: event.id,
-        sender: event.pubkey,
-        receiver: '',
-        groupId: channelId,
-        kind: event.kind,
-        tags: jsonEncode(event.tags),
-        replyId: replyMessage ?? '',
-        content: event.content,
-        decryptContent: content,
-        type: MessageDBISAR.messageTypeToString(type),
-        createTime: event.createdAt,
-        status: 0,
-        plaintEvent: jsonEncode(event),
-        chatType: 2);
-    channelMessageCallBack?.call(messageDB);
+    late MessageDBISAR messageDB;
+    if (replaceMessageId != null) {
+      messageDB =
+          await Messages.sharedInstance.loadMessageDBFromDB(replaceMessageId) ??
+              MessageDBISAR();
+      messageDB.messageId = event.id;
+      channelMessageUpdateCallBack?.call(messageDB, replaceMessageId);
+    } else {
+      messageDB = MessageDBISAR(
+          messageId: event.id,
+          sender: event.pubkey,
+          receiver: '',
+          groupId: channelId,
+          kind: event.kind,
+          tags: jsonEncode(event.tags),
+          replyId: replyMessage ?? '',
+          content: event.content,
+          decryptContent: content,
+          type: MessageDBISAR.messageTypeToString(type),
+          createTime: event.createdAt,
+          status: 0,
+          plaintEvent: jsonEncode(event),
+          chatType: 2);
+      channelMessageCallBack?.call(messageDB);
+    }
     await Messages.saveMessageToDB(messageDB);
 
     if (local) {
