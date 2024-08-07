@@ -298,7 +298,9 @@ class Contacts {
       if (map != null) {
         List<People> friendsList = map['people'];
         for (var p in friendsList) {
-          allContacts[p.pubkey] = UserDBISAR(pubKey: p.pubkey);
+          UserDBISAR userDB = UserDBISAR(pubKey: p.pubkey);
+          userDB.name = userDB.shortEncodedPubkey;
+          allContacts[p.pubkey] = userDB;
         }
         contactUpdatedCallBack?.call();
         await Future.forEach(friendsList, (p) async {
