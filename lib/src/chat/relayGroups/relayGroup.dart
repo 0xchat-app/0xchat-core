@@ -401,8 +401,16 @@ class RelayGroup {
     return completer.future;
   }
 
-  List<RelayGroupDBISAR>? fuzzySearch(String keyword) {
+  bool isWebSocketUrl(String url) {
+    final regex = RegExp(r'^(ws|wss)://');
+    return regex.hasMatch(url);
+  }
+
+  Future<List<RelayGroupDBISAR>?> fuzzySearch(String keyword) async {
     if (keyword.isNotEmpty) {
+      if(isWebSocketUrl(keyword)){
+        return await searchGroupsFromRelays([keyword], null);
+      }
       RegExp regex = RegExp(keyword, caseSensitive: false);
       List<RelayGroupDBISAR> result = groups.values
           .where((group) =>
