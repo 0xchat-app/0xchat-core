@@ -105,6 +105,7 @@ class NotificationHelper {
 
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<String> channels = Channels.sharedInstance.getAllUnMuteChannels();
+    List<String> groups = RelayGroup.sharedInstance.getAllUnMuteGroups();
     var authors = Contacts.sharedInstance.allContacts.keys.toList();
     var ptags = [pubkey];
     // List<SecretSessionDB> secretSessions =
@@ -124,7 +125,7 @@ class NotificationHelper {
       'kinds': kinds,
       'deviceId': deviceId,
       'relays': relays,
-      '#e': channels,
+      '#e': [...channels, ...groups],
       '#p': ptags
     };
     Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
