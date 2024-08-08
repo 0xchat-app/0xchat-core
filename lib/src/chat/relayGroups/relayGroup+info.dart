@@ -114,17 +114,18 @@ extension EInfo on RelayGroup {
     await syncGroupToDB(groupDB);
   }
 
-  Future<void> handleGroupMembers(Event event, String relay) async {
+  RelayGroupDBISAR handleGroupMembers(Event event, String relay) {
     String groupId = Nip29.getGroupIdFromEvent(event) ?? '';
     List<String> members = Nip29.decodeGroupMembers(event);
     RelayGroupDBISAR? groupDB = groups[groupId];
     groupDB ??= RelayGroupDBISAR(
         groupId: groupId, relay: relay, identifier: '$relay\'$groupId');
-    if (event.createdAt < groupDB.lastUpdatedTime) return;
+    if (event.createdAt < groupDB.lastUpdatedTime) return groupDB;
     groupDB.members = members;
     groupDB.lastUpdatedTime = event.createdAt;
     groupMetadataUpdatedCallBack?.call(groupDB);
-    await syncGroupToDB(groupDB);
+    syncGroupToDB(groupDB);
+    return groupDB;
   }
 
   List<GroupAdmin>? getGroupAdminsFromLocal(String groupId) {
@@ -160,10 +161,27 @@ extension EInfo on RelayGroup {
       GroupMetadataUpdatedCallBack? groupCallback) async {
     Set<String> relays = Set.from(groupRelays);
     relays.addAll(Relays.sharedInstance.recommendGroupRelays);
-    return await searchGroupsFromRelays(relays.toList(), groupCallback);
+    return await searchGroupsMetadataFromRelays(relays.toList(), groupCallback);
   }
 
-  Future<List<RelayGroupDBISAR>> searchGroupsFromRelays(
+  Future<RelayGroupDBISAR> searchGroupMembersFromRelays(
+      RelayGroupDBISAR group) async {
+    Completer<RelayGroupDBISAR> completer = Completer<RelayGroupDBISAR>();
+    Filter f = Filter(kinds: [39002], d: [group.groupId]);
+    Connect.sharedInstance.addSubscription([f], relays: [group.relay],
+        eventCallBack: (event, relay) async {
+      RelayGroupDBISAR groupDB = handleGroupMembers(event, relay);
+      completer.complete(groupDB);
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+      if (unCompletedRelays.isEmpty && !completer.isCompleted) {
+        completer.complete(group);
+      }
+    });
+    return completer.future;
+  }
+
+  Future<List<RelayGroupDBISAR>> searchGroupsMetadataFromRelays(
       List<String> relays, GroupMetadataUpdatedCallBack? groupCallback) async {
     if (relays.isEmpty) return [];
     Map<String, RelayGroupDBISAR> result = {};
@@ -181,11 +199,11 @@ extension EInfo on RelayGroup {
         eventCallBack: (event, relay) async {
       RelayGroupDBISAR groupDB = handleGroupMetadata(event, relay);
       result[groupDB.groupId] = groupDB;
+      groupDB = await searchGroupMembersFromRelays(groupDB);
       groupCallback?.call(groupDB);
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty && !completer.isCompleted) {
-        Connect.sharedInstance.closeConnects(relays, RelayKind.temp);
         completer.complete(result.values.toList());
       }
     });

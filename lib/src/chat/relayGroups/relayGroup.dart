@@ -409,7 +409,7 @@ class RelayGroup {
   Future<List<RelayGroupDBISAR>?> fuzzySearch(String keyword) async {
     if (keyword.isNotEmpty) {
       if(isWebSocketUrl(keyword)){
-        return await searchGroupsFromRelays([keyword], null);
+        return await searchGroupsMetadataFromRelays([keyword], null);
       }
       RegExp regex = RegExp(keyword, caseSensitive: false);
       List<RelayGroupDBISAR> result = groups.values
