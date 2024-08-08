@@ -47,58 +47,68 @@ const RelayGroupDBISARSchema = CollectionSchema(
       name: r'identifier',
       type: IsarType.string,
     ),
-    r'lastUpdatedTime': PropertySchema(
+    r'lastAdminsUpdatedTime': PropertySchema(
       id: 6,
+      name: r'lastAdminsUpdatedTime',
+      type: IsarType.long,
+    ),
+    r'lastMembersUpdatedTime': PropertySchema(
+      id: 7,
+      name: r'lastMembersUpdatedTime',
+      type: IsarType.long,
+    ),
+    r'lastUpdatedTime': PropertySchema(
+      id: 8,
       name: r'lastUpdatedTime',
       type: IsarType.long,
     ),
     r'level': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'level',
       type: IsarType.long,
     ),
     r'members': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'members',
       type: IsarType.stringList,
     ),
     r'mute': PropertySchema(
-      id: 9,
+      id: 11,
       name: r'mute',
       type: IsarType.bool,
     ),
     r'name': PropertySchema(
-      id: 10,
+      id: 12,
       name: r'name',
       type: IsarType.string,
     ),
     r'picture': PropertySchema(
-      id: 11,
+      id: 13,
       name: r'picture',
       type: IsarType.string,
     ),
     r'pinned': PropertySchema(
-      id: 12,
+      id: 14,
       name: r'pinned',
       type: IsarType.stringList,
     ),
     r'point': PropertySchema(
-      id: 13,
+      id: 15,
       name: r'point',
       type: IsarType.long,
     ),
     r'private': PropertySchema(
-      id: 14,
+      id: 16,
       name: r'private',
       type: IsarType.bool,
     ),
     r'relay': PropertySchema(
-      id: 15,
+      id: 17,
       name: r'relay',
       type: IsarType.string,
     ),
     r'relayPubkey': PropertySchema(
-      id: 16,
+      id: 18,
       name: r'relayPubkey',
       type: IsarType.string,
     )
@@ -203,17 +213,19 @@ void _relayGroupDBISARSerialize(
   writer.writeBool(offsets[3], object.closed);
   writer.writeString(offsets[4], object.groupId);
   writer.writeString(offsets[5], object.identifier);
-  writer.writeLong(offsets[6], object.lastUpdatedTime);
-  writer.writeLong(offsets[7], object.level);
-  writer.writeStringList(offsets[8], object.members);
-  writer.writeBool(offsets[9], object.mute);
-  writer.writeString(offsets[10], object.name);
-  writer.writeString(offsets[11], object.picture);
-  writer.writeStringList(offsets[12], object.pinned);
-  writer.writeLong(offsets[13], object.point);
-  writer.writeBool(offsets[14], object.private);
-  writer.writeString(offsets[15], object.relay);
-  writer.writeString(offsets[16], object.relayPubkey);
+  writer.writeLong(offsets[6], object.lastAdminsUpdatedTime);
+  writer.writeLong(offsets[7], object.lastMembersUpdatedTime);
+  writer.writeLong(offsets[8], object.lastUpdatedTime);
+  writer.writeLong(offsets[9], object.level);
+  writer.writeStringList(offsets[10], object.members);
+  writer.writeBool(offsets[11], object.mute);
+  writer.writeString(offsets[12], object.name);
+  writer.writeString(offsets[13], object.picture);
+  writer.writeStringList(offsets[14], object.pinned);
+  writer.writeLong(offsets[15], object.point);
+  writer.writeBool(offsets[16], object.private);
+  writer.writeString(offsets[17], object.relay);
+  writer.writeString(offsets[18], object.relayPubkey);
 }
 
 RelayGroupDBISAR _relayGroupDBISARDeserialize(
@@ -229,17 +241,19 @@ RelayGroupDBISAR _relayGroupDBISARDeserialize(
     closed: reader.readBoolOrNull(offsets[3]) ?? false,
     groupId: reader.readStringOrNull(offsets[4]) ?? '',
     identifier: reader.readStringOrNull(offsets[5]) ?? '',
-    lastUpdatedTime: reader.readLongOrNull(offsets[6]) ?? 0,
-    level: reader.readLongOrNull(offsets[7]) ?? 0,
-    members: reader.readStringList(offsets[8]),
-    mute: reader.readBoolOrNull(offsets[9]) ?? false,
-    name: reader.readStringOrNull(offsets[10]) ?? '',
-    picture: reader.readStringOrNull(offsets[11]) ?? '',
-    pinned: reader.readStringList(offsets[12]),
-    point: reader.readLongOrNull(offsets[13]) ?? 0,
-    private: reader.readBoolOrNull(offsets[14]) ?? false,
-    relay: reader.readStringOrNull(offsets[15]) ?? '',
-    relayPubkey: reader.readStringOrNull(offsets[16]) ?? '',
+    lastAdminsUpdatedTime: reader.readLongOrNull(offsets[6]) ?? 0,
+    lastMembersUpdatedTime: reader.readLongOrNull(offsets[7]) ?? 0,
+    lastUpdatedTime: reader.readLongOrNull(offsets[8]) ?? 0,
+    level: reader.readLongOrNull(offsets[9]) ?? 0,
+    members: reader.readStringList(offsets[10]),
+    mute: reader.readBoolOrNull(offsets[11]) ?? false,
+    name: reader.readStringOrNull(offsets[12]) ?? '',
+    picture: reader.readStringOrNull(offsets[13]) ?? '',
+    pinned: reader.readStringList(offsets[14]),
+    point: reader.readLongOrNull(offsets[15]) ?? 0,
+    private: reader.readBoolOrNull(offsets[16]) ?? false,
+    relay: reader.readStringOrNull(offsets[17]) ?? '',
+    relayPubkey: reader.readStringOrNull(offsets[18]) ?? '',
   );
   object.id = id;
   return object;
@@ -269,22 +283,26 @@ P _relayGroupDBISARDeserializeProp<P>(
     case 7:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 8:
-      return (reader.readStringList(offset)) as P;
-    case 9:
-      return (reader.readBoolOrNull(offset) ?? false) as P;
-    case 10:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    case 11:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    case 12:
-      return (reader.readStringList(offset)) as P;
-    case 13:
       return (reader.readLongOrNull(offset) ?? 0) as P;
-    case 14:
+    case 9:
+      return (reader.readLongOrNull(offset) ?? 0) as P;
+    case 10:
+      return (reader.readStringList(offset)) as P;
+    case 11:
       return (reader.readBoolOrNull(offset) ?? false) as P;
-    case 15:
+    case 12:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 13:
+      return (reader.readStringOrNull(offset) ?? '') as P;
+    case 14:
+      return (reader.readStringList(offset)) as P;
+    case 15:
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 16:
+      return (reader.readBoolOrNull(offset) ?? false) as P;
+    case 17:
+      return (reader.readStringOrNull(offset) ?? '') as P;
+    case 18:
       return (reader.readStringOrNull(offset) ?? '') as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1345,6 +1363,118 @@ extension RelayGroupDBISARQueryFilter
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'identifier',
         value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterFilterCondition>
+      lastAdminsUpdatedTimeEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastAdminsUpdatedTime',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterFilterCondition>
+      lastAdminsUpdatedTimeGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastAdminsUpdatedTime',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterFilterCondition>
+      lastAdminsUpdatedTimeLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastAdminsUpdatedTime',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterFilterCondition>
+      lastAdminsUpdatedTimeBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastAdminsUpdatedTime',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterFilterCondition>
+      lastMembersUpdatedTimeEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastMembersUpdatedTime',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterFilterCondition>
+      lastMembersUpdatedTimeGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastMembersUpdatedTime',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterFilterCondition>
+      lastMembersUpdatedTimeLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastMembersUpdatedTime',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterFilterCondition>
+      lastMembersUpdatedTimeBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastMembersUpdatedTime',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -2660,6 +2790,34 @@ extension RelayGroupDBISARQuerySortBy
   }
 
   QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterSortBy>
+      sortByLastAdminsUpdatedTime() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastAdminsUpdatedTime', Sort.asc);
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterSortBy>
+      sortByLastAdminsUpdatedTimeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastAdminsUpdatedTime', Sort.desc);
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterSortBy>
+      sortByLastMembersUpdatedTime() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastMembersUpdatedTime', Sort.asc);
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterSortBy>
+      sortByLastMembersUpdatedTimeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastMembersUpdatedTime', Sort.desc);
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterSortBy>
       sortByLastUpdatedTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastUpdatedTime', Sort.asc);
@@ -2880,6 +3038,34 @@ extension RelayGroupDBISARQuerySortThenBy
   }
 
   QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterSortBy>
+      thenByLastAdminsUpdatedTime() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastAdminsUpdatedTime', Sort.asc);
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterSortBy>
+      thenByLastAdminsUpdatedTimeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastAdminsUpdatedTime', Sort.desc);
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterSortBy>
+      thenByLastMembersUpdatedTime() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastMembersUpdatedTime', Sort.asc);
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterSortBy>
+      thenByLastMembersUpdatedTimeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastMembersUpdatedTime', Sort.desc);
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterSortBy>
       thenByLastUpdatedTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastUpdatedTime', Sort.asc);
@@ -3046,6 +3232,20 @@ extension RelayGroupDBISARQueryWhereDistinct
   }
 
   QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QDistinct>
+      distinctByLastAdminsUpdatedTime() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastAdminsUpdatedTime');
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QDistinct>
+      distinctByLastMembersUpdatedTime() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastMembersUpdatedTime');
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QDistinct>
       distinctByLastUpdatedTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'lastUpdatedTime');
@@ -3165,6 +3365,20 @@ extension RelayGroupDBISARQueryProperty
       identifierProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'identifier');
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, int, QQueryOperations>
+      lastAdminsUpdatedTimeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastAdminsUpdatedTime');
+    });
+  }
+
+  QueryBuilder<RelayGroupDBISAR, int, QQueryOperations>
+      lastMembersUpdatedTimeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastMembersUpdatedTime');
     });
   }
 

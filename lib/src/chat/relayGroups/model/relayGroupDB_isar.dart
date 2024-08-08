@@ -23,6 +23,8 @@ class RelayGroupDBISAR {
   bool private;
   bool closed;
   int lastUpdatedTime;
+  int lastMembersUpdatedTime;
+  int lastAdminsUpdatedTime;
   bool mute;
   String? adminsString;
   String name;
@@ -42,6 +44,8 @@ class RelayGroupDBISAR {
       this.private = false,
       this.closed = false,
       this.lastUpdatedTime = 0,
+      this.lastMembersUpdatedTime = 0,
+      this.lastAdminsUpdatedTime = 0,
       this.mute = false,
       this.adminsString,
       this.name = '',

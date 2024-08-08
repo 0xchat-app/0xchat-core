@@ -38,20 +38,24 @@ extension EInfo on RelayGroup {
           groupDB.about = group.about;
           groupDB.private = group.private;
           groupDB.closed = group.closed;
+          groupDB.lastUpdatedTime = event.createdAt;
           break;
         case 39001:
           List<GroupAdmin> admins = Nip29.decodeGroupAdmins(event);
           groupDB!.admins = admins;
+          groupDB.lastAdminsUpdatedTime = event.createdAt;
           break;
         case 39002:
           List<String> members = Nip29.decodeGroupMembers(event);
           if ((!checkInGroup(groupId) && members.contains(pubkey)) ||
               (checkInGroup(groupId) && !members.contains(pubkey))) {
             groupDB!.members = members;
+            groupDB.lastMembersUpdatedTime = event.createdAt;
             await syncGroupToDB(groupDB);
             updateGroupSubscription();
           } else {
             groupDB!.members = members;
+            groupDB.lastMembersUpdatedTime = event.createdAt;
           }
           break;
       }
@@ -107,9 +111,9 @@ extension EInfo on RelayGroup {
     RelayGroupDBISAR? groupDB = groups[groupId];
     groupDB ??= RelayGroupDBISAR(
         groupId: groupId, relay: relay, identifier: '$relay\'$groupId');
-    if (event.createdAt < groupDB.lastUpdatedTime) return;
+    if (event.createdAt < groupDB.lastAdminsUpdatedTime) return;
     groupDB.admins = admins;
-    groupDB.lastUpdatedTime = event.createdAt;
+    groupDB.lastAdminsUpdatedTime = event.createdAt;
     groupMetadataUpdatedCallBack?.call(groupDB);
     await syncGroupToDB(groupDB);
   }
@@ -120,9 +124,9 @@ extension EInfo on RelayGroup {
     RelayGroupDBISAR? groupDB = groups[groupId];
     groupDB ??= RelayGroupDBISAR(
         groupId: groupId, relay: relay, identifier: '$relay\'$groupId');
-    if (event.createdAt < groupDB.lastUpdatedTime) return groupDB;
+    if (event.createdAt < groupDB.lastMembersUpdatedTime) return groupDB;
     groupDB.members = members;
-    groupDB.lastUpdatedTime = event.createdAt;
+    groupDB.lastMembersUpdatedTime = event.createdAt;
     groupMetadataUpdatedCallBack?.call(groupDB);
     syncGroupToDB(groupDB);
     return groupDB;
@@ -199,11 +203,13 @@ extension EInfo on RelayGroup {
         eventCallBack: (event, relay) async {
       RelayGroupDBISAR groupDB = handleGroupMetadata(event, relay);
       result[groupDB.groupId] = groupDB;
-      groupDB = await searchGroupMembersFromRelays(groupDB);
-      groupCallback?.call(groupDB);
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty && !completer.isCompleted) {
+        for (var groupDB in result.values.toList()) {
+          groupDB = await searchGroupMembersFromRelays(groupDB);
+          groupCallback?.call(groupDB);
+        }
         completer.complete(result.values.toList());
       }
     });
