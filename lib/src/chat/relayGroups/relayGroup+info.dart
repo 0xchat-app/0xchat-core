@@ -129,11 +129,11 @@ extension EInfo on RelayGroup {
   }
 
   List<GroupAdmin>? getGroupAdminsFromLocal(String groupId) {
-    return myGroups[groupId]?.admins;
+    return groups[groupId]?.admins;
   }
 
   Future<List<UserDBISAR>> getGroupMembersFromLocal(String groupId) async {
-    RelayGroupDBISAR? groupDB = myGroups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId];
     List<UserDBISAR> result = [];
     if (groupDB != null && groupDB.members != null) {
       await Future.forEach(groupDB.members!, (member) async {
