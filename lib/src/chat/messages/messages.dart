@@ -339,20 +339,23 @@ class Messages {
   }
 
   static Future<Map> searchGroupMessagesFromDB(
-      String? groupId, String contentNotLike, String decryptContentLike) async {
+      String? groupId, String decryptContentLike) async {
     final isar = DBISAR.sharedInstance.isar;
-    final queryBuilder = isar.messageDBISARs
-        .filter()
-        .groupIdIsNotEmpty()
-        .decryptContentMatches(decryptContentLike, caseSensitive: false);
     List<MessageDBISAR> messages;
     if (groupId != null) {
-      messages = await queryBuilder
+      messages = await isar.messageDBISARs
+          .filter()
           .groupIdEqualTo(groupId)
+          .decryptContentContains(decryptContentLike, caseSensitive: false)
           .sortByCreateTimeDesc()
           .findAll();
     } else {
-      messages = await queryBuilder.sortByCreateTimeDesc().findAll();
+      messages = await isar.messageDBISARs
+          .filter()
+          .groupIdIsNotEmpty()
+          .decryptContentContains(decryptContentLike, caseSensitive: false)
+          .sortByCreateTimeDesc()
+          .findAll();
     }
     int theLastTime = 0;
     for (var message in messages) {
@@ -378,7 +381,7 @@ class Messages {
           .filter()
           .senderIsNotEmpty()
           .receiverIsNotEmpty()
-          .decryptContentMatches(orignalSearchTxt, caseSensitive: false)
+          .decryptContentContains(orignalSearchTxt, caseSensitive: false)
           .findAll();
     } else {
       messages = await isar.messageDBISARs
@@ -393,7 +396,7 @@ class Messages {
               .and()
               .receiverEqualTo(chatId))
           .and()
-          .decryptContentMatches(orignalSearchTxt, caseSensitive: false)
+          .decryptContentContains(orignalSearchTxt, caseSensitive: false)
           .findAll();
     }
     int theLastTime = 0;
