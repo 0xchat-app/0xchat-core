@@ -34,6 +34,7 @@ extension EInfo on RelayGroup {
         case 39000:
           Group group = Nip29.decodeMetadata(event, relay);
           groupDB!.name = group.name;
+          groupDB.relay = relay;
           groupDB.picture = group.picture;
           groupDB.about = group.about;
           groupDB.private = group.private;
