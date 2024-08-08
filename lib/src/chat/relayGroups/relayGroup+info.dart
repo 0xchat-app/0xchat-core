@@ -79,6 +79,7 @@ extension EInfo on RelayGroup {
         identifier: '$relay\'${group.groupId}');
     if (event.createdAt < groupDB.lastUpdatedTime) return groupDB;
     groupDB.name = group.name;
+    groupDB.relay = relay;
     groupDB.picture = group.picture;
     groupDB.about = group.about;
     groupDB.private = group.private;
