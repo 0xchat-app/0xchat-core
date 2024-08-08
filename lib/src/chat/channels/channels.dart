@@ -10,6 +10,7 @@ typedef ChannelsUpdatedCallBack = void Function();
 typedef ChannelMessageCallBack = void Function(MessageDBISAR);
 typedef ChannelMessageUpdateCallBack = void Function(MessageDBISAR, String);
 typedef OfflineChannelMessageFinishCallBack = void Function();
+typedef ChannelsSearchCallBack = void Function(List<ChannelDBISAR>);
 
 class Channels {
   /// singleton
@@ -610,24 +611,25 @@ class Channels {
   }
 
   // get 20 latest channels
-  Future<List<ChannelDBISAR>> getChannelsFromRelay(
-      {List<String>? channelIds}) async {
+  Future<List<ChannelDBISAR>> searchChannelsFromRelay(
+      {List<String>? channelIds,
+      ChannelsSearchCallBack? searchCallBack}) async {
     Completer<List<ChannelDBISAR>> completer = Completer<List<ChannelDBISAR>>();
 
     Filter f = channelIds == null
         ? Filter(kinds: [40], limit: 20)
         : Filter(ids: channelIds, kinds: [40]);
     Map<String, ChannelDBISAR> result = {};
+    result.addAll(channels);
+    searchCallBack?.call(channels.values.toList());
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       Channel channel = Nip28.getChannelCreation(event);
-      if (channels.containsKey(channel.channelId) &&
-          !result.containsKey(channel.channelId)) {
-        result[channel.channelId] = (channels[channel.channelId]!);
-      } else {
+      if (!channels.containsKey(channel.channelId)) {
         ChannelDBISAR channelDB = getChannelDBFromChannel(channel);
         _syncChannelToDB(channelDB);
         result[channel.channelId] = channelDB;
+        searchCallBack?.call([channelDB]);
       }
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
