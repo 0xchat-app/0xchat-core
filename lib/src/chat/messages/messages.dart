@@ -8,7 +8,7 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 typedef MessageActionsCallBack = void Function(MessageDBISAR);
-typedef MessagesDeleteCallBack = void Function(List<String>);
+typedef MessagesDeleteCallBack = void Function(List<MessageDBISAR>);
 
 class Messages {
   /// singleton
@@ -344,11 +344,7 @@ class Messages {
     final queryBuilder = isar.messageDBISARs
         .filter()
         .groupIdIsNotEmpty()
-        .contentMatches(r'^(?!.*' + RegExp.escape(contentNotLike) + r').*$',
-            caseSensitive: false) // NOT LIKE
-        .and()
-        .decryptContentMatches(decryptContentLike,
-            caseSensitive: false); // LIKE
+        .decryptContentMatches(decryptContentLike, caseSensitive: false);
     List<MessageDBISAR> messages;
     if (groupId != null) {
       messages = await queryBuilder
@@ -426,13 +422,17 @@ class Messages {
   static deleteMessagesFromDB({List<String>? messageIds}) async {
     if (messageIds != null) {
       final isar = DBISAR.sharedInstance.isar;
+      var queryBuilder = isar.messageDBISARs.where();
+      final messages = await queryBuilder
+          .anyOf(messageIds, (q, messageId) => q.messageIdEqualTo(messageId))
+          .findAll();
       await isar.writeTxn(() async {
         await isar.messageDBISARs
             .filter()
             .anyOf(messageIds, (q, messageId) => q.messageIdEqualTo(messageId))
             .deleteAll();
       });
-      Messages.sharedInstance.deleteCallBack?.call(messageIds);
+      Messages.sharedInstance.deleteCallBack?.call(messages);
     }
   }
 
