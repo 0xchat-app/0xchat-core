@@ -7,6 +7,12 @@ import 'package:chatcore/chat-core.dart';
 
 part 'relayGroupDB_isar.g.dart';
 
+extension RelayGroupDBISARExtensions on RelayGroupDBISAR {
+  RelayGroupDBISAR withGrowableLevels() => this
+    ..pinned = pinned?.toList()
+    ..members = members?.toList();
+}
+
 @collection
 class RelayGroupDBISAR {
   Id id = Isar.autoIncrement;

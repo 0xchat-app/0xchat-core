@@ -5,6 +5,19 @@ import 'package:isar/isar.dart';
 
 part 'userDB_isar.g.dart';
 
+extension UserDBISARExtensions on UserDBISAR {
+  UserDBISAR withGrowableLevels() => this
+    ..channelsList = channelsList?.toList()
+    ..groupsList = groupsList?.toList()
+    ..relayGroupsList = relayGroupsList?.toList()
+    ..badgesList = badgesList?.toList()
+    ..blockedList = blockedList?.toList()
+    ..followingList = followingList?.toList()
+    ..followersList = followersList?.toList()
+    ..relayList = relayList?.toList()
+    ..dmRelayList = dmRelayList?.toList();
+}
+
 @collection
 class UserDBISAR {
   Id id = Isar.autoIncrement;
@@ -228,7 +241,8 @@ UserDBISAR _userInfoFromMap(Map<String, dynamic> map) {
     friendsList: map['friendsList'].toString(),
     channelsList: UserDBISAR.decodeStringList(map['channelsList'].toString()),
     groupsList: UserDBISAR.decodeStringList(map['groupsList'].toString()),
-    relayGroupsList: UserDBISAR.decodeStringList(map['relayGroupsList'].toString()),
+    relayGroupsList:
+        UserDBISAR.decodeStringList(map['relayGroupsList'].toString()),
     badgesList: UserDBISAR.decodeStringList(map['badgesList'].toString()),
     blockedList: UserDBISAR.decodeStringList(map['blockedList'].toString()),
     followingList: UserDBISAR.decodeStringList(map['followingList'].toString()),

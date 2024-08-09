@@ -3,6 +3,12 @@ import 'package:isar/isar.dart';
 
 part 'groupDB_isar.g.dart';
 
+extension GroupDBISARExtensions on GroupDBISAR {
+  GroupDBISAR withGrowableLevels() => this
+    ..members = members?.toList()
+    ..pinned = pinned?.toList();
+}
+
 @collection
 class GroupDBISAR {
   Id id = Isar.autoIncrement;

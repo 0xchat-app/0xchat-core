@@ -217,7 +217,6 @@ extension Send on Moment {
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       if (!note.pTags!.contains(note.author)){
-        note.pTags = List.from(note.pTags!);
         note.pTags!.add(note.author);
       }
       Event event = await Nip25.encode(
@@ -254,7 +253,6 @@ extension Send on Moment {
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       if (!note.pTags!.contains(note.author)){
-        note.pTags = List.from(note.pTags!);
         note.pTags!.add(note.author);
       }
       Event event = await Nip18.encodeReposts(repostNoteId, repostNoteRelay,

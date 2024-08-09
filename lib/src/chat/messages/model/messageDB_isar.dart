@@ -21,6 +21,13 @@ enum MessageType {
   call
 }
 
+extension MessageDBISARExtensions on MessageDBISAR {
+  MessageDBISAR withGrowableLevels() => this
+    ..reportList = reportList?.toList()
+    ..reactionEventIds = reactionEventIds?.toList()
+    ..zapEventIds = zapEventIds?.toList();
+}
+
 @collection
 class MessageDBISAR {
   Id id = Isar.autoIncrement;

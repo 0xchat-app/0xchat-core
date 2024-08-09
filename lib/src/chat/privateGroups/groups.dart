@@ -70,10 +70,10 @@ class Groups {
   }
 
   Future<void> _loadAllGroupsFromDB() async {
-    List<Object?> maps =
+    List<GroupDBISAR> maps =
         await DBISAR.sharedInstance.isar.groupDBISARs.where().findAll();
-    for (var e in maps) {
-      GroupDBISAR groupDB = e as GroupDBISAR;
+    for (GroupDBISAR e in maps) {
+      GroupDBISAR groupDB = e.withGrowableLevels();
       if (groupDB.name.isEmpty) groupDB.name = _shortGroupId(groupDB.groupId);
       groups[groupDB.groupId] = groupDB;
     }

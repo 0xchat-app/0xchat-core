@@ -84,9 +84,10 @@ class RelayGroup {
 
   Future<void> _loadAllGroupsFromDB() async {
     final isar = DBISAR.sharedInstance.isar;
-    List<Object?> maps = await isar.relayGroupDBISARs.where().findAll();
-    for (var e in maps) {
-      RelayGroupDBISAR groupDB = e as RelayGroupDBISAR;
+    List<RelayGroupDBISAR> maps =
+        await isar.relayGroupDBISARs.where().findAll();
+    for (RelayGroupDBISAR e in maps) {
+      RelayGroupDBISAR groupDB = e.withGrowableLevels();
       if (groupDB.groupId.isNotEmpty) {
         if (groupDB.name.isEmpty) groupDB.name = groupDB.groupId;
         groups[groupDB.groupId] = groupDB;
@@ -261,7 +262,8 @@ class RelayGroup {
           handleGroupMembers(event, relay);
           break;
         default:
-          debugPrintSynchronously('relaygroup unhandled message ${event.toJson()}');
+          debugPrintSynchronously(
+              'relaygroup unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
@@ -338,7 +340,8 @@ class RelayGroup {
           handleGroupMembers(event, relay);
           break;
         default:
-          debugPrintSynchronously('relaygroup unhandled message ${event.toJson()}');
+          debugPrintSynchronously(
+              'relaygroup unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
@@ -408,7 +411,7 @@ class RelayGroup {
 
   Future<List<RelayGroupDBISAR>?> fuzzySearch(String keyword) async {
     if (keyword.isNotEmpty) {
-      if(isWebSocketUrl(keyword)){
+      if (isWebSocketUrl(keyword)) {
         return await searchGroupsMetadataFromRelays([keyword], null);
       }
       RegExp regex = RegExp(keyword, caseSensitive: false);

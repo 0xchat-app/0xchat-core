@@ -128,8 +128,6 @@ class Messages {
         await loadMessageDBFromDB(reactions.reactedEventId);
     if (reactedMessageDB == null) return;
     reactedMessageDB.reactionEventIds ??= [];
-    reactedMessageDB.reactionEventIds =
-        List.from(reactedMessageDB.reactionEventIds!);
     if (!reactedMessageDB.reactionEventIds!.contains(reactions.id)) {
       reactedMessageDB.reactionEventIds!.add(reactions.id);
       await saveMessageToDB(reactedMessageDB);
@@ -324,7 +322,9 @@ class Messages {
     var queryBuilder = isar.messageDBISARs.where();
     final messages = await queryBuilder.sortByCreateTimeDesc().findAll();
     int theLastTime = 0;
+    List<MessageDBISAR> result = [];
     for (var message in messages) {
+      message = message.withGrowableLevels();
       theLastTime =
           message.createTime > theLastTime ? message.createTime : theLastTime;
       if (message.content.isNotEmpty &&
@@ -334,8 +334,9 @@ class Messages {
         message.decryptContent = map['content'];
         message.type = map['contentType'];
       }
+      result.add(message);
     }
-    return {'theLastTime': theLastTime, 'messages': messages};
+    return {'theLastTime': theLastTime, 'messages': result};
   }
 
   static Future<Map> searchGroupMessagesFromDB(

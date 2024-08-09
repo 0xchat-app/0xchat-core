@@ -5,6 +5,18 @@ import 'package:nostr_core_dart/nostr.dart';
 
 part 'noteDB_isar.g.dart';
 
+extension NoteDBISARExtensions on NoteDBISAR {
+  NoteDBISAR withGrowableLevels() => this
+    ..mentions = mentions?.toList()
+    ..pTags = pTags?.toList()
+    ..hashTags = hashTags?.toList()
+    ..replyEventIds = replyEventIds?.toList()
+    ..repostEventIds = repostEventIds?.toList()
+    ..quoteRepostEventIds = quoteRepostEventIds?.toList()
+    ..reactionEventIds = reactionEventIds?.toList()
+    ..zapEventIds = zapEventIds?.toList();
+}
+
 @collection
 class NoteDBISAR {
   Id id = Isar.autoIncrement;

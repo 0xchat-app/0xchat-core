@@ -50,6 +50,7 @@ class Account {
     List<UserDBISAR?> maps = await queryBuilder.findAll();
     for (UserDBISAR? user in maps) {
       if (user != null) {
+        user = user.withGrowableLevels();
         userCache[user.pubKey] = ValueNotifier<UserDBISAR>(user);
       }
     }
@@ -120,6 +121,7 @@ class Account {
         .pubKeyEqualTo(pubkey)
         .findFirst();
     if (user != null) {
+      user = user.withGrowableLevels();
       userCache[user.pubKey] = ValueNotifier<UserDBISAR>(user);
     }
     return user;

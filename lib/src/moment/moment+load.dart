@@ -225,14 +225,12 @@ extension Load on Moment {
       // check reply
       if (note.reply == noteDB.noteId &&
           !noteDB.replyEventIds!.contains(note.noteId)) {
-        noteDB.replyEventIds = List.from(noteDB.replyEventIds!);
         noteDB.replyEventIds!.add(note.noteId);
         noteDB.replyCount++;
         if (note.author == pubkey) noteDB.replyCountByMe++;
       } else if ((note.root == noteDB.noteId &&
               (note.reply == null || note.reply!.isEmpty)) &&
           !noteDB.replyEventIds!.contains(note.noteId)) {
-        noteDB.replyEventIds = List.from(noteDB.replyEventIds!);
         noteDB.replyEventIds!.add(note.noteId);
         noteDB.replyCount++;
         if (note.author == pubkey) noteDB.replyCountByMe++;
@@ -240,7 +238,6 @@ extension Load on Moment {
       // check repost
       if (note.repostId == noteDB.noteId &&
           !noteDB.repostEventIds!.contains(note.noteId)) {
-        noteDB.repostEventIds = List.from(noteDB.repostEventIds!);
         noteDB.repostEventIds!.add(note.noteId);
         noteDB.repostCount++;
         if (note.author == pubkey) noteDB.repostCountByMe++;
@@ -248,7 +245,6 @@ extension Load on Moment {
       // check quote repost
       if (note.quoteRepostId == noteDB.noteId &&
           !noteDB.quoteRepostEventIds!.contains(note.noteId)) {
-        noteDB.quoteRepostEventIds = List.from(noteDB.quoteRepostEventIds!);
         noteDB.quoteRepostEventIds!.add(note.noteId);
         noteDB.quoteRepostCount++;
         if (note.author == pubkey) noteDB.quoteRepostCountByMe++;
@@ -256,7 +252,6 @@ extension Load on Moment {
       // check reaction
       if (note.reactedId == noteDB.noteId &&
           !noteDB.reactionEventIds!.contains(note.noteId)) {
-        noteDB.reactionEventIds = List.from(noteDB.reactionEventIds!);
         noteDB.reactionEventIds!.add(note.noteId);
         noteDB.reactionCount++;
         if (note.author == pubkey) noteDB.reactionCountByMe++;
@@ -321,7 +316,6 @@ extension Load on Moment {
     NoteDBISAR? noteDB = await loadNoteWithNoteId(noteId, reload: false);
     if (noteDB == null) return;
     noteDB.zapEventIds ??= [];
-    noteDB.zapEventIds = List.from(noteDB.zapEventIds!);
     ZapReceipt zapReceipt = await Nip57.getZapReceipt(
         zapEvent,
         Account.sharedInstance.currentPubkey,
@@ -330,7 +324,6 @@ extension Load on Moment {
         ZapRecordsDBISAR.zapReceiptToZapRecordsDB(zapReceipt);
     if (noteDB.zapEventIds?.contains(zapRecordsDB.bolt11) == true) return;
     Zaps.saveZapRecordToDB(zapRecordsDB);
-    noteDB.zapEventIds = List.from(noteDB.zapEventIds ?? []);
     noteDB.zapEventIds?.add(zapRecordsDB.bolt11);
     noteDB.zapCount++;
     noteDB.zapAmount += ZapRecordsDBISAR.getZapAmount(zapRecordsDB.bolt11);
@@ -351,7 +344,6 @@ extension Load on Moment {
     NoteDBISAR? noteDB = await loadNoteWithNoteId(noteId);
     if (noteDB == null) return;
     noteDB.replyEventIds ??= [];
-    noteDB.replyEventIds = List.from(noteDB.replyEventIds!);
     if (noteDB.replyEventIds?.contains(replyEvent.id) == true) return;
     saveNoteToDB(replyNoteDB, ConflictAlgorithm.ignore);
     noteDB.replyEventIds?.add(replyNoteDB.noteId);
@@ -371,7 +363,6 @@ extension Load on Moment {
     Reposts reposts = await Nip18.decodeReposts(repostEvent);
     NoteDBISAR repostDB = NoteDBISAR.noteDBFromReposts(reposts);
     saveNoteToDB(repostDB, ConflictAlgorithm.ignore);
-    noteDB.repostEventIds = List.from(noteDB.repostEventIds!);
     noteDB.repostEventIds?.add(repostDB.noteId);
     noteDB.repostCount++;
     if (reposts.pubkey == pubkey) {
@@ -392,7 +383,6 @@ extension Load on Moment {
     QuoteReposts quoteReposts = Nip18.decodeQuoteReposts(quoteRepostEvent);
     NoteDBISAR quoteRepostDB = NoteDBISAR.noteDBFromQuoteReposts(quoteReposts);
     saveNoteToDB(quoteRepostDB, ConflictAlgorithm.ignore);
-    noteDB.quoteRepostEventIds = List.from(noteDB.quoteRepostEventIds ?? []);
     noteDB.quoteRepostEventIds?.add(quoteRepostDB.noteId);
     noteDB.quoteRepostCount++;
     if (quoteReposts.pubkey == pubkey) {
@@ -405,7 +395,6 @@ extension Load on Moment {
     NoteDBISAR? noteDB = await loadNoteWithNoteId(noteId);
     if (noteDB == null) return;
     noteDB.reactionEventIds ??= [];
-    noteDB.reactionEventIds = List.from(noteDB.reactionEventIds!);
     if (noteDB.reactionEventIds?.contains(reactionEvent.id) == true) return;
 
     Reactions reactions = Nip25.decode(reactionEvent);
@@ -474,10 +463,15 @@ extension Load on Moment {
 
   Future<List<NoteDBISAR>?> loadHashTagsFromRelay(List<String> hashTags,
       {int limit = 30, int? until}) async {
-    List<NoteDBISAR> r = await DBISAR.sharedInstance.isar.noteDBISARs
+    List<NoteDBISAR> returnResult = [];
+    List<NoteDBISAR> searchResult = await DBISAR.sharedInstance.isar.noteDBISARs
         .filter()
         .anyOf(hashTags, (q, hashTag) => q.hashTagsElementEqualTo(hashTag))
         .findAll();
+    for (var note in searchResult) {
+      note = note.withGrowableLevels();
+      returnResult.add(note);
+    }
     Completer<List<NoteDBISAR>?> completer = Completer<List<NoteDBISAR>?>();
     Filter f = Filter(kinds: [1], t: hashTags, until: until, limit: limit);
     Map<String, Event> result = {};
@@ -492,10 +486,10 @@ extension Load on Moment {
           Note note = Nip1.decodeNote(event);
           noteDB = NoteDBISAR.noteDBFromNote(note);
           saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
-          r.add(noteDB);
+          returnResult.add(noteDB);
         }
-        r.sort((a, b) => b.createAt.compareTo(a.createAt));
-        if (!completer.isCompleted) completer.complete(r);
+        returnResult.sort((a, b) => b.createAt.compareTo(a.createAt));
+        if (!completer.isCompleted) completer.complete(returnResult);
       }
     });
     return completer.future;
@@ -614,17 +608,28 @@ extension Load on Moment {
     if (private != null) {
       queryBuilder = queryBuilder.privateEqualTo(private);
     }
+    List<NoteDBISAR> result = [];
     if (limit != null) {
-      return await queryBuilder
+      final searchResult = await queryBuilder
           .idBetween(0, intMaxValue)
           .sortByCreateAtDesc()
           .limit(limit)
           .findAll();
+      for (NoteDBISAR note in searchResult) {
+        note = note.withGrowableLevels();
+        result.add(note);
+      }
+      return result;
     }
-    return await queryBuilder
+    final searchResult = await queryBuilder
         .idBetween(0, intMaxValue)
         .sortByCreateAtDesc()
         .findAll();
+    for (NoteDBISAR note in searchResult) {
+      note = note.withGrowableLevels();
+      result.add(note);
+    }
+    return result;
   }
 
   Future<void> handleNewNotes(NoteDBISAR noteDB) async {

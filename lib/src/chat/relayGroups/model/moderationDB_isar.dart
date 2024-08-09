@@ -4,6 +4,13 @@ import 'package:chatcore/chat-core.dart';
 
 part 'moderationDB_isar.g.dart';
 
+extension ModerationDBISARExtensions on ModerationDBISAR {
+  ModerationDBISAR withGrowableLevels() => this
+    ..previous = previous?.toList()
+    ..users = users?.toList()
+    ..permissions = permissions?.toList();
+}
+
 @collection
 class ModerationDBISAR {
   Id id = Isar.autoIncrement;

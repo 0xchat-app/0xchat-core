@@ -145,7 +145,6 @@ extension EMember on RelayGroup {
       //open group, auto join
       groupDB.members ??= [];
       if (!groupDB.members!.contains(pubkey)) {
-        groupDB.members = List.from(groupDB.members!);
         groupDB.members!.add(pubkey);
       }
     }
