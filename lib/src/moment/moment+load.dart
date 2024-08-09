@@ -225,12 +225,14 @@ extension Load on Moment {
       // check reply
       if (note.reply == noteDB.noteId &&
           !noteDB.replyEventIds!.contains(note.noteId)) {
+        noteDB.replyEventIds = List.from(noteDB.replyEventIds!);
         noteDB.replyEventIds!.add(note.noteId);
         noteDB.replyCount++;
         if (note.author == pubkey) noteDB.replyCountByMe++;
       } else if ((note.root == noteDB.noteId &&
               (note.reply == null || note.reply!.isEmpty)) &&
           !noteDB.replyEventIds!.contains(note.noteId)) {
+        noteDB.replyEventIds = List.from(noteDB.replyEventIds!);
         noteDB.replyEventIds!.add(note.noteId);
         noteDB.replyCount++;
         if (note.author == pubkey) noteDB.replyCountByMe++;
@@ -238,6 +240,7 @@ extension Load on Moment {
       // check repost
       if (note.repostId == noteDB.noteId &&
           !noteDB.repostEventIds!.contains(note.noteId)) {
+        noteDB.repostEventIds = List.from(noteDB.repostEventIds!);
         noteDB.repostEventIds!.add(note.noteId);
         noteDB.repostCount++;
         if (note.author == pubkey) noteDB.repostCountByMe++;
@@ -245,6 +248,7 @@ extension Load on Moment {
       // check quote repost
       if (note.quoteRepostId == noteDB.noteId &&
           !noteDB.quoteRepostEventIds!.contains(note.noteId)) {
+        noteDB.quoteRepostEventIds = List.from(noteDB.quoteRepostEventIds!);
         noteDB.quoteRepostEventIds!.add(note.noteId);
         noteDB.quoteRepostCount++;
         if (note.author == pubkey) noteDB.quoteRepostCountByMe++;
@@ -252,6 +256,7 @@ extension Load on Moment {
       // check reaction
       if (note.reactedId == noteDB.noteId &&
           !noteDB.reactionEventIds!.contains(note.noteId)) {
+        noteDB.reactionEventIds = List.from(noteDB.reactionEventIds!);
         noteDB.reactionEventIds!.add(note.noteId);
         noteDB.reactionCount++;
         if (note.author == pubkey) noteDB.reactionCountByMe++;
@@ -325,6 +330,7 @@ extension Load on Moment {
         ZapRecordsDBISAR.zapReceiptToZapRecordsDB(zapReceipt);
     if (noteDB.zapEventIds?.contains(zapRecordsDB.bolt11) == true) return;
     Zaps.saveZapRecordToDB(zapRecordsDB);
+    noteDB.zapEventIds = List.from(noteDB.zapEventIds ?? []);
     noteDB.zapEventIds?.add(zapRecordsDB.bolt11);
     noteDB.zapCount++;
     noteDB.zapAmount += ZapRecordsDBISAR.getZapAmount(zapRecordsDB.bolt11);
@@ -365,6 +371,7 @@ extension Load on Moment {
     Reposts reposts = await Nip18.decodeReposts(repostEvent);
     NoteDBISAR repostDB = NoteDBISAR.noteDBFromReposts(reposts);
     saveNoteToDB(repostDB, ConflictAlgorithm.ignore);
+    noteDB.repostEventIds = List.from(noteDB.repostEventIds!);
     noteDB.repostEventIds?.add(repostDB.noteId);
     noteDB.repostCount++;
     if (reposts.pubkey == pubkey) {
@@ -385,6 +392,7 @@ extension Load on Moment {
     QuoteReposts quoteReposts = Nip18.decodeQuoteReposts(quoteRepostEvent);
     NoteDBISAR quoteRepostDB = NoteDBISAR.noteDBFromQuoteReposts(quoteReposts);
     saveNoteToDB(quoteRepostDB, ConflictAlgorithm.ignore);
+    noteDB.quoteRepostEventIds = List.from(noteDB.quoteRepostEventIds ?? []);
     noteDB.quoteRepostEventIds?.add(quoteRepostDB.noteId);
     noteDB.quoteRepostCount++;
     if (quoteReposts.pubkey == pubkey) {

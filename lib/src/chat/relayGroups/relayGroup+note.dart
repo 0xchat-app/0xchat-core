@@ -62,9 +62,13 @@ extension ENote on RelayGroup {
     String? rootEventId = note.root;
     note.pTags ??= [];
     if (rootEventId == null || rootEventId.isEmpty) {
-      if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
+      if (!note.pTags!.contains(note.author)) {
+        note.pTags = List.from(note.pTags!);
+        note.pTags!.add(note.author);
+      }
       for (var mention in mentions ?? []) {
         if (!note.pTags!.contains(mention)) {
+          note.pTags = List.from(note.pTags!);
           note.pTags!.add(mention);
         }
       }
@@ -75,9 +79,13 @@ extension ENote on RelayGroup {
           await Moment.sharedInstance.loadNoteWithNoteId(rootEventId);
       if (rootNote?.author.isNotEmpty == true &&
           !note.pTags!.contains(rootNote?.author)) {
+        note.pTags = List.from(note.pTags!);
         note.pTags!.add(rootNote!.author);
       }
-      if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
+      if (!note.pTags!.contains(note.author)) {
+        note.pTags = List.from(note.pTags!);
+        note.pTags!.add(note.author);
+      }
       return await sendGroupNotes(note.groupId, content, previous,
           rootEvent: rootEventId,
           mentions: note.pTags,
@@ -103,7 +111,10 @@ extension ENote on RelayGroup {
     }
 
     Completer<OKEvent> completer = Completer<OKEvent>();
-    if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
+    if (!note.pTags!.contains(note.author)) {
+      note.pTags = List.from(note.pTags!);
+      note.pTags!.add(note.author);
+    }
     Event event = await Nip25.encode(
         reactedNoteId, note.pTags ?? [], '1', like, pubkey, privkey,
         emojiShotCode: emojiShotCode, emojiURL: emojiURL);
@@ -113,6 +124,7 @@ extension ENote on RelayGroup {
     Moment.sharedInstance.saveNoteToDB(noteDB, null);
 
     note.reactionEventIds ??= [];
+    note.reactionEventIds = List.from(note.reactionEventIds!);
     note.reactionEventIds!.add(event.id);
     note.reactionCount++;
     note.reactionCountByMe++;
@@ -142,7 +154,10 @@ extension ENote on RelayGroup {
     }
 
     Completer<OKEvent> completer = Completer<OKEvent>();
-    if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
+    if (!note.pTags!.contains(note.author)) {
+      note.pTags = List.from(note.pTags!);
+      note.pTags!.add(note.author);
+    }
     Event event = await Nip18.encodeReposts(repostNoteId, repostNoteRelay,
         note.pTags ?? [], note.rawEvent, pubkey, privkey);
 
@@ -152,6 +167,7 @@ extension ENote on RelayGroup {
     await Moment.sharedInstance.saveNoteToDB(noteDB, null);
 
     note.repostEventIds ??= [];
+    note.repostEventIds = List.from(note.repostEventIds!);
     note.repostEventIds!.add(event.id);
     note.repostCount++;
     note.repostCountByMe++;
@@ -182,13 +198,17 @@ extension ENote on RelayGroup {
     }
 
     Completer<OKEvent> completer = Completer<OKEvent>();
-    if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
+    if (!note.pTags!.contains(note.author)) {
+      note.pTags = List.from(note.pTags!);
+      note.pTags!.add(note.author);
+    }
     String nostrNote = Nip21.encode(Nip19.encodeNote(quoteRepostNoteId));
     content = '$content\n$nostrNote';
     Event event = await Nip18.encodeQuoteReposts(quoteRepostNoteId,
         note.pTags ?? [], content, hashTags, pubkey, privkey);
     for (var mention in mentions ?? []) {
       if (!note.pTags!.contains(mention)) {
+        note.pTags = List.from(note.pTags!);
         note.pTags!.add(mention);
       }
     }
@@ -198,6 +218,7 @@ extension ENote on RelayGroup {
     await Moment.sharedInstance.saveNoteToDB(noteDB, null);
 
     note.quoteRepostEventIds ??= [];
+    note.quoteRepostEventIds = List.from(note.quoteRepostEventIds!);
     note.quoteRepostEventIds!.add(event.id);
     note.quoteRepostCount++;
     note.quoteRepostCountByMe++;

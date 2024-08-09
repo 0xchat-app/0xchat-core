@@ -216,7 +216,10 @@ extension Send on Moment {
     NoteDBISAR? note = await loadNoteWithNoteId(reactedNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
-      if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
+      if (!note.pTags!.contains(note.author)){
+        note.pTags = List.from(note.pTags!);
+        note.pTags!.add(note.author);
+      }
       Event event = await Nip25.encode(
           reactedNoteId, note.pTags ?? [], '1', like, pubkey, privkey,
           emojiShotCode: emojiShotCode, emojiURL: emojiURL);
@@ -250,7 +253,10 @@ extension Send on Moment {
     NoteDBISAR? note = await loadNoteWithNoteId(repostNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
-      if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
+      if (!note.pTags!.contains(note.author)){
+        note.pTags = List.from(note.pTags!);
+        note.pTags!.add(note.author);
+      }
       Event event = await Nip18.encodeReposts(repostNoteId, repostNoteRelay,
           note.pTags ?? [], note.rawEvent, pubkey, privkey);
       Reposts r = await Nip18.decodeReposts(event);
