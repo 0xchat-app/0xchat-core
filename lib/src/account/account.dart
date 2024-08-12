@@ -61,10 +61,7 @@ class Account {
   }
 
   static Future<void> saveUserToDB(UserDBISAR user) async {
-    final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.userDBISARs.put(user);
-    });
+    await DBISAR.sharedInstance.saveToDB(user);
   }
 
   bool isValidPubKey(String pubKey) {

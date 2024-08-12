@@ -28,10 +28,7 @@ class EventCache {
   }
 
   Future<void> saveEventToDB(EventDBISAR eventDB) async {
-    final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.eventDBISARs.put(eventDB);
-    });
+    await DBISAR.sharedInstance.saveToDB(eventDB);
   }
 
   Future<bool> eventExit(Event event) async {

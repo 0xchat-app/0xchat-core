@@ -114,7 +114,7 @@ class Messages {
         isar.messageDBISARs.where().filter().messageIdEqualTo(messageId);
     final messages = await queryBuilder.sortByCreateTimeDesc().findAll();
     if (messages.isNotEmpty) {
-      return messages.first;
+      return messages.first.withGrowableLevels();
     }
     return null;
   }
@@ -417,10 +417,7 @@ class Messages {
 
   static Future<void> saveMessageToDB(MessageDBISAR message,
       {ConflictAlgorithm? conflictAlgorithm}) async {
-    final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.messageDBISARs.put(message);
-    });
+    await DBISAR.sharedInstance.saveToDB(message);
   }
 
   static deleteMessagesFromDB({List<String>? messageIds}) async {

@@ -142,10 +142,7 @@ extension Load on Moment {
         conflictAlgorithm != ConflictAlgorithm.ignore) {
       notesCache[noteDB.noteId] = noteDB;
     }
-    final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.noteDBISARs.put(noteDB);
-    });
+    await DBISAR.sharedInstance.saveToDB(noteDB);
     notesCache[noteDB.noteId] = noteDB;
   }
 

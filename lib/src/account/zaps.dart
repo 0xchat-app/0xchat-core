@@ -370,10 +370,7 @@ class Zaps {
   }
 
   static Future<void> saveZapRecordToDB(ZapRecordsDBISAR zapRecordsDB) async {
-    final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.zapRecordsDBISARs.put(zapRecordsDB);
-    });
+    await DBISAR.sharedInstance.saveToDB(zapRecordsDB);
   }
 
   static Future<ZapRecordsDBISAR> handleZapRecordEvent(Event event) async {
