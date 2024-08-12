@@ -533,6 +533,7 @@ extension Load on Moment {
       noteDB = await loadPublicNoteActionsFromDB(noteDB);
       result['reply'] = await loadNoteIdsToNoteDBs(
           noteDB.replyEventIds ?? [], noteDB.private, reload);
+      actionsCallBack?.call(result);
       if (!noteDB.private && reload) {
         await loadPublicNoteActionsFromRelay(noteDB,
             noteCallBack: (noteDB) async {
