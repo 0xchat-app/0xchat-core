@@ -112,7 +112,9 @@ extension ENote on RelayGroup {
     }
     Event event = await Nip25.encode(
         reactedNoteId, note.pTags ?? [], '1', like, pubkey, privkey,
-        emojiShotCode: emojiShotCode, emojiURL: emojiURL);
+        emojiShotCode: emojiShotCode,
+        emojiURL: emojiURL,
+        relayGroupId: groupId);
 
     NoteDBISAR noteDB = NoteDBISAR.noteDBFromReactions(Nip25.decode(event));
     noteDB.groupId = groupId;
@@ -152,7 +154,8 @@ extension ENote on RelayGroup {
       note.pTags!.add(note.author);
     }
     Event event = await Nip18.encodeReposts(repostNoteId, repostNoteRelay,
-        note.pTags ?? [], note.rawEvent, pubkey, privkey);
+        note.pTags ?? [], note.rawEvent, pubkey, privkey,
+        relayGroupId: groupId);
 
     Reposts r = await Nip18.decodeReposts(event);
     NoteDBISAR noteDB = NoteDBISAR.noteDBFromReposts(r);
@@ -195,8 +198,9 @@ extension ENote on RelayGroup {
     }
     String nostrNote = Nip21.encode(Nip19.encodeNote(quoteRepostNoteId));
     content = '$content\n$nostrNote';
-    Event event = await Nip18.encodeQuoteReposts(quoteRepostNoteId,
-        note.pTags ?? [], content, hashTags, pubkey, privkey);
+    Event event = await Nip18.encodeQuoteReposts(
+        quoteRepostNoteId, note.pTags ?? [], content, hashTags, pubkey, privkey,
+        relayGroupId: groupId);
     for (var mention in mentions ?? []) {
       if (!note.pTags!.contains(mention)) {
         note.pTags!.add(mention);
