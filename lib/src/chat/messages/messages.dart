@@ -112,11 +112,8 @@ class Messages {
     final isar = DBISAR.sharedInstance.isar;
     var queryBuilder =
         isar.messageDBISARs.where().filter().messageIdEqualTo(messageId);
-    final messages = await queryBuilder.sortByCreateTimeDesc().findAll();
-    if (messages.isNotEmpty) {
-      return messages.first.withGrowableLevels();
-    }
-    return null;
+    final message = await queryBuilder.findFirst();
+    return message?.withGrowableLevels();
   }
 
   Future<void> handleReactionEvent(Event event) async {
