@@ -10,6 +10,7 @@ typedef GroupsModerationCallBack = void Function(ModerationDBISAR);
 typedef GroupsNoteCallBack = void Function(NoteDBISAR);
 typedef GroupMetadataUpdatedCallBack = void Function(RelayGroupDBISAR);
 typedef OfflineGroupMessageFinishCallBack = void Function();
+typedef GroupSearchCallBack = void Function(List<RelayGroupDBISAR>);
 
 class RelayGroup {
   /// singleton

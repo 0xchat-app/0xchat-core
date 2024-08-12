@@ -164,7 +164,7 @@ extension EInfo on RelayGroup {
   }
 
   Future<List<RelayGroupDBISAR>> searchAllGroupsFromRelays(
-      GroupMetadataUpdatedCallBack? groupCallback) async {
+      GroupSearchCallBack? groupCallback) async {
     Set<String> relays = Set.from(groupRelays);
     relays.addAll(Relays.sharedInstance.recommendGroupRelays);
     return await searchGroupsMetadataFromRelays(relays.toList(), groupCallback);
@@ -188,14 +188,14 @@ extension EInfo on RelayGroup {
   }
 
   Future<List<RelayGroupDBISAR>> searchGroupsMetadataFromRelays(
-      List<String> relays, GroupMetadataUpdatedCallBack? groupCallback) async {
+      List<String> relays, GroupSearchCallBack? groupCallback) async {
     if (relays.isEmpty) return [];
     Map<String, RelayGroupDBISAR> result = {};
     List<RelayGroupDBISAR> resultFromDB = await searchGroupsFromDB(relays);
     for (var db in resultFromDB) {
       result[db.groupId] = db;
-      groupCallback?.call(db);
     }
+    groupCallback?.call(resultFromDB);
     await Connect.sharedInstance
         .connectRelays(relays, relayKind: RelayKind.temp);
     Completer<List<RelayGroupDBISAR>> completer =
@@ -207,11 +207,12 @@ extension EInfo on RelayGroup {
       result[groupDB.groupId] = groupDB;
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
+      for (var groupDB in List.from(result.values.toList())) {
+        groupDB = await searchGroupMembersFromRelays(groupDB);
+        result[groupDB.groupId] = groupDB;
+      }
+      groupCallback?.call(result.values.toList());
       if (unCompletedRelays.isEmpty && !completer.isCompleted) {
-        for (var groupDB in result.values.toList()) {
-          groupDB = await searchGroupMembersFromRelays(groupDB);
-          groupCallback?.call(groupDB);
-        }
         completer.complete(result.values.toList());
       }
     });
