@@ -28,6 +28,8 @@ class Moment {
   String notesSubscription = '';
   Map<String, bool> offlineMomentFinish = {};
 
+  Map<String, Future<NoteDBISAR?>> loadingNoteIds = {};
+
   int latestNoteTime = 0;
   int latestNotificationTime = 0;
   int limit = 50;

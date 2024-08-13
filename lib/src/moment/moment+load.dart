@@ -108,10 +108,7 @@ extension Load on Moment {
     if (notesCache.containsKey(noteId)) return notesCache[noteId];
     NoteDBISAR? note = await loadNoteFromDBWithNoteId(noteId);
     if (note == null && !private && reload) {
-      await Connect.sharedInstance
-          .connectRelays(relays ?? [], relayKind: RelayKind.temp);
       note = await loadPublicNoteFromRelay(noteId, relays: relays);
-      await Connect.sharedInstance.closeTempConnects(relays ?? []);
     }
     if (note != null) notesCache[noteId] = note;
     return note;
@@ -149,6 +146,11 @@ extension Load on Moment {
   Future<NoteDBISAR?> loadPublicNoteFromRelay(String noteId,
       {List<String>? relays}) async {
     if (noteId.isEmpty) return null;
+    // cache future
+    if (loadingNoteIds.keys.contains(noteId)) return loadingNoteIds[noteId];
+    Completer<NoteDBISAR?> completer = Completer<NoteDBISAR?>();
+    loadingNoteIds[noteId] = completer.future;
+
     List<String> tempRelays = [];
     for (var relay in relays ?? []) {
       if (relay.isNotEmpty &&
@@ -158,7 +160,6 @@ extension Load on Moment {
         tempRelays.add(relay);
       }
     }
-    Completer<NoteDBISAR?> completer = Completer<NoteDBISAR?>();
     Filter f = Filter(ids: [noteId]);
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) async {
