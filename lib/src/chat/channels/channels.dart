@@ -678,9 +678,10 @@ class Channels {
     if (encodedChannel.startsWith('nostr:')) {
       encodedChannel = Nip21.decode(encodedChannel)!;
     }
-    if (encodedChannel.startsWith('nevent')) {
+    if (encodedChannel.startsWith('nevent') ||
+        encodedChannel.startsWith('naddr')) {
       Map result = Nip19.decodeShareableEntity(encodedChannel);
-      if (result['prefix'] == 'nevent') {
+      if (result['prefix'] == 'nevent' || result['prefix'] == 'naddr') {
         return {
           'channelId': result['special'],
           'relays': result['relays'],

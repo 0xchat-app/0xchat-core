@@ -410,10 +410,19 @@ class RelayGroup {
     return regex.hasMatch(url);
   }
 
+  bool isGroupIdentifier(String url) {
+    return url.contains('\'');
+  }
+
   Future<List<RelayGroupDBISAR>?> fuzzySearch(String keyword) async {
     if (keyword.isNotEmpty) {
       if (isWebSocketUrl(keyword)) {
         return await searchGroupsMetadataFromRelays([keyword], null);
+      }
+      if (isGroupIdentifier(keyword)) {
+        RelayGroupDBISAR? group =
+            await searchGroupsMetadataWithGroupID(keyword, null);
+        if (group != null) return [group];
       }
       RegExp regex = RegExp(keyword, caseSensitive: false);
       List<RelayGroupDBISAR> result = groups.values
@@ -451,7 +460,7 @@ class RelayGroup {
     RelayGroupDBISAR? groupDB = groups[groupId];
     if (groupDB == null) return null;
     String nevent = Nip19.encodeShareableEntity(
-        'nevent', groupId, [groupDB.relay], groupDB.author, 39000);
+        'naddr', groupId, [groupDB.relay], groupDB.author, 39000);
     return Nip21.encode(nevent);
   }
 
