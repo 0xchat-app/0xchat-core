@@ -268,8 +268,10 @@ extension Load on Moment {
     Map<String, List<Filter>> subscriptions = {};
     for (String relayURL in Connect.sharedInstance.relays()) {
       int lastUpdatedTime = noteDB.getLastUpdatedTime(relayURL);
-      Filter f = Filter(
-          kinds: [1, 6, 7, 9735], e: [noteId], since: lastUpdatedTime + 1);
+      Filter f = lastUpdatedTime == 0
+          ? Filter(kinds: [1, 6, 7, 9735], e: [noteId])
+          : Filter(
+              kinds: [1, 6, 7, 9735], e: [noteId], since: lastUpdatedTime + 1);
       subscriptions[relayURL] = [f];
     }
     Connect.sharedInstance.addSubscriptions(subscriptions,
