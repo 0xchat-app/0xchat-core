@@ -10,6 +10,7 @@ extension Notification on Moment {
     List<NotificationDBISAR> notifications = await isar.notificationDBISARs
         .filter()
         .createAtLessThan(until)
+        .sortByCreateAtDesc()
         .limit(limit)
         .findAll();
     latestNotificationTime = notifications.first.createAt;
