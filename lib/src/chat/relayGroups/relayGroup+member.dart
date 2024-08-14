@@ -224,6 +224,8 @@ extension EMember on RelayGroup {
       case GroupActionKind.addPermission:
       case GroupActionKind.removePermission:
       case GroupActionKind.deleteEvent:
+        deleteMessageFromLocal(moderation.eventId);
+        deleteNoteFromLocal(moderation.eventId);
         return;
       case GroupActionKind.editGroupStatus:
         String private = moderation.private ? 'PRIVATE' : 'PUBLIC';

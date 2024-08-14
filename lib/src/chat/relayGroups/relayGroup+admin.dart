@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:chatcore/chat-core.dart';
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:flutter/foundation.dart';
 
 extension EAdmin on RelayGroup {
@@ -26,8 +25,8 @@ extension EAdmin on RelayGroup {
   Future<void> handleJoinRequest(Event event, String relay) async {
     GroupJoinRequest joinRequest = Nip29.decodeJoinRequest(event);
     RelayGroupDBISAR? groupDB = groups[joinRequest.groupId];
-    if (groupDB == null || !groupDB.private || groupDB.admins == null) return;
-    if (hasPermissions(groupDB.admins!, pubkey, [GroupActionKind.addUser])) {
+    if (groupDB == null || !groupDB.private) return;
+    if (hasPermissions(groupDB.admins, pubkey, [GroupActionKind.addUser])) {
       JoinRequestDBISAR joinRequestDB =
           JoinRequestDBISAR.toJoinRequestDB(joinRequest);
       await saveJoinRequestDBToDB(joinRequestDB);
@@ -45,10 +44,10 @@ extension EAdmin on RelayGroup {
 
   Future<OKEvent> acceptJoinRequest(JoinRequestDBISAR joinRequest) async {
     RelayGroupDBISAR? groupDB = groups[joinRequest.groupId];
-    if (groupDB == null || !groupDB.private || groupDB.admins == null) {
+    if (groupDB == null || !groupDB.private) {
       return OKEvent(joinRequest.groupId, false, 'group not exit');
     }
-    if (hasPermissions(groupDB.admins!, pubkey, [GroupActionKind.addUser])) {
+    if (hasPermissions(groupDB.admins, pubkey, [GroupActionKind.addUser])) {
       return await addUser(groupDB.groupId, [joinRequest.author], '');
     } else {
       return OKEvent(joinRequest.groupId, false, 'no permissions');
@@ -68,14 +67,14 @@ extension EAdmin on RelayGroup {
     String groupId = moderation.groupId;
     RelayGroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
-    if (groupDB.admins == null) {
+    if (groupDB.admins.isEmpty) {
       return OKEvent(groupId, false, 'group admins not exit');
     }
     if (moderation.actionKind == GroupActionKind.removeUser &&
         moderation.users.singleOrNull == pubkey) {
       debugPrintSynchronously('sendModeration: leave group');
     } else if (!hasPermissions(
-        groupDB.admins!, pubkey, [moderation.actionKind])) {
+        groupDB.admins, pubkey, [moderation.actionKind])) {
       return OKEvent(groupId, false, 'permission not met');
     }
 
@@ -147,8 +146,8 @@ extension EAdmin on RelayGroup {
     RelayGroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     List<GroupAdmin>? admins =
-        groupDB.admins?.where((admin) => admin.pubkey == user).toList();
-    if (admins != null && admins.isNotEmpty) {
+        groupDB.admins.where((admin) => admin.pubkey == user).toList();
+    if (admins.isNotEmpty) {
       List<GroupActionKind> oldList = admins.first.permissions;
       List<GroupActionKind> addList = [];
       List<GroupActionKind> removeList = [];
@@ -186,7 +185,7 @@ extension EAdmin on RelayGroup {
     OKEvent ok = await sendModeration(moderation);
     if (ok.status) {
       bool exit = false;
-      for (GroupAdmin admin in groupDB.admins ?? []) {
+      for (GroupAdmin admin in groupDB.admins) {
         if (admin.pubkey == user) {
           exit = true;
           admin.permissions.addAll(permissions);
@@ -194,8 +193,7 @@ extension EAdmin on RelayGroup {
       }
       if (!exit) {
         GroupAdmin admin = GroupAdmin(user, 'admin', permissions);
-        groupDB.admins ??= [];
-        groupDB.admins?.add(admin);
+        groupDB.admins.add(admin);
       }
       syncGroupToDB(groupDB);
     }
@@ -210,12 +208,12 @@ extension EAdmin on RelayGroup {
         groupId, [user], permissions.map((e) => e.name).toList(), reason);
     OKEvent ok = await sendModeration(moderation);
     if (ok.status) {
-      for (GroupAdmin admin in groupDB.admins ?? []) {
+      for (GroupAdmin admin in groupDB.admins) {
         if (admin.pubkey == user) {
           admin.permissions.removeWhere((permission) =>
               permissions.any((element) => element.name == permission.name));
           if (admin.permissions.isEmpty) {
-            groupDB.admins?.remove(admin);
+            groupDB.admins.remove(admin);
             break;
           }
         }
