@@ -123,6 +123,9 @@ class Channels {
       }
       if (unCompletedRelays.isEmpty) {
         offlineChannelMessageFinishCallBack?.call();
+        if (!Messages.sharedInstance.channelMessageCompleter.isCompleted) {
+          Messages.sharedInstance.channelMessageCompleter.complete();
+        }
       }
     });
   }

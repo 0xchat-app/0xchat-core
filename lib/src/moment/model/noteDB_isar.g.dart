@@ -47,178 +47,183 @@ const NoteDBISARSchema = CollectionSchema(
       name: r'encodedNoteId',
       type: IsarType.string,
     ),
-    r'groupId': PropertySchema(
+    r'findEvent': PropertySchema(
       id: 6,
+      name: r'findEvent',
+      type: IsarType.bool,
+    ),
+    r'groupId': PropertySchema(
+      id: 7,
       name: r'groupId',
       type: IsarType.string,
     ),
     r'hashTags': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'hashTags',
       type: IsarType.stringList,
     ),
     r'lastUpdatedTimeString': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'lastUpdatedTimeString',
       type: IsarType.string,
     ),
     r'mentions': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'mentions',
       type: IsarType.stringList,
     ),
     r'noteId': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'noteId',
       type: IsarType.string,
     ),
     r'pTags': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'pTags',
       type: IsarType.stringList,
     ),
     r'private': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'private',
       type: IsarType.bool,
     ),
     r'quoteRepostCount': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'quoteRepostCount',
       type: IsarType.long,
     ),
     r'quoteRepostCountByMe': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'quoteRepostCountByMe',
       type: IsarType.long,
     ),
     r'quoteRepostEventIds': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'quoteRepostEventIds',
       type: IsarType.stringList,
     ),
     r'quoteRepostId': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'quoteRepostId',
       type: IsarType.string,
     ),
     r'rawEvent': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'rawEvent',
       type: IsarType.string,
     ),
     r'reactedId': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'reactedId',
       type: IsarType.string,
     ),
     r'reactedKind': PropertySchema(
-      id: 19,
+      id: 20,
       name: r'reactedKind',
       type: IsarType.string,
     ),
     r'reactionCount': PropertySchema(
-      id: 20,
+      id: 21,
       name: r'reactionCount',
       type: IsarType.long,
     ),
     r'reactionCountByMe': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'reactionCountByMe',
       type: IsarType.long,
     ),
     r'reactionEventIds': PropertySchema(
-      id: 22,
+      id: 23,
       name: r'reactionEventIds',
       type: IsarType.stringList,
     ),
     r'read': PropertySchema(
-      id: 23,
+      id: 24,
       name: r'read',
       type: IsarType.bool,
     ),
     r'reply': PropertySchema(
-      id: 24,
+      id: 25,
       name: r'reply',
       type: IsarType.string,
     ),
     r'replyCount': PropertySchema(
-      id: 25,
+      id: 26,
       name: r'replyCount',
       type: IsarType.long,
     ),
     r'replyCountByMe': PropertySchema(
-      id: 26,
+      id: 27,
       name: r'replyCountByMe',
       type: IsarType.long,
     ),
     r'replyEventIds': PropertySchema(
-      id: 27,
+      id: 28,
       name: r'replyEventIds',
       type: IsarType.stringList,
     ),
     r'replyRelay': PropertySchema(
-      id: 28,
+      id: 29,
       name: r'replyRelay',
       type: IsarType.string,
     ),
     r'repostCount': PropertySchema(
-      id: 29,
+      id: 30,
       name: r'repostCount',
       type: IsarType.long,
     ),
     r'repostCountByMe': PropertySchema(
-      id: 30,
+      id: 31,
       name: r'repostCountByMe',
       type: IsarType.long,
     ),
     r'repostEventIds': PropertySchema(
-      id: 31,
+      id: 32,
       name: r'repostEventIds',
       type: IsarType.stringList,
     ),
     r'repostId': PropertySchema(
-      id: 32,
+      id: 33,
       name: r'repostId',
       type: IsarType.string,
     ),
     r'root': PropertySchema(
-      id: 33,
+      id: 34,
       name: r'root',
       type: IsarType.string,
     ),
     r'rootRelay': PropertySchema(
-      id: 34,
+      id: 35,
       name: r'rootRelay',
       type: IsarType.string,
     ),
     r'warning': PropertySchema(
-      id: 35,
+      id: 36,
       name: r'warning',
       type: IsarType.string,
     ),
     r'zapAmount': PropertySchema(
-      id: 36,
+      id: 37,
       name: r'zapAmount',
       type: IsarType.long,
     ),
     r'zapAmountByMe': PropertySchema(
-      id: 37,
+      id: 38,
       name: r'zapAmountByMe',
       type: IsarType.long,
     ),
     r'zapCount': PropertySchema(
-      id: 38,
+      id: 39,
       name: r'zapCount',
       type: IsarType.long,
     ),
     r'zapCountByMe': PropertySchema(
-      id: 39,
+      id: 40,
       name: r'zapCountByMe',
       type: IsarType.long,
     ),
     r'zapEventIds': PropertySchema(
-      id: 40,
+      id: 41,
       name: r'zapEventIds',
       type: IsarType.stringList,
     )
@@ -451,41 +456,42 @@ void _noteDBISARSerialize(
   writer.writeString(offsets[3], object.emojiShortcode);
   writer.writeString(offsets[4], object.emojiURL);
   writer.writeString(offsets[5], object.encodedNoteId);
-  writer.writeString(offsets[6], object.groupId);
-  writer.writeStringList(offsets[7], object.hashTags);
-  writer.writeString(offsets[8], object.lastUpdatedTimeString);
-  writer.writeStringList(offsets[9], object.mentions);
-  writer.writeString(offsets[10], object.noteId);
-  writer.writeStringList(offsets[11], object.pTags);
-  writer.writeBool(offsets[12], object.private);
-  writer.writeLong(offsets[13], object.quoteRepostCount);
-  writer.writeLong(offsets[14], object.quoteRepostCountByMe);
-  writer.writeStringList(offsets[15], object.quoteRepostEventIds);
-  writer.writeString(offsets[16], object.quoteRepostId);
-  writer.writeString(offsets[17], object.rawEvent);
-  writer.writeString(offsets[18], object.reactedId);
-  writer.writeString(offsets[19], object.reactedKind);
-  writer.writeLong(offsets[20], object.reactionCount);
-  writer.writeLong(offsets[21], object.reactionCountByMe);
-  writer.writeStringList(offsets[22], object.reactionEventIds);
-  writer.writeBool(offsets[23], object.read);
-  writer.writeString(offsets[24], object.reply);
-  writer.writeLong(offsets[25], object.replyCount);
-  writer.writeLong(offsets[26], object.replyCountByMe);
-  writer.writeStringList(offsets[27], object.replyEventIds);
-  writer.writeString(offsets[28], object.replyRelay);
-  writer.writeLong(offsets[29], object.repostCount);
-  writer.writeLong(offsets[30], object.repostCountByMe);
-  writer.writeStringList(offsets[31], object.repostEventIds);
-  writer.writeString(offsets[32], object.repostId);
-  writer.writeString(offsets[33], object.root);
-  writer.writeString(offsets[34], object.rootRelay);
-  writer.writeString(offsets[35], object.warning);
-  writer.writeLong(offsets[36], object.zapAmount);
-  writer.writeLong(offsets[37], object.zapAmountByMe);
-  writer.writeLong(offsets[38], object.zapCount);
-  writer.writeLong(offsets[39], object.zapCountByMe);
-  writer.writeStringList(offsets[40], object.zapEventIds);
+  writer.writeBool(offsets[6], object.findEvent);
+  writer.writeString(offsets[7], object.groupId);
+  writer.writeStringList(offsets[8], object.hashTags);
+  writer.writeString(offsets[9], object.lastUpdatedTimeString);
+  writer.writeStringList(offsets[10], object.mentions);
+  writer.writeString(offsets[11], object.noteId);
+  writer.writeStringList(offsets[12], object.pTags);
+  writer.writeBool(offsets[13], object.private);
+  writer.writeLong(offsets[14], object.quoteRepostCount);
+  writer.writeLong(offsets[15], object.quoteRepostCountByMe);
+  writer.writeStringList(offsets[16], object.quoteRepostEventIds);
+  writer.writeString(offsets[17], object.quoteRepostId);
+  writer.writeString(offsets[18], object.rawEvent);
+  writer.writeString(offsets[19], object.reactedId);
+  writer.writeString(offsets[20], object.reactedKind);
+  writer.writeLong(offsets[21], object.reactionCount);
+  writer.writeLong(offsets[22], object.reactionCountByMe);
+  writer.writeStringList(offsets[23], object.reactionEventIds);
+  writer.writeBool(offsets[24], object.read);
+  writer.writeString(offsets[25], object.reply);
+  writer.writeLong(offsets[26], object.replyCount);
+  writer.writeLong(offsets[27], object.replyCountByMe);
+  writer.writeStringList(offsets[28], object.replyEventIds);
+  writer.writeString(offsets[29], object.replyRelay);
+  writer.writeLong(offsets[30], object.repostCount);
+  writer.writeLong(offsets[31], object.repostCountByMe);
+  writer.writeStringList(offsets[32], object.repostEventIds);
+  writer.writeString(offsets[33], object.repostId);
+  writer.writeString(offsets[34], object.root);
+  writer.writeString(offsets[35], object.rootRelay);
+  writer.writeString(offsets[36], object.warning);
+  writer.writeLong(offsets[37], object.zapAmount);
+  writer.writeLong(offsets[38], object.zapAmountByMe);
+  writer.writeLong(offsets[39], object.zapCount);
+  writer.writeLong(offsets[40], object.zapCountByMe);
+  writer.writeStringList(offsets[41], object.zapEventIds);
 }
 
 NoteDBISAR _noteDBISARDeserialize(
@@ -500,41 +506,42 @@ NoteDBISAR _noteDBISARDeserialize(
     createAt: reader.readLongOrNull(offsets[2]) ?? 0,
     emojiShortcode: reader.readStringOrNull(offsets[3]),
     emojiURL: reader.readStringOrNull(offsets[4]),
-    groupId: reader.readStringOrNull(offsets[6]) ?? '',
-    hashTags: reader.readStringList(offsets[7]),
-    lastUpdatedTimeString: reader.readStringOrNull(offsets[8]),
-    mentions: reader.readStringList(offsets[9]),
-    noteId: reader.readStringOrNull(offsets[10]) ?? '',
-    pTags: reader.readStringList(offsets[11]),
-    private: reader.readBoolOrNull(offsets[12]) ?? false,
-    quoteRepostCount: reader.readLongOrNull(offsets[13]) ?? 0,
-    quoteRepostCountByMe: reader.readLongOrNull(offsets[14]) ?? 0,
-    quoteRepostEventIds: reader.readStringList(offsets[15]),
-    quoteRepostId: reader.readStringOrNull(offsets[16]),
-    rawEvent: reader.readStringOrNull(offsets[17]),
-    reactedId: reader.readStringOrNull(offsets[18]),
-    reactedKind: reader.readStringOrNull(offsets[19]),
-    reactionCount: reader.readLongOrNull(offsets[20]) ?? 0,
-    reactionCountByMe: reader.readLongOrNull(offsets[21]) ?? 0,
-    reactionEventIds: reader.readStringList(offsets[22]),
-    read: reader.readBoolOrNull(offsets[23]) ?? false,
-    reply: reader.readStringOrNull(offsets[24]),
-    replyCount: reader.readLongOrNull(offsets[25]) ?? 0,
-    replyCountByMe: reader.readLongOrNull(offsets[26]) ?? 0,
-    replyEventIds: reader.readStringList(offsets[27]),
-    replyRelay: reader.readStringOrNull(offsets[28]),
-    repostCount: reader.readLongOrNull(offsets[29]) ?? 0,
-    repostCountByMe: reader.readLongOrNull(offsets[30]) ?? 0,
-    repostEventIds: reader.readStringList(offsets[31]),
-    repostId: reader.readStringOrNull(offsets[32]),
-    root: reader.readStringOrNull(offsets[33]),
-    rootRelay: reader.readStringOrNull(offsets[34]),
-    warning: reader.readStringOrNull(offsets[35]),
-    zapAmount: reader.readLongOrNull(offsets[36]) ?? 0,
-    zapAmountByMe: reader.readLongOrNull(offsets[37]) ?? 0,
-    zapCount: reader.readLongOrNull(offsets[38]) ?? 0,
-    zapCountByMe: reader.readLongOrNull(offsets[39]) ?? 0,
-    zapEventIds: reader.readStringList(offsets[40]),
+    findEvent: reader.readBoolOrNull(offsets[6]) ?? false,
+    groupId: reader.readStringOrNull(offsets[7]) ?? '',
+    hashTags: reader.readStringList(offsets[8]),
+    lastUpdatedTimeString: reader.readStringOrNull(offsets[9]),
+    mentions: reader.readStringList(offsets[10]),
+    noteId: reader.readStringOrNull(offsets[11]) ?? '',
+    pTags: reader.readStringList(offsets[12]),
+    private: reader.readBoolOrNull(offsets[13]) ?? false,
+    quoteRepostCount: reader.readLongOrNull(offsets[14]) ?? 0,
+    quoteRepostCountByMe: reader.readLongOrNull(offsets[15]) ?? 0,
+    quoteRepostEventIds: reader.readStringList(offsets[16]),
+    quoteRepostId: reader.readStringOrNull(offsets[17]),
+    rawEvent: reader.readStringOrNull(offsets[18]),
+    reactedId: reader.readStringOrNull(offsets[19]),
+    reactedKind: reader.readStringOrNull(offsets[20]),
+    reactionCount: reader.readLongOrNull(offsets[21]) ?? 0,
+    reactionCountByMe: reader.readLongOrNull(offsets[22]) ?? 0,
+    reactionEventIds: reader.readStringList(offsets[23]),
+    read: reader.readBoolOrNull(offsets[24]) ?? false,
+    reply: reader.readStringOrNull(offsets[25]),
+    replyCount: reader.readLongOrNull(offsets[26]) ?? 0,
+    replyCountByMe: reader.readLongOrNull(offsets[27]) ?? 0,
+    replyEventIds: reader.readStringList(offsets[28]),
+    replyRelay: reader.readStringOrNull(offsets[29]),
+    repostCount: reader.readLongOrNull(offsets[30]) ?? 0,
+    repostCountByMe: reader.readLongOrNull(offsets[31]) ?? 0,
+    repostEventIds: reader.readStringList(offsets[32]),
+    repostId: reader.readStringOrNull(offsets[33]),
+    root: reader.readStringOrNull(offsets[34]),
+    rootRelay: reader.readStringOrNull(offsets[35]),
+    warning: reader.readStringOrNull(offsets[36]),
+    zapAmount: reader.readLongOrNull(offsets[37]) ?? 0,
+    zapAmountByMe: reader.readLongOrNull(offsets[38]) ?? 0,
+    zapCount: reader.readLongOrNull(offsets[39]) ?? 0,
+    zapCountByMe: reader.readLongOrNull(offsets[40]) ?? 0,
+    zapEventIds: reader.readStringList(offsets[41]),
   );
   object.id = id;
   return object;
@@ -560,27 +567,27 @@ P _noteDBISARDeserializeProp<P>(
     case 5:
       return (reader.readString(offset)) as P;
     case 6:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    case 7:
-      return (reader.readStringList(offset)) as P;
-    case 8:
-      return (reader.readStringOrNull(offset)) as P;
-    case 9:
-      return (reader.readStringList(offset)) as P;
-    case 10:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    case 11:
-      return (reader.readStringList(offset)) as P;
-    case 12:
       return (reader.readBoolOrNull(offset) ?? false) as P;
+    case 7:
+      return (reader.readStringOrNull(offset) ?? '') as P;
+    case 8:
+      return (reader.readStringList(offset)) as P;
+    case 9:
+      return (reader.readStringOrNull(offset)) as P;
+    case 10:
+      return (reader.readStringList(offset)) as P;
+    case 11:
+      return (reader.readStringOrNull(offset) ?? '') as P;
+    case 12:
+      return (reader.readStringList(offset)) as P;
     case 13:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     case 14:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 15:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 16:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringList(offset)) as P;
     case 17:
       return (reader.readStringOrNull(offset)) as P;
     case 18:
@@ -588,31 +595,31 @@ P _noteDBISARDeserializeProp<P>(
     case 19:
       return (reader.readStringOrNull(offset)) as P;
     case 20:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 21:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 22:
-      return (reader.readStringList(offset)) as P;
-    case 23:
-      return (reader.readBoolOrNull(offset) ?? false) as P;
-    case 24:
-      return (reader.readStringOrNull(offset)) as P;
-    case 25:
       return (reader.readLongOrNull(offset) ?? 0) as P;
+    case 23:
+      return (reader.readStringList(offset)) as P;
+    case 24:
+      return (reader.readBoolOrNull(offset) ?? false) as P;
+    case 25:
+      return (reader.readStringOrNull(offset)) as P;
     case 26:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 27:
-      return (reader.readStringList(offset)) as P;
-    case 28:
-      return (reader.readStringOrNull(offset)) as P;
-    case 29:
       return (reader.readLongOrNull(offset) ?? 0) as P;
+    case 28:
+      return (reader.readStringList(offset)) as P;
+    case 29:
+      return (reader.readStringOrNull(offset)) as P;
     case 30:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 31:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 32:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringList(offset)) as P;
     case 33:
       return (reader.readStringOrNull(offset)) as P;
     case 34:
@@ -620,7 +627,7 @@ P _noteDBISARDeserializeProp<P>(
     case 35:
       return (reader.readStringOrNull(offset)) as P;
     case 36:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 37:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 38:
@@ -628,6 +635,8 @@ P _noteDBISARDeserializeProp<P>(
     case 39:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 40:
+      return (reader.readLongOrNull(offset) ?? 0) as P;
+    case 41:
       return (reader.readStringList(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1579,6 +1588,16 @@ extension NoteDBISARQueryFilter
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'encodedNoteId',
         value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition> findEventEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'findEvent',
+        value: value,
       ));
     });
   }
@@ -6276,6 +6295,18 @@ extension NoteDBISARQuerySortBy
     });
   }
 
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterSortBy> sortByFindEvent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'findEvent', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterSortBy> sortByFindEventDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'findEvent', Sort.desc);
+    });
+  }
+
   QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterSortBy> sortByGroupId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'groupId', Sort.asc);
@@ -6684,6 +6715,18 @@ extension NoteDBISARQuerySortThenBy
     });
   }
 
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterSortBy> thenByFindEvent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'findEvent', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterSortBy> thenByFindEventDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'findEvent', Sort.desc);
+    });
+  }
+
   QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterSortBy> thenByGroupId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'groupId', Sort.asc);
@@ -7074,6 +7117,12 @@ extension NoteDBISARQueryWhereDistinct
     });
   }
 
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QDistinct> distinctByFindEvent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'findEvent');
+    });
+  }
+
   QueryBuilder<NoteDBISAR, NoteDBISAR, QDistinct> distinctByGroupId(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -7344,6 +7393,12 @@ extension NoteDBISARQueryProperty
   QueryBuilder<NoteDBISAR, String, QQueryOperations> encodedNoteIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'encodedNoteId');
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, bool, QQueryOperations> findEventProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'findEvent');
     });
   }
 

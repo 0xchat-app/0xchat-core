@@ -25,11 +25,73 @@ class Messages {
   MessageActionsCallBack? actionsCallBack;
   MessagesDeleteCallBack? deleteCallBack;
 
+  final Completer<void> channelMessageCompleter = Completer<void>();
+  final Completer<void> groupMessageCompleter = Completer<void>();
+  final Completer<void> contactMessageCompleter = Completer<void>();
+  final Completer<void> secretChatMessageCompleter = Completer<void>();
+
   Future<void> init() async {
     privkey = Account.sharedInstance.currentPrivkey;
     pubkey = Account.sharedInstance.currentPubkey;
 
+    refindActionsFromDB();
+
+    Future.wait([
+      channelMessageCompleter.future,
+      groupMessageCompleter.future,
+      contactMessageCompleter.future,
+      secretChatMessageCompleter.future
+    ]).then((value) {
+      refindActionsFromDB();
+    });
     return;
+  }
+
+  Future<void> refindActionsFromDB() async {
+    final isar = DBISAR.sharedInstance.isar;
+    List<NoteDBISAR> reactions = await isar.noteDBISARs
+        .filter()
+        .reactedIdIsNotEmpty()
+        .findEventEqualTo(false)
+        .findAll();
+    for (var reaction in reactions) {
+      String eventId = reaction.reactedId!;
+      MessageDBISAR? message = await isar.messageDBISARs
+          .filter()
+          .messageIdEqualTo(eventId)
+          .findFirst();
+      if (message != null) {
+        message = message.withGrowableLevels();
+        message.reactionEventIds ??= [];
+        if (!message.reactionEventIds!.contains(reaction.noteId)) {
+          message.reactionEventIds!.add(reaction.noteId);
+          await DBISAR.sharedInstance.saveToDB(message);
+          actionsCallBack?.call(message);
+        }
+        reaction.findEvent = true;
+        await DBISAR.sharedInstance.saveToDB(reaction);
+      }
+    }
+    List<ZapRecordsDBISAR> zaps =
+        await isar.zapRecordsDBISARs.filter().findEventEqualTo(false).findAll();
+    for (var zap in zaps) {
+      String eventId = zap.eventId;
+      MessageDBISAR? message = await isar.messageDBISARs
+          .filter()
+          .messageIdEqualTo(eventId)
+          .findFirst();
+      if (message != null) {
+        message = message.withGrowableLevels();
+        message.reactionEventIds ??= [];
+        if (!message.reactionEventIds!.contains(zap.bolt11)) {
+          message.reactionEventIds!.add(zap.bolt11);
+          await DBISAR.sharedInstance.saveToDB(message);
+          actionsCallBack?.call(message);
+        }
+        zap.findEvent = true;
+        await DBISAR.sharedInstance.saveToDB(zap);
+      }
+    }
   }
 
   void _initSubscription() {
@@ -85,10 +147,8 @@ class Messages {
       case 2:
         f = Filter(kinds: [7, 9735], e: eventIds);
         break;
-      case 7:
-        return;
       default:
-        f = Filter(kinds: [9735], e: eventIds);
+        return;
     }
     messagesActionsRequestsId = Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) {

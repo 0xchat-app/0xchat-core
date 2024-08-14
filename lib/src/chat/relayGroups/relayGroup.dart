@@ -279,6 +279,9 @@ class RelayGroup {
       }
       if (unCompletedRelays.isEmpty) {
         offlineGroupMessageFinishCallBack?.call();
+        if (!Messages.sharedInstance.groupMessageCompleter.isCompleted) {
+          Messages.sharedInstance.groupMessageCompleter.complete();
+        }
       }
     });
   }

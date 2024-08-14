@@ -473,6 +473,9 @@ class Contacts {
       Relays.sharedInstance.syncRelaysToDB(r: relay);
       if (unCompletedRelays.isEmpty) {
         offlinePrivateMessageFinishCallBack?.call();
+        if (!Messages.sharedInstance.contactMessageCompleter.isCompleted) {
+          Messages.sharedInstance.contactMessageCompleter.complete();
+        }
       }
     });
   }

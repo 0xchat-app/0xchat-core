@@ -573,6 +573,9 @@ extension SecretChat on Contacts {
       Relays.sharedInstance.syncRelaysToDB(r: relay);
       if (unCompletedRelays.isEmpty) {
         offlineSecretMessageFinishCallBack?.call();
+        if (!Messages.sharedInstance.secretChatMessageCompleter.isCompleted) {
+          Messages.sharedInstance.secretChatMessageCompleter.complete();
+        }
       }
     });
   }

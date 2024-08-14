@@ -20,16 +20,19 @@ class ZapRecordsDBISAR {
   String eventId;
   String content;
 
+  bool findEvent;
+
   ZapRecordsDBISAR(
       {this.bolt11 = '',
-        this.paidAt = 0,
-        this.zapper = '',
-        this.preimage = '',
-        this.description = '',
-        this.recipient = '',
-        this.sender = '',
-        this.eventId = '',
-        this.content = ''});
+      this.paidAt = 0,
+      this.zapper = '',
+      this.preimage = '',
+      this.description = '',
+      this.recipient = '',
+      this.sender = '',
+      this.eventId = '',
+      this.content = '',
+      this.findEvent = false});
 
   static ZapRecordsDBISAR fromMap(Map<String, Object?> map) {
     return _zapRecordsDBInfoFromMap(map);

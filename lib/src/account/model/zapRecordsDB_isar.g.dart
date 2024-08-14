@@ -37,28 +37,33 @@ const ZapRecordsDBISARSchema = CollectionSchema(
       name: r'eventId',
       type: IsarType.string,
     ),
-    r'paidAt': PropertySchema(
+    r'findEvent': PropertySchema(
       id: 4,
+      name: r'findEvent',
+      type: IsarType.bool,
+    ),
+    r'paidAt': PropertySchema(
+      id: 5,
       name: r'paidAt',
       type: IsarType.long,
     ),
     r'preimage': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'preimage',
       type: IsarType.string,
     ),
     r'recipient': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'recipient',
       type: IsarType.string,
     ),
     r'sender': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'sender',
       type: IsarType.string,
     ),
     r'zapper': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'zapper',
       type: IsarType.string,
     )
@@ -118,11 +123,12 @@ void _zapRecordsDBISARSerialize(
   writer.writeString(offsets[1], object.content);
   writer.writeString(offsets[2], object.description);
   writer.writeString(offsets[3], object.eventId);
-  writer.writeLong(offsets[4], object.paidAt);
-  writer.writeString(offsets[5], object.preimage);
-  writer.writeString(offsets[6], object.recipient);
-  writer.writeString(offsets[7], object.sender);
-  writer.writeString(offsets[8], object.zapper);
+  writer.writeBool(offsets[4], object.findEvent);
+  writer.writeLong(offsets[5], object.paidAt);
+  writer.writeString(offsets[6], object.preimage);
+  writer.writeString(offsets[7], object.recipient);
+  writer.writeString(offsets[8], object.sender);
+  writer.writeString(offsets[9], object.zapper);
 }
 
 ZapRecordsDBISAR _zapRecordsDBISARDeserialize(
@@ -136,11 +142,12 @@ ZapRecordsDBISAR _zapRecordsDBISARDeserialize(
     content: reader.readStringOrNull(offsets[1]) ?? '',
     description: reader.readStringOrNull(offsets[2]) ?? '',
     eventId: reader.readStringOrNull(offsets[3]) ?? '',
-    paidAt: reader.readLongOrNull(offsets[4]) ?? 0,
-    preimage: reader.readStringOrNull(offsets[5]) ?? '',
-    recipient: reader.readStringOrNull(offsets[6]) ?? '',
-    sender: reader.readStringOrNull(offsets[7]) ?? '',
-    zapper: reader.readStringOrNull(offsets[8]) ?? '',
+    findEvent: reader.readBoolOrNull(offsets[4]) ?? false,
+    paidAt: reader.readLongOrNull(offsets[5]) ?? 0,
+    preimage: reader.readStringOrNull(offsets[6]) ?? '',
+    recipient: reader.readStringOrNull(offsets[7]) ?? '',
+    sender: reader.readStringOrNull(offsets[8]) ?? '',
+    zapper: reader.readStringOrNull(offsets[9]) ?? '',
   );
   object.id = id;
   return object;
@@ -162,14 +169,16 @@ P _zapRecordsDBISARDeserializeProp<P>(
     case 3:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 4:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     case 5:
-      return (reader.readStringOrNull(offset) ?? '') as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 6:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 7:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 8:
+      return (reader.readStringOrNull(offset) ?? '') as P;
+    case 9:
       return (reader.readStringOrNull(offset) ?? '') as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -915,6 +924,16 @@ extension ZapRecordsDBISARQueryFilter
   }
 
   QueryBuilder<ZapRecordsDBISAR, ZapRecordsDBISAR, QAfterFilterCondition>
+      findEventEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'findEvent',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ZapRecordsDBISAR, ZapRecordsDBISAR, QAfterFilterCondition>
       idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -1636,6 +1655,20 @@ extension ZapRecordsDBISARQuerySortBy
   }
 
   QueryBuilder<ZapRecordsDBISAR, ZapRecordsDBISAR, QAfterSortBy>
+      sortByFindEvent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'findEvent', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ZapRecordsDBISAR, ZapRecordsDBISAR, QAfterSortBy>
+      sortByFindEventDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'findEvent', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ZapRecordsDBISAR, ZapRecordsDBISAR, QAfterSortBy>
       sortByPaidAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'paidAt', Sort.asc);
@@ -1764,6 +1797,20 @@ extension ZapRecordsDBISARQuerySortThenBy
     });
   }
 
+  QueryBuilder<ZapRecordsDBISAR, ZapRecordsDBISAR, QAfterSortBy>
+      thenByFindEvent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'findEvent', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ZapRecordsDBISAR, ZapRecordsDBISAR, QAfterSortBy>
+      thenByFindEventDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'findEvent', Sort.desc);
+    });
+  }
+
   QueryBuilder<ZapRecordsDBISAR, ZapRecordsDBISAR, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -1879,6 +1926,13 @@ extension ZapRecordsDBISARQueryWhereDistinct
   }
 
   QueryBuilder<ZapRecordsDBISAR, ZapRecordsDBISAR, QDistinct>
+      distinctByFindEvent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'findEvent');
+    });
+  }
+
+  QueryBuilder<ZapRecordsDBISAR, ZapRecordsDBISAR, QDistinct>
       distinctByPaidAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'paidAt');
@@ -1944,6 +1998,12 @@ extension ZapRecordsDBISARQueryProperty
   QueryBuilder<ZapRecordsDBISAR, String, QQueryOperations> eventIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'eventId');
+    });
+  }
+
+  QueryBuilder<ZapRecordsDBISAR, bool, QQueryOperations> findEventProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'findEvent');
     });
   }
 

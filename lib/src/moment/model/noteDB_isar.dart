@@ -50,6 +50,7 @@ class NoteDBISAR {
   String? reactedKind;
   String? emojiShortcode;
   String? emojiURL;
+  bool findEvent;
 
   /// actions count
   int replyCount;
@@ -100,6 +101,7 @@ class NoteDBISAR {
     this.reactedKind = '',
     this.emojiShortcode = '',
     this.emojiURL = '',
+    this.findEvent = false,
     this.replyCount = 0,
     this.repostCount = 0,
     this.quoteRepostCount = 0,
