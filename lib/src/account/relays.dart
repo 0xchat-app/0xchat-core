@@ -286,7 +286,7 @@ class Relays {
       {bool? refresh}) async {
     if (refresh != true) {
       RelayDBISAR? relayDB = await getRelayDetailsFromDB(relayURL);
-      if (relayDB != null) return relayDB;
+      if (relayDB?.pubkey?.isNotEmpty == true) return relayDB;
     }
 
     var url = Uri.parse(relayURL).replace(scheme: 'https');
