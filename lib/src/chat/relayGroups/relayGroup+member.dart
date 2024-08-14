@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension EMember on RelayGroup {
   Future<RelayGroupDBISAR?> createGroup(String relay,

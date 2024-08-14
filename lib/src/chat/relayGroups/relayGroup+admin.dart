@@ -56,9 +56,8 @@ extension EAdmin on RelayGroup {
 
   Future<bool> ignoreJoinRequest(JoinRequestDBISAR joinRequest) async {
     final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async{
-      await isar.joinRequestDBISARs
-          .deleteByRequestId(joinRequest.requestId);
+    await isar.writeTxn(() async {
+      await isar.joinRequestDBISARs.deleteByRequestId(joinRequest.requestId);
     });
     return true;
   }
@@ -223,6 +222,13 @@ extension EAdmin on RelayGroup {
     return ok;
   }
 
+  bool hasDeletePermission(String groupId) {
+    RelayGroupDBISAR? groupDB = myGroups[groupId];
+    if (groupDB == null) return false;
+    return hasPermissions(
+        groupDB.admins, pubkey, [GroupActionKind.deleteEvent]);
+  }
+
   Future<OKEvent> deleteMessageFromRelay(
       String groupId, String messageId, String reason) async {
     OKEvent ok = await deleteEvent(groupId, messageId, reason);
@@ -249,7 +255,7 @@ extension EAdmin on RelayGroup {
   Future<OKEvent> deleteNoteFromLocal(String noteId) async {
     final isar = DBISAR.sharedInstance.isar;
     await isar.writeTxn(() async {
-       await isar.noteDBISARs.deleteByNoteId(noteId);
+      await isar.noteDBISARs.deleteByNoteId(noteId);
     });
     return OKEvent(noteId, true, '');
   }
