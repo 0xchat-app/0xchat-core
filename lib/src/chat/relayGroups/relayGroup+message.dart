@@ -7,6 +7,7 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension EMessage on RelayGroup {
   Future<void> handleGroupMessage(Event event, String relay) async {
+    if (Contacts.sharedInstance.inBlockList(event.pubkey)) return;
     GroupMessage groupMessage = Nip29.decodeGroupMessage(event);
     RelayGroupDBISAR? groupDB = myGroups[groupMessage.groupId];
     if (groupDB == null) return;
