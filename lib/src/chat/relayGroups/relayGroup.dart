@@ -105,6 +105,11 @@ class RelayGroup {
 
     if (match != null) {
       String? host = match.group(1);
+      if (host?.isNotEmpty == true) {
+        if (!host!.contains('wss://') && !host.contains('ws://')) {
+          host = 'wss://$host';
+        }
+      }
       String? groupId = match.group(2);
       return SimpleGroups(groupId ?? '', host ?? '');
     } else {
@@ -125,8 +130,8 @@ class RelayGroup {
         String groupId = simpleGroups.groupId;
         if (groupId.isEmpty) continue;
         if (!groups.containsKey(groupId)) {
-          groups[groupId] = RelayGroupDBISAR(
-              groupId: groupId, relay: simpleGroups.relay, identifier: id);
+          groups[groupId] =
+              RelayGroupDBISAR(groupId: groupId, relay: simpleGroups.relay);
           getGroupMetadataFromRelay(groupId);
         }
         result[groupId] = groups[groupId]!;

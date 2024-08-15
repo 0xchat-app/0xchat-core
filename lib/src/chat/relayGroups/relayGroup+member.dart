@@ -23,7 +23,6 @@ extension EMember on RelayGroup {
     Connect.sharedInstance.sendEvent(event, toRelays: [relay],
         sendCallBack: (ok, relay) async {
       if (ok.status) {
-        String id = '$relay\'$groupId';
         RelayGroupDBISAR relayGroupDB = RelayGroupDBISAR(
             groupId: groupId,
             relay: relay,
@@ -36,7 +35,6 @@ extension EMember on RelayGroup {
             name: name,
             picture: picture,
             about: about,
-            identifier: id,
             lastUpdatedTime: event.createdAt);
         myGroups[groupId] = relayGroupDB;
         await syncGroupToDB(relayGroupDB);
@@ -74,7 +72,6 @@ extension EMember on RelayGroup {
           String groupId = naddr['special'];
           String relay = naddr['relays']?.first;
           String author = naddr['author'];
-          String id = '$relay\'$groupId';
           RelayGroupDBISAR relayGroupDB = RelayGroupDBISAR(
               groupId: groupId,
               relay: relay,
@@ -87,7 +84,6 @@ extension EMember on RelayGroup {
               name: name,
               picture: picture,
               about: about,
-              identifier: id,
               lastUpdatedTime: currentUnixTimestampSeconds());
           myGroups[groupId] = relayGroupDB;
           await syncGroupToDB(relayGroupDB);
@@ -136,8 +132,7 @@ extension EMember on RelayGroup {
     if (groupDB != null) relay = groupDB.relay;
     if (relay.isEmpty) return OKEvent(input, false, 'empty relay');
     if (groupDB == null) {
-      groupDB =
-          RelayGroupDBISAR(groupId: groupId, relay: relay, identifier: input);
+      groupDB = RelayGroupDBISAR(groupId: groupId, relay: relay);
       groups[groupId] = groupDB;
     }
     if (groupDB.closed == false) {
@@ -260,8 +255,7 @@ extension EMember on RelayGroup {
     groupId = simpleGroups.groupId;
     String relay = simpleGroups.relay;
     RelayGroupDBISAR? relayGroupDB = groups[groupId];
-    relayGroupDB ??= RelayGroupDBISAR(
-        groupId: groupId, relay: relay, identifier: '$relay\'$groupId');
+    relayGroupDB ??= RelayGroupDBISAR(groupId: groupId, relay: relay);
 
     Filter f = Filter(kinds: [9000, 9001], p: [user], limit: 1);
 

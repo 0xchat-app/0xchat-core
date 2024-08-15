@@ -20,9 +20,6 @@ class RelayGroupDBISAR {
   @Index(unique: true, replace: true)
   String groupId;
 
-  @Index(unique: true, replace: true)
-  String identifier; //<relay>'<group-id>
-
   String author; // group creator
   String relay;
   String relayPubkey;
@@ -43,7 +40,6 @@ class RelayGroupDBISAR {
 
   RelayGroupDBISAR(
       {this.groupId = '',
-      this.identifier = '',
       this.author = '',
       this.relay = '',
       this.relayPubkey = '',
@@ -64,6 +60,12 @@ class RelayGroupDBISAR {
 
   static RelayGroupDBISAR fromMap(Map<String, Object?> map) {
     return _groupInfoFromMap(map);
+  }
+
+  String get identifier {
+    RegExp regExp = RegExp(r'(?<=wss?://)([^/]+)');
+    String host = regExp.firstMatch(relay)?.group(0) ?? '';
+    return '$host\'$groupId';
   }
 
   @ignore
@@ -108,7 +110,6 @@ class RelayGroupDBISAR {
 RelayGroupDBISAR _groupInfoFromMap(Map<String, dynamic> map) {
   return RelayGroupDBISAR(
     groupId: map['groupId'].toString(),
-    identifier: map['id'].toString(),
     author: map['author'].toString(),
     relay: map['relay'].toString(),
     relayPubkey: map['relayPubkey'].toString(),

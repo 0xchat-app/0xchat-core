@@ -131,19 +131,6 @@ const RelayGroupDBISARSchema = CollectionSchema(
           caseSensitive: true,
         )
       ],
-    ),
-    r'identifier': IndexSchema(
-      id: -1091831983288130400,
-      name: r'identifier',
-      unique: true,
-      replace: true,
-      properties: [
-        IndexPropertySchema(
-          name: r'identifier',
-          type: IndexType.hash,
-          caseSensitive: true,
-        )
-      ],
     )
   },
   links: {},
@@ -240,7 +227,6 @@ RelayGroupDBISAR _relayGroupDBISARDeserialize(
     author: reader.readStringOrNull(offsets[2]) ?? '',
     closed: reader.readBoolOrNull(offsets[3]) ?? false,
     groupId: reader.readStringOrNull(offsets[4]) ?? '',
-    identifier: reader.readStringOrNull(offsets[5]) ?? '',
     lastAdminsUpdatedTime: reader.readLongOrNull(offsets[6]) ?? 0,
     lastMembersUpdatedTime: reader.readLongOrNull(offsets[7]) ?? 0,
     lastUpdatedTime: reader.readLongOrNull(offsets[8]) ?? 0,
@@ -277,7 +263,7 @@ P _relayGroupDBISARDeserializeProp<P>(
     case 4:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 5:
-      return (reader.readStringOrNull(offset) ?? '') as P;
+      return (reader.readString(offset)) as P;
     case 6:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 7:
@@ -374,61 +360,6 @@ extension RelayGroupDBISARByIndex on IsarCollection<RelayGroupDBISAR> {
   List<Id> putAllByGroupIdSync(List<RelayGroupDBISAR> objects,
       {bool saveLinks = true}) {
     return putAllByIndexSync(r'groupId', objects, saveLinks: saveLinks);
-  }
-
-  Future<RelayGroupDBISAR?> getByIdentifier(String identifier) {
-    return getByIndex(r'identifier', [identifier]);
-  }
-
-  RelayGroupDBISAR? getByIdentifierSync(String identifier) {
-    return getByIndexSync(r'identifier', [identifier]);
-  }
-
-  Future<bool> deleteByIdentifier(String identifier) {
-    return deleteByIndex(r'identifier', [identifier]);
-  }
-
-  bool deleteByIdentifierSync(String identifier) {
-    return deleteByIndexSync(r'identifier', [identifier]);
-  }
-
-  Future<List<RelayGroupDBISAR?>> getAllByIdentifier(
-      List<String> identifierValues) {
-    final values = identifierValues.map((e) => [e]).toList();
-    return getAllByIndex(r'identifier', values);
-  }
-
-  List<RelayGroupDBISAR?> getAllByIdentifierSync(
-      List<String> identifierValues) {
-    final values = identifierValues.map((e) => [e]).toList();
-    return getAllByIndexSync(r'identifier', values);
-  }
-
-  Future<int> deleteAllByIdentifier(List<String> identifierValues) {
-    final values = identifierValues.map((e) => [e]).toList();
-    return deleteAllByIndex(r'identifier', values);
-  }
-
-  int deleteAllByIdentifierSync(List<String> identifierValues) {
-    final values = identifierValues.map((e) => [e]).toList();
-    return deleteAllByIndexSync(r'identifier', values);
-  }
-
-  Future<Id> putByIdentifier(RelayGroupDBISAR object) {
-    return putByIndex(r'identifier', object);
-  }
-
-  Id putByIdentifierSync(RelayGroupDBISAR object, {bool saveLinks = true}) {
-    return putByIndexSync(r'identifier', object, saveLinks: saveLinks);
-  }
-
-  Future<List<Id>> putAllByIdentifier(List<RelayGroupDBISAR> objects) {
-    return putAllByIndex(r'identifier', objects);
-  }
-
-  List<Id> putAllByIdentifierSync(List<RelayGroupDBISAR> objects,
-      {bool saveLinks = true}) {
-    return putAllByIndexSync(r'identifier', objects, saveLinks: saveLinks);
   }
 }
 
@@ -549,51 +480,6 @@ extension RelayGroupDBISARQueryWhere
               indexName: r'groupId',
               lower: [],
               upper: [groupId],
-              includeUpper: false,
-            ));
-      }
-    });
-  }
-
-  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterWhereClause>
-      identifierEqualTo(String identifier) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'identifier',
-        value: [identifier],
-      ));
-    });
-  }
-
-  QueryBuilder<RelayGroupDBISAR, RelayGroupDBISAR, QAfterWhereClause>
-      identifierNotEqualTo(String identifier) {
-    return QueryBuilder.apply(this, (query) {
-      if (query.whereSort == Sort.asc) {
-        return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'identifier',
-              lower: [],
-              upper: [identifier],
-              includeUpper: false,
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'identifier',
-              lower: [identifier],
-              includeLower: false,
-              upper: [],
-            ));
-      } else {
-        return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'identifier',
-              lower: [identifier],
-              includeLower: false,
-              upper: [],
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'identifier',
-              lower: [],
-              upper: [identifier],
               includeUpper: false,
             ));
       }
