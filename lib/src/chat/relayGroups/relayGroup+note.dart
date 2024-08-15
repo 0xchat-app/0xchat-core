@@ -116,18 +116,21 @@ extension ENote on RelayGroup {
         emojiURL: emojiURL,
         relayGroupId: groupId);
 
-    NoteDBISAR noteDB = NoteDBISAR.noteDBFromReactions(Nip25.decode(event));
-    noteDB.groupId = groupId;
-    Moment.sharedInstance.saveNoteToDB(noteDB, null);
-
-    note.reactionEventIds ??= [];
-    note.reactionEventIds!.add(event.id);
-    note.reactionCount++;
-    note.reactionCountByMe++;
-    Moment.sharedInstance.saveNoteToDB(note, null);
-
     Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
         sendCallBack: (ok, relay) async {
+      if (ok.status) {
+        NoteDBISAR noteDB = NoteDBISAR.noteDBFromReactions(Nip25.decode(event));
+        noteDB.groupId = groupId;
+        Moment.sharedInstance.saveNoteToDB(noteDB, null);
+
+        note.reactionEventIds ??= [];
+        if (!note.reactionEventIds!.contains(event.id)) {
+          note.reactionEventIds!.add(event.id);
+          note.reactionCount++;
+          note.reactionCountByMe++;
+          Moment.sharedInstance.saveNoteToDB(note, null);
+        }
+      }
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
