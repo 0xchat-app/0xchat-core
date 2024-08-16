@@ -242,15 +242,18 @@ class Channels {
     Completer<void> completer = Completer<void>();
     Filter f = Filter(
       ids: channelIds,
-      kinds: [40],
     );
     await Connect.sharedInstance
         .connectRelays(relays ?? [], relayKind: RelayKind.temp);
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) async {
-      Channel channel = Nip28.getChannelCreation(event);
-      ChannelDBISAR channelDB = getChannelDBFromChannel(channel);
-      _syncChannelToDB(channelDB);
+      Channel? channel;
+      if (event.kind == 40) channel = Nip28.getChannelCreation(event);
+      if (event.kind == 41) channel = Nip28.getChannelMetadata(event);
+      if (channel != null) {
+        ChannelDBISAR channelDB = getChannelDBFromChannel(channel);
+        _syncChannelToDB(channelDB);
+      }
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty && !completer.isCompleted) {
