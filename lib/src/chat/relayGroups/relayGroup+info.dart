@@ -193,14 +193,19 @@ extension EInfo on RelayGroup {
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) async {
       RelayGroupDBISAR groupDB = handleGroupMetadata(event, relay);
-      result[groupDB.groupId] = groupDB;
+      if (!result.containsKey(groupDB.groupId)) {
+        groupDB = await searchGroupMembersFromRelays(groupDB);
+        groupDB.members?.sort();
+        result[groupDB.groupId] = groupDB;
+        groupCallback?.call(result.values.toList());
+      }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
-      for (var groupDB in List.from(result.values.toList())) {
-        groupDB = await searchGroupMembersFromRelays(groupDB);
-        result[groupDB.groupId] = groupDB;
-      }
-      groupCallback?.call(result.values.toList());
+      // for (var groupDB in List.from(result.values.toList())) {
+      //   groupDB = await searchGroupMembersFromRelays(groupDB);
+      //   result[groupDB.groupId] = groupDB;
+      // }
+      // groupCallback?.call(result.values.toList());
       if (unCompletedRelays.isEmpty && !completer.isCompleted) {
         completer.complete(result.values.toList());
       }
