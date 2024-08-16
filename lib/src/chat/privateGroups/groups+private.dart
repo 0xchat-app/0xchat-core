@@ -30,6 +30,7 @@ extension PrivateGroups on Groups {
       String sender, String groupId, String? name, List<String>? members,
       {int createAt = 0}) async {
     if (members == null || members.isEmpty) return null;
+    if (!members.contains(pubkey)) return null;
     members = members.toSet().toList();
     if (groupId.isEmpty) groupId = ChatRoom.generateChatRoomID(members);
     if (myGroups.containsKey(groupId)) {
@@ -52,6 +53,29 @@ extension PrivateGroups on Groups {
     }
     myGroupsUpdatedCallBack?.call();
     return myGroups[groupId];
+  }
+
+  Future<GroupDBISAR?> addMembersToPrivateGroup(
+      String groupId, List<String> members) async {
+    GroupDBISAR? groupDB = myGroups[groupId];
+    if (groupDB == null) return null;
+    List<String> existingMembers = groupDB.members ?? [];
+    Set<String> uniqueMembersSet = {...existingMembers, ...members};
+    return await createPrivateGroup(
+        pubkey, '', groupDB.name, uniqueMembersSet.toList());
+  }
+
+  Future<GroupDBISAR?> removeMembersFromPrivateGroup(
+      String groupId, List<String> membersToRemove) async {
+    GroupDBISAR? groupDB = myGroups[groupId];
+    if (groupDB == null) return null;
+    List<String> existingMembers = groupDB.members ?? [];
+    Set<String> updatedMembersSet = existingMembers.toSet();
+    for (String member in membersToRemove) {
+      updatedMembersSet.remove(member);
+    }
+    return await createPrivateGroup(
+        pubkey, '', groupDB.name, updatedMembersSet.toList());
   }
 
   Future<OKEvent> updatePrivateGroupName(
