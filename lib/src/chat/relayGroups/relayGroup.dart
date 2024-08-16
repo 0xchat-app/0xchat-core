@@ -460,7 +460,7 @@ class RelayGroup {
   List<String> getAllUnMuteGroups() {
     return myGroups.entries
         .where((e) => e.value.mute == false)
-        .map((e) => e.key)
+        .map((e) => e.value.identifier)
         .toList();
   }
 
