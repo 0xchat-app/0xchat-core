@@ -195,7 +195,6 @@ extension EInfo on RelayGroup {
       RelayGroupDBISAR groupDB = handleGroupMetadata(event, relay);
       if (!result.containsKey(groupDB.groupId)) {
         groupDB = await searchGroupMembersFromRelays(groupDB);
-        groupDB.members?.sort();
         result[groupDB.groupId] = groupDB;
         groupCallback?.call(result.values.toList());
       }
