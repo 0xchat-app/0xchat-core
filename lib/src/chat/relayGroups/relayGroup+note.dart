@@ -61,6 +61,7 @@ extension ENote on RelayGroup {
 
     String? rootEventId = note.root;
     note.pTags ??= [];
+    late OKEvent okEvent;
     if (rootEventId == null || rootEventId.isEmpty) {
       if (!note.pTags!.contains(note.author)) {
         note.pTags!.add(note.author);
@@ -70,7 +71,7 @@ extension ENote on RelayGroup {
           note.pTags!.add(mention);
         }
       }
-      return await sendGroupNotes(note.groupId, content, previous,
+      okEvent = await sendGroupNotes(note.groupId, content, previous,
           rootEvent: replyNoteId, mentions: note.pTags, hashTags: hashTags);
     } else {
       NoteDBISAR? rootNote =
@@ -82,12 +83,21 @@ extension ENote on RelayGroup {
       if (!note.pTags!.contains(note.author)) {
         note.pTags!.add(note.author);
       }
-      return await sendGroupNotes(note.groupId, content, previous,
+      okEvent = await sendGroupNotes(note.groupId, content, previous,
           rootEvent: rootEventId,
           mentions: note.pTags,
           replyEvent: replyNoteId,
           hashTags: hashTags);
     }
+    if (okEvent.status) {
+      note.replyEventIds ??= [];
+      if (!note.replyEventIds!.contains(okEvent.eventId)) {
+        note.replyEventIds!.add(okEvent.eventId);
+        note.replyCount++;
+        await Moment.sharedInstance.saveNoteToDB(note, null);
+      }
+    }
+    return okEvent;
   }
 
   Future<OKEvent> sendGroupNoteReaction(String reactedNoteId,
