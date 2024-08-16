@@ -576,8 +576,11 @@ extension Load on Moment {
     if (noteId != null) {
       queryBuilder = queryBuilder.noteIdEqualTo(noteId);
     }
-    if (groupId != null) {
+    if (groupId != null && groupId.isNotEmpty) {
       queryBuilder = queryBuilder.groupIdEqualTo(groupId);
+    }
+    else{
+      queryBuilder = queryBuilder.groupIdIsEmpty();
     }
     if (authors != null) {
       queryBuilder =
