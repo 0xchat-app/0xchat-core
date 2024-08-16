@@ -118,10 +118,10 @@ class Connect {
 
   Future<void> resetConnection() async {
     for (var relay in webSockets.keys) {
-      // if (webSockets[relay]?.connectStatus != 3) {
-      //   webSockets[relay]?.connectStatus = 3;
-      //   await webSockets[relay]?.socket?.close();
-      // }
+      if (webSockets[relay]?.connectStatus != 3 && Platform.isAndroid) {
+        webSockets[relay]?.connectStatus = 3;
+        await webSockets[relay]?.socket?.close();
+      }
       for (var relayKind in webSockets[relay]?.relayKinds ?? []) {
         connect(relay, relayKind: relayKind);
       }
