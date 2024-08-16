@@ -177,7 +177,7 @@ extension EAdmin on RelayGroup {
 
   Future<OKEvent> _addPermissions(String groupId, String user,
       List<GroupActionKind> permissions, String reason) async {
-    RelayGroupDBISAR? groupDB = myGroups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     GroupModeration moderation = GroupModeration.addPermission(
         groupId, [user], permissions.map((e) => e.name).toList(), reason);
@@ -188,11 +188,14 @@ extension EAdmin on RelayGroup {
         if (admin.pubkey == user) {
           exit = true;
           admin.permissions.addAll(permissions);
+          break;
         }
       }
       if (!exit) {
         GroupAdmin admin = GroupAdmin(user, 'admin', permissions);
-        groupDB.admins.add(admin);
+        List<GroupAdmin> admins = List.from(groupDB.admins);
+        admins.add(admin);
+        groupDB.admins = admins;
       }
       syncGroupToDB(groupDB);
     }
@@ -212,9 +215,11 @@ extension EAdmin on RelayGroup {
           admin.permissions.removeWhere((permission) =>
               permissions.any((element) => element.name == permission.name));
           if (admin.permissions.isEmpty) {
-            groupDB.admins.remove(admin);
-            break;
+            List<GroupAdmin> admins = List.from(groupDB.admins);
+            admins.removeWhere((admin) => admin.pubkey == user);
+            groupDB.admins = admins;
           }
+          break;
         }
       }
       syncGroupToDB(groupDB);
