@@ -8,6 +8,14 @@ extension ENote on RelayGroup {
     GroupNote groupNote = Nip29.decodeGroupNote(event);
     NoteDBISAR noteDB = NoteDBISAR.noteDBFromNote(groupNote.note);
     noteDB.groupId = groupNote.groupId;
+    // reply
+    if (noteDB.getNoteKind() == 1) {
+      await Moment.sharedInstance.addReplyToNote(event, noteDB.reply ?? noteDB.root!);
+    }
+    // quote repost
+    else if (noteDB.getNoteKind() == 2) {
+      await Moment.sharedInstance.addQuoteRepostToNote(event, noteDB.quoteRepostId!);
+    }
     noteCallBack?.call(noteDB);
     Moment.sharedInstance.handleNewNotes(noteDB);
   }
@@ -88,14 +96,6 @@ extension ENote on RelayGroup {
           mentions: note.pTags,
           replyEvent: replyNoteId,
           hashTags: hashTags);
-    }
-    if (okEvent.status) {
-      note.replyEventIds ??= [];
-      if (!note.replyEventIds!.contains(okEvent.eventId)) {
-        note.replyEventIds!.add(okEvent.eventId);
-        note.replyCount++;
-        await Moment.sharedInstance.saveNoteToDB(note, null);
-      }
     }
     return okEvent;
   }
