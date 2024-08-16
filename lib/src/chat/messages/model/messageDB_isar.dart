@@ -198,6 +198,8 @@ class MessageDBISAR {
         path.endsWith('.heic') ||
         path.startsWith('image/gif;base64,') ||
         path.startsWith('image/png;base64,') ||
+        path.startsWith('image/jpeg;base64,') ||
+        path.startsWith('image/jpg;base64,') ||
         path.startsWith('image/webp;base64,')) {
       return MessageType.image;
     } else if (path.endsWith('.mp3') ||
