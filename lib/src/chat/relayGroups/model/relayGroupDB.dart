@@ -90,11 +90,12 @@ class RelayGroupDB extends DBObject {
 
   static Future<void> migrateToISAR() async {
     List<RelayGroupDB> groups = await DB.sharedInstance.objects<RelayGroupDB>();
-    await Future.forEach(groups, (group) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.relayGroupDBISARs
-            .put(RelayGroupDBISAR.fromMap(group.toMap()));
-      });
+    List<RelayGroupDBISAR> groupsISAR = [];
+    for (var group in groups) {
+      groupsISAR.add(RelayGroupDBISAR.fromMap(group.toMap()));
+    }
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.relayGroupDBISARs.putAll(groupsISAR);
     });
   }
 }

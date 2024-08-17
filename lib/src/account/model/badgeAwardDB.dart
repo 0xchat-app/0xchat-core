@@ -38,11 +38,13 @@ class BadgeAwardDB extends DBObject {
   static Future<void> migrateToISAR() async {
     List<BadgeAwardDB> badgeAwardDBs =
         await DB.sharedInstance.objects<BadgeAwardDB>();
-    await Future.forEach(badgeAwardDBs, (badgeAwardDB) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.badgeAwardDBISARs
-            .put(BadgeAwardDBISAR.fromMap(badgeAwardDB.toMap()));
-      });
+    List<BadgeAwardDBISAR> badgeAwardDBsISAR = [];
+    for (var badgeAwardDB in badgeAwardDBs) {
+      badgeAwardDBsISAR.add(BadgeAwardDBISAR.fromMap(badgeAwardDB.toMap()));
+    }
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.badgeAwardDBISARs
+          .putAll(badgeAwardDBsISAR);
     });
   }
 }

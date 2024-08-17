@@ -207,11 +207,12 @@ class UserDB extends DBObject {
 
   static Future<void> migrateToISAR() async {
     List<UserDB> users = await DB.sharedInstance.objects<UserDB>();
-    await Future.forEach(users, (user) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.userDBISARs
-            .put(UserDBISAR.fromMap(user.toMap()));
-      });
+    List<UserDBISAR> usersISAR = [];
+    for (var user in users) {
+      usersISAR.add(UserDBISAR.fromMap(user.toMap()));
+    }
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.userDBISARs.putAll(usersISAR);
     });
   }
 }

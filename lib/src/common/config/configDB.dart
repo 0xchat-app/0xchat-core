@@ -31,11 +31,12 @@ class ConfigDB extends DBObject {
 
   static Future<void> migrateToISAR() async {
     List<ConfigDB> configs = await DB.sharedInstance.objects<ConfigDB>();
-    await Future.forEach(configs, (config) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.configDBISARs
-            .put(ConfigDBISAR.fromMap(config.toMap()));
-      });
+    List<ConfigDBISAR> configsISAR = [];
+    for (var config in configs) {
+      configsISAR.add(ConfigDBISAR.fromMap(config.toMap()));
+    }
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.configDBISARs.putAll(configsISAR);
     });
   }
 }

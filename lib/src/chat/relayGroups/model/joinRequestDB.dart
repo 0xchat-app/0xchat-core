@@ -47,11 +47,13 @@ class JoinRequestDB extends DBObject {
   static Future<void> migrateToISAR() async {
     List<JoinRequestDB> joinRequests =
         await DB.sharedInstance.objects<JoinRequestDB>();
-    await Future.forEach(joinRequests, (joinRequest) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.joinRequestDBISARs
-            .put(JoinRequestDBISAR.fromMap(joinRequest.toMap()));
-      });
+    List<JoinRequestDBISAR> joinRequestsISAR = [];
+    for (var joinRequest in joinRequests) {
+      joinRequestsISAR.add(JoinRequestDBISAR.fromMap(joinRequest.toMap()));
+    }
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.joinRequestDBISARs
+          .putAll(joinRequestsISAR);
     });
   }
 }

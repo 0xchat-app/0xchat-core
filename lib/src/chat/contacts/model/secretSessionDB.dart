@@ -76,11 +76,14 @@ class SecretSessionDB extends DBObject {
   static Future<void> migrateToISAR() async {
     List<SecretSessionDB> secretSessions =
         await DB.sharedInstance.objects<SecretSessionDB>();
-    await Future.forEach(secretSessions, (secretSession) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.secretSessionDBISARs
-            .put(SecretSessionDBISAR.fromMap(secretSession.toMap()));
-      });
+    List<SecretSessionDBISAR> secretSessionsISAR = [];
+    for (var secretSession in secretSessions) {
+      secretSessionsISAR
+          .add(SecretSessionDBISAR.fromMap(secretSession.toMap()));
+    }
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.secretSessionDBISARs
+          .putAll(secretSessionsISAR);
     });
   }
 }

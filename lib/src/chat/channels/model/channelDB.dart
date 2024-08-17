@@ -61,11 +61,12 @@ class ChannelDB extends DBObject {
 
   static Future<void> migrateToISAR() async {
     List<ChannelDB> channels = await DB.sharedInstance.objects<ChannelDB>();
-    await Future.forEach(channels, (channel) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.channelDBISARs
-            .put(ChannelDBISAR.fromMap(channel.toMap()));
-      });
+    List<ChannelDBISAR> channelsISAR = [];
+    for (var channel in channels) {
+      channelsISAR.add(ChannelDBISAR.fromMap(channel.toMap()));
+    }
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.channelDBISARs.putAll(channelsISAR);
     });
   }
 }

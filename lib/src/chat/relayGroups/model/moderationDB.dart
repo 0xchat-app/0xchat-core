@@ -91,11 +91,13 @@ class ModerationDB extends DBObject {
   static Future<void> migrateToISAR() async {
     List<ModerationDB> moderations =
         await DB.sharedInstance.objects<ModerationDB>();
-    await Future.forEach(moderations, (moderation) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.moderationDBISARs
-            .put(ModerationDBISAR.fromMap(moderation.toMap()));
-      });
+    List<ModerationDBISAR> moderationsISAR = [];
+    for (var moderation in moderations) {
+      moderationsISAR.add(ModerationDBISAR.fromMap(moderation.toMap()));
+    }
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.moderationDBISARs
+          .putAll(moderationsISAR);
     });
   }
 }

@@ -38,11 +38,12 @@ class BadgeDB extends DBObject {
 
   static Future<void> migrateToISAR() async {
     List<BadgeDB> badgeDBs = await DB.sharedInstance.objects<BadgeDB>();
-    await Future.forEach(badgeDBs, (badgeDB) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.badgeDBISARs
-            .put(BadgeDBISAR.fromMap(badgeDB.toMap()));
-      });
+    List<BadgeDBISAR> badgeDBsISAR = [];
+    for (var badgeDB in badgeDBs) {
+      badgeDBsISAR.add(BadgeDBISAR.fromMap(badgeDB.toMap()));
+    }
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.badgeDBISARs.putAll(badgeDBsISAR);
     });
   }
 }

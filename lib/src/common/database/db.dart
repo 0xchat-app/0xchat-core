@@ -38,15 +38,15 @@ class DB {
     BadgeAwardDB.migrateToISAR,
     BadgeDB.migrateToISAR,
     RelayDB.migrateToISAR,
-    ZapRecordsDB.migrateToISAR,
+    // ZapRecordsDB.migrateToISAR,
     ChannelDB.migrateToISAR,
     SecretSessionDB.migrateToISAR,
     GroupDB.migrateToISAR,
     JoinRequestDB.migrateToISAR,
     ModerationDB.migrateToISAR,
     RelayGroupDB.migrateToISAR,
-    NoteDB.migrateToISAR,
-    NotificationDB.migrateToISAR,
+    // NoteDB.migrateToISAR,
+    // NotificationDB.migrateToISAR,
     ConfigDB.migrateToISAR
   ];
 

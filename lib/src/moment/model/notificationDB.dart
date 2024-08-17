@@ -83,11 +83,13 @@ class NotificationDB extends DBObject {
   static Future<void> migrateToISAR() async {
     List<NotificationDB> notifications =
         await DB.sharedInstance.objects<NotificationDB>();
-    await Future.forEach(notifications, (notification) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.notificationDBISARs
-            .put(NotificationDBISAR.fromMap(notification.toMap()));
-      });
+    List<NotificationDBISAR> notificationsISAR = [];
+    for (var notification in notifications) {
+      notificationsISAR.add(NotificationDBISAR.fromMap(notification.toMap()));
+    }
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.notificationDBISARs
+          .putAll(notificationsISAR);
     });
   }
 }

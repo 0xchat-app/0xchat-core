@@ -114,11 +114,12 @@ class MessageDB extends DBObject {
 
   static Future<void> migrateToISAR() async {
     List<MessageDB> messages = await DB.sharedInstance.objects<MessageDB>();
-    await Future.forEach(messages, (message) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.messageDBISARs
-            .put(MessageDBISAR.fromMap(message.toMap()));
-      });
+    List<MessageDBISAR> messagesISAR = [];
+    for (var message in messages) {
+      messagesISAR.add(MessageDBISAR.fromMap(message.toMap()));
+    }
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.messageDBISARs.putAll(messagesISAR);
     });
   }
 }

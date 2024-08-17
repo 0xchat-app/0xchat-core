@@ -1,7 +1,5 @@
 import 'dart:convert';
-
 import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/chat/privateGroups/model/groupDB_isar.dart';
 
 @reflector
 class GroupDB extends DBObject {
@@ -57,11 +55,12 @@ class GroupDB extends DBObject {
 
   static Future<void> migrateToISAR() async {
     List<GroupDB> groups = await DB.sharedInstance.objects<GroupDB>();
-    await Future.forEach(groups, (group) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.groupDBISARs
-            .put(GroupDBISAR.fromMap(group.toMap()));
-      });
+    List<GroupDBISAR> groupsISAR = [];
+    for (var group in groups) {
+      groupsISAR.add(GroupDBISAR.fromMap(group.toMap()));
+    }
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.groupDBISARs.putAll(groupsISAR);
     });
   }
 }

@@ -248,11 +248,12 @@ class NoteDB extends DBObject {
 
   static Future<void> migrateToISAR() async {
     List<NoteDB> notes = await DB.sharedInstance.objects<NoteDB>();
-    await Future.forEach(notes, (note) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.noteDBISARs
-            .put(NoteDBISAR.fromMap(note.toMap()));
-      });
+    List<NoteDBISAR> notesISAR = [];
+    for (var note in notes) {
+      notesISAR.add(NoteDBISAR.fromMap(note.toMap()));
+    }
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.noteDBISARs.putAll(notesISAR);
     });
   }
 }

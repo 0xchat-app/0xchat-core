@@ -60,11 +60,12 @@ class ZapRecordsDB extends DBObject {
   static Future<void> migrateToISAR() async {
     List<ZapRecordsDB> zapRecords =
         await DB.sharedInstance.objects<ZapRecordsDB>();
-    await Future.forEach(zapRecords, (zapRecord) async {
-      await DBISAR.sharedInstance.isar.writeTxn(() async {
-        await DBISAR.sharedInstance.isar.zapRecordsDBISARs
-            .put(ZapRecordsDBISAR.fromMap(zapRecord.toMap()));
-      });
+    List<ZapRecordsDBISAR> zapRecordsISAR = [];
+    for (var zapRecord in zapRecords) {
+      zapRecordsISAR.add(ZapRecordsDBISAR.fromMap(zapRecord.toMap()));
+    }
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.zapRecordsDBISARs.putAll(zapRecordsISAR);
     });
   }
 }
