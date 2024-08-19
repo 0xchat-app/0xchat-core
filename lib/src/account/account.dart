@@ -70,6 +70,8 @@ class Account {
   }
 
   FutureOr<UserDBISAR?> getUserInfo(String pubkey) {
+    if (!isValidPubKey(pubkey)) return null;
+
     UserDBISAR? user = userCache[pubkey]?.value;
     if (user != null) {
       _addToPQueue(user);
@@ -105,9 +107,7 @@ class Account {
   void _addToPQueue(UserDBISAR user) {
     if (user.lastUpdatedTime != 0) return;
     final pubkey = user.pubKey;
-    if (pubkey.isNotEmpty &&
-        !pQueue.contains(pubkey) &&
-        isValidPubKey(pubkey)) {
+    if (pubkey.isNotEmpty && !pQueue.contains(pubkey)) {
       pQueue.add(pubkey);
     }
   }
@@ -286,6 +286,7 @@ class Account {
   }
 
   Future<void> logout() async {
+    await NotificationHelper.sharedInstance.logout();
     await Connect.sharedInstance.closeAllConnects();
     Contacts.sharedInstance.allContacts.clear();
     Contacts.sharedInstance.secretSessionMap.clear();
@@ -295,7 +296,6 @@ class Account {
     RelayGroup.sharedInstance.myGroups.clear();
     RelayGroup.sharedInstance.groupRelays.clear();
     Relays.sharedInstance.relays.clear();
-    NotificationHelper.sharedInstance.logout();
     me = null;
     currentPubkey = '';
     currentPrivkey = '';

@@ -91,7 +91,6 @@ extension AccountProfile on Account {
   }
 
   Future<UserDBISAR> reloadProfileFromRelay(String pubkey) async {
-    if (!isValidPubKey(pubkey)) return UserDBISAR(pubKey: pubkey);
     Completer<UserDBISAR> completer = Completer<UserDBISAR>();
     UserDBISAR? db = await getUserInfo(pubkey);
     Filter f = Filter(kinds: [0, 10050, 30008], authors: [pubkey]);

@@ -11,12 +11,12 @@ extension AccountFollows on Account {
   Future<List<UserDBISAR>> syncFollowingListFromDB(String pubkey) async {
     UserDBISAR? user = pubkey == currentPubkey ? me : await getUserInfo(pubkey);
     List<UserDBISAR> result = [];
-    for (var p in user?.followingList ?? []) {
+    await Future.forEach(user?.followingList ?? [], (p) async {
       UserDBISAR? userDB = await getUserInfo(p);
       if (userDB != null) {
         result.add(userDB);
       }
-    }
+    });
     return result;
   }
 

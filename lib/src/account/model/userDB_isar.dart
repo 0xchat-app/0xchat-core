@@ -171,6 +171,7 @@ class UserDBISAR {
   @ignore
   String get shortEncodedPubkey {
     String k = encodedPubkey;
+    if(k.length < 7) return k;
     final String start = k.substring(0, 6);
     final String end = k.substring(k.length - 6);
 
