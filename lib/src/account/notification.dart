@@ -90,12 +90,20 @@ class NotificationHelper {
     startHeartBeat();
   }
 
-  Future<void> logout() async {
+  Future<OKEvent> logout() async {
     Map map = {'online': 0, 'deviceId': ''};
     Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event, toRelays: [oxchatRelay]);
-
-    _stopHeartBeat();
+    if (Connect.sharedInstance.webSockets[oxchatRelay]?.connectStatus != 1) {
+      return OKEvent(event.id, true, '');
+    }
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+      if (!completer.isCompleted) {
+        completer.complete(ok);
+        _stopHeartBeat();
+      }
+    }, toRelays: [oxchatRelay]);
+    return completer.future;
   }
 
   // call setNotification when online or updating notification
