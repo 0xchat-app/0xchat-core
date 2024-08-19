@@ -375,7 +375,11 @@ class Messages {
   }
 
   static Future<Map> loadMessagesFromDB(
-      {String? receiver, String? groupId, int? until, int? limit}) async {
+      {String? receiver,
+      String? groupId,
+      String? sessionId,
+      int? until,
+      int? limit}) async {
     final isar = DBISAR.sharedInstance.isar;
     var queryBuilder = isar.messageDBISARs.filter().idLessThan(Isar.maxId);
     if (receiver != null) {
@@ -392,6 +396,9 @@ class Messages {
     }
     if (groupId != null) {
       queryBuilder = queryBuilder.groupIdEqualTo(groupId);
+    }
+    if (sessionId != null) {
+      queryBuilder = queryBuilder.sessionIdEqualTo(sessionId);
     }
     if (until != null) {
       queryBuilder = queryBuilder.createTimeLessThan(until);
