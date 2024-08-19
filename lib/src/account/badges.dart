@@ -171,10 +171,7 @@ class BadgesHelper {
   }
 
   static Future<void> saveBadgeToDB(BadgeDBISAR badgeDB) async {
-    final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.badgeDBISARs.put(badgeDB);
-    });
+    await DBISAR.sharedInstance.saveToDB(badgeDB);
     BadgesHelper.sharedInstance.badgeInfos[badgeDB.badgeID] = badgeDB;
   }
 
@@ -451,10 +448,7 @@ class BadgesHelper {
   }
 
   static Future<void> saveBadgeAwardDB(BadgeAwardDBISAR badgeAwardDB) async {
-    final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.badgeAwardDBISARs.put(badgeAwardDB);
-    });
+    await DBISAR.sharedInstance.saveToDB(badgeAwardDB);
   }
 
   static Future<BadgeAwardDBISAR?> searchBadgeAwardDB(

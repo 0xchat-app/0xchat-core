@@ -219,10 +219,7 @@ class Groups {
   }
 
   static Future<void> saveGroupToDB(GroupDBISAR groupDB) async {
-    final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.groupDBISARs.put(groupDB);
-    });
+    await DBISAR.sharedInstance.saveToDB(groupDB);
   }
 
   Future<void> syncMyGroupListToDB() async {

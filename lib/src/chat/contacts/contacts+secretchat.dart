@@ -7,10 +7,7 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension SecretChat on Contacts {
   Future<void> saveSecretDB(SecretSessionDBISAR secretSessionDB) async {
-    final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.secretSessionDBISARs.put(secretSessionDB);
-    });
+    await DBISAR.sharedInstance.saveToDB(secretSessionDB);
   }
 
   Future<void> _connectToRelay(String? relay) async {

@@ -86,25 +86,17 @@ class Relays {
   }
 
   Future<void> syncRelaysToDB({String? r}) async {
-    final isar = DBISAR.sharedInstance.isar;
     if (r != null && relays[r] != null) {
-      await isar.writeTxn(() async {
-        await isar.relayDBISARs.put(relays[r]!);
-      });
+      await DBISAR.sharedInstance.saveToDB(relays[r]!);
     } else {
       await Future.forEach(relays.values, (relay) async {
-        await isar.writeTxn(() async {
-          await isar.relayDBISARs.put(relay);
-        });
+        await DBISAR.sharedInstance.saveToDB(relay);
       });
     }
   }
 
   Future<void> syncRelayToDB(RelayDBISAR db) async {
-    final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.relayDBISARs.put(db);
-    });
+    await DBISAR.sharedInstance.saveToDB(db);
   }
 
   int getFriendMessageUntil(String relayURL) {
@@ -301,7 +293,8 @@ class Relays {
       await Relays.sharedInstance.syncRelayToDB(relayDB);
       return relayDB;
     } else {
-      debugPrintSynchronously('Request failed with status: ${response.statusCode}.');
+      debugPrintSynchronously(
+          'Request failed with status: ${response.statusCode}.');
       return null;
     }
   }

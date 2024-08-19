@@ -162,10 +162,7 @@ extension EMember on RelayGroup {
   }
 
   Future<void> saveModerationToDB(ModerationDBISAR moderationDB) async {
-    final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.moderationDBISARs.put(moderationDB);
-    });
+    await DBISAR.sharedInstance.saveToDB(moderationDB);
   }
 
   Future<void> handleModeration(Event event, String relay) async {

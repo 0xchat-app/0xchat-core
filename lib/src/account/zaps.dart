@@ -170,10 +170,7 @@ class Zaps {
         zapsDB = ZapsDBISAR.fromMap(jsonDecode(response.body));
         zapsDB.lnURL = lnurl;
         // cache to DB
-        final isar = DBISAR.sharedInstance.isar;
-        await isar.writeTxn(() async {
-          await isar.zapsDBISARs.put(zapsDB!);
-        });
+        await DBISAR.sharedInstance.saveToDB(zapsDB);
         return zapsDB;
       } else {
         throw Exception(response.toString());

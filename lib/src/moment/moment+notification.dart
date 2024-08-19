@@ -41,10 +41,7 @@ extension Notification on Moment {
 
   Future<void> saveNotificationToDB(NotificationDBISAR notificationDB,
       {ConflictAlgorithm? conflictAlgorithm}) async {
-    final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.notificationDBISARs.put(notificationDB);
-    });
+    await DBISAR.sharedInstance.saveToDB(notificationDB);
   }
 
   Future<void> deleteAllNotifications() async {

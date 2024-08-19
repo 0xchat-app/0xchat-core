@@ -102,6 +102,42 @@ class DBISAR {
       case ZapRecordsDBISAR:
         collection = isar.zapRecordsDBISARs;
         objects = objects.cast<ZapRecordsDBISAR>();
+      case BadgeDBISAR:
+        collection = isar.badgeDBISARs;
+        objects = objects.cast<BadgeDBISAR>();
+      case BadgeAwardDBISAR:
+        collection = isar.badgeAwardDBISARs;
+        objects = objects.cast<BadgeAwardDBISAR>();
+      case RelayDBISAR:
+        collection = isar.relayDBISARs;
+        objects = objects.cast<RelayDBISAR>();
+      case RelayGroupDBISAR:
+        collection = isar.relayGroupDBISARs;
+        objects = objects.cast<RelayGroupDBISAR>();
+      case ZapsDBISAR:
+        collection = isar.zapsDBISARs;
+        objects = objects.cast<ZapsDBISAR>();
+      case ChannelDBISAR:
+        collection = isar.channelDBISARs;
+        objects = objects.cast<ChannelDBISAR>();
+      case SecretSessionDBISAR:
+        collection = isar.secretSessionDBISARs;
+        objects = objects.cast<SecretSessionDBISAR>();
+      case GroupDBISAR:
+        collection = isar.groupDBISARs;
+        objects = objects.cast<GroupDBISAR>();
+      case JoinRequestDBISAR:
+        collection = isar.joinRequestDBISARs;
+        objects = objects.cast<JoinRequestDBISAR>();
+      case ModerationDBISAR:
+        collection = isar.moderationDBISARs;
+        objects = objects.cast<ModerationDBISAR>();
+      case NotificationDBISAR:
+        collection = isar.notificationDBISARs;
+        objects = objects.cast<NotificationDBISAR>();
+      case ConfigDBISAR:
+        collection = isar.configDBISARs;
+        objects = objects.cast<ConfigDBISAR>();
     }
     if (collection != null) {
       await isar.writeTxn(() async {

@@ -374,10 +374,7 @@ class RelayGroup {
   }
 
   Future<void> saveGroupToDB(RelayGroupDBISAR groupDB) async {
-    final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.relayGroupDBISARs.put(groupDB);
-    });
+    await DBISAR.sharedInstance.saveToDB(groupDB);
   }
 
   Future<void> syncGroupToDB(RelayGroupDBISAR groupDB) async {

@@ -296,10 +296,7 @@ class Channels {
     if (myChannels.containsKey(channelDB.channelId)) {
       myChannels[channelDB.channelId] = channelDB;
     }
-    final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.channelDBISARs.put(channelDB);
-    });
+    await DBISAR.sharedInstance.saveToDB(channelDB);
   }
 
   Future<void> _syncMyChannelListToDB() async {
