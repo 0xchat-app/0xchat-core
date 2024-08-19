@@ -374,10 +374,32 @@ class Messages {
     }
   }
 
-  static Future<Map> loadMessagesFromDB() async {
+  static Future<Map> loadMessagesFromDB(
+      {String? receiver, String? groupId, int? until, int? limit}) async {
     final isar = DBISAR.sharedInstance.isar;
-    var queryBuilder = isar.messageDBISARs.where();
-    final messages = await queryBuilder.sortByCreateTimeDesc().findAll();
+    var queryBuilder = isar.messageDBISARs.filter().idLessThan(Isar.maxId);
+    if (receiver != null) {
+      queryBuilder = queryBuilder
+          .group((q) => q
+              .senderEqualTo(receiver)
+              .and()
+              .receiverEqualTo(Account.sharedInstance.currentPubkey))
+          .or()
+          .group((q) => q
+              .senderEqualTo(Account.sharedInstance.currentPubkey)
+              .and()
+              .receiverEqualTo(receiver));
+    }
+    if (groupId != null) {
+      queryBuilder = queryBuilder.groupIdEqualTo(groupId);
+    }
+    if (until != null) {
+      queryBuilder = queryBuilder.createTimeLessThan(until);
+    }
+    final messages = limit == null
+        ? await queryBuilder.sortByCreateTimeDesc().findAll()
+        : await queryBuilder.sortByCreateTimeDesc().limit(limit).findAll();
+
     int theLastTime = 0;
     List<MessageDBISAR> result = [];
     for (var message in messages) {

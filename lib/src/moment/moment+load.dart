@@ -615,7 +615,7 @@ extension Load on Moment {
     List<NoteDBISAR> result = [];
     if (limit != null) {
       final searchResult = await queryBuilder
-          .idBetween(0, intMaxValue)
+          .idBetween(0, Isar.maxId)
           .sortByCreateAtDesc()
           .limit(limit)
           .findAll();
@@ -626,7 +626,7 @@ extension Load on Moment {
       return result;
     }
     final searchResult = await queryBuilder
-        .idBetween(0, intMaxValue)
+        .idBetween(0, Isar.maxId)
         .sortByCreateAtDesc()
         .findAll();
     for (NoteDBISAR note in searchResult) {
