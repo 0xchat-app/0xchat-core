@@ -15,7 +15,8 @@ class DBISAR {
 
   late Isar isar;
 
-  final List<Object> _buffer = [];
+  final Map<Type, List<dynamic>> _buffers = {};
+
   Timer? _timer;
 
   List<CollectionSchema<dynamic>> schemas = [
@@ -52,8 +53,12 @@ class DBISAR {
         );
   }
 
-  Future<void> saveToDB(Object object) async {
-    _buffer.add(object);
+  Future<void> saveToDB<T>(T object) async {
+    final type = T;
+    if (!_buffers.containsKey(type)) {
+      _buffers[type] = <T>[];
+    }
+    _buffers[type]!.add(object);
 
     _timer?.cancel();
     _timer = Timer(const Duration(milliseconds: 200), () async {
@@ -62,20 +67,8 @@ class DBISAR {
   }
 
   Future<void> _putAll() async {
-    if (_buffer.isEmpty) return;
-
-    final Map<Type, List<Object>> typeMap = {};
-
-    List<Object> tempBuffer = List.from(_buffer);
-    _buffer.clear();
-    for (var item in tempBuffer) {
-      var type = item.runtimeType;
-      if (!typeMap.containsKey(type)) {
-        typeMap[type] = [];
-      }
-      typeMap[type]!.add(item);
-    }
-
+    final Map<Type, List<dynamic>> typeMap = Map.from(_buffers);
+    _buffers.clear();
     await Future.forEach(typeMap.keys, (type) async {
       await _saveTOISAR(typeMap[type]!, type);
     });
@@ -84,64 +77,12 @@ class DBISAR {
     _timer = null;
   }
 
-  Future<void> _saveTOISAR(List<Object> objects, Type type) async {
-    IsarCollection? collection;
-    switch (type) {
-      case MessageDBISAR:
-        collection = isar.messageDBISARs;
-        objects = objects.cast<MessageDBISAR>();
-      case NoteDBISAR:
-        collection = isar.noteDBISARs;
-        objects = objects.cast<NoteDBISAR>();
-      case EventDBISAR:
-        collection = isar.eventDBISARs;
-        objects = objects.cast<EventDBISAR>();
-      case UserDBISAR:
-        collection = isar.userDBISARs;
-        objects = objects.cast<UserDBISAR>();
-      case ZapRecordsDBISAR:
-        collection = isar.zapRecordsDBISARs;
-        objects = objects.cast<ZapRecordsDBISAR>();
-      case BadgeDBISAR:
-        collection = isar.badgeDBISARs;
-        objects = objects.cast<BadgeDBISAR>();
-      case BadgeAwardDBISAR:
-        collection = isar.badgeAwardDBISARs;
-        objects = objects.cast<BadgeAwardDBISAR>();
-      case RelayDBISAR:
-        collection = isar.relayDBISARs;
-        objects = objects.cast<RelayDBISAR>();
-      case RelayGroupDBISAR:
-        collection = isar.relayGroupDBISARs;
-        objects = objects.cast<RelayGroupDBISAR>();
-      case ZapsDBISAR:
-        collection = isar.zapsDBISARs;
-        objects = objects.cast<ZapsDBISAR>();
-      case ChannelDBISAR:
-        collection = isar.channelDBISARs;
-        objects = objects.cast<ChannelDBISAR>();
-      case SecretSessionDBISAR:
-        collection = isar.secretSessionDBISARs;
-        objects = objects.cast<SecretSessionDBISAR>();
-      case GroupDBISAR:
-        collection = isar.groupDBISARs;
-        objects = objects.cast<GroupDBISAR>();
-      case JoinRequestDBISAR:
-        collection = isar.joinRequestDBISARs;
-        objects = objects.cast<JoinRequestDBISAR>();
-      case ModerationDBISAR:
-        collection = isar.moderationDBISARs;
-        objects = objects.cast<ModerationDBISAR>();
-      case NotificationDBISAR:
-        collection = isar.notificationDBISARs;
-        objects = objects.cast<NotificationDBISAR>();
-      case ConfigDBISAR:
-        collection = isar.configDBISARs;
-        objects = objects.cast<ConfigDBISAR>();
-    }
+  Future<void> _saveTOISAR(List<dynamic> objects, Type type) async {
+    IsarCollection? collection =
+        isar.getCollectionByNameInternal(type.toString());
     if (collection != null) {
       await isar.writeTxn(() async {
-        await collection!.putAll(objects);
+        await collection.putAll(objects);
       });
     }
   }

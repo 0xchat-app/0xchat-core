@@ -370,7 +370,7 @@ class MessageDBISAR {
 
       if (message != null) {
         message.previewData = previewData;
-        await isar.messageDBISARs.put(message);
+        await DBISAR.sharedInstance.saveToDB(message);
       }
     });
   }
