@@ -16,10 +16,7 @@ extension EAdmin on RelayGroup {
   }
 
   Future<void> saveJoinRequestDBToDB(JoinRequestDBISAR joinRequestDB) async {
-    final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.joinRequestDBISARs.put(joinRequestDB);
-    });
+    await DBISAR.sharedInstance.saveToDB(joinRequestDB);
   }
 
   Future<void> handleJoinRequest(Event event, String relay) async {
