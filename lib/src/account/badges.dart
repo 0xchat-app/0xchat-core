@@ -115,11 +115,25 @@ class BadgesHelper {
     List<BadgeDBISAR> badges = [];
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      Badge? badge = Nip58.getBadgeDefinition(event);
-      if (badge != null) {
-        BadgeDBISAR badgeDB = _badgeToBadgeDB(badge);
-        badges.add(badgeDB);
-        saveBadgeToDB(badgeDB);
+      if (event.kind == 30009) {
+        Badge? badge = Nip58.getBadgeDefinition(event);
+        if (badge != null) {
+          BadgeDBISAR badgeDB = _badgeToBadgeDB(badge);
+          badges.add(badgeDB);
+          saveBadgeToDB(badgeDB);
+        }
+      } else if (event.kind == 8) {
+        BadgeAward? badgeAward = Nip58.getBadgeAward(event);
+        if (badgeAward != null) {
+          BadgeAwardDBISAR badgeAwardDB = badgeAwardToBadgeAwardDB(badgeAward);
+          saveBadgeAwardDB(badgeAwardDB);
+          BadgeDBISAR? badgeDB =
+              BadgesHelper.sharedInstance.chatBadges[badgeAward.identifies];
+          if (badgeDB != null) {
+            badges.add(badgeDB);
+            saveBadgeToDB(badgeDB);
+          }
+        }
       }
     }, eoseCallBack: (requestId, status, relay, unRelays) {
       Connect.sharedInstance.closeSubscription(requestId, relay);
