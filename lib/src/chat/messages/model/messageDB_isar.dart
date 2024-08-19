@@ -362,17 +362,15 @@ class MessageDBISAR {
       String messageId, String previewData) async {
     final isar = DBISAR.sharedInstance.isar;
 
-    await isar.writeTxn(() async {
-      final message = await isar.messageDBISARs
-          .filter()
-          .messageIdEqualTo(messageId)
-          .findFirst();
+    final message = await isar.messageDBISARs
+        .filter()
+        .messageIdEqualTo(messageId)
+        .findFirst();
 
-      if (message != null) {
-        message.previewData = previewData;
-        await DBISAR.sharedInstance.saveToDB(message);
-      }
-    });
+    if (message != null) {
+      message.previewData = previewData;
+      await DBISAR.sharedInstance.saveToDB(message);
+    }
   }
 
   static String? getNostrScheme(String content) {

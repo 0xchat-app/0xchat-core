@@ -67,8 +67,11 @@ class DBISAR {
   Future<void> _putAll() async {
     final Map<Type, List<dynamic>> typeMap = Map.from(_buffers);
     _buffers.clear();
-    await Future.forEach(typeMap.keys, (type) async {
-      await _saveTOISAR(typeMap[type]!, type);
+
+    await isar.writeTxn(() async {
+      await Future.forEach(typeMap.keys, (type) async {
+        await _saveTOISAR(typeMap[type]!, type);
+      });
     });
 
     _timer?.cancel();
@@ -79,9 +82,7 @@ class DBISAR {
     IsarCollection? collection =
         isar.getCollectionByNameInternal(type.toString());
     if (collection != null) {
-      await isar.writeTxn(() async {
-        await collection.putAll(objects);
-      });
+      await collection.putAll(objects);
     }
   }
 }
