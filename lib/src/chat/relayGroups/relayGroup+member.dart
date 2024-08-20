@@ -101,15 +101,29 @@ extension EMember on RelayGroup {
     return completer.future;
   }
 
-  Future<OKEvent> leaveGroup(String groupId) async {
-    RelayGroupDBISAR? groupDB = groups[groupId];
+  Future<OKEvent> leaveGroup(String groupId, String reason) async {
+    RelayGroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
-    removeUser(groupId, [pubkey], '');
-    if (groupDB.members?.isNotEmpty == true) {
+    OKEvent ok = await sendLeaveRequest(groupId, reason);
+    if (ok.status) {
       groupDB.members?.remove(pubkey);
+      syncGroupToDB(groupDB);
     }
     myGroups.remove(groupId);
     return await syncMyGroupListToRelay();
+  }
+
+  Future<OKEvent> sendLeaveRequest(String groupId, String content) async {
+    RelayGroupDBISAR? groupDB = myGroups[groupId];
+    if (groupDB == null) return OKEvent(groupId, false, 'group not found');
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    Event event =
+        await Nip29.encodeLeaveRequest(groupId, content, pubkey, privkey);
+    Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
+        sendCallBack: (ok, relay) async {
+      if (!completer.isCompleted) completer.complete(ok);
+    });
+    return completer.future;
   }
 
   Future<OKEvent> joinGroup(String id, String content) async {

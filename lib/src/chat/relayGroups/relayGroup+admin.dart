@@ -121,6 +121,19 @@ extension EAdmin on RelayGroup {
     return ok;
   }
 
+  Future<OKEvent> deleteGroup(String groupId, String reason) async {
+    RelayGroupDBISAR? groupDB = myGroups[groupId];
+    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
+    GroupModeration moderation = GroupModeration.deleteGroup(groupId, reason);
+    OKEvent ok = await sendModeration(moderation);
+    if (ok.status) {
+      myGroups.remove(groupId);
+      groups.remove(groupId);
+      await deleteGroupFromDB(groupId);
+    }
+    return ok;
+  }
+
   Future<OKEvent> editMetadata(String groupId, String name, String about,
       String picture, String reason) async {
     RelayGroupDBISAR? groupDB = myGroups[groupId];

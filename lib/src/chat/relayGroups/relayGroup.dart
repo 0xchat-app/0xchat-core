@@ -377,6 +377,15 @@ class RelayGroup {
     await DBISAR.sharedInstance.saveToDB(groupDB);
   }
 
+  Future<void> deleteGroupFromDB(String groupId) async {
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.relayGroupDBISARs
+          .where()
+          .groupIdEqualTo(groupId)
+          .deleteAll();
+    });
+  }
+
   Future<void> syncGroupToDB(RelayGroupDBISAR groupDB) async {
     groups[groupDB.groupId] = groupDB;
     if (myGroups.containsKey(groupDB.groupId)) {
