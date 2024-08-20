@@ -293,7 +293,7 @@ class Relays {
       await Relays.sharedInstance.syncRelayToDB(relayDB);
       return relayDB;
     } else {
-      debugPrintSynchronously(
+      LogUtils.v(() =>
           'Request failed with status: ${response.statusCode}.');
       return null;
     }

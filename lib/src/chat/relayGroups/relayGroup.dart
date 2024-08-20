@@ -268,7 +268,7 @@ class RelayGroup {
           handleGroupMembers(event, relay);
           break;
         default:
-          debugPrintSynchronously(
+          LogUtils.v(() =>
               'relaygroup unhandled message ${event.toJson()}');
           break;
       }
@@ -349,7 +349,7 @@ class RelayGroup {
           handleGroupMembers(event, relay);
           break;
         default:
-          debugPrintSynchronously(
+          LogUtils.v(() =>
               'relaygroup unhandled message ${event.toJson()}');
           break;
       }

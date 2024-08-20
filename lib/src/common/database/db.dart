@@ -70,7 +70,7 @@ class DB {
     if (deleteDBIfNeedMirgration) {
       bool exists = await databaseExists(dbPath);
       if (exists) {
-        debugPrintSynchronously("delete Table");
+        LogUtils.v(() => "delete Table");
         await deleteDatabase(dbPath);
       }
     }
@@ -84,7 +84,7 @@ class DB {
           try {
             batch.execute(sql);
           } catch (_) {
-            debugPrintSynchronously("create ${objectMirror.simpleName} failure");
+            LogUtils.v(() => "create ${objectMirror.simpleName} failure");
           }
         }
       }
@@ -121,7 +121,7 @@ class DB {
                   }
                 }
               } catch (_) {
-                debugPrintSynchronously(
+                LogUtils.v(() =>
                     "update ${objectMirror.simpleName} failure ==> ${updateSql.toString()}");
               }
             }
@@ -151,7 +151,7 @@ class DB {
       //   insertOperations.addAll(batchOperations);
       // }
     } catch (e) {
-      debugPrintSynchronously('batchCommit error: $e');
+      LogUtils.v(() => 'batchCommit error: $e');
     }
   }
 
@@ -258,7 +258,7 @@ class DB {
   //
   // Future<int> delete<T extends DBObject>(
   //     {String? where, List<Object?>? whereArgs}) async {
-  //   debugPrintSynchronously('db delete: $where, ${jsonEncode(whereArgs)}');
+  //   LogUtils.v(() => 'db delete: $where, ${jsonEncode(whereArgs)}');
   //   String tableName = DBHelper.getTableName(T);
   //   await createTableForDBObject<T>(tableName);
   //   return await db.delete(tableName, where: where, whereArgs: whereArgs);

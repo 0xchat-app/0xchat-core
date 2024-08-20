@@ -462,7 +462,7 @@ class Contacts {
                   .handleReactionEvent(innerEvent, relay, true);
               break;
             default:
-              debugPrintSynchronously(
+              LogUtils.v(() =>
                   'contacts unhandled message ${innerEvent.toJson()}');
               break;
           }

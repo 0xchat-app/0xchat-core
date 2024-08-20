@@ -101,7 +101,7 @@ class RelayGroupDBISAR {
           groupAdminsJson.map((json) => GroupAdmin.fromJson(json)).toList();
       return admins;
     } catch (e) {
-      debugPrintSynchronously('stringToGroupAdmins error: $e');
+      LogUtils.v(() => 'stringToGroupAdmins error: $e');
       return [];
     }
   }

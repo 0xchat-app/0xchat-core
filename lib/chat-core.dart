@@ -65,6 +65,7 @@ export 'src/common/thread/threadPoolManager.dart';
 export 'src/common/config/config.dart';
 export 'src/common/config/configDB.dart';
 export 'src/common/config/configDB_isar.dart';
+export 'src/common/utils/LogUtil.dart';
 export 'src/moment/moment.dart';
 export 'src/moment/moment+load.dart';
 export 'src/moment/moment+notification.dart';

@@ -1,5 +1,5 @@
 import 'dart:core';
-import 'package:flutter/foundation.dart';
+import 'package:chatcore/chat-core.dart';
 import 'package:reflectable/mirrors.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'db.dart';
@@ -68,7 +68,7 @@ class DBHelper {
       primaryKey = primaryKey.substring(0, primaryKey.length - 1);
       primaryKey = "$primaryKey)";
     }
-    debugPrintSynchronously("primaryKey===>$primaryKey");
+    LogUtils.v(() => "primaryKey===>$primaryKey");
     List<String?> ignoreList = [];
     if (classMirror.staticMembers.keys.contains("ignoreKey")) {
       try {
@@ -109,7 +109,7 @@ class DBHelper {
     }
     sql = sql.substring(0, sql.length - 1);
     sql = "$sql)";
-    debugPrintSynchronously("sql=====>$sql");
+    LogUtils.v(() => "sql=====>$sql");
     return sql;
   }
 
@@ -151,13 +151,13 @@ class DBHelper {
       return false;
     }
     String sql = DBHelper.generatorTableSql(type);
-    debugPrintSynchronously("sql");
+    LogUtils.v(() => "sql");
     if (sql.isNotEmpty) {
       try {
         await db.execute(sql);
         return true;
       } catch (_) {
-        debugPrintSynchronously("create ${objectMirror.simpleName} failure");
+        LogUtils.v(() => "create ${objectMirror.simpleName} failure");
         return false;
       }
     }

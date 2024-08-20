@@ -253,7 +253,7 @@ class MessageDBISAR {
       }
       return {'contentType': 'text', 'content': content};
     } catch (e) {
-      debugPrintSynchronously(
+      LogUtils.v(() =>
           'decodeContent fail: $content, error msg: ${e.toString()}');
       MessageType type = _identifyUrl(content);
       return {'contentType': messageTypeToString(type), 'content': content};

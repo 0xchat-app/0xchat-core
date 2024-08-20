@@ -122,7 +122,7 @@ class Messages {
           _handleMuteUserEvent(event);
           break;
         default:
-          debugPrintSynchronously(
+          LogUtils.v(() =>
               'messages unhandled message ${event.toJson()}');
           break;
       }
@@ -160,7 +160,7 @@ class Messages {
           handleZapRecordEvent(event);
           break;
         default:
-          debugPrintSynchronously('unhandled message $event');
+          LogUtils.v(() => 'unhandled message $event');
           break;
       }
     },

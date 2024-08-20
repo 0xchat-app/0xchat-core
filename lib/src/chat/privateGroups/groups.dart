@@ -180,7 +180,7 @@ class Groups {
         _handleGroupMessage(event);
         break;
       default:
-        debugPrintSynchronously('unknown event: ${event.kind}');
+        LogUtils.v(() => 'unknown event: ${event.kind}');
         break;
     }
   }

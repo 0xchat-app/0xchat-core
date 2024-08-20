@@ -68,7 +68,7 @@ extension EAdmin on RelayGroup {
     }
     if (moderation.actionKind == GroupActionKind.removeUser &&
         moderation.users.singleOrNull == pubkey) {
-      debugPrintSynchronously('sendModeration: leave group');
+      LogUtils.v(() => 'sendModeration: leave group');
     } else if (!hasPermissions(
         groupDB.admins, pubkey, [moderation.actionKind])) {
       return OKEvent(groupId, false, 'permission not met');

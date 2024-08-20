@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
@@ -30,7 +29,7 @@ class NpubCash {
         return token;
       }
     } else {
-      debugPrintSynchronously('Request failed with status: ${response.statusCode}');
+      LogUtils.v(() => 'Request failed with status: ${response.statusCode}');
     }
     return null;
   }

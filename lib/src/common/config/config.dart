@@ -83,7 +83,7 @@ class Config {
           _handleAppData(event);
           break;
         default:
-          debugPrintSynchronously('config unhandled message ${event.toJson()}');
+          LogUtils.v(() => 'config unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (String requestId, OKEvent ok, String relay,

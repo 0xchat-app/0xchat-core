@@ -215,7 +215,7 @@ class Account {
         return null;
       }
     } catch (e) {
-      debugPrintSynchronously(e.toString());
+      LogUtils.v(() => e.toString());
       return null;
     }
   }
