@@ -216,6 +216,7 @@ extension AccountProfile on Account {
   }
 
   UserDBISAR? _handleKind0Event(UserDBISAR? db, Event event) {
+    if(event.content.isEmpty) return null;
     Map map = jsonDecode(event.content);
     if (db != null && db.lastUpdatedTime < event.createdAt) {
       db.name = map['name']?.toString();
