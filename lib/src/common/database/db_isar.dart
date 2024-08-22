@@ -65,6 +65,11 @@ class DBISAR {
   }
 
   Future<void> _putAll() async {
+    _timer?.cancel();
+    _timer = null;
+
+    if(_buffers.isEmpty) return;
+
     final Map<Type, List<dynamic>> typeMap = Map.from(_buffers);
     _buffers.clear();
 
@@ -73,9 +78,6 @@ class DBISAR {
         await _saveTOISAR(typeMap[type]!, type);
       });
     });
-
-    _timer?.cancel();
-    _timer = null;
   }
 
   Future<void> _saveTOISAR(List<dynamic> objects, Type type) async {
