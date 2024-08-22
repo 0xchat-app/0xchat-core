@@ -35,7 +35,6 @@ class Messages {
     pubkey = Account.sharedInstance.currentPubkey;
 
     refindActionsFromDB();
-    return;
 
     Future.wait([
       channelMessageCompleter.future,
