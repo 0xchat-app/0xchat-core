@@ -52,13 +52,13 @@ class ThreadPoolManager {
     return completer.future;
   }
 
-  Future<dynamic> runDatabaseTask(Future<dynamic> Function() task) {
-    return _runTask(task, _databaseSendPort);
-  }
-
-  Future<dynamic> runAlgorithmTask(Future<dynamic> Function() task) {
-    return _runTask(task, _algorithmSendPort);
-  }
+  // Future<dynamic> runDatabaseTask(Future<dynamic> Function() task) {
+  //   return _runTask(task, _databaseSendPort);
+  // }
+  //
+  // Future<dynamic> runAlgorithmTask(Future<dynamic> Function() task) {
+  //   return _runTask(task, _algorithmSendPort);
+  // }
 
   Future<dynamic> runOtherTask(Future<dynamic> Function() task) {
     return _runTask(task, _otherSendPort);
@@ -85,11 +85,10 @@ void _isolateEntry(SendPort sendPort) {
       final task = message[0] as Future Function();
       final replyPort = message[1] as SendPort;
       final rootIsolateToken = message[2] as RootIsolateToken;
+      final result = await task();
 
       // Attach root isolate token to the current isolate
       BackgroundIsolateBinaryMessenger.ensureInitialized(rootIsolateToken);
-
-      final result = await task();
       replyPort.send(result);
     }
   });

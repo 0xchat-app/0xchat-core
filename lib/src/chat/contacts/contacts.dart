@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:isolate';
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -339,40 +338,27 @@ class Contacts {
     });
   }
 
-  static Future<void> decodeNip24InIsolate(Map<String, dynamic> params) async {
+  static Future<Map<String, dynamic>?> decodeNip24InIsolate(
+      Map<String, dynamic> params) async {
     String privkey = params['privkey'] ?? '';
-    BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
+    String pubkey = params['pubkey'] ?? '';
     Event event = await Event.fromJson(params['event'], verify: false);
-    Event? innerEvent =
-        await Nip17.decode(event, params['pubkey'] ?? '', privkey);
-    params['sendPort'].send(innerEvent?.toJson());
+    Event? innerEvent = await Nip17.decode(event, pubkey, privkey);
+    return innerEvent?.toJson();
   }
 
   Future<Event?> decodeNip24Event(Event event) async {
-    Completer<Event?> completer = Completer<Event?>();
-    final receivePort = ReceivePort();
-    receivePort.listen((message) {
-      if (!completer.isCompleted) {
-        if (message != null) {
-          completer.complete(Event.fromJson(message, verify: false));
-        } else {
-          completer.complete(null);
-        }
-      }
-      receivePort.close(); // Close the receive port to avoid memory leaks
-    });
-
-    var rootToken = RootIsolateToken.instance!;
     Map<String, dynamic> map = {
       'event': event.toJson(),
       'privkey': privkey,
       'pubkey': pubkey,
-      'sendPort': receivePort.sendPort,
-      'token': rootToken
     };
-
-    await Isolate.spawn(decodeNip24InIsolate, map);
-    return completer.future;
+    var message = await ThreadPoolManager.sharedInstance
+        .runOtherTask(() => decodeNip24InIsolate(map));
+    if (message != null) {
+      return Event.fromJson(message, verify: false);
+    }
+    return null;
   }
 
   Future<void> _subscriptMoment({String? relay}) async {
@@ -462,8 +448,8 @@ class Contacts {
                   .handleReactionEvent(innerEvent, relay, true);
               break;
             default:
-              LogUtils.v(() =>
-                  'contacts unhandled message ${innerEvent.toJson()}');
+              LogUtils.v(
+                  () => 'contacts unhandled message ${innerEvent.toJson()}');
               break;
           }
         }
