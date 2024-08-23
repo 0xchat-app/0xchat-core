@@ -32,8 +32,13 @@ const EventDBISARSchema = CollectionSchema(
       name: r'eventSendStatusJson',
       type: IsarType.string,
     ),
-    r'rawData': PropertySchema(
+    r'expiration': PropertySchema(
       id: 3,
+      name: r'expiration',
+      type: IsarType.long,
+    ),
+    r'rawData': PropertySchema(
+      id: 4,
       name: r'rawData',
       type: IsarType.string,
     )
@@ -98,7 +103,8 @@ void _eventDBISARSerialize(
   writer.writeString(offsets[0], object.eventId);
   writer.writeString(offsets[1], object.eventReceiveStatusJson);
   writer.writeString(offsets[2], object.eventSendStatusJson);
-  writer.writeString(offsets[3], object.rawData);
+  writer.writeLong(offsets[3], object.expiration);
+  writer.writeString(offsets[4], object.rawData);
 }
 
 EventDBISAR _eventDBISARDeserialize(
@@ -109,7 +115,8 @@ EventDBISAR _eventDBISARDeserialize(
 ) {
   final object = EventDBISAR(
     eventId: reader.readStringOrNull(offsets[0]) ?? '',
-    rawData: reader.readStringOrNull(offsets[3]) ?? '',
+    expiration: reader.readLongOrNull(offsets[3]),
+    rawData: reader.readStringOrNull(offsets[4]) ?? '',
   );
   object.eventReceiveStatusJson = reader.readStringOrNull(offsets[1]);
   object.eventSendStatusJson = reader.readStringOrNull(offsets[2]);
@@ -131,6 +138,8 @@ P _eventDBISARDeserializeProp<P>(
     case 2:
       return (reader.readStringOrNull(offset)) as P;
     case 3:
+      return (reader.readLongOrNull(offset)) as P;
+    case 4:
       return (reader.readStringOrNull(offset) ?? '') as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -774,6 +783,80 @@ extension EventDBISARQueryFilter
     });
   }
 
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      expirationIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'expiration',
+      ));
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      expirationIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'expiration',
+      ));
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      expirationEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'expiration',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      expirationGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'expiration',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      expirationLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'expiration',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      expirationBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'expiration',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition> idEqualTo(
       Id value) {
     return QueryBuilder.apply(this, (query) {
@@ -1010,6 +1093,18 @@ extension EventDBISARQuerySortBy
     });
   }
 
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> sortByExpiration() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'expiration', Sort.asc);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> sortByExpirationDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'expiration', Sort.desc);
+    });
+  }
+
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> sortByRawData() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'rawData', Sort.asc);
@@ -1065,6 +1160,18 @@ extension EventDBISARQuerySortThenBy
     });
   }
 
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenByExpiration() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'expiration', Sort.asc);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenByExpirationDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'expiration', Sort.desc);
+    });
+  }
+
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -1115,6 +1222,12 @@ extension EventDBISARQueryWhereDistinct
     });
   }
 
+  QueryBuilder<EventDBISAR, EventDBISAR, QDistinct> distinctByExpiration() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'expiration');
+    });
+  }
+
   QueryBuilder<EventDBISAR, EventDBISAR, QDistinct> distinctByRawData(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1148,6 +1261,12 @@ extension EventDBISARQueryProperty
       eventSendStatusJsonProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'eventSendStatusJson');
+    });
+  }
+
+  QueryBuilder<EventDBISAR, int?, QQueryOperations> expirationProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'expiration');
     });
   }
 

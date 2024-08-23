@@ -11,12 +11,14 @@ class EventDBISAR {
   String eventId;
 
   String rawData;
+  int? expiration;
   String? eventSendStatusJson;
   String? eventReceiveStatusJson;
 
   EventDBISAR(
       {this.eventId = '',
       this.rawData = '',
+      this.expiration,
       List<EventStatusISAR>? eventSendStatus,
       List<EventStatusISAR>? eventReceiveStatus})
       : eventSendStatusJson = jsonEncode(eventSendStatus),
