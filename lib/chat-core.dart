@@ -54,6 +54,7 @@ export 'src/chat/relayGroups/model/moderationDB_isar.dart';
 export 'src/chat/contacts/contacts+calling.dart';
 export 'src/chat/contacts/contacts+blocklist.dart';
 export 'src/chat/contacts/contacts+secretchat.dart';
+export 'src/chat/contacts/contacts+isolateEvent.dart';
 export 'src/chat/channels/channels.dart';
 export 'src/common/database/db.dart';
 export 'src/common/database/db_isar.dart';

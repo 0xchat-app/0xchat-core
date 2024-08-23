@@ -384,27 +384,17 @@ class Groups {
   Future<OKEvent> sendMessageEvent(List<String>? receivers, Event event) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (receivers != null) {
-      final receivePort = ReceivePort();
-      receivePort.listen((message) async {
-        String receiver = message['receiver'];
-        Event e = await Event.fromJson(message['event']);
-        UserDBISAR? user = await Account.sharedInstance.getUserInfo(receiver);
-        Connect.sharedInstance.sendEvent(e, toRelays: user?.relayList);
-      });
-      for (var receiver in receivers) {
+      await Future.forEach(receivers, (receiver) async {
         if (receiver.isNotEmpty) {
-          var rootToken = RootIsolateToken.instance!;
-          Map<String, dynamic> map = {
-            'event': event.toJson(),
-            'receiver': receiver,
-            'privkey': privkey,
-            'pubkey': pubkey,
-            'sendPort': receivePort.sendPort,
-            'token': rootToken
-          };
-          Isolate.spawn(encodeNip17InIsolate, map);
+          Event? e =
+              await Contacts.sharedInstance.encodeNip17Event(event, receiver);
+          if (e != null) {
+            UserDBISAR? user =
+                await Account.sharedInstance.getUserInfo(receiver);
+            Connect.sharedInstance.sendEvent(e, toRelays: user?.relayList);
+          }
         }
-      }
+      });
       if (!completer.isCompleted) {
         completer.complete(OKEvent(event.id, true, ''));
       }

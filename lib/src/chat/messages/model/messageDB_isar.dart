@@ -253,8 +253,8 @@ class MessageDBISAR {
       }
       return {'contentType': 'text', 'content': content};
     } catch (e) {
-      LogUtils.v(() =>
-          'decodeContent fail: $content, error msg: ${e.toString()}');
+      LogUtils.v(
+          () => 'decodeContent fail: $content, error msg: ${e.toString()}');
       MessageType type = _identifyUrl(content);
       return {'contentType': messageTypeToString(type), 'content': content};
     }
@@ -324,11 +324,14 @@ class MessageDBISAR {
       {int chatType = 0}) async {
     EDMessage? message;
     if (event.kind == 4) {
-      message = await Nip4.decode(event, receiver, privkey);
+      message = await Contacts.sharedInstance
+          .decodeNip4Event(event, receiver, privkey);
     } else if (event.kind == 44) {
-      message = await Nip44.decode(event, receiver, privkey);
+      message = await Contacts.sharedInstance
+          .decodeNip44Event(event, receiver, privkey);
     } else if (event.kind == 14) {
-      message = await Nip17.decodeSealedGossipDM(event, receiver);
+      message =
+          await Contacts.sharedInstance.decodeKind14Event(event, receiver);
       if (message?.groupId?.isNotEmpty == true) {
         Groups.sharedInstance.createPrivateGroup(
             message!.sender, message.groupId!, message.subject, message.members,

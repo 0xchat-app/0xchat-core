@@ -338,29 +338,6 @@ class Contacts {
     });
   }
 
-  static Future<Map<String, dynamic>?> decodeNip24InIsolate(
-      Map<String, dynamic> params) async {
-    String privkey = params['privkey'] ?? '';
-    String pubkey = params['pubkey'] ?? '';
-    Event event = await Event.fromJson(params['event'], verify: false);
-    Event? innerEvent = await Nip17.decode(event, pubkey, privkey);
-    return innerEvent?.toJson();
-  }
-
-  Future<Event?> decodeNip24Event(Event event) async {
-    Map<String, dynamic> map = {
-      'event': event.toJson(),
-      'privkey': privkey,
-      'pubkey': pubkey,
-    };
-    var message = await ThreadPoolManager.sharedInstance
-        .runOtherTask(() => decodeNip24InIsolate(map));
-    if (message != null) {
-      return Event.fromJson(message, verify: false);
-    }
-    return null;
-  }
-
   Future<void> _subscriptMoment({String? relay}) async {
     // await Moment.sharedInstance.updateSubscriptions(relay: relay);
   }
@@ -420,7 +397,7 @@ class Contacts {
         updateFriendMessageTime(event.createdAt, relay);
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       } else if (event.kind == 1059) {
-        Event? innerEvent = await decodeNip24Event(event);
+        Event? innerEvent = await decodeNip17Event(event);
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
