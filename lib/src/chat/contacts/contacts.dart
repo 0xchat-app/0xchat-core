@@ -507,6 +507,10 @@ class Contacts {
           giftWrappedId: event.id);
       privateChatMessageCallBack?.call(messageDB);
     }
+    var map = await MessageDBISAR.decodeContent(messageDB.content);
+    messageDB.decryptContent = map['content'];
+    messageDB.type = map['contentType'];
+    messageDB.decryptSecret = map['decryptSecret'];
     await Messages.saveMessageToDB(messageDB);
 
     if (local) {

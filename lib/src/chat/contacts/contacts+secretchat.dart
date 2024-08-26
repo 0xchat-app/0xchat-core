@@ -453,6 +453,10 @@ extension SecretChat on Contacts {
             giftWrappedId: event.id);
         secretChatMessageCallBack?.call(messageDB);
       }
+      var map = await MessageDBISAR.decodeContent(messageDB.content);
+      messageDB.decryptContent = map['content'];
+      messageDB.type = map['contentType'];
+      messageDB.decryptSecret = map['decryptSecret'];
       await Messages.saveMessageToDB(messageDB);
 
       if (local) {
