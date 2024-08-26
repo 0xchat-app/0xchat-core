@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:path_provider/path_provider.dart';
@@ -49,6 +48,10 @@ class DBISAR {
           directory: dbPath,
           name: pubkey,
         );
+  }
+
+  Map<Type, List<dynamic>> getBuffers(){
+    return Map.from(_buffers);
   }
 
   Future<void> saveToDB<T>(T object) async {

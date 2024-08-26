@@ -122,8 +122,7 @@ class Messages {
           _handleMuteUserEvent(event);
           break;
         default:
-          LogUtils.v(() =>
-              'messages unhandled message ${event.toJson()}');
+          LogUtils.v(() => 'messages unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (String requestId, OKEvent ok, String relay,
@@ -374,6 +373,32 @@ class Messages {
     }
   }
 
+  static List<MessageDBISAR> loadMessagesFromCache(
+      {String? receiver, String? groupId, String? sessionId, int? until}) {
+    final Map<Type, List<dynamic>> buffers = DBISAR.sharedInstance.getBuffers();
+    List<MessageDBISAR> result = [];
+    for (MessageDBISAR message in buffers[MessageDBISAR]?.toList() ?? []) {
+      bool query = true;
+      if (query && receiver != null) {
+        query = (message.sender == receiver &&
+                message.receiver == Account.sharedInstance.currentPubkey) ||
+            (message.sender == Account.sharedInstance.currentPubkey &&
+                message.receiver == receiver);
+      }
+      if (query && groupId != null) {
+        query = message.groupId == groupId;
+      }
+      if (query && sessionId != null) {
+        query = message.sessionId == sessionId;
+      }
+      if (query && until != null) {
+        query = message.createTime < until;
+      }
+      if (query) result.add(message);
+    }
+    return result;
+  }
+
   static Future<Map> loadMessagesFromDB(
       {String? receiver,
       String? groupId,
@@ -408,7 +433,11 @@ class Messages {
         : await queryBuilder.sortByCreateTimeDesc().limit(limit).findAll();
 
     int theLastTime = 0;
-    List<MessageDBISAR> result = [];
+    List<MessageDBISAR> result = loadMessagesFromCache(
+        receiver: receiver,
+        groupId: groupId,
+        sessionId: sessionId,
+        until: until);
     for (var message in messages) {
       message = message.withGrowableLevels();
       theLastTime =

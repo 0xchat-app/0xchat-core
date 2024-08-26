@@ -557,6 +557,64 @@ extension Load on Moment {
     return result;
   }
 
+  List<NoteDBISAR> searchNotesFromCache(
+    String? noteId,
+    String? groupId,
+    List<String>? authors,
+    String? root,
+    String? reply,
+    String? repostId,
+    String? quoteRepostId,
+    String? reactedId,
+    bool? isReacted,
+    bool? private,
+    int? until,
+    int? limit,
+  ) {
+    final Map<Type, List<dynamic>> buffers = DBISAR.sharedInstance.getBuffers();
+    List<NoteDBISAR> result = [];
+    for (NoteDBISAR noteDB in buffers[NoteDBISAR]?.toList() ?? []) {
+      bool query = true;
+      if (query && noteId != null) {
+        query = noteDB.noteId == noteId;
+      }
+      if (query && groupId != null && groupId.isNotEmpty) {
+        query = noteDB.groupId == groupId;
+      }
+      if (query && authors != null) {
+        query = authors.any((author) => noteDB.author == author);
+      }
+      if (query && root != null) {
+        query = noteDB.root == root;
+      }
+      if (query && reply != null) {
+        query = noteDB.reply == reply;
+      }
+      if (query && repostId != null) {
+        query = noteDB.repostId == repostId;
+      }
+      if (query && quoteRepostId != null) {
+        query = noteDB.quoteRepostId == quoteRepostId;
+      }
+      if (query && reactedId != null) {
+        query = noteDB.reactedId == reactedId;
+      }
+      if (query && isReacted != null) {
+        query = isReacted
+            ? noteDB.reactedId?.isNotEmpty == true
+            : noteDB.reactedId?.isEmpty == true;
+      }
+      if (query && private != null) {
+        query = noteDB.private == private;
+      }
+      if (query && until != null) {
+        query = noteDB.createAt < until;
+      }
+      if (query) result.add(noteDB);
+    }
+    return result;
+  }
+
   Future<List<NoteDBISAR>> searchNotesFromDB({
     String? noteId,
     String? groupId,
@@ -578,8 +636,7 @@ extension Load on Moment {
     }
     if (groupId != null && groupId.isNotEmpty) {
       queryBuilder = queryBuilder.groupIdEqualTo(groupId);
-    }
-    else{
+    } else {
       queryBuilder = queryBuilder.groupIdIsEmpty();
     }
     if (authors != null) {
@@ -612,7 +669,19 @@ extension Load on Moment {
     if (private != null) {
       queryBuilder = queryBuilder.privateEqualTo(private);
     }
-    List<NoteDBISAR> result = [];
+    List<NoteDBISAR> result = searchNotesFromCache(
+        noteId,
+        groupId,
+        authors,
+        root,
+        reply,
+        repostId,
+        quoteRepostId,
+        reactedId,
+        isReacted,
+        private,
+        until,
+        limit);
     if (limit != null) {
       final searchResult = await queryBuilder
           .idBetween(0, Isar.maxId)
