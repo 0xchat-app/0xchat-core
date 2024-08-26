@@ -24,7 +24,7 @@ extension EMessage on RelayGroup {
         createTime: event.createdAt,
         plaintEvent: jsonEncode(event),
         chatType: 4);
-    var map = MessageDBISAR.decodeContent(groupMessage.content);
+    var map = await MessageDBISAR.decodeContent(groupMessage.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
     messageDB.decryptSecret = map['decryptSecret'];

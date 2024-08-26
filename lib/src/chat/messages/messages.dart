@@ -445,7 +445,7 @@ class Messages {
       if (message.content.isNotEmpty &&
           message.decryptContent.isEmpty &&
           message.type != 'text') {
-        var map = MessageDBISAR.decodeContent(message.content);
+        var map = await MessageDBISAR.decodeContent(message.content);
         message.decryptContent = map['content'];
         message.type = map['contentType'];
       }
@@ -480,7 +480,7 @@ class Messages {
       if (message.content.isNotEmpty &&
           message.decryptContent.isEmpty &&
           message.type != 'text') {
-        var map = MessageDBISAR.decodeContent(message.content);
+        var map = await MessageDBISAR.decodeContent(message.content);
         message.decryptContent = map['content'];
         message.type = map['contentType'];
       }
@@ -522,7 +522,7 @@ class Messages {
       if (message.content.isNotEmpty &&
           message.decryptContent.isEmpty &&
           message.type != 'text') {
-        var map = MessageDBISAR.decodeContent(message.content);
+        var map = await MessageDBISAR.decodeContent(message.content);
         message.decryptContent = map['content'];
         message.type = map['contentType'];
       }

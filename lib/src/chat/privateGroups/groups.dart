@@ -157,7 +157,7 @@ class Groups {
         plaintEvent: jsonEncode(event),
         chatType: 1,
         subType: subType);
-    var map = MessageDBISAR.decodeContent(groupMessage.content);
+    var map = await MessageDBISAR.decodeContent(groupMessage.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
     messageDB.decryptSecret = map['decryptSecret'];

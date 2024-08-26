@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:isar/isar.dart';
+import 'package:http/http.dart' as http;
 
 part 'messageDB_isar.g.dart';
 
@@ -173,20 +174,18 @@ class MessageDBISAR {
     }
   }
 
-  static MessageType _identifyUrl(String urlString) {
+  static Future<MessageType> identifyUrl(String urlString) async {
     final Uri uri;
 
     try {
       uri = Uri.parse(urlString);
     } catch (e) {
-      return MessageType.text;
-    }
-
-    if (!uri.isAbsolute) {
+      print(e);
       return MessageType.text;
     }
 
     final String path = uri.path.toLowerCase();
+    final String? mimeType = uri.queryParameters['m']?.toLowerCase();
 
     if (path.endsWith('.jpg') ||
         path.endsWith('.jpeg') ||
@@ -195,12 +194,7 @@ class MessageDBISAR {
         path.endsWith('.bmp') ||
         path.endsWith('.svg') ||
         path.endsWith('.webp') ||
-        path.endsWith('.heic') ||
-        path.startsWith('image/gif;base64,') ||
-        path.startsWith('image/png;base64,') ||
-        path.startsWith('image/jpeg;base64,') ||
-        path.startsWith('image/jpg;base64,') ||
-        path.startsWith('image/webp;base64,')) {
+        path.endsWith('.heic')) {
       return MessageType.image;
     } else if (path.endsWith('.mp3') ||
         path.endsWith('.wav') ||
@@ -227,12 +221,48 @@ class MessageDBISAR {
         path.endsWith('.txt') ||
         path.endsWith('.csv')) {
       return MessageType.file;
-    } else {
-      return MessageType.text;
     }
+
+    if (mimeType != null) {
+      if (mimeType.startsWith('image/')) {
+        return MessageType.image;
+      } else if (mimeType.startsWith('audio/')) {
+        return MessageType.audio;
+      } else if (mimeType.startsWith('video/')) {
+        return MessageType.video;
+      } else if (mimeType.startsWith('application/')) {
+        return MessageType.file;
+      }
+    }
+
+    if (uri.queryParameters.containsKey('blurhash')) {
+      return MessageType.image;
+    }
+
+    try {
+      final response = await http.head(uri);
+      final contentType = response.headers['content-type'];
+
+      if (contentType != null) {
+        if (contentType.startsWith('image/')) {
+          return MessageType.image;
+        } else if (contentType.startsWith('audio/')) {
+          return MessageType.audio;
+        } else if (contentType.startsWith('video/')) {
+          return MessageType.video;
+        } else if (contentType.startsWith('application/')) {
+          return MessageType.file;
+        }
+      }
+    } catch (e) {
+      print(e);
+    }
+
+    return MessageType.text;
   }
 
-  static Map<String, dynamic> decodeContent(String content) {
+
+  static Future<Map<String, dynamic>> decodeContent(String content) async {
     content = content.trim();
     try {
       Map<String, dynamic> map = jsonDecode(content);
@@ -255,7 +285,8 @@ class MessageDBISAR {
     } catch (e) {
       LogUtils.v(
           () => 'decodeContent fail: $content, error msg: ${e.toString()}');
-      MessageType type = _identifyUrl(content);
+      MessageType type = await identifyUrl(content);
+      print('_identifyUrl type = $type');
       return {'contentType': messageTypeToString(type), 'content': content};
     }
   }
@@ -354,7 +385,7 @@ class MessageDBISAR {
         chatType: chatType,
         expiration:
             message.expiration == null ? null : int.parse(message.expiration!));
-    var map = decodeContent(message.content);
+    var map = await decodeContent(message.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
     messageDB.decryptSecret = map['decryptSecret'];
