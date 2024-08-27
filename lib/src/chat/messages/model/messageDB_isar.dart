@@ -407,13 +407,11 @@ class MessageDBISAR {
   }
 
   static String? getNostrScheme(String content) {
-    final regexNostr = RegExp(
-        r'\bnostr:(npub|note|nprofile|nevent|nrelay|naddr)[0-9a-zA-Z]{8,}\b');
-    final match = regexNostr.firstMatch(content);
-    if (match != null) {
-      return match.group(1);
-    }
-    return null;
+    final regexNostr =
+        r'((nostr:)?(npub|note|nprofile|nevent|nrelay|naddr)[0-9a-zA-Z]+)';
+    final urlRegexp = RegExp(regexNostr);
+    final match = urlRegexp.firstMatch(content);
+    return match?.group(0);
   }
 }
 
