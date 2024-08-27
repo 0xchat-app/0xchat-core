@@ -19,12 +19,12 @@ class EventCache {
         await DBISAR.sharedInstance.isar.eventDBISARs.where().findAll();
     List<String> expiredEvents = [];
     for (var eventDB in eventDBs) {
-      if (eventDB.expiration != null &&
-          eventDB.expiration! > 0 &&
-          eventDB.expiration! < currentUnixTimestampSeconds()) {
-        expiredEvents.add(eventDB.eventId);
-        continue;
-      }
+      // if (eventDB.expiration != null &&
+      //     eventDB.expiration! > 0 &&
+      //     eventDB.expiration! < currentUnixTimestampSeconds()) {
+      //   expiredEvents.add(eventDB.eventId);
+      //   continue;
+      // }
       cacheIds.add(eventDB.eventId);
     }
 

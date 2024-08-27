@@ -281,6 +281,11 @@ class Connect {
     await Future.forEach(List.from(webSockets.keys), (relay) async {
       await closeConnect(relay);
     });
+    sendsMap.clear();
+    requestsMap.clear();
+    auths.clear();
+    connectStatusListeners.clear();
+    eventCheckerFutures.clear();
   }
 
   Future closeConnect(String relay) async {
