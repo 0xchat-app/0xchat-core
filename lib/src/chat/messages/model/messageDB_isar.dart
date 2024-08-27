@@ -286,7 +286,6 @@ class MessageDBISAR {
       LogUtils.v(
           () => 'decodeContent fail: $content, error msg: ${e.toString()}');
       MessageType type = await identifyUrl(content);
-      print('_identifyUrl type = $type');
       return {'contentType': messageTypeToString(type), 'content': content};
     }
   }

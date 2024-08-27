@@ -442,13 +442,13 @@ class Messages {
       message = message.withGrowableLevels();
       theLastTime =
           message.createTime > theLastTime ? message.createTime : theLastTime;
-      // if (message.content.isNotEmpty &&
-      //     message.decryptContent.isEmpty &&
-      //     message.type != 'text') {
-      //   var map = await MessageDBISAR.decodeContent(message.content);
-      //   message.decryptContent = map['content'];
-      //   message.type = map['contentType'];
-      // }
+      if (message.content.isNotEmpty &&
+          message.decryptContent.isEmpty &&
+          message.type != 'text') {
+        var map = await MessageDBISAR.decodeContent(message.content);
+        message.decryptContent = map['content'];
+        message.type = map['contentType'];
+      }
       result.add(message);
     }
     return {'theLastTime': theLastTime, 'messages': result};
@@ -477,13 +477,13 @@ class Messages {
     for (var message in messages) {
       theLastTime =
           message.createTime > theLastTime ? message.createTime : theLastTime;
-      // if (message.content.isNotEmpty &&
-      //     message.decryptContent.isEmpty &&
-      //     message.type != 'text') {
-      //   var map = await MessageDBISAR.decodeContent(message.content);
-      //   message.decryptContent = map['content'];
-      //   message.type = map['contentType'];
-      // }
+      if (message.content.isNotEmpty &&
+          message.decryptContent.isEmpty &&
+          message.type != 'text') {
+        var map = await MessageDBISAR.decodeContent(message.content);
+        message.decryptContent = map['content'];
+        message.type = map['contentType'];
+      }
     }
     return {'theLastTime': theLastTime, 'messages': messages};
   }
@@ -519,13 +519,13 @@ class Messages {
     for (var message in messages) {
       theLastTime =
           message.createTime > theLastTime ? message.createTime : theLastTime;
-      // if (message.content.isNotEmpty &&
-      //     message.decryptContent.isEmpty &&
-      //     message.type != 'text') {
-      //   var map = await MessageDBISAR.decodeContent(message.content);
-      //   message.decryptContent = map['content'];
-      //   message.type = map['contentType'];
-      // }
+      if (message.content.isNotEmpty &&
+          message.decryptContent.isEmpty &&
+          message.type != 'text') {
+        var map = await MessageDBISAR.decodeContent(message.content);
+        message.decryptContent = map['content'];
+        message.type = map['contentType'];
+      }
     }
     return {'theLastTime': theLastTime, 'messages': messages};
   }
