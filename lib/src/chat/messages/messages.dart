@@ -412,19 +412,24 @@ class Messages {
           .group((q) => q
               .senderEqualTo(receiver)
               .and()
-              .receiverEqualTo(Account.sharedInstance.currentPubkey))
+              .receiverEqualTo(Account.sharedInstance.currentPubkey)
+              .and()
+              .sessionIdIsEmpty())
           .or()
           .group((q) => q
               .senderEqualTo(Account.sharedInstance.currentPubkey)
               .and()
-              .receiverEqualTo(receiver));
+              .receiverEqualTo(receiver)
+              .and()
+              .sessionIdIsEmpty());
     }
-    if (groupId != null) {
-      queryBuilder = queryBuilder.groupIdEqualTo(groupId);
-    }
-    if (sessionId != null) {
-      queryBuilder = queryBuilder.sessionIdEqualTo(sessionId);
-    }
+    queryBuilder = sessionId != null
+        ? queryBuilder.sessionIdEqualTo(sessionId)
+        : queryBuilder.sessionIdIsEmpty();
+    queryBuilder = groupId != null
+        ? queryBuilder.groupIdEqualTo(groupId)
+        : queryBuilder.groupIdIsEmpty();
+
     if (until != null) {
       queryBuilder = queryBuilder.createTimeLessThan(until);
     }
