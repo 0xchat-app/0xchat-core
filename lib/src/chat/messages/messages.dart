@@ -578,6 +578,16 @@ class Messages {
     });
   }
 
+  static deleteSecretChatMessagesFromDB(String sessionId) async {
+    final isar = DBISAR.sharedInstance.isar;
+    await isar.writeTxn(() async {
+      await isar.messageDBISARs
+          .filter()
+          .sessionIdEqualTo(sessionId)
+          .deleteAll();
+    });
+  }
+
   static Future<OKEvent> deleteMessageFromRelay(
       String messageId, String reason) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
