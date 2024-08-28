@@ -90,4 +90,9 @@ class DBISAR {
       await collection.putAll(objects);
     }
   }
+
+  Future<void> closDatabase() async {
+    _buffers.clear();
+    await isar.close();
+  }
 }
