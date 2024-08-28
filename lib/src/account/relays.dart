@@ -24,7 +24,8 @@ class Relays {
 
   List<String> recommendDMRelays = [
     'wss://auth.nostr1.com',
-    'wss://relay.0xchat.com'
+    'wss://relay.0xchat.com',
+    'wss://inbox.nostr.wine',
   ];
 
   List<String> recommendGroupRelays = [
@@ -87,7 +88,6 @@ class Relays {
 
   Future<void> syncRelaysToDB({String? r}) async {
     if (r != null && relays[r] != null) {
-      print('syncRelaysToDB: $r');
       await DBISAR.sharedInstance.saveToDB(relays[r]!);
     } else {
       await Future.forEach(relays.values, (relay) async {
