@@ -574,7 +574,9 @@ extension SecretChat on Contacts {
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
       offlineSecretMessageFinish[relay] = true;
-      Relays.sharedInstance.syncRelaysToDB(r: relay);
+      if(ok.status){
+        updateFriendMessageTime(currentUnixTimestampSeconds(), relay);
+      }
       if (unCompletedRelays.isEmpty) {
         offlineSecretMessageFinishCallBack?.call();
         if (!Messages.sharedInstance.secretChatMessageCompleter.isCompleted) {

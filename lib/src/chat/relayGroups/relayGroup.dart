@@ -268,8 +268,7 @@ class RelayGroup {
           handleGroupMembers(event, relay);
           break;
         default:
-          LogUtils.v(() =>
-              'relaygroup unhandled message ${event.toJson()}');
+          LogUtils.v(() => 'relaygroup unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
@@ -349,8 +348,7 @@ class RelayGroup {
           handleGroupMembers(event, relay);
           break;
         default:
-          LogUtils.v(() =>
-              'relaygroup unhandled message ${event.toJson()}');
+          LogUtils.v(() => 'relaygroup unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
@@ -365,8 +363,8 @@ class RelayGroup {
     } else {
       Relays.sharedInstance.relays[relay] = RelayDBISAR(
           url: relay,
-          groupMessageUntilString: jsonEncode({relay: eventTime}),
-          groupMessageSinceString: jsonEncode({relay: eventTime}));
+          groupMessageUntil: eventTime,
+          groupMessageSince: eventTime);
     }
     if (offlineGroupMessageFinish[relay] == true) {
       Relays.sharedInstance.syncRelaysToDB(r: relay);

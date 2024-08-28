@@ -222,7 +222,7 @@ extension EInfo on RelayGroup {
     }
     await Connect.sharedInstance
         .connectRelays([relay], relayKind: RelayKind.temp);
-    Completer<RelayGroupDBISAR> completer = Completer<RelayGroupDBISAR>();
+    Completer<RelayGroupDBISAR?> completer = Completer<RelayGroupDBISAR>();
     Filter f = Filter(kinds: [39000], d: [groupId]);
     Connect.sharedInstance.addSubscription([f], relays: [relay],
         eventCallBack: (event, relay) async {

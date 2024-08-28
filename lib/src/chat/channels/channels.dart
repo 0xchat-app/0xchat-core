@@ -174,8 +174,8 @@ class Channels {
     } else {
       Relays.sharedInstance.relays[relay] = RelayDBISAR(
           url: relay,
-          channelMessageUntilString: jsonEncode({relay: eventTime}),
-          channelMessageSinceString: jsonEncode({relay: eventTime}));
+          channelMessageUntil: eventTime,
+          channelMessageSince: eventTime);
     }
     if (offlineChannelMessageFinish[relay] == true) {
       Relays.sharedInstance.syncRelaysToDB(r: relay);

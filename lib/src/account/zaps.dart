@@ -116,7 +116,9 @@ class Zaps {
       Zaps.handleZapRecordEvent(event);
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
       offlineZapRecordFinish[relay] = true;
-      Relays.sharedInstance.syncRelaysToDB(r: relay);
+      if (ok.status) {
+        updateZapRecordTime(currentUnixTimestampSeconds(), relay);
+      }
     });
   }
 
@@ -127,9 +129,7 @@ class Zaps {
       Relays.sharedInstance.setZapRecordUntil(eventTime, relay);
     } else {
       Relays.sharedInstance.relays[relay] = RelayDBISAR(
-          url: relay,
-          zapRecordSinceString: jsonEncode({relay: eventTime}),
-          zapRecordUntilString: jsonEncode({relay: eventTime}));
+          url: relay, zapRecordSince: eventTime, zapRecordUntil: eventTime);
     }
     if (offlineZapRecordFinish[relay] == true) {
       Relays.sharedInstance.syncRelaysToDB(r: relay);

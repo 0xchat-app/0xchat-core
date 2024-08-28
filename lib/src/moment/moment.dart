@@ -98,10 +98,9 @@ class Moment {
         }
       }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
         offlineMomentFinish[relay] = true;
-        if(ok.status){
+        if (ok.status) {
           updateMomentTime(currentUnixTimestampSeconds(), relay);
         }
-        Relays.sharedInstance.syncRelaysToDB(r: relay);
         if (unCompletedRelays.isEmpty) {
           offlineMomentFinishCallBack?.call();
         }
@@ -116,12 +115,9 @@ class Moment {
       Relays.sharedInstance.setMomentUntil(eventTime, relay);
     } else {
       Relays.sharedInstance.relays[relay] = RelayDBISAR(
-          url: relay,
-          momentSinceString: jsonEncode({relay: eventTime}),
-          momentUntilString: jsonEncode({relay: eventTime}));
+          url: relay, momentSince: eventTime, momentUntil: eventTime);
     }
-    if (offlineMomentFinish[relay] == true &&
-        offlineMomentFinish[relay] == true) {
+    if (offlineMomentFinish[relay] == true) {
       Relays.sharedInstance.syncRelaysToDB(r: relay);
     }
   }
