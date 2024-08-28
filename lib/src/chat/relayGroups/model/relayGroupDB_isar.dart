@@ -77,6 +77,11 @@ class RelayGroupDBISAR {
     return '$start:$end';
   }
 
+  @ignore
+  String get showName {
+    return name.isEmpty ? shortGroupId : name;
+  }
+
   set admins(List<GroupAdmin> attributes) {
     adminsString = groupAdminsToString(attributes);
   }

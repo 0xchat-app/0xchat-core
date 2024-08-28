@@ -222,7 +222,7 @@ extension EInfo on RelayGroup {
     }
     await Connect.sharedInstance
         .connectRelays([relay], relayKind: RelayKind.temp);
-    Completer<RelayGroupDBISAR?> completer = Completer<RelayGroupDBISAR>();
+    Completer<RelayGroupDBISAR?> completer = Completer<RelayGroupDBISAR?>();
     Filter f = Filter(kinds: [39000], d: [groupId]);
     Connect.sharedInstance.addSubscription([f], relays: [relay],
         eventCallBack: (event, relay) async {
@@ -233,7 +233,9 @@ extension EInfo on RelayGroup {
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       Connect.sharedInstance.closeConnects([relay], RelayKind.temp);
-      if (!completer.isCompleted) completer.complete(null);
+      if (!completer.isCompleted) {
+        completer.complete(RelayGroupDBISAR(groupId: groupId, relay: relay));
+      }
     });
     return completer.future;
   }
