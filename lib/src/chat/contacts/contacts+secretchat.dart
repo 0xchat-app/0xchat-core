@@ -31,7 +31,7 @@ extension SecretChat on Contacts {
         expiration: expiration, interval: interval, relay: chatRelay);
     if (okEvent.status) {
       // connect the chat relay
-      _connectToRelay(chatRelay);
+      await _connectToRelay(chatRelay);
       SecretSessionDBISAR secretSessionDB = SecretSessionDBISAR(
           sessionId: okEvent.eventId,
           myPubkey: pubkey,
@@ -88,7 +88,7 @@ extension SecretChat on Contacts {
     SecretSessionDBISAR? db = secretSessionMap[sessionId];
     if (db != null) {
       // connect the chat relay
-      _connectToRelay(db.relay);
+      await _connectToRelay(db.relay);
       Keychain randomKey = Keychain.generate();
       OKEvent okEvent =
           await _sendAcceptEvent(randomKey.public, db.toPubkey!, sessionId);
@@ -453,7 +453,10 @@ extension SecretChat on Contacts {
             giftWrappedId: event.id);
         secretChatMessageCallBack?.call(messageDB);
       }
-      var map = await MessageDBISAR.decodeContent(messageDB.content);
+      var map = await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(
+              type, content,
+              decryptSecret: decryptSecret) ??
+          messageDB.content);
       messageDB.decryptContent = map['content'];
       messageDB.type = map['contentType'];
       messageDB.decryptSecret = map['decryptSecret'];

@@ -161,7 +161,10 @@ extension PrivateGroups on Groups {
           decryptSecret: decryptSecret);
       groupMessageCallBack?.call(messageDB);
     }
-    var map = await MessageDBISAR.decodeContent(messageDB.content);
+    var map = await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(
+            type, content,
+            decryptSecret: decryptSecret) ??
+        messageDB.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
     messageDB.decryptSecret = map['decryptSecret'];

@@ -112,8 +112,7 @@ class Channels {
           _receiveChannelMessages(event, relay);
           break;
         default:
-          LogUtils.v(() =>
-              'channel unhandled message ${event.toJson()}');
+          LogUtils.v(() => 'channel unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
@@ -528,7 +527,10 @@ class Channels {
           chatType: 2);
       channelMessageCallBack?.call(messageDB);
     }
-    var map = await MessageDBISAR.decodeContent(messageDB.content);
+    var map = await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(
+            type, content,
+            decryptSecret: decryptSecret) ??
+        messageDB.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
     messageDB.decryptSecret = map['decryptSecret'];
