@@ -61,7 +61,7 @@ class Contacts {
   List<String>? blockList;
   Map<String, CallMessage> callMessages = {};
   int maxLimit = 2048;
-  int offset2 = 24 * 60 * 60 * 2;
+  int offset2 = 24 * 60 * 60 * 3;
 
   /// callbacks
   SecretChatRequestCallBack? secretChatRequestCallBack;
