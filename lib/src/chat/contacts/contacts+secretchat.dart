@@ -526,7 +526,7 @@ extension SecretChat on Contacts {
         if (value.sharePubkey!.isNotEmpty) pubkeys.add(value.sharePubkey!);
       }
     });
-
+    if(pubkeys.isEmpty) return;
     Map<String, List<Filter>> subscriptions = {};
     if (relay == null) {
       List<String> relays =
