@@ -284,7 +284,6 @@ class Connect {
     sendsMap.clear();
     requestsMap.clear();
     auths.clear();
-    connectStatusListeners.clear();
     eventCheckerFutures.clear();
   }
 
