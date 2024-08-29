@@ -512,7 +512,7 @@ class Contacts {
     var map = await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(
             type, content,
             decryptSecret: decryptSecret) ??
-        messageDB.content);
+        content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
     messageDB.decryptSecret = map['decryptSecret'];

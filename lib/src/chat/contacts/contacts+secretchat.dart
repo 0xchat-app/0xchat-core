@@ -455,8 +455,7 @@ extension SecretChat on Contacts {
       }
       var map = await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(
               type, content,
-              decryptSecret: decryptSecret) ??
-          messageDB.content);
+              decryptSecret: decryptSecret) ?? content);
       messageDB.decryptContent = map['content'];
       messageDB.type = map['contentType'];
       messageDB.decryptSecret = map['decryptSecret'];
