@@ -154,4 +154,42 @@ extension EMessage on RelayGroup {
       return OKEvent(event.id, false, 'relay group not found');
     }
   }
+
+  void loadGroupMessages(String groupId, int? since, int? until, int? limit) {
+    RelayGroupDBISAR? groupDB = groups[groupId];
+    if (groupDB == null) return;
+    Filter f = Filter(
+        h: [groupDB.groupId],
+        kinds: [7, 9, 10, 11, 12, 9735],
+        limit: limit,
+        until: until,
+        since: since);
+    Connect.sharedInstance.addSubscription([f], relays: [groupDB.relay],
+        eventCallBack: (event, relay) async {
+      switch (event.kind) {
+        case 7:
+          handleGroupReaction(event, relay);
+          break;
+        case 9:
+        case 10:
+          handleGroupMessage(event, relay);
+          break;
+        case 11:
+        case 12:
+          handleGroupNotes(event, relay);
+          break;
+        case 9735:
+          handleGroupZaps(event, relay);
+          break;
+        default:
+          LogUtils.v(() => 'unhandled message $event');
+          break;
+      }
+    }, eoseCallBack: (String requestId, OKEvent ok, String relay,
+            List<String> unCompletedRelays) {
+      if (unCompletedRelays.isEmpty) {
+        Connect.sharedInstance.closeRequests(requestId);
+      }
+    });
+  }
 }

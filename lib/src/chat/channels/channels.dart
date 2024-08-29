@@ -118,7 +118,7 @@ class Channels {
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
       offlineChannelMessageFinish[relay] = true;
       if (ok.status) {
-        _updateChannelMessageTime(currentUnixTimestampSeconds(), relay);
+        Relays.sharedInstance.syncRelaysToDB(r: relay);
       }
       if (unCompletedRelays.isEmpty) {
         offlineChannelMessageFinishCallBack?.call();
@@ -319,9 +319,14 @@ class Channels {
     });
   }
 
-  void _loadChannelPreMessages(String channelId, int until, int maxAmount) {
-    Filter f =
-        Filter(e: [channelId], kinds: [42], limit: maxAmount, until: until);
+  void _loadChannelPreMessages(String channelId, int until, int limit) {
+    loadChannelMessages(channelId, null, until, limit);
+  }
+
+  void loadChannelMessages(
+      String channelId, int? since, int? until, int? limit) {
+    Filter f = Filter(
+        e: [channelId], kinds: [42], limit: limit, until: until, since: since);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
       switch (event.kind) {

@@ -274,7 +274,7 @@ class RelayGroup {
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       offlineGroupMessageFinish[relay] = true;
       if (ok.status) {
-        _updateGroupMessageTime(currentUnixTimestampSeconds(), relay);
+        Relays.sharedInstance.syncRelaysToDB(r: relay);
       } else if (Nip29.restricted(ok.message)) {
         await Future.forEach(groupList, (g) async {
           await getGroupMetadataFromRelay(g);

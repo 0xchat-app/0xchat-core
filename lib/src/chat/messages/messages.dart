@@ -373,6 +373,18 @@ class Messages {
     }
   }
 
+  static void recoverMessagesFromRelay(
+      String groupId, int chatType, int? since, int? until, int? limit) {
+    // channel
+    if (chatType == 2) {
+      Channels.sharedInstance.loadChannelMessages(groupId, since, until, limit);
+    }
+    // relay group
+    else if (chatType == 4) {
+      RelayGroup.sharedInstance.loadGroupMessages(groupId, since, until, limit);
+    }
+  }
+
   static List<MessageDBISAR> loadMessagesFromCache(
       {String? receiver, String? groupId, String? sessionId, int? until}) {
     final Map<Type, List<dynamic>> buffers = DBISAR.sharedInstance.getBuffers();

@@ -117,7 +117,7 @@ class Zaps {
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
       offlineZapRecordFinish[relay] = true;
       if (ok.status) {
-        updateZapRecordTime(currentUnixTimestampSeconds(), relay);
+        Relays.sharedInstance.syncRelaysToDB(r: relay);
       }
     });
   }
