@@ -374,7 +374,7 @@ class Messages {
   }
 
   static void recoverMessagesFromRelay(String groupId, int chatType,
-      {int? since, int? until, int? limit}) {
+      {int? since, int? until, int limit = 1000}) {
     // channel
     if (chatType == 2) {
       Channels.sharedInstance.loadChannelMessages(groupId, since, until, limit);
