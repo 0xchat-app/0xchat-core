@@ -93,6 +93,8 @@ class DBISAR {
 
   Future<void> closDatabase() async {
     _buffers.clear();
+    _timer?.cancel();
+    _timer = null;
     if(isar.isOpen) await isar.close();
   }
 }
