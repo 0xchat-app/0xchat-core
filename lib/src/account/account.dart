@@ -296,6 +296,7 @@ class Account {
     RelayGroup.sharedInstance.myGroups.clear();
     RelayGroup.sharedInstance.groupRelays.clear();
     Relays.sharedInstance.relays.clear();
+    EventCache.sharedInstance.cacheIds.clear();
     me = null;
     currentPubkey = '';
     currentPrivkey = '';
