@@ -179,7 +179,7 @@ extension Send on Moment {
           }
         }
         return note.private
-            ? await _sendPrivateNote(content, [note.author, pubkey],
+            ? await _sendPrivateNote(content, [...note.pTags!, pubkey],
                 rootEvent: replyNoteId,
                 mentions: note.pTags,
                 hashTags: hashTags)
@@ -195,7 +195,7 @@ extension Send on Moment {
         }
         if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
         return note.private
-            ? await _sendPrivateNote(content, [note.author, pubkey],
+            ? await _sendPrivateNote(content, [...note.pTags!, pubkey],
                 rootEvent: rootEventId,
                 mentions: note.pTags,
                 replyEvent: replyNoteId,
@@ -216,7 +216,7 @@ extension Send on Moment {
     NoteDBISAR? note = await loadNoteWithNoteId(reactedNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
-      if (!note.pTags!.contains(note.author)){
+      if (!note.pTags!.contains(note.author)) {
         note.pTags!.add(note.author);
       }
       Event event = await Nip25.encode(
@@ -252,7 +252,7 @@ extension Send on Moment {
     NoteDBISAR? note = await loadNoteWithNoteId(repostNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
-      if (!note.pTags!.contains(note.author)){
+      if (!note.pTags!.contains(note.author)) {
         note.pTags!.add(note.author);
       }
       Event event = await Nip18.encodeReposts(repostNoteId, repostNoteRelay,
