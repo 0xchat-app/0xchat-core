@@ -149,16 +149,19 @@ extension EMember on RelayGroup {
       groupDB = RelayGroupDBISAR(groupId: groupId, relay: relay);
       groups[groupId] = groupDB;
     }
-    if (groupDB.closed == false) {
+    if (groupDB.lastUpdatedTime > 0 && groupDB.closed == false) {
       //open group, auto join
       groupDB.members ??= [];
       if (!groupDB.members!.contains(pubkey)) {
         groupDB.members!.add(pubkey);
       }
     }
-    myGroups[groupId] = groupDB;
     syncGroupToDB(groupDB);
-    syncMyGroupListToRelay();
+
+    if (!myGroups.containsKey(groupId)) {
+      myGroups[groupId] = groupDB;
+      syncMyGroupListToRelay();
+    }
 
     await Connect.sharedInstance
         .connectRelays([relay], relayKind: RelayKind.relayGroup);
@@ -167,7 +170,9 @@ extension EMember on RelayGroup {
         await Nip29.encodeJoinRequest(groupId, content, pubkey, privkey);
     Connect.sharedInstance.sendEvent(event, toRelays: [relay],
         sendCallBack: (ok, relay) async {
-      if (groupDB!.closed == false && ok.status) {
+      if (groupDB!.lastUpdatedTime > 0 &&
+          groupDB.closed == false &&
+          ok.status) {
         preloadGroupMessages(groupId, relay);
       }
       if (!completer.isCompleted) completer.complete(ok);

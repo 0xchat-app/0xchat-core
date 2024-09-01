@@ -217,8 +217,12 @@ extension EInfo on RelayGroup {
     SimpleGroups simpleGroups = getHostAndGroupId(id);
     String groupId = simpleGroups.groupId;
     relay ??= simpleGroups.relay;
-    if (groups.containsKey(groupId)) {
+    if (groups.containsKey(groupId) && groups[groupId]!.lastUpdatedTime > 0) {
       return groups[groupId]!;
+    } else {
+      RelayGroupDBISAR groupDB =
+          RelayGroupDBISAR(groupId: groupId, relay: relay);
+      syncGroupToDB(groupDB);
     }
     await Connect.sharedInstance
         .connectRelays([relay], relayKind: RelayKind.temp);
