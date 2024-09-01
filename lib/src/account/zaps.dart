@@ -17,6 +17,7 @@ enum ZapType {
   channelChat,
   privateGroup,
   relayGroup,
+  donate,
 }
 
 class Zaps {
@@ -216,9 +217,15 @@ class Zaps {
             if (relayGroupDB != null) {
               toRelays.addAll(
                   Connect.sharedInstance.relays(relayKind: RelayKind.general));
+              toRelays.add(relayGroupDB.relay);
             } else {
               return {"invoice": '', "zapsDB": zapsDB};
             }
+            break;
+          case ZapType.donate:
+            toRelays.addAll(
+                Connect.sharedInstance.relays(relayKind: RelayKind.general));
+            toRelays.add(Config.sharedInstance.wssHost);
             break;
         }
 
