@@ -420,7 +420,7 @@ class Messages {
     final isar = DBISAR.sharedInstance.isar;
     var queryBuilder = isar.messageDBISARs.filter().idLessThan(Isar.maxId);
     if (receiver != null) {
-      queryBuilder = queryBuilder
+      queryBuilder = queryBuilder.group((q) => q
           .group((q) => q
               .senderEqualTo(receiver)
               .and()
@@ -433,17 +433,17 @@ class Messages {
               .and()
               .receiverEqualTo(receiver)
               .and()
-              .sessionIdIsEmpty());
+              .sessionIdIsEmpty()));
     }
     queryBuilder = sessionId != null
-        ? queryBuilder.sessionIdEqualTo(sessionId)
-        : queryBuilder.sessionIdIsEmpty();
+        ? queryBuilder.and().sessionIdEqualTo(sessionId)
+        : queryBuilder.and().sessionIdIsEmpty();
     queryBuilder = groupId != null
-        ? queryBuilder.groupIdEqualTo(groupId)
-        : queryBuilder.groupIdIsEmpty();
+        ? queryBuilder.and().groupIdEqualTo(groupId)
+        : queryBuilder.and().groupIdIsEmpty();
 
     if (until != null) {
-      queryBuilder = queryBuilder.createTimeLessThan(until);
+      queryBuilder = queryBuilder.and().createTimeLessThan(until);
     }
     final messages = limit == null
         ? await queryBuilder.sortByCreateTimeDesc().findAll()
@@ -520,14 +520,15 @@ class Messages {
       messages = await isar.messageDBISARs
           .filter()
           .group((q) => q
-              .senderEqualTo(chatId)
-              .and()
-              .receiverEqualTo(Account.sharedInstance.currentPubkey))
-          .or()
-          .group((q) => q
-              .senderEqualTo(Account.sharedInstance.currentPubkey)
-              .and()
-              .receiverEqualTo(chatId))
+              .group((q) => q
+                  .senderEqualTo(chatId)
+                  .and()
+                  .receiverEqualTo(Account.sharedInstance.currentPubkey))
+              .or()
+              .group((q) => q
+                  .senderEqualTo(Account.sharedInstance.currentPubkey)
+                  .and()
+                  .receiverEqualTo(chatId)))
           .and()
           .decryptContentContains(orignalSearchTxt, caseSensitive: false)
           .findAll();
