@@ -105,7 +105,7 @@ extension EMessage on RelayGroup {
           groupId: groupId,
           kind: event.kind,
           tags: jsonEncode(event.tags),
-          replyId: rootEvent ?? '',
+          replyId: replyEvent ?? (rootEvent ?? ''),
           content: event.content,
           decryptContent: content,
           type: MessageDBISAR.messageTypeToString(type),
