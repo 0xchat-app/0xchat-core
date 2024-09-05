@@ -11,10 +11,10 @@ import 'package:nostr_core_dart/nostr.dart';
 enum OnionHostOption { no, whenAvailable, required }
 
 class ProxySettings {
-  final bool turnOnProxy;
-  final String socksProxyHost;
-  final int socksProxyPort;
-  final OnionHostOption onionHostOption;
+  bool turnOnProxy;
+  String socksProxyHost;
+  int socksProxyPort;
+  OnionHostOption onionHostOption;
 
   ProxySettings({
     this.turnOnProxy = false,
@@ -180,8 +180,8 @@ class Config {
     }
   }
 
-  ProxySettings? getProxy(){
-    return proxySettings;
+  ProxySettings getProxy() {
+    return proxySettings ?? ProxySettings(turnOnProxy: false);
   }
 
   Future<void> setProxy(ProxySettings setting) async {
