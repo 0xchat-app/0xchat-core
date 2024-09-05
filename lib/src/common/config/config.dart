@@ -8,19 +8,19 @@ import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
-enum OnionHostOption { no, whenAvailable, required }
+enum EOnionHostOption { no, whenAvailable, required }
 
 class ProxySettings {
   bool turnOnProxy;
   String socksProxyHost;
   int socksProxyPort;
-  OnionHostOption onionHostOption;
+  EOnionHostOption onionHostOption;
 
   ProxySettings({
     this.turnOnProxy = false,
     this.socksProxyHost = '127.0.0.1',
     this.socksProxyPort = 9050,
-    this.onionHostOption = OnionHostOption.whenAvailable,
+    this.onionHostOption = EOnionHostOption.whenAvailable,
   });
 
   Map<String, dynamic> toJson() {
@@ -37,7 +37,7 @@ class ProxySettings {
       turnOnProxy: json['turnOnProxy'],
       socksProxyHost: json['socksProxyHost'],
       socksProxyPort: json['socksProxyPort'],
-      onionHostOption: OnionHostOption.values[json['onionHostOption']],
+      onionHostOption: EOnionHostOption.values[json['onionHostOption']],
     );
   }
 
