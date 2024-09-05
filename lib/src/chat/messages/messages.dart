@@ -168,6 +168,8 @@ class Messages {
   }
 
   Future<MessageDBISAR?> loadMessageDBFromDB(String messageId) async {
+    List<MessageDBISAR> result = loadMessagesFromCache(messageId: messageId);
+    if(result.isNotEmpty) return result.first;
     final isar = DBISAR.sharedInstance.isar;
     var queryBuilder =
         isar.messageDBISARs.where().filter().messageIdEqualTo(messageId);
@@ -386,11 +388,14 @@ class Messages {
   }
 
   static List<MessageDBISAR> loadMessagesFromCache(
-      {String? receiver, String? groupId, String? sessionId, int? until}) {
+      {String? receiver, String? groupId, String? sessionId, int? until, String? messageId}) {
     final Map<Type, List<dynamic>> buffers = DBISAR.sharedInstance.getBuffers();
     List<MessageDBISAR> result = [];
     for (MessageDBISAR message in buffers[MessageDBISAR]?.toList() ?? []) {
       bool query = true;
+      if(messageId != null && message.messageId != messageId){
+        query = false;
+      }
       if (query && receiver != null) {
         query = (message.sender == receiver &&
                 message.receiver == Account.sharedInstance.currentPubkey) ||
