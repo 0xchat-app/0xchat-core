@@ -8,6 +8,50 @@ import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
+enum OnionHostOption { no, whenAvailable, required }
+
+class ProxySettings {
+  final bool turnOnProxy;
+  final String socksProxyHost;
+  final int socksProxyPort;
+  final OnionHostOption onionHostOption;
+
+  ProxySettings({
+    this.turnOnProxy = false,
+    this.socksProxyHost = '127.0.0.1',
+    this.socksProxyPort = 9050,
+    this.onionHostOption = OnionHostOption.whenAvailable,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'turnOnProxy': turnOnProxy,
+      'socksProxyHost': socksProxyHost,
+      'socksProxyPort': socksProxyPort,
+      'onionHostOption': onionHostOption.index,
+    };
+  }
+
+  factory ProxySettings.fromJson(Map<String, dynamic> json) {
+    return ProxySettings(
+      turnOnProxy: json['turnOnProxy'],
+      socksProxyHost: json['socksProxyHost'],
+      socksProxyPort: json['socksProxyPort'],
+      onionHostOption: OnionHostOption.values[json['onionHostOption']],
+    );
+  }
+
+  String toJsonString() {
+    final jsonData = toJson();
+    return jsonEncode(jsonData);
+  }
+
+  factory ProxySettings.fromJsonString(String jsonString) {
+    final Map<String, dynamic> jsonData = jsonDecode(jsonString);
+    return ProxySettings.fromJson(jsonData);
+  }
+}
+
 class Config {
   /// singleton
   Config._internal();
@@ -16,6 +60,7 @@ class Config {
   static final Config sharedInstance = Config._internal();
 
   Map<String, ConfigDBISAR> configs = {};
+  ProxySettings? proxySettings;
 
   // recommendChannels config
   List<String> recommendChannels = [
@@ -30,8 +75,7 @@ class Config {
     "mint.0xchat.com": "13.38.85.175:3337",
     "wss://groups.0xchat.com": "wss://54.191.231.210/groups",
   };
-  final String _serverPubkey =
-      '093dff31a87bbf838c54fd39ff755e72b38bd6b7975c670c0f2633fa7c54ddd0';
+  final String _serverPubkey = '093dff31a87bbf838c54fd39ff755e72b38bd6b7975c670c0f2633fa7c54ddd0';
   final String configD = '0xchat-config';
   final String wssHost = 'wss://relay.0xchat.com';
   final String httpHost = 'www.0xchat.com';
@@ -40,8 +84,7 @@ class Config {
 
   Future<void> initConfig() async {
     // subscript friend requests
-    Connect.sharedInstance
-        .addConnectStatusListener((relay, status, relayKinds) async {
+    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 &&
           Account.sharedInstance.me != null &&
           relayKinds.contains(RelayKind.general)) {
@@ -61,12 +104,12 @@ class Config {
     List<Object?> maps = await isar.configDBISARs.where().findAll();
     configs = {for (var configDB in maps) (configDB as ConfigDBISAR).d: configDB};
     _setConfig();
+    _loadProxy();
   }
 
   void _loadConfigFromRelay({String? relay}) {
     Map<String, List<Filter>> subscriptions = {};
-    Filter f = Filter(
-        kinds: [30078], d: [configD], authors: [_serverPubkey], limit: 1);
+    Filter f = Filter(kinds: [30078], d: [configD], authors: [_serverPubkey], limit: 1);
 
     if (relay == null) {
       for (var r in Connect.sharedInstance.relays()) {
@@ -76,8 +119,7 @@ class Config {
       subscriptions[relay] = [f];
     }
 
-    Connect.sharedInstance.addSubscriptions(subscriptions,
-        eventCallBack: (event, relay) {
+    Connect.sharedInstance.addSubscriptions(subscriptions, eventCallBack: (event, relay) {
       switch (event.kind) {
         case 30078:
           _handleAppData(event);
@@ -86,8 +128,7 @@ class Config {
           LogUtils.v(() => 'config unhandled message ${event.toJson()}');
           break;
       }
-    }, eoseCallBack: (String requestId, OKEvent ok, String relay,
-            List<String> unCompletedRelays) {
+    }, eoseCallBack: (String requestId, OKEvent ok, String relay, List<String> unCompletedRelays) {
       if (unCompletedRelays.isEmpty) {
         Connect.sharedInstance.closeRequests(requestId);
       }
@@ -99,10 +140,7 @@ class Config {
     // if (appData.d == null) return;
     // if (event.createdAt <= (configs[appData.d]?.time ?? 0)) return;
     ConfigDBISAR configDB = ConfigDBISAR(
-        d: appData.d ?? '',
-        eventId: event.id,
-        time: appData.createAt,
-        configJson: appData.content);
+        d: appData.d ?? '', eventId: event.id, time: appData.createAt, configJson: appData.content);
     configs[configDB.d] = configDB;
     _setConfig();
     await DBISAR.sharedInstance.saveToDB(configDB);
@@ -119,9 +157,8 @@ class Config {
       String? httpsdns = map['httpsdnsnew'];
       hostConfig[httpHost] = httpsdns ?? '52.76.210.159:9602';
 
-      List<String>? channels = (map['recommendChannels'] as List<dynamic>?)
-          ?.map((item) => item.toString())
-          .toList();
+      List<String>? channels =
+          (map['recommendChannels'] as List<dynamic>?)?.map((item) => item.toString()).toList();
       if (channels != null) recommendChannels = channels;
 
       String? mintdns = map['mintdnsnew'];
@@ -130,5 +167,23 @@ class Config {
       String? relayGroupdns = map['wssgroupdns'];
       hostConfig[relayGroupHost] = 'wss://${relayGroupdns ?? '54.191.231.210/groups'}';
     }
+  }
+
+  void _loadProxy() {
+    String? json = configs[configD]?.proxyJson;
+    if (json != null) {
+      try {
+        proxySettings = ProxySettings.fromJsonString(json);
+      } catch (_) {
+        proxySettings = ProxySettings(turnOnProxy: false);
+      }
+    }
+  }
+
+  Future<void> setProxy(ProxySettings setting) async {
+    proxySettings = setting;
+    configs[configD] ??= ConfigDBISAR(d: configD);
+    configs[configD]!.proxyJson = proxySettings!.toJsonString();
+    await DBISAR.sharedInstance.saveToDB(configs[configD]);
   }
 }

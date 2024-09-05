@@ -12,12 +12,14 @@ class ConfigDBISAR {
   String eventId;
   int time;
   String configJson;
+  String proxyJson;
 
   ConfigDBISAR({
     this.d = '',
     this.eventId = '',
     this.time = 0,
     this.configJson = '',
+    this.proxyJson = '',
   });
 
   static ConfigDBISAR fromMap(Map<String, Object?> map) {
