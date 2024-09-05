@@ -169,7 +169,7 @@ class Messages {
 
   Future<MessageDBISAR?> loadMessageDBFromDB(String messageId) async {
     List<MessageDBISAR> result = loadMessagesFromCache(messageId: messageId);
-    if(result.isNotEmpty) return result.first;
+    if(result.isNotEmpty) return result.first.withGrowableLevels();
     final isar = DBISAR.sharedInstance.isar;
     var queryBuilder =
         isar.messageDBISARs.where().filter().messageIdEqualTo(messageId);
