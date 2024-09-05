@@ -180,6 +180,10 @@ class Config {
     }
   }
 
+  ProxySettings? getProxy(){
+    return proxySettings;
+  }
+
   Future<void> setProxy(ProxySettings setting) async {
     proxySettings = setting;
     configs[configD] ??= ConfigDBISAR(d: configD);
