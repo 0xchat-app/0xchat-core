@@ -137,11 +137,20 @@ extension PrivateGroups on Groups {
 
     late MessageDBISAR messageDB;
     if (replaceMessageId != null) {
-      messageDB =
-          await Messages.sharedInstance.loadMessageDBFromDB(replaceMessageId) ??
-              MessageDBISAR();
-      messageDB.messageId = event!.id;
-      groupMessageUpdateCallBack?.call(messageDB, replaceMessageId);
+      final replaceMessageDB =
+          await Messages.sharedInstance.loadMessageDBFromDB(replaceMessageId);
+      if (replaceMessageDB == null) {
+        return Future.value(
+            OKEvent(
+              event?.innerEvent?.id ?? event!.id,
+              false,
+              'The message to be replaced was not found',
+            )
+        );
+      }
+      replaceMessageDB.messageId = event!.id;
+      groupMessageUpdateCallBack?.call(replaceMessageDB, replaceMessageId);
+      messageDB = replaceMessageDB;
     } else {
       messageDB = MessageDBISAR(
           messageId: event!.id,
