@@ -15,7 +15,7 @@ class NotificationHelper {
   String privkey = '';
   String serverPubkey = '';
   Timer? timer;
-  String oxchatRelay = 'wss://relay.0xchat.com';
+  List<String> toRelays = Relays.sharedInstance.recommendDMRelays;
 
   Event? unSendNotification;
 
@@ -30,12 +30,12 @@ class NotificationHelper {
 
     Connect.sharedInstance
         .addConnectStatusListener((relay, status, relayKinds) async {
-      if (status == 1 && relay == oxchatRelay) {
+      if (status == 1 && toRelays.contains(relay)) {
         if (unSendNotification != null) {
           Connect.sharedInstance.sendEvent(unSendNotification!,
               sendCallBack: (ok, relay) {
             if (ok.status) unSendNotification = null;
-          }, toRelays: [oxchatRelay]);
+          }, toRelays: toRelays);
         } else {
           _heartBeat(serverPubkey, privkey);
         }
@@ -74,13 +74,13 @@ class NotificationHelper {
   Future<void> _heartBeat(String serverPubkey, String privkey) async {
     Map map = {'online': 1};
     Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event, toRelays: [oxchatRelay]);
+    Connect.sharedInstance.sendEvent(event, toRelays: toRelays);
   }
 
   Future<void> setOffline() async {
     Map map = {'online': 0};
     Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event, toRelays: [oxchatRelay]);
+    Connect.sharedInstance.sendEvent(event, toRelays: toRelays);
 
     _stopHeartBeat();
   }
@@ -93,16 +93,13 @@ class NotificationHelper {
   Future<OKEvent> logout() async {
     Map map = {'online': 0, 'deviceId': ''};
     Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
-    if (Connect.sharedInstance.webSockets[oxchatRelay]?.connectStatus != 1) {
-      return OKEvent(event.id, true, '');
-    }
     Completer<OKEvent> completer = Completer<OKEvent>();
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
         completer.complete(ok);
         _stopHeartBeat();
       }
-    }, toRelays: [oxchatRelay]);
+    }, toRelays: toRelays);
     return completer.future;
   }
 
@@ -143,7 +140,7 @@ class NotificationHelper {
         if (ok.status) unSendNotification = null;
         completer.complete(ok);
       }
-    }, toRelays: [oxchatRelay]);
+    }, toRelays: toRelays);
     return completer.future;
   }
 }
