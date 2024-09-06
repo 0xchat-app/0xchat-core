@@ -140,7 +140,11 @@ class Config {
     // if (appData.d == null) return;
     // if (event.createdAt <= (configs[appData.d]?.time ?? 0)) return;
     ConfigDBISAR configDB = ConfigDBISAR(
-        d: appData.d ?? '', eventId: event.id, time: appData.createAt, configJson: appData.content);
+        d: appData.d ?? '',
+        eventId: event.id,
+        time: appData.createAt,
+        configJson: appData.content,
+        proxyJson: proxySettings?.toJsonString() ?? '');
     configs[configDB.d] = configDB;
     _setConfig();
     await DBISAR.sharedInstance.saveToDB(configDB);
@@ -158,7 +162,7 @@ class Config {
       hostConfig[httpHost] = httpsdns ?? '52.76.210.159:9602';
 
       List<String>? channels =
-      (map['recommendChannels'] as List<dynamic>?)?.map((item) => item.toString()).toList();
+          (map['recommendChannels'] as List<dynamic>?)?.map((item) => item.toString()).toList();
       if (channels != null) recommendChannels = channels;
 
       String? mintdns = map['mintdnsnew'];
