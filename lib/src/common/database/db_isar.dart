@@ -84,8 +84,8 @@ class DBISAR {
   }
 
   Future<void> _saveTOISAR(List<dynamic> objects, Type type) async {
-    IsarCollection? collection =
-        isar.getCollectionByNameInternal(type.toString());
+    String typeName = type.toString().replaceAll('?', '');
+    IsarCollection? collection = isar.getCollectionByNameInternal(typeName);
     if (collection != null) {
       await collection.putAll(objects);
     }
