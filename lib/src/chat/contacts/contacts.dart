@@ -545,7 +545,7 @@ class Contacts {
               event!.innerEvent?.id ?? event.id, ok.status, ok.message));
         }
         if (kind != 4 && kind != 44) {
-          await sendPrivateMessageToSelf(toPubkey, replyId, type, content,
+           sendPrivateMessageToSelf(toPubkey, replyId, type, content,
               kind: kind,
               subContent: subContent,
               expiration: expiration,
