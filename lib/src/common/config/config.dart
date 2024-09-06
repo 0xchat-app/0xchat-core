@@ -158,7 +158,7 @@ class Config {
       hostConfig[httpHost] = httpsdns ?? '52.76.210.159:9602';
 
       List<String>? channels =
-          (map['recommendChannels'] as List<dynamic>?)?.map((item) => item.toString()).toList();
+      (map['recommendChannels'] as List<dynamic>?)?.map((item) => item.toString()).toList();
       if (channels != null) recommendChannels = channels;
 
       String? mintdns = map['mintdnsnew'];
@@ -188,6 +188,7 @@ class Config {
     proxySettings = setting;
     configs[configD] ??= ConfigDBISAR(d: configD);
     configs[configD]!.proxyJson = proxySettings!.toJsonString();
-    await DBISAR.sharedInstance.saveToDB(configs[configD]);
+    await DBISAR.sharedInstance.saveToDB(configs[configD]!);
+    await Connect.sharedInstance.reConnectAll();
   }
 }

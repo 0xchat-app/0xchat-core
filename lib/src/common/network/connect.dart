@@ -294,6 +294,12 @@ class Connect {
     await socket?.close();
   }
 
+  Future reConnectAll() async {
+    await Future.forEach(List.from(webSockets.values), (isocket) async {
+      await isocket.socket?.close();
+    });
+  }
+
   String addSubscription(List<Filter> filters,
       {EventCallBack? eventCallBack,
       EOSECallBack? eoseCallBack,
