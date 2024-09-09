@@ -403,6 +403,8 @@ class Messages {
       int? until,
       int? since,
       int? limit}) async {
+    assert(until == null || since == null, 'unsupported filter');
+
     final isar = DBISAR.sharedInstance.isar;
     var queryBuilder = isar.messageDBISARs.filter().idLessThan(Isar.maxId);
     if (receiver != null) {
@@ -428,15 +430,17 @@ class Messages {
         ? queryBuilder.and().groupIdEqualTo(groupId)
         : queryBuilder.and().groupIdIsEmpty();
 
+    var queryBuilderAfteSort = queryBuilder.sortByCreateTimeDesc();
     if (until != null) {
-      queryBuilder = queryBuilder.and().createTimeLessThan(until);
+      queryBuilderAfteSort = queryBuilder.and().createTimeLessThan(until).sortByCreateTimeDesc();
     }
     if (since != null) {
-      queryBuilder = queryBuilder.and().createTimeGreaterThan(since);
+      queryBuilderAfteSort = queryBuilder.and().createTimeGreaterThan(since).sortByCreateTime();
     }
+
     final messages = limit == null
-        ? await queryBuilder.sortByCreateTimeDesc().findAll()
-        : await queryBuilder.sortByCreateTimeDesc().limit(limit).findAll();
+        ? await queryBuilderAfteSort.findAll()
+        : await queryBuilderAfteSort.limit(limit).findAll();
 
     int theLastTime = 0;
     List<MessageDBISAR> result = loadMessagesFromCache(
