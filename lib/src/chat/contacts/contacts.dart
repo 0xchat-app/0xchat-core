@@ -238,30 +238,6 @@ class Contacts {
     return null;
   }
 
-  Future<Event?> getSendMessageEvent(
-      String friendPubkey, String replayId, MessageType type, String content,
-      {String? source,
-      int? kind,
-      int? expiration,
-      String? decryptSecret,
-      String? sealedReceiver}) async {
-    Event? event;
-    expiration = expiration != null
-        ? (expiration + currentUnixTimestampSeconds())
-        : null;
-    event ??= await Nip17.encodeSealedGossipDM(
-        friendPubkey,
-        MessageDBISAR.getContent(type, content, source),
-        replayId,
-        pubkey,
-        privkey,
-        sealedReceiver: sealedReceiver,
-        subContent: MessageDBISAR.getSubContent(type, content,
-            decryptSecret: decryptSecret),
-        expiration: expiration);
-    return event;
-  }
-
   Future<void> muteFriend(String friendPubkey) async {
     _setMuteFriend(friendPubkey, true);
   }
@@ -402,7 +378,7 @@ class Contacts {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
             case 14:
-              _handlePrivateMessage(innerEvent, relay, giftWrappedId: event.id);
+              _handlePrivateMessage(innerEvent, relay);
               break;
             case 10100:
             case 10101:
@@ -445,12 +421,10 @@ class Contacts {
     });
   }
 
-  Future<void> _handlePrivateMessage(Event event, String relay,
-      {String? giftWrappedId}) async {
+  Future<void> _handlePrivateMessage(Event event, String relay) async {
     MessageDBISAR? messageDB =
         await MessageDBISAR.fromPrivateMessage(event, pubkey, privkey);
     if (messageDB != null) {
-      if (giftWrappedId != null) messageDB.giftWrappedId = giftWrappedId;
       await Messages.saveMessageToDB(messageDB);
       if (messageDB.groupId.isNotEmpty) {
         // private group
@@ -460,6 +434,28 @@ class Contacts {
         privateChatMessageCallBack?.call(messageDB);
       }
     }
+  }
+
+  Future<Event?> getSendMessageEvent(
+      String friendPubkey, String replayId, MessageType type, String content,
+      {String? source,
+        int? kind,
+        int? expiration,
+        String? decryptSecret}) async {
+    Event? event;
+    expiration = expiration != null
+        ? (expiration + currentUnixTimestampSeconds())
+        : null;
+    event ??= await Nip17.encodeInnerEvent(
+        friendPubkey,
+        MessageDBISAR.getContent(type, content, source),
+        replayId,
+        pubkey,
+        privkey,
+        subContent: MessageDBISAR.getSubContent(type, content,
+            decryptSecret: decryptSecret),
+        expiration: expiration);
+    return event;
   }
 
   Future<OKEvent> sendPrivateMessage(
@@ -499,11 +495,11 @@ class Contacts {
       messageDB = replaceMessageDB;
     } else {
       messageDB = MessageDBISAR(
-          messageId: event?.innerEvent?.id ?? event!.id,
+          messageId: event!.id,
           sender: pubkey,
           receiver: toPubkey,
           groupId: '',
-          kind: event!.kind,
+          kind: event.kind,
           tags: jsonEncode(event.tags),
           content: event.content,
           replyId: replyId,
@@ -514,8 +510,7 @@ class Contacts {
           plaintEvent: jsonEncode(event),
           chatType: 0,
           expiration: expiration,
-          decryptSecret: decryptSecret,
-          giftWrappedId: event.id);
+          decryptSecret: decryptSecret);
       privateChatMessageCallBack?.call(messageDB);
     }
     var map = await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(
@@ -530,12 +525,14 @@ class Contacts {
     if (local) {
       if (!completer.isCompleted) {
         completer
-            .complete(OKEvent(event!.innerEvent?.id ?? event.id, true, ''));
+            .complete(OKEvent(event!.id, true, ''));
       }
     } else {
+      // send to user
+      Event? giftwrappedEvent = await Contacts.sharedInstance.encodeNip17Event(event!, toPubkey);
       UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(toPubkey);
       List<String>? dmRelays = toUser?.dmRelayList;
-      Connect.sharedInstance.sendEvent(event!, toRelays: dmRelays,
+      Connect.sharedInstance.sendEvent(giftwrappedEvent!, toRelays: dmRelays,
           sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
         await Messages.saveMessageToDB(messageDB,
@@ -544,58 +541,12 @@ class Contacts {
           completer.complete(OKEvent(
               event!.innerEvent?.id ?? event.id, ok.status, ok.message));
         }
-        if (kind != 4 && kind != 44) {
-           sendPrivateMessageToSelf(toPubkey, replyId, type, content,
-              kind: kind,
-              subContent: subContent,
-              expiration: expiration,
-              local: local,
-              source: source,
-              decryptSecret: decryptSecret,
-              innerEvent: event?.innerEvent);
-        }
       });
-    }
-    return completer.future;
-  }
-
-  Future<OKEvent> sendPrivateMessageToSelf(
-      String toPubkey, String replyId, MessageType type, String content,
-      {Event? event,
-      int? kind,
-      String? subContent,
-      int? expiration,
-      bool local = false,
-      String? source,
-      String? decryptSecret,
-      Event? innerEvent}) async {
-    if (innerEvent == null) return OKEvent('', false, 'innerEvent == null');
-    Completer<OKEvent> completer = Completer<OKEvent>();
-    event ??= await Nip17.encodeSealedGossipDM(
-        toPubkey,
-        MessageDBISAR.getContent(type, content, source),
-        replyId,
-        pubkey,
-        privkey,
-        sealedReceiver: pubkey,
-        subContent: MessageDBISAR.getSubContent(type, content,
-            decryptSecret: decryptSecret),
-        expiration: expiration,
-        innerEvent: innerEvent);
-    expiration = expiration != null
-        ? (expiration + currentUnixTimestampSeconds())
-        : null;
-    if (local) {
-      if (!completer.isCompleted) {
-        completer.complete(OKEvent(innerEvent.id, true, ''));
-      }
-    } else {
-      UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(pubkey);
-      List<String>? dmRelays = toUser?.dmRelayList;
-      Connect.sharedInstance.sendEvent(event, toRelays: dmRelays,
-          sendCallBack: (ok, relay) async {
-        if (!completer.isCompleted) completer.complete(ok);
-      });
+      // send to self
+      Event? giftwrappedEventToSelf = await Contacts.sharedInstance.encodeNip17Event(event, pubkey);
+      UserDBISAR? me = await Account.sharedInstance.getUserInfo(pubkey);
+      List<String>? myDMRelays = me?.dmRelayList;
+      Connect.sharedInstance.sendEvent(giftwrappedEventToSelf!, toRelays: myDMRelays);
     }
     return completer.future;
   }

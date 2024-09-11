@@ -74,9 +74,6 @@ class MessageDBISAR {
   List<String>? reactionEventIds;
   List<String>? zapEventIds;
 
-  // innerEvent Id
-  String giftWrappedId;
-
   MessageDBISAR({
     this.messageId = '',
     this.sender = '',
@@ -100,7 +97,6 @@ class MessageDBISAR {
     this.decryptSecret,
     this.reactionEventIds,
     this.zapEventIds,
-    this.giftWrappedId = '',
   });
 
   static MessageDBISAR fromMap(Map<String, Object?> map) {
@@ -440,6 +436,5 @@ MessageDBISAR _messageInfoFromMap(Map<String, dynamic> map) {
     reactionEventIds:
         UserDBISAR.decodeStringList(map['reactionEventIds'].toString()),
     zapEventIds: UserDBISAR.decodeStringList(map['zapEventIds'].toString()),
-    giftWrappedId: map['giftWrappedId'].toString(),
   );
 }
