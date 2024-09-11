@@ -432,10 +432,16 @@ class Messages {
 
     var queryBuilderAfteSort = queryBuilder.sortByCreateTimeDesc();
     if (until != null) {
-      queryBuilderAfteSort = queryBuilder.and().createTimeLessThan(until).sortByCreateTimeDesc();
+      queryBuilderAfteSort = queryBuilder
+          .and()
+          .createTimeLessThan(until, include: true)
+          .sortByCreateTimeDesc();
     }
     if (since != null) {
-      queryBuilderAfteSort = queryBuilder.and().createTimeGreaterThan(since).sortByCreateTime();
+      queryBuilderAfteSort = queryBuilder
+          .and()
+          .createTimeGreaterThan(since, include: true)
+          .sortByCreateTime();
     }
 
     final messages = limit == null
