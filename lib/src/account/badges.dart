@@ -5,6 +5,7 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
 typedef BadgeAwardsCallBack = void Function(List<BadgeAward?>?);
+typedef BadgeAwardDBsCallBack = void Function(List<BadgeAwardDBISAR?>?);
 
 class BadgesHelper {
   /// singleton
@@ -240,37 +241,34 @@ class BadgesHelper {
 
   /// badge award
   Future<List<BadgeAwardDBISAR?>?> getUserBadgeAwardsFromRelay(
-      String userPubkey) async {
+      String userPubkey, BadgeAwardDBsCallBack? callback) async {
     Completer<List<BadgeAwardDBISAR?>?> completer =
         Completer<List<BadgeAwardDBISAR?>?>();
-    Map<String, Event> badgeAwardEvents = {};
     List<BadgeAwardDBISAR> badgeAwardsDB =
         await getUserBadgesFromDB(userPubkey);
     Filter f = Filter(kinds: [8], p: [userPubkey]);
     Connect.sharedInstance.addSubscription([f],
         eventCallBack: (event, relay) async {
-      badgeAwardEvents[event.id] = event;
-    }, eoseCallBack: (requestId, status, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
-      if (unRelays.isEmpty) {
-        for (var badgeAwardEvent in badgeAwardEvents.values) {
-          BadgeAward? badgeAward = Nip58.getBadgeAward(badgeAwardEvent);
+          BadgeAward? badgeAward = Nip58.getBadgeAward(event);
           if (badgeAward != null) {
             BadgeDBISAR? badgeDB = _get0xchatBadgeInfo(badgeAward.identifies);
             if (badgeDB != null) {
               // save to DB
               BadgeAwardDBISAR badgeAwardDB =
-                  badgeAwardToBadgeAwardDB(badgeAward);
+              badgeAwardToBadgeAwardDB(badgeAward);
               badgeAwardDB.badgeId = badgeDB.badgeID;
-              await saveBadgeAwardDB(badgeAwardDB);
               var exists = badgeAwardsDB.any(
-                  (badgeAward) => badgeAward.badgeId == badgeAwardDB.badgeId);
+                      (badgeAward) => badgeAward.badgeId == badgeAwardDB.badgeId);
               if (!exists) {
                 badgeAwardsDB.add(badgeAwardDB);
+                saveBadgeAwardDB(badgeAwardDB);
+                callback?.call(badgeAwardsDB);
               }
             }
           }
-        }
+    }, eoseCallBack: (requestId, status, relay, unRelays) async {
+      Connect.sharedInstance.closeSubscription(requestId, relay);
+      if (unRelays.isEmpty) {
         // cache to DB
         await syncUserBadgesToDB(
             userPubkey, badgeAwardsDB.map((e) => e.badgeId).toList());
