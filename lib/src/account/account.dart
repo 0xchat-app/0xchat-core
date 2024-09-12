@@ -70,6 +70,9 @@ class Account {
   }
 
   FutureOr<UserDBISAR?> getUserInfo(String pubkey) {
+    if(pubkey.length == 66 && pubkey.startsWith('02')) {
+      pubkey = pubkey.replaceFirst('02', '');
+    }
     if (!isValidPubKey(pubkey)) return null;
 
     UserDBISAR? user = userCache[pubkey]?.value;
