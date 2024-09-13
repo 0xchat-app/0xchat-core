@@ -6,22 +6,17 @@ import 'package:nostr_core_dart/nostr.dart';
 
 extension EMember on RelayGroup {
   Future<RelayGroupDBISAR?> createGroup(String relay,
-      {String name = '',
-      bool closed = false,
-      String picture = '',
-      String about = ''}) async {
+      {String name = '', bool closed = false, String picture = '', String about = ''}) async {
     // if (relay == 'wss://groups.fiatjaf.com') {
     //   return await createGroup2(relay,
     //       name: name, closed: closed, picture: picture, about: about);
     // }
 
-    await Connect.sharedInstance
-        .connectRelays([relay], relayKind: RelayKind.relayGroup);
+    await Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.relayGroup);
     Completer<RelayGroupDBISAR?> completer = Completer<RelayGroupDBISAR?>();
     String groupId = generate64RandomHexChars();
     Event event = await Nip29.encodeCreateGroup(groupId, pubkey, privkey);
-    Connect.sharedInstance.sendEvent(event, toRelays: [relay],
-        sendCallBack: (ok, relay) async {
+    Connect.sharedInstance.sendEvent(event, toRelays: [relay], sendCallBack: (ok, relay) async {
       if (ok.status) {
         RelayGroupDBISAR relayGroupDB = RelayGroupDBISAR(
             groupId: groupId,
@@ -50,10 +45,7 @@ extension EMember on RelayGroup {
   }
 
   Future<RelayGroupDBISAR?> createGroup2(String relay,
-      {String name = '',
-      bool closed = false,
-      String picture = '',
-      String about = ''}) async {
+      {String name = '', bool closed = false, String picture = '', String about = ''}) async {
     Completer<RelayGroupDBISAR?> completer = Completer<RelayGroupDBISAR?>();
     var uri = Uri.parse(relay);
     var hostWithPort = uri.hasPort ? '${uri.host}:${uri.port}' : uri.host;
@@ -117,8 +109,7 @@ extension EMember on RelayGroup {
     RelayGroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not found');
     Completer<OKEvent> completer = Completer<OKEvent>();
-    Event event =
-        await Nip29.encodeLeaveRequest(groupId, content, pubkey, privkey);
+    Event event = await Nip29.encodeLeaveRequest(groupId, content, pubkey, privkey);
     Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
         sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
@@ -163,16 +154,11 @@ extension EMember on RelayGroup {
       syncMyGroupListToRelay();
     }
 
-    await Connect.sharedInstance
-        .connectRelays([relay], relayKind: RelayKind.relayGroup);
+    await Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.relayGroup);
     Completer<OKEvent> completer = Completer<OKEvent>();
-    Event event =
-        await Nip29.encodeJoinRequest(groupId, content, pubkey, privkey);
-    Connect.sharedInstance.sendEvent(event, toRelays: [relay],
-        sendCallBack: (ok, relay) async {
-      if (groupDB!.lastUpdatedTime > 0 &&
-          groupDB.closed == false &&
-          ok.status) {
+    Event event = await Nip29.encodeJoinRequest(groupId, content, pubkey, privkey);
+    Connect.sharedInstance.sendEvent(event, toRelays: [relay], sendCallBack: (ok, relay) async {
+      if (groupDB!.lastUpdatedTime > 0 && groupDB.closed == false && ok.status) {
         preloadGroupMessages(groupId, relay);
       }
       if (!completer.isCompleted) completer.complete(ok);
@@ -184,13 +170,30 @@ extension EMember on RelayGroup {
     await DBISAR.sharedInstance.saveToDB(moderationDB);
   }
 
+  Future<void> handleLeaveGroup(Event event, String relay) async {
+    String? groupId = Nip29.getGroupIdFromEvent(event);
+    if (groupId == null) return;
+    UserDBISAR? user = await Account.sharedInstance.getUserInfo(event.pubkey);
+    String content = '${user?.name} leave the group';
+
+    RelayGroupDBISAR? groupDB = groups[groupId];
+    if (groupDB != null) {
+      groupDB.members ??= [];
+      if (groupDB.members!.contains(event.pubkey)) {
+        groupDB.members!.remove(event.pubkey);
+        syncGroupToDB(groupDB);
+      }
+    }
+    sendGroupMessage(groupId, MessageType.system, content, [],
+        local: true, createAt: event.createdAt);
+  }
+
   Future<void> handleModeration(Event event, String relay) async {
     GroupModeration moderation = Nip29.decodeModeration(event);
     ModerationDBISAR db = ModerationDBISAR.toModerationDB(moderation);
     await saveModerationToDB(db);
     String content = '';
-    Map<String, UserDBISAR> users =
-        await Account.sharedInstance.getUserInfos(moderation.users);
+    Map<String, UserDBISAR> users = await Account.sharedInstance.getUserInfos(moderation.users);
     switch (moderation.actionKind) {
       case GroupActionKind.addUser:
         for (var user in users.values) {
@@ -201,8 +204,7 @@ extension EMember on RelayGroup {
         RelayGroupDBISAR? groupDB = groups[db.groupId];
         if (groupDB != null) {
           groupDB.members ??= [];
-          if (!groupDB.members!.contains(pubkey) &&
-              moderation.users.contains(pubkey)) {
+          if (!groupDB.members!.contains(pubkey) && moderation.users.contains(pubkey)) {
             groupDB.members!.add(pubkey);
             syncGroupToDB(groupDB);
             if (myGroups.keys.contains(groupDB.groupId)) {
@@ -216,13 +218,12 @@ extension EMember on RelayGroup {
         for (var user in users.values) {
           content = '${user.name} $content ';
         }
-        content = '${content}leave the group';
+        content = 'Admin remove ${content}from the group';
 
         RelayGroupDBISAR? groupDB = groups[db.groupId];
         if (groupDB != null) {
           groupDB.members ??= [];
-          if (groupDB.members!.contains(pubkey) &&
-              moderation.users.contains(pubkey)) {
+          if (groupDB.members!.contains(pubkey) && moderation.users.contains(pubkey)) {
             groupDB.members!.remove(pubkey);
             syncGroupToDB(groupDB);
           }
@@ -233,6 +234,7 @@ extension EMember on RelayGroup {
         return;
       case GroupActionKind.addPermission:
       case GroupActionKind.removePermission:
+        return;
       case GroupActionKind.deleteEvent:
         deleteMessageFromLocal(moderation.eventId);
         deleteNoteFromLocal(moderation.eventId);
@@ -241,6 +243,9 @@ extension EMember on RelayGroup {
         String private = moderation.private ? 'PRIVATE' : 'PUBLIC';
         String closed = moderation.closed ? 'CLOSED' : 'OPEN';
         content = 'Admin change group status to $closed, $private';
+        break;
+      case GroupActionKind.deleteGroup:
+        content = 'Admin delete the group';
         break;
       default:
         return;
@@ -289,8 +294,7 @@ extension EMember on RelayGroup {
         syncGroupToDB(relayGroupDB);
         if (!completer.isCompleted) completer.complete(false);
       }
-    }, eoseCallBack: (String requestId, OKEvent ok, String relay,
-            List<String> unCompletedRelays) {
+    }, eoseCallBack: (String requestId, OKEvent ok, String relay, List<String> unCompletedRelays) {
       if (!completer.isCompleted) {
         completer.complete(relayGroupDB!.members?.contains(user));
       }

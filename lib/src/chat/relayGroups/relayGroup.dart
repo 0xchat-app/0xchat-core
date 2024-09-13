@@ -192,7 +192,9 @@ class RelayGroup {
               9004,
               9005,
               9006,
+              9008,
               9021,
+              9022,
               9735,
               // 39000,
               // 39001,
@@ -218,7 +220,9 @@ class RelayGroup {
             9004,
             9005,
             9006,
+            9008,
             9021,
+            9022,
             9735,
             // 39000,
             // 39001,
@@ -250,10 +254,14 @@ class RelayGroup {
         case 9004:
         case 9005:
         case 9006:
+        case 9008:
           handleModeration(event, relay);
           break;
         case 9021:
           handleJoinRequest(event, relay);
+          break;
+        case 9022:
+          handleLeaveGroup(event, relay);
           break;
         case 9735:
           handleGroupZaps(event, relay);
