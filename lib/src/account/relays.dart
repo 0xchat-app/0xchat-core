@@ -30,6 +30,7 @@ class Relays {
 
   List<String> recommendGroupRelays = [
     'wss://groups.0xchat.com',
+    'wss://relay.highlighter.com'
   ];
 
   List<String> recommendSecretChatRelays = [

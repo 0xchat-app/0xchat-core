@@ -193,7 +193,6 @@ class Config {
     configs[configD] ??= ConfigDBISAR(d: configD);
     configs[configD]!.proxyJson = proxySettings!.toJsonString();
     await DBISAR.sharedInstance.saveToDB(configs[configD]!);
-    await Account.sharedInstance.closeAllRelays();
-    await Account.sharedInstance.resumeAllRelays();
+    await Connect.sharedInstance.resetConnection();
   }
 }
