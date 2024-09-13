@@ -10,10 +10,10 @@ extension EMember on RelayGroup {
       bool closed = false,
       String picture = '',
       String about = ''}) async {
-    if (relay == 'wss://groups.fiatjaf.com') {
-      return await createGroup2(relay,
-          name: name, closed: closed, picture: picture, about: about);
-    }
+    // if (relay == 'wss://groups.fiatjaf.com') {
+    //   return await createGroup2(relay,
+    //       name: name, closed: closed, picture: picture, about: about);
+    // }
 
     await Connect.sharedInstance
         .connectRelays([relay], relayKind: RelayKind.relayGroup);
