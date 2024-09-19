@@ -111,12 +111,12 @@ class Connect {
         _checkTimeout();
       });
     }
-    resetConnection();
+    resetConnection(force: false);
   }
 
-  Future<void> resetConnection() async {
+  Future<void> resetConnection({bool force = true}) async {
     for (var relay in webSockets.keys) {
-      if (webSockets[relay]?.connectStatus != 3) {
+      if (webSockets[relay]?.connectStatus != 3 && force) {
         webSockets[relay]?.connectStatus = 3;
         await webSockets[relay]?.socket?.close();
       }
