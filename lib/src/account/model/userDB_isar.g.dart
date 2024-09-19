@@ -47,183 +47,198 @@ const UserDBISARSchema = CollectionSchema(
       name: r'banner',
       type: IsarType.string,
     ),
-    r'blockedList': PropertySchema(
+    r'blockedHashTags': PropertySchema(
       id: 6,
+      name: r'blockedHashTags',
+      type: IsarType.stringList,
+    ),
+    r'blockedList': PropertySchema(
+      id: 7,
       name: r'blockedList',
       type: IsarType.stringList,
     ),
+    r'blockedThreads': PropertySchema(
+      id: 8,
+      name: r'blockedThreads',
+      type: IsarType.stringList,
+    ),
+    r'blockedWords': PropertySchema(
+      id: 9,
+      name: r'blockedWords',
+      type: IsarType.stringList,
+    ),
     r'channelsList': PropertySchema(
-      id: 7,
+      id: 10,
       name: r'channelsList',
       type: IsarType.stringList,
     ),
     r'defaultPassword': PropertySchema(
-      id: 8,
+      id: 11,
       name: r'defaultPassword',
       type: IsarType.string,
     ),
     r'dmRelayList': PropertySchema(
-      id: 9,
+      id: 12,
       name: r'dmRelayList',
       type: IsarType.stringList,
     ),
     r'dns': PropertySchema(
-      id: 10,
+      id: 13,
       name: r'dns',
       type: IsarType.string,
     ),
     r'encryptedPrivKey': PropertySchema(
-      id: 11,
+      id: 14,
       name: r'encryptedPrivKey',
       type: IsarType.string,
     ),
     r'followersList': PropertySchema(
-      id: 12,
+      id: 15,
       name: r'followersList',
       type: IsarType.stringList,
     ),
     r'followingList': PropertySchema(
-      id: 13,
+      id: 16,
       name: r'followingList',
       type: IsarType.stringList,
     ),
     r'friendsList': PropertySchema(
-      id: 14,
+      id: 17,
       name: r'friendsList',
       type: IsarType.string,
     ),
     r'gender': PropertySchema(
-      id: 15,
+      id: 18,
       name: r'gender',
       type: IsarType.string,
     ),
     r'groupsList': PropertySchema(
-      id: 16,
+      id: 19,
       name: r'groupsList',
       type: IsarType.stringList,
     ),
     r'lastBadgesListUpdatedTime': PropertySchema(
-      id: 17,
+      id: 20,
       name: r'lastBadgesListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastBlockListUpdatedTime': PropertySchema(
-      id: 18,
+      id: 21,
       name: r'lastBlockListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastChannelsListUpdatedTime': PropertySchema(
-      id: 19,
+      id: 22,
       name: r'lastChannelsListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastDMRelayListUpdatedTime': PropertySchema(
-      id: 20,
+      id: 23,
       name: r'lastDMRelayListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastFollowingListUpdatedTime': PropertySchema(
-      id: 21,
+      id: 24,
       name: r'lastFollowingListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastFriendsListUpdatedTime': PropertySchema(
-      id: 22,
+      id: 25,
       name: r'lastFriendsListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastGroupsListUpdatedTime': PropertySchema(
-      id: 23,
+      id: 26,
       name: r'lastGroupsListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastRelayGroupsListUpdatedTime': PropertySchema(
-      id: 24,
+      id: 27,
       name: r'lastRelayGroupsListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastRelayListUpdatedTime': PropertySchema(
-      id: 25,
+      id: 28,
       name: r'lastRelayListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastUpdatedTime': PropertySchema(
-      id: 26,
+      id: 29,
       name: r'lastUpdatedTime',
       type: IsarType.long,
     ),
     r'lnurl': PropertySchema(
-      id: 27,
+      id: 30,
       name: r'lnurl',
       type: IsarType.string,
     ),
     r'mainRelay': PropertySchema(
-      id: 28,
+      id: 31,
       name: r'mainRelay',
       type: IsarType.string,
     ),
     r'mute': PropertySchema(
-      id: 29,
+      id: 32,
       name: r'mute',
       type: IsarType.bool,
     ),
     r'name': PropertySchema(
-      id: 30,
+      id: 33,
       name: r'name',
       type: IsarType.string,
     ),
     r'nickName': PropertySchema(
-      id: 31,
+      id: 34,
       name: r'nickName',
       type: IsarType.string,
     ),
     r'nwcURI': PropertySchema(
-      id: 32,
+      id: 35,
       name: r'nwcURI',
       type: IsarType.string,
     ),
     r'otherField': PropertySchema(
-      id: 33,
+      id: 36,
       name: r'otherField',
       type: IsarType.string,
     ),
     r'picture': PropertySchema(
-      id: 34,
+      id: 37,
       name: r'picture',
       type: IsarType.string,
     ),
     r'privkey': PropertySchema(
-      id: 35,
+      id: 38,
       name: r'privkey',
       type: IsarType.string,
     ),
     r'pubKey': PropertySchema(
-      id: 36,
+      id: 39,
       name: r'pubKey',
       type: IsarType.string,
     ),
     r'relayGroupsList': PropertySchema(
-      id: 37,
+      id: 40,
       name: r'relayGroupsList',
       type: IsarType.stringList,
     ),
     r'relayList': PropertySchema(
-      id: 38,
+      id: 41,
       name: r'relayList',
       type: IsarType.stringList,
     ),
     r'settings': PropertySchema(
-      id: 39,
+      id: 42,
       name: r'settings',
       type: IsarType.string,
     ),
     r'toAliasPrivkey': PropertySchema(
-      id: 40,
+      id: 43,
       name: r'toAliasPrivkey',
       type: IsarType.string,
     ),
     r'toAliasPubkey': PropertySchema(
-      id: 41,
+      id: 44,
       name: r'toAliasPubkey',
       type: IsarType.string,
     )
@@ -305,7 +320,43 @@ int _userDBISAREstimateSize(
     }
   }
   {
+    final list = object.blockedHashTags;
+    if (list != null) {
+      bytesCount += 3 + list.length * 3;
+      {
+        for (var i = 0; i < list.length; i++) {
+          final value = list[i];
+          bytesCount += value.length * 3;
+        }
+      }
+    }
+  }
+  {
     final list = object.blockedList;
+    if (list != null) {
+      bytesCount += 3 + list.length * 3;
+      {
+        for (var i = 0; i < list.length; i++) {
+          final value = list[i];
+          bytesCount += value.length * 3;
+        }
+      }
+    }
+  }
+  {
+    final list = object.blockedThreads;
+    if (list != null) {
+      bytesCount += 3 + list.length * 3;
+      {
+        for (var i = 0; i < list.length; i++) {
+          final value = list[i];
+          bytesCount += value.length * 3;
+        }
+      }
+    }
+  }
+  {
+    final list = object.blockedWords;
     if (list != null) {
       bytesCount += 3 + list.length * 3;
       {
@@ -512,42 +563,45 @@ void _userDBISARSerialize(
   writer.writeString(offsets[3], object.badges);
   writer.writeStringList(offsets[4], object.badgesList);
   writer.writeString(offsets[5], object.banner);
-  writer.writeStringList(offsets[6], object.blockedList);
-  writer.writeStringList(offsets[7], object.channelsList);
-  writer.writeString(offsets[8], object.defaultPassword);
-  writer.writeStringList(offsets[9], object.dmRelayList);
-  writer.writeString(offsets[10], object.dns);
-  writer.writeString(offsets[11], object.encryptedPrivKey);
-  writer.writeStringList(offsets[12], object.followersList);
-  writer.writeStringList(offsets[13], object.followingList);
-  writer.writeString(offsets[14], object.friendsList);
-  writer.writeString(offsets[15], object.gender);
-  writer.writeStringList(offsets[16], object.groupsList);
-  writer.writeLong(offsets[17], object.lastBadgesListUpdatedTime);
-  writer.writeLong(offsets[18], object.lastBlockListUpdatedTime);
-  writer.writeLong(offsets[19], object.lastChannelsListUpdatedTime);
-  writer.writeLong(offsets[20], object.lastDMRelayListUpdatedTime);
-  writer.writeLong(offsets[21], object.lastFollowingListUpdatedTime);
-  writer.writeLong(offsets[22], object.lastFriendsListUpdatedTime);
-  writer.writeLong(offsets[23], object.lastGroupsListUpdatedTime);
-  writer.writeLong(offsets[24], object.lastRelayGroupsListUpdatedTime);
-  writer.writeLong(offsets[25], object.lastRelayListUpdatedTime);
-  writer.writeLong(offsets[26], object.lastUpdatedTime);
-  writer.writeString(offsets[27], object.lnurl);
-  writer.writeString(offsets[28], object.mainRelay);
-  writer.writeBool(offsets[29], object.mute);
-  writer.writeString(offsets[30], object.name);
-  writer.writeString(offsets[31], object.nickName);
-  writer.writeString(offsets[32], object.nwcURI);
-  writer.writeString(offsets[33], object.otherField);
-  writer.writeString(offsets[34], object.picture);
-  writer.writeString(offsets[35], object.privkey);
-  writer.writeString(offsets[36], object.pubKey);
-  writer.writeStringList(offsets[37], object.relayGroupsList);
-  writer.writeStringList(offsets[38], object.relayList);
-  writer.writeString(offsets[39], object.settings);
-  writer.writeString(offsets[40], object.toAliasPrivkey);
-  writer.writeString(offsets[41], object.toAliasPubkey);
+  writer.writeStringList(offsets[6], object.blockedHashTags);
+  writer.writeStringList(offsets[7], object.blockedList);
+  writer.writeStringList(offsets[8], object.blockedThreads);
+  writer.writeStringList(offsets[9], object.blockedWords);
+  writer.writeStringList(offsets[10], object.channelsList);
+  writer.writeString(offsets[11], object.defaultPassword);
+  writer.writeStringList(offsets[12], object.dmRelayList);
+  writer.writeString(offsets[13], object.dns);
+  writer.writeString(offsets[14], object.encryptedPrivKey);
+  writer.writeStringList(offsets[15], object.followersList);
+  writer.writeStringList(offsets[16], object.followingList);
+  writer.writeString(offsets[17], object.friendsList);
+  writer.writeString(offsets[18], object.gender);
+  writer.writeStringList(offsets[19], object.groupsList);
+  writer.writeLong(offsets[20], object.lastBadgesListUpdatedTime);
+  writer.writeLong(offsets[21], object.lastBlockListUpdatedTime);
+  writer.writeLong(offsets[22], object.lastChannelsListUpdatedTime);
+  writer.writeLong(offsets[23], object.lastDMRelayListUpdatedTime);
+  writer.writeLong(offsets[24], object.lastFollowingListUpdatedTime);
+  writer.writeLong(offsets[25], object.lastFriendsListUpdatedTime);
+  writer.writeLong(offsets[26], object.lastGroupsListUpdatedTime);
+  writer.writeLong(offsets[27], object.lastRelayGroupsListUpdatedTime);
+  writer.writeLong(offsets[28], object.lastRelayListUpdatedTime);
+  writer.writeLong(offsets[29], object.lastUpdatedTime);
+  writer.writeString(offsets[30], object.lnurl);
+  writer.writeString(offsets[31], object.mainRelay);
+  writer.writeBool(offsets[32], object.mute);
+  writer.writeString(offsets[33], object.name);
+  writer.writeString(offsets[34], object.nickName);
+  writer.writeString(offsets[35], object.nwcURI);
+  writer.writeString(offsets[36], object.otherField);
+  writer.writeString(offsets[37], object.picture);
+  writer.writeString(offsets[38], object.privkey);
+  writer.writeString(offsets[39], object.pubKey);
+  writer.writeStringList(offsets[40], object.relayGroupsList);
+  writer.writeStringList(offsets[41], object.relayList);
+  writer.writeString(offsets[42], object.settings);
+  writer.writeString(offsets[43], object.toAliasPrivkey);
+  writer.writeString(offsets[44], object.toAliasPubkey);
 }
 
 UserDBISAR _userDBISARDeserialize(
@@ -563,42 +617,45 @@ UserDBISAR _userDBISARDeserialize(
     badges: reader.readStringOrNull(offsets[3]),
     badgesList: reader.readStringList(offsets[4]),
     banner: reader.readStringOrNull(offsets[5]),
-    blockedList: reader.readStringList(offsets[6]),
-    channelsList: reader.readStringList(offsets[7]),
-    defaultPassword: reader.readStringOrNull(offsets[8]),
-    dmRelayList: reader.readStringList(offsets[9]),
-    dns: reader.readStringOrNull(offsets[10]),
-    encryptedPrivKey: reader.readStringOrNull(offsets[11]),
-    followersList: reader.readStringList(offsets[12]),
-    followingList: reader.readStringList(offsets[13]),
-    friendsList: reader.readStringOrNull(offsets[14]),
-    gender: reader.readStringOrNull(offsets[15]),
-    groupsList: reader.readStringList(offsets[16]),
-    lastBadgesListUpdatedTime: reader.readLongOrNull(offsets[17]) ?? 0,
-    lastBlockListUpdatedTime: reader.readLongOrNull(offsets[18]) ?? 0,
-    lastChannelsListUpdatedTime: reader.readLongOrNull(offsets[19]) ?? 0,
-    lastDMRelayListUpdatedTime: reader.readLongOrNull(offsets[20]) ?? 0,
-    lastFollowingListUpdatedTime: reader.readLongOrNull(offsets[21]) ?? 0,
-    lastFriendsListUpdatedTime: reader.readLongOrNull(offsets[22]) ?? 0,
-    lastGroupsListUpdatedTime: reader.readLongOrNull(offsets[23]) ?? 0,
-    lastRelayGroupsListUpdatedTime: reader.readLongOrNull(offsets[24]) ?? 0,
-    lastRelayListUpdatedTime: reader.readLongOrNull(offsets[25]) ?? 0,
-    lastUpdatedTime: reader.readLongOrNull(offsets[26]) ?? 0,
-    lnurl: reader.readStringOrNull(offsets[27]),
-    mainRelay: reader.readStringOrNull(offsets[28]),
-    mute: reader.readBoolOrNull(offsets[29]),
-    name: reader.readStringOrNull(offsets[30]),
-    nickName: reader.readStringOrNull(offsets[31]),
-    nwcURI: reader.readStringOrNull(offsets[32]),
-    otherField: reader.readStringOrNull(offsets[33]),
-    picture: reader.readStringOrNull(offsets[34]),
-    privkey: reader.readStringOrNull(offsets[35]),
-    pubKey: reader.readStringOrNull(offsets[36]) ?? '',
-    relayGroupsList: reader.readStringList(offsets[37]),
-    relayList: reader.readStringList(offsets[38]),
-    settings: reader.readStringOrNull(offsets[39]),
-    toAliasPrivkey: reader.readStringOrNull(offsets[40]),
-    toAliasPubkey: reader.readStringOrNull(offsets[41]),
+    blockedHashTags: reader.readStringList(offsets[6]),
+    blockedList: reader.readStringList(offsets[7]),
+    blockedThreads: reader.readStringList(offsets[8]),
+    blockedWords: reader.readStringList(offsets[9]),
+    channelsList: reader.readStringList(offsets[10]),
+    defaultPassword: reader.readStringOrNull(offsets[11]),
+    dmRelayList: reader.readStringList(offsets[12]),
+    dns: reader.readStringOrNull(offsets[13]),
+    encryptedPrivKey: reader.readStringOrNull(offsets[14]),
+    followersList: reader.readStringList(offsets[15]),
+    followingList: reader.readStringList(offsets[16]),
+    friendsList: reader.readStringOrNull(offsets[17]),
+    gender: reader.readStringOrNull(offsets[18]),
+    groupsList: reader.readStringList(offsets[19]),
+    lastBadgesListUpdatedTime: reader.readLongOrNull(offsets[20]) ?? 0,
+    lastBlockListUpdatedTime: reader.readLongOrNull(offsets[21]) ?? 0,
+    lastChannelsListUpdatedTime: reader.readLongOrNull(offsets[22]) ?? 0,
+    lastDMRelayListUpdatedTime: reader.readLongOrNull(offsets[23]) ?? 0,
+    lastFollowingListUpdatedTime: reader.readLongOrNull(offsets[24]) ?? 0,
+    lastFriendsListUpdatedTime: reader.readLongOrNull(offsets[25]) ?? 0,
+    lastGroupsListUpdatedTime: reader.readLongOrNull(offsets[26]) ?? 0,
+    lastRelayGroupsListUpdatedTime: reader.readLongOrNull(offsets[27]) ?? 0,
+    lastRelayListUpdatedTime: reader.readLongOrNull(offsets[28]) ?? 0,
+    lastUpdatedTime: reader.readLongOrNull(offsets[29]) ?? 0,
+    lnurl: reader.readStringOrNull(offsets[30]),
+    mainRelay: reader.readStringOrNull(offsets[31]),
+    mute: reader.readBoolOrNull(offsets[32]),
+    name: reader.readStringOrNull(offsets[33]),
+    nickName: reader.readStringOrNull(offsets[34]),
+    nwcURI: reader.readStringOrNull(offsets[35]),
+    otherField: reader.readStringOrNull(offsets[36]),
+    picture: reader.readStringOrNull(offsets[37]),
+    privkey: reader.readStringOrNull(offsets[38]),
+    pubKey: reader.readStringOrNull(offsets[39]) ?? '',
+    relayGroupsList: reader.readStringList(offsets[40]),
+    relayList: reader.readStringList(offsets[41]),
+    settings: reader.readStringOrNull(offsets[42]),
+    toAliasPrivkey: reader.readStringOrNull(offsets[43]),
+    toAliasPubkey: reader.readStringOrNull(offsets[44]),
   );
   object.id = id;
   return object;
@@ -628,29 +685,29 @@ P _userDBISARDeserializeProp<P>(
     case 7:
       return (reader.readStringList(offset)) as P;
     case 8:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringList(offset)) as P;
     case 9:
       return (reader.readStringList(offset)) as P;
     case 10:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringList(offset)) as P;
     case 11:
       return (reader.readStringOrNull(offset)) as P;
     case 12:
       return (reader.readStringList(offset)) as P;
     case 13:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 14:
       return (reader.readStringOrNull(offset)) as P;
     case 15:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringList(offset)) as P;
     case 16:
       return (reader.readStringList(offset)) as P;
     case 17:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 18:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 19:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
+      return (reader.readStringList(offset)) as P;
     case 20:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 21:
@@ -666,17 +723,17 @@ P _userDBISARDeserializeProp<P>(
     case 26:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 27:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 28:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 29:
-      return (reader.readBoolOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 30:
       return (reader.readStringOrNull(offset)) as P;
     case 31:
       return (reader.readStringOrNull(offset)) as P;
     case 32:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBoolOrNull(offset)) as P;
     case 33:
       return (reader.readStringOrNull(offset)) as P;
     case 34:
@@ -684,16 +741,22 @@ P _userDBISARDeserializeProp<P>(
     case 35:
       return (reader.readStringOrNull(offset)) as P;
     case 36:
-      return (reader.readStringOrNull(offset) ?? '') as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 37:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 38:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 39:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 40:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringList(offset)) as P;
     case 41:
+      return (reader.readStringList(offset)) as P;
+    case 42:
+      return (reader.readStringOrNull(offset)) as P;
+    case 43:
+      return (reader.readStringOrNull(offset)) as P;
+    case 44:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1878,6 +1941,251 @@ extension UserDBISARQueryFilter
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'blockedHashTags',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'blockedHashTags',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'blockedHashTags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'blockedHashTags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'blockedHashTags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'blockedHashTags',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'blockedHashTags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'blockedHashTags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsElementContains(String value,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'blockedHashTags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsElementMatches(String pattern,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'blockedHashTags',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'blockedHashTags',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'blockedHashTags',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedHashTags',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedHashTags',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedHashTags',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedHashTags',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedHashTags',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedHashTagsLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedHashTags',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
       blockedListIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -2112,6 +2420,493 @@ extension UserDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.listLength(
         r'blockedList',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'blockedThreads',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'blockedThreads',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'blockedThreads',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'blockedThreads',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'blockedThreads',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'blockedThreads',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'blockedThreads',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'blockedThreads',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'blockedThreads',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsElementMatches(String pattern,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'blockedThreads',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'blockedThreads',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'blockedThreads',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedThreads',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedThreads',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedThreads',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedThreads',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedThreads',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedThreadsLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedThreads',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'blockedWords',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'blockedWords',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'blockedWords',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'blockedWords',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'blockedWords',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'blockedWords',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'blockedWords',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'blockedWords',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'blockedWords',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsElementMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'blockedWords',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'blockedWords',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'blockedWords',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedWords',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedWords',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedWords',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedWords',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedWords',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      blockedWordsLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'blockedWords',
         lower,
         includeLower,
         upper,
@@ -7907,9 +8702,27 @@ extension UserDBISARQueryWhereDistinct
     });
   }
 
+  QueryBuilder<UserDBISAR, UserDBISAR, QDistinct> distinctByBlockedHashTags() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'blockedHashTags');
+    });
+  }
+
   QueryBuilder<UserDBISAR, UserDBISAR, QDistinct> distinctByBlockedList() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'blockedList');
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QDistinct> distinctByBlockedThreads() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'blockedThreads');
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QDistinct> distinctByBlockedWords() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'blockedWords');
     });
   }
 
@@ -8200,9 +9013,30 @@ extension UserDBISARQueryProperty
   }
 
   QueryBuilder<UserDBISAR, List<String>?, QQueryOperations>
+      blockedHashTagsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'blockedHashTags');
+    });
+  }
+
+  QueryBuilder<UserDBISAR, List<String>?, QQueryOperations>
       blockedListProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'blockedList');
+    });
+  }
+
+  QueryBuilder<UserDBISAR, List<String>?, QQueryOperations>
+      blockedThreadsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'blockedThreads');
+    });
+  }
+
+  QueryBuilder<UserDBISAR, List<String>?, QQueryOperations>
+      blockedWordsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'blockedWords');
     });
   }
 

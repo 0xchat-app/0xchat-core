@@ -297,6 +297,9 @@ extension AccountProfile on Account {
       Set<String> blockedList = Set.from(db.blockedList ?? []);
       blockedList.addAll(result.people.map((p) => p.pubkey).toList());
       db.blockedList = blockedList.toList();
+      db.blockedWords = result.words;
+      db.blockedHashTags = result.hashTags;
+      db.blockedThreads = result.bookmarks;
     }
     return db;
   }

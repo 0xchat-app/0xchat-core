@@ -25,13 +25,14 @@ extension BlockList on Contacts {
         People p = People(pubkey, '', '', '');
         list.add(p);
       }
-      Event event = await Nip51.createMutePeople([], list,privkey, pubkey);
+      Event event = await Nip51.createMutePeople([], list, privkey, pubkey,
+          hashTags: Account.sharedInstance.me?.blockedHashTags,
+          words: Account.sharedInstance.me?.blockedWords,
+          threads: Account.sharedInstance.me?.blockedThreads);
       if (event.content.isNotEmpty) {
-        Connect.sharedInstance.sendEvent(event,
-            sendCallBack: (OKEvent ok, String relay) {
-          if(ok.status){
-            Account.sharedInstance.me!.lastBlockListUpdatedTime =
-                event.createdAt;
+        Connect.sharedInstance.sendEvent(event, sendCallBack: (OKEvent ok, String relay) {
+          if (ok.status) {
+            Account.sharedInstance.me!.lastBlockListUpdatedTime = event.createdAt;
           }
           okCallBack?.call(ok, relay);
         });
@@ -59,8 +60,7 @@ extension BlockList on Contacts {
       _syncBlockListToDB();
     } else {
       if (!completer.isCompleted) {
-        completer
-            .complete(OKEvent(blockPubkey, false, 'blockPubkey already exit'));
+        completer.complete(OKEvent(blockPubkey, false, 'blockPubkey already exit'));
       }
     }
 

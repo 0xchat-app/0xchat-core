@@ -61,7 +61,12 @@ class UserDBISAR {
   List<String>? groupsList; // private group list
   List<String>? relayGroupsList;
   List<String>? badgesList;
+
   List<String>? blockedList; // blocked users list
+  List<String>? blockedHashTags; // blocked hash tags
+  List<String>? blockedWords; // blocked words
+  List<String>? blockedThreads; // blocked threads
+
   List<String>? followingList;
   List<String>? followersList;
   List<String>? relayList; // relay list
@@ -114,6 +119,9 @@ class UserDBISAR {
     this.relayGroupsList,
     this.badgesList,
     this.blockedList,
+    this.blockedHashTags,
+    this.blockedThreads,
+    this.blockedWords,
     this.followersList,
     this.followingList,
     this.relayList,
