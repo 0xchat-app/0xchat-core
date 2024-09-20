@@ -269,16 +269,16 @@ extension EMember on RelayGroup {
     String relay = simpleGroups.relay;
     RelayGroupDBISAR? relayGroupDB = groups[groupId];
     relayGroupDB ??= RelayGroupDBISAR(groupId: groupId, relay: relay);
+    relayGroupDB.members ??= [];
 
-    Filter f = Filter(kinds: [9000, 9001], p: [user], limit: 1);
+    Filter f = Filter(kinds: [9000, 9001], p: [user], h: [groupId], limit: 1);
 
     Completer<bool> completer = Completer<bool>();
     Connect.sharedInstance.addSubscription([f], relays: [relayGroupDB.relay],
         eventCallBack: (event, relay) {
       GroupModeration moderation = Nip29.decodeModeration(event);
       if (moderation.actionKind == GroupActionKind.addUser) {
-        relayGroupDB!.members ??= [];
-        relayGroupDB.members?.add(user);
+        relayGroupDB!.members?.add(user);
         syncGroupToDB(relayGroupDB);
         if (!completer.isCompleted) completer.complete(true);
       } else if (moderation.actionKind == GroupActionKind.removeUser) {
