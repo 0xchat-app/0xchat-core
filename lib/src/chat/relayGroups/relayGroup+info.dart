@@ -12,21 +12,17 @@ extension EInfo on RelayGroup {
     groupId = simpleGroups.groupId;
     relay ??= simpleGroups.relay;
     List<String> tempRelays = [];
-    if (relay.isNotEmpty &&
-        !Connect.sharedInstance.webSockets.keys.contains(relay)) {
-      await Connect.sharedInstance
-          .connectRelays([relay], relayKind: RelayKind.temp);
+    if (relay.isNotEmpty && !Connect.sharedInstance.webSockets.keys.contains(relay)) {
+      await Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.temp);
       tempRelays.add(relay);
     }
     RelayGroupDBISAR? groupDB = groups[groupId];
-    groupDB ??=
-        RelayGroupDBISAR(groupId: groupId, relay: relay, author: author ?? '');
+    groupDB ??= RelayGroupDBISAR(groupId: groupId, relay: relay, author: author ?? '');
     Completer<RelayGroupDBISAR?> completer = Completer<RelayGroupDBISAR?>();
     Filter f = Filter(kinds: [39000, 39001, 39002], d: [groupId]);
     Map<String, List<Filter>> subscriptions = {};
     subscriptions[groupDB.relay] = [f];
-    Connect.sharedInstance.addSubscriptions(subscriptions,
-        eventCallBack: (event, relay) async {
+    Connect.sharedInstance.addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       switch (event.kind) {
         case 39000:
           Group group = Nip29.decodeMetadata(event, relay);
@@ -85,8 +81,7 @@ extension EInfo on RelayGroup {
     return groupDB;
   }
 
-  Future<void> handleGroupMetadataFromModeration(
-      GroupModeration moderation, String relay) async {
+  Future<void> handleGroupMetadataFromModeration(GroupModeration moderation, String relay) async {
     RelayGroupDBISAR? groupDB = groups[moderation.groupId];
     groupDB ??= RelayGroupDBISAR(groupId: moderation.groupId, relay: relay);
     if (moderation.createdAt < groupDB.lastUpdatedTime) return;
@@ -159,8 +154,7 @@ extension EInfo on RelayGroup {
     return await searchGroupsMetadataFromRelays(relays.toList(), groupCallback);
   }
 
-  Future<RelayGroupDBISAR> searchGroupMembersFromRelays(
-      RelayGroupDBISAR group) async {
+  Future<RelayGroupDBISAR> searchGroupMembersFromRelays(RelayGroupDBISAR group) async {
     Completer<RelayGroupDBISAR> completer = Completer<RelayGroupDBISAR>();
     Filter f = Filter(kinds: [39002], d: [group.groupId]);
     Connect.sharedInstance.addSubscription([f], relays: [group.relay],
@@ -185,18 +179,19 @@ extension EInfo on RelayGroup {
       result[db.groupId] = db;
     }
     groupCallback?.call(resultFromDB);
-    await Connect.sharedInstance
-        .connectRelays(relays, relayKind: RelayKind.temp);
-    Completer<List<RelayGroupDBISAR>> completer =
-        Completer<List<RelayGroupDBISAR>>();
-    Filter f = Filter(kinds: [39000], limit: 100);
+    await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.temp);
+    Completer<List<RelayGroupDBISAR>> completer = Completer<List<RelayGroupDBISAR>>();
+    Filter f = Filter(kinds: [39000, 39002], limit: 100);
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) async {
-      RelayGroupDBISAR groupDB = handleGroupMetadata(event, relay);
-      if (!result.containsKey(groupDB.groupId)) {
-        groupDB = await searchGroupMembersFromRelays(groupDB);
+      RelayGroupDBISAR? groupDB;
+      if (event.kind == 39000) {
+        groupDB = handleGroupMetadata(event, relay);
+      } else if (event.kind == 39002) {
+        groupDB = handleGroupMembers(event, relay);
+      }
+      if (groupDB != null) {
         result[groupDB.groupId] = groupDB;
-        groupCallback?.call(result.values.toList());
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
@@ -204,7 +199,7 @@ extension EInfo on RelayGroup {
       //   groupDB = await searchGroupMembersFromRelays(groupDB);
       //   result[groupDB.groupId] = groupDB;
       // }
-      // groupCallback?.call(result.values.toList());
+      groupCallback?.call(result.values.toList());
       if (unCompletedRelays.isEmpty && !completer.isCompleted) {
         completer.complete(result.values.toList());
       }
@@ -212,20 +207,17 @@ extension EInfo on RelayGroup {
     return completer.future;
   }
 
-  Future<RelayGroupDBISAR?> searchGroupsMetadataWithGroupID(
-      String id, String? relay) async {
+  Future<RelayGroupDBISAR?> searchGroupsMetadataWithGroupID(String id, String? relay) async {
     SimpleGroups simpleGroups = getHostAndGroupId(id);
     String groupId = simpleGroups.groupId;
     relay ??= simpleGroups.relay;
     if (groups.containsKey(groupId) && groups[groupId]!.lastUpdatedTime > 0) {
       return groups[groupId]!;
     } else {
-      RelayGroupDBISAR groupDB =
-          RelayGroupDBISAR(groupId: groupId, relay: relay);
+      RelayGroupDBISAR groupDB = RelayGroupDBISAR(groupId: groupId, relay: relay);
       syncGroupToDB(groupDB);
     }
-    await Connect.sharedInstance
-        .connectRelays([relay], relayKind: RelayKind.temp);
+    await Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.temp);
     Completer<RelayGroupDBISAR?> completer = Completer<RelayGroupDBISAR?>();
     Filter f = Filter(kinds: [39000], d: [groupId]);
     Connect.sharedInstance.addSubscription([f], relays: [relay],
