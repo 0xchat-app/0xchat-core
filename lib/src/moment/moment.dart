@@ -99,7 +99,7 @@ class Moment {
       }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
         offlineMomentFinish[relay] = true;
         if (ok.status) {
-          updateMomentTime(currentUnixTimestampSeconds(), relay);
+          updateMomentTime(currentUnixTimestampSeconds() - 1, relay);
         }
         if (unCompletedRelays.isEmpty) {
           offlineMomentFinishCallBack?.call();

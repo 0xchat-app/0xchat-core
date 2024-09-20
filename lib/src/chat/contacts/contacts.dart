@@ -365,7 +365,7 @@ class Contacts {
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
       offlinePrivateMessageFinish[relay] = true;
       if (ok.status) {
-        Relays.sharedInstance.syncRelaysToDB(r: relay);
+        updateFriendMessageTime(currentUnixTimestampSeconds() - 1, relay);
       }
       if (unCompletedRelays.isEmpty) {
         offlinePrivateMessageFinishCallBack?.call();
@@ -524,7 +524,7 @@ class Contacts {
       Relays.sharedInstance.relays[relay] =
           RelayDBISAR(url: relay, friendMessageUntil: eventTime, friendMessageSince: eventTime);
     }
-    if (offlinePrivateMessageFinish[relay] == true || offlineSecretMessageFinish[relay] == true) {
+    if (offlinePrivateMessageFinish[relay] == true) {
       Relays.sharedInstance.syncRelaysToDB(r: relay);
     }
   }

@@ -235,54 +235,11 @@ class RelayGroup {
     groupMessageSubscription = Connect.sharedInstance
         .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       _updateGroupMessageTime(event.createdAt, relay);
-      switch (event.kind) {
-        case 7:
-          handleGroupReaction(event, relay);
-          break;
-        case 9:
-        case 10:
-          handleGroupMessage(event, relay);
-          break;
-        case 11:
-        case 12:
-          handleGroupNotes(event, relay);
-          break;
-        case 9000:
-        case 9001:
-        case 9002:
-        case 9003:
-        case 9004:
-        case 9005:
-        case 9006:
-        case 9008:
-          handleModeration(event, relay);
-          break;
-        case 9021:
-          handleJoinRequest(event, relay);
-          break;
-        case 9022:
-          handleLeaveGroup(event, relay);
-          break;
-        case 9735:
-          handleGroupZaps(event, relay);
-          break;
-        case 39000:
-          handleGroupMetadata(event, relay);
-          break;
-        case 39001:
-          handleGroupAdmins(event, relay);
-          break;
-        case 39002:
-          handleGroupMembers(event, relay);
-          break;
-        default:
-          LogUtils.v(() => 'relaygroup unhandled message ${event.toJson()}');
-          break;
-      }
+      handleGroupEvents(event, relay);
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       offlineGroupMessageFinish[relay] = true;
       if (ok.status) {
-        Relays.sharedInstance.syncRelaysToDB(r: relay);
+        _updateGroupMessageTime(currentUnixTimestampSeconds() - 1, relay);
       } else if (Nip29.restricted(ok.message)) {
         await Future.forEach(groupList, (g) async {
           await getGroupMetadataFromRelay(g);
@@ -298,70 +255,51 @@ class RelayGroup {
     });
   }
 
-  Future<void> preloadGroupMessages(String groupId, String relay) async {
-    Filter f = Filter(h: [
-      groupId
-    ], kinds: [
-      7,
-      9,
-      10,
-      11,
-      12,
-      9000,
-      9001,
-      9002,
-      9003,
-      9004,
-      9005,
-      9006,
-      9021,
-      9735,
-    ], limit: 1000);
-    Connect.sharedInstance.addSubscription([f], relays: [relay],
-        eventCallBack: (event, relay) async {
-      switch (event.kind) {
-        case 7:
-          handleGroupReaction(event, relay);
-          break;
-        case 9:
-        case 10:
-          handleGroupMessage(event, relay);
-          break;
-        case 11:
-        case 12:
-          handleGroupNotes(event, relay);
-          break;
-        case 9000:
-        case 9001:
-        case 9002:
-        case 9003:
-        case 9004:
-        case 9005:
-        case 9006:
-          handleModeration(event, relay);
-          break;
-        case 9021:
-          handleJoinRequest(event, relay);
-          break;
-        case 9735:
-          handleGroupZaps(event, relay);
-          break;
-        case 39000:
-          handleGroupMetadata(event, relay);
-          break;
-        case 39001:
-          handleGroupAdmins(event, relay);
-          break;
-        case 39002:
-          handleGroupMembers(event, relay);
-          break;
-        default:
-          LogUtils.v(() => 'relaygroup unhandled message ${event.toJson()}');
-          break;
-      }
-    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
-      await Connect.sharedInstance.closeRequests(requestId);
-    });
+  void handleGroupEvents(Event event, String relay){
+    switch (event.kind) {
+      case 7:
+        handleGroupReaction(event, relay);
+        break;
+      case 9:
+      case 10:
+        handleGroupMessage(event, relay);
+        break;
+      case 11:
+      case 12:
+        handleGroupNotes(event, relay);
+        break;
+      case 9000:
+      case 9001:
+      case 9002:
+      case 9003:
+      case 9004:
+      case 9005:
+      case 9006:
+      case 9008:
+        handleModeration(event, relay);
+        break;
+      case 9021:
+        handleJoinRequest(event, relay);
+        break;
+      case 9022:
+        handleLeaveGroup(event, relay);
+        break;
+      case 9735:
+        handleGroupZaps(event, relay);
+        break;
+      case 39000:
+        handleGroupMetadata(event, relay);
+        break;
+      case 39001:
+        handleGroupAdmins(event, relay);
+        break;
+      case 39002:
+        handleGroupMembers(event, relay);
+        break;
+      default:
+        LogUtils.v(() => 'relaygroup unhandled message ${event.toJson()}');
+        break;
+    }
   }
 
   void _updateGroupMessageTime(int eventTime, String relay) {

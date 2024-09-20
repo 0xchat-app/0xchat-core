@@ -495,19 +495,19 @@ extension SecretChat on Contacts {
       List<String> relays = Connect.sharedInstance.relays(relayKind: RelayKind.general);
       relays.addAll(Connect.sharedInstance.relays(relayKind: RelayKind.secretChat));
       for (var r in relays) {
-        int friendMessageUntil = Relays.sharedInstance.getFriendMessageUntil(r);
+        int friendRequestUntil = Relays.sharedInstance.getFriendRequestUntil(r);
         Filter f = Filter(
             kinds: [1059],
             authors: pubkeys,
-            since: friendMessageUntil > offset2 ? (friendMessageUntil - offset2 + 1) : 1);
+            since: friendRequestUntil > offset2 ? (friendRequestUntil - offset2 + 1) : 1);
         subscriptions[r] = [f];
       }
     } else {
-      int friendMessageUntil = Relays.sharedInstance.getFriendMessageUntil(relay);
+      int friendRequestUntil = Relays.sharedInstance.getFriendRequestUntil(relay);
       Filter f = Filter(
           kinds: [1059],
           authors: pubkeys,
-          since: friendMessageUntil > offset2 ? (friendMessageUntil - offset2 + 1) : 1);
+          since: friendRequestUntil > offset2 ? (friendRequestUntil - offset2 + 1) : 1);
       subscriptions[relay] = [f];
     }
     secretSessionSubscription =
@@ -517,7 +517,7 @@ extension SecretChat on Contacts {
         Event? innerEvent =
             await Nip17.decode(event, pubkey, privkey, sealedPrivkey: session.shareSecretKey!);
         if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
-          updateFriendMessageTime(innerEvent.createdAt, relay);
+          updateFriendRequestTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
             case 14:
               _handleSecretMessage(session.sessionId, innerEvent, event.id);
@@ -531,7 +531,7 @@ extension SecretChat on Contacts {
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
       offlineSecretMessageFinish[relay] = true;
       if (ok.status) {
-        Relays.sharedInstance.syncRelaysToDB(r: relay);
+        updateFriendRequestTime(currentUnixTimestampSeconds() - 1, relay);
       }
       if (unCompletedRelays.isEmpty) {
         offlineSecretMessageFinishCallBack?.call();
@@ -540,5 +540,18 @@ extension SecretChat on Contacts {
         }
       }
     });
+  }
+
+  void updateFriendRequestTime(int eventTime, String relay) {
+    if (Relays.sharedInstance.relays.containsKey(relay)) {
+      Relays.sharedInstance.setFriendRequestSince(eventTime, relay);
+      Relays.sharedInstance.setFriendRequestUntil(eventTime, relay);
+    } else {
+      Relays.sharedInstance.relays[relay] =
+          RelayDBISAR(url: relay, friendRequestUntil: eventTime, friendRequestSince: eventTime);
+    }
+    if (offlineSecretMessageFinish[relay] == true) {
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
+    }
   }
 }

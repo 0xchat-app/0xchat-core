@@ -118,7 +118,7 @@ class Channels {
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
       offlineChannelMessageFinish[relay] = true;
       if (ok.status) {
-        Relays.sharedInstance.syncRelaysToDB(r: relay);
+        _updateChannelMessageTime(currentUnixTimestampSeconds() - 1, relay);
       }
       if (unCompletedRelays.isEmpty) {
         offlineChannelMessageFinishCallBack?.call();

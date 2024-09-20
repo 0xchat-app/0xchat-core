@@ -9,7 +9,7 @@ extension EMessage on RelayGroup {
   Future<void> handleGroupMessage(Event event, String relay) async {
     if (Contacts.sharedInstance.inBlockList(event.pubkey)) return;
     GroupMessage groupMessage = Nip29.decodeGroupMessage(event);
-    RelayGroupDBISAR? groupDB = myGroups[groupMessage.groupId];
+    RelayGroupDBISAR? groupDB = groups[groupMessage.groupId];
     if (groupDB == null) return;
 
     MessageDBISAR messageDB = MessageDBISAR(
@@ -50,16 +50,11 @@ extension EMessage on RelayGroup {
       bool local = false,
       String? decryptSecret}) async {
     Event event = await Nip29.encodeGroupMessageReply(
-        id,
-        MessageDBISAR.getContent(type, content, source),
-        previous,
-        pubkey,
-        privkey,
+        id, MessageDBISAR.getContent(type, content, source), previous, pubkey, privkey,
         rootEvent: rootEvent,
         replyEvent: replyEvent,
         replyUsers: replyUsers,
-        subContent: MessageDBISAR.getSubContent(type, content,
-            decryptSecret: decryptSecret));
+        subContent: MessageDBISAR.getSubContent(type, content, decryptSecret: decryptSecret));
     return event;
   }
 
@@ -78,30 +73,22 @@ extension EMessage on RelayGroup {
     RelayGroupDBISAR? groupDB = groups[groupId];
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     event ??= await Nip29.encodeGroupMessageReply(
-        groupId,
-        MessageDBISAR.getContent(type, content, source),
-        previous,
-        pubkey,
-        privkey,
+        groupId, MessageDBISAR.getContent(type, content, source), previous, pubkey, privkey,
         rootEvent: rootEvent,
         replyEvent: replyEvent,
         replyUsers: replyUsers,
-        subContent: MessageDBISAR.getSubContent(type, content,
-            decryptSecret: decryptSecret),
+        subContent: MessageDBISAR.getSubContent(type, content, decryptSecret: decryptSecret),
         createAt: createAt);
 
     late MessageDBISAR messageDB;
     if (replaceMessageId != null) {
-      final replaceMessageDB =
-          await Messages.sharedInstance.loadMessageDBFromDB(replaceMessageId);
+      final replaceMessageDB = await Messages.sharedInstance.loadMessageDBFromDB(replaceMessageId);
       if (replaceMessageDB == null) {
-        return Future.value(
-            OKEvent(
-              event.innerEvent?.id ?? event.id,
-              false,
-              'The message to be replaced was not found',
-            )
-        );
+        return Future.value(OKEvent(
+          event.innerEvent?.id ?? event.id,
+          false,
+          'The message to be replaced was not found',
+        ));
       }
       replaceMessageDB.messageId = event.id;
       groupMessageUpdateCallBack?.call(replaceMessageDB, replaceMessageId);
@@ -125,10 +112,8 @@ extension EMessage on RelayGroup {
           decryptSecret: decryptSecret);
       groupMessageCallBack?.call(messageDB);
     }
-    var map = await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(
-            type, content,
-            decryptSecret: decryptSecret) ??
-        event.content);
+    var map = await MessageDBISAR.decodeContent(
+        MessageDBISAR.getSubContent(type, content, decryptSecret: decryptSecret) ?? event.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
     messageDB.decryptSecret = map['decryptSecret'];
@@ -142,8 +127,7 @@ extension EMessage on RelayGroup {
       Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
           sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
-        await Messages.saveMessageToDB(messageDB,
-            conflictAlgorithm: ConflictAlgorithm.replace);
+        await Messages.saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
         if (!completer.isCompleted) completer.complete(ok);
       });
     }
@@ -167,35 +151,28 @@ extension EMessage on RelayGroup {
   void loadGroupMessages(String groupId, int? since, int? until, int? limit) {
     RelayGroupDBISAR? groupDB = groups[groupId];
     if (groupDB == null) return;
-    Filter f = Filter(
-        h: [groupDB.groupId],
-        kinds: [7, 9, 10, 11, 12, 9735],
-        limit: limit,
-        until: until,
-        since: since);
+    Filter f = Filter(h: [
+      groupDB.groupId
+    ], kinds: [
+      7,
+      9,
+      10,
+      11,
+      12,
+      9000,
+      9001,
+      9002,
+      9003,
+      9004,
+      9005,
+      9006,
+      9021,
+      9735,
+    ], limit: limit, until: until, since: since);
     Connect.sharedInstance.addSubscription([f], relays: [groupDB.relay],
         eventCallBack: (event, relay) async {
-      switch (event.kind) {
-        case 7:
-          handleGroupReaction(event, relay);
-          break;
-        case 9:
-        case 10:
-          handleGroupMessage(event, relay);
-          break;
-        case 11:
-        case 12:
-          handleGroupNotes(event, relay);
-          break;
-        case 9735:
-          handleGroupZaps(event, relay);
-          break;
-        default:
-          LogUtils.v(() => 'unhandled message $event');
-          break;
-      }
-    }, eoseCallBack: (String requestId, OKEvent ok, String relay,
-            List<String> unCompletedRelays) {
+      handleGroupEvents(event, relay);
+    }, eoseCallBack: (String requestId, OKEvent ok, String relay, List<String> unCompletedRelays) {
       if (unCompletedRelays.isEmpty) {
         Connect.sharedInstance.closeRequests(requestId);
       }
