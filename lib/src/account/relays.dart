@@ -113,6 +113,18 @@ class Relays {
         : 0;
   }
 
+  int getFriendRequestUntil(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.friendRequestUntil
+        : 0;
+  }
+
+  int getFriendRequestSince(String relayURL) {
+    return relays.containsKey(relayURL)
+        ? relays[relayURL]!.friendRequestSince
+        : 0;
+  }
+
   int getChannelMessageSince(String relayURL) {
     return relays.containsKey(relayURL)
         ? relays[relayURL]!.channelMessageSince
