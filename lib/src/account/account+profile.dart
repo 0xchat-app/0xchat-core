@@ -169,6 +169,7 @@ extension AccountProfile on Account {
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
+        pQueue.removeWhere((key) => users.keys.contains(key));
         if (!completer.isCompleted) completer.complete();
       }
     });
