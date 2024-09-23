@@ -440,7 +440,7 @@ class Contacts {
           tags: jsonEncode(event.tags),
           content: event.content,
           replyId: replyId,
-          createTime: currentUnixTimestampSeconds(),
+          createTime: event.createdAt,
           decryptContent: content,
           type: MessageDBISAR.messageTypeToString(type),
           status: 0,

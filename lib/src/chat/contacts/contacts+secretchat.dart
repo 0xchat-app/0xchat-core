@@ -410,7 +410,7 @@ extension SecretChat on Contacts {
             kind: event.kind,
             tags: jsonEncode(event.tags),
             content: event.content,
-            createTime: currentUnixTimestampSeconds(),
+            createTime: event.createdAt,
             decryptContent: content,
             type: MessageDBISAR.messageTypeToString(type),
             status: 0,
