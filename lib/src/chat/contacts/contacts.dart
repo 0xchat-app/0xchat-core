@@ -495,6 +495,8 @@ class Contacts {
           Connect.sharedInstance.sendEvent(giftwrappedEventToSelf!, toRelays: myDMRelays);
         }
       });
+
+      EventCache.sharedInstance.receiveEvent(event, '');
     }
     return completer.future;
   }

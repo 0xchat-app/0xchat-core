@@ -449,6 +449,7 @@ extension SecretChat on Contacts {
             await update(sessionDB.sessionId);
           }
         });
+        EventCache.sharedInstance.receiveEvent(event, '');
       }
     } else {
       if (!completer.isCompleted) {
