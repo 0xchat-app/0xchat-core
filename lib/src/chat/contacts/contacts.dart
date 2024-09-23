@@ -466,7 +466,14 @@ class Contacts {
       Event? giftwrappedEvent = await Contacts.sharedInstance.encodeNip17Event(event, toPubkey);
       UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(toPubkey);
       List<String>? dmRelays = toUser?.dmRelayList;
-      if (!await connectUserDMRelays(toPubkey)) {
+      bool hasConnected = false;
+      for (var relay in dmRelays ?? []) {
+        if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1){
+          hasConnected = true;
+          break;
+        }
+      }
+      if (!hasConnected) {
         if (!completer.isCompleted) {
           completer.complete(OKEvent(event.id, false, 'Unable to connect to user DM relays'));
         }

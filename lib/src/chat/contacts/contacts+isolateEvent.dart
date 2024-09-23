@@ -91,7 +91,7 @@ extension IsolateEvent on Contacts {
   }
 
   static Future<Map<String, dynamic>> encodeNip17InIsolate(Map<String, dynamic> params) async {
-    Event event = await Event.fromJson(params['event']);
+    Event event = await Event.fromJson(params['event'], verify: false);
     String receiver = params['receiver'] ?? '';
     Event sealedEvent = await Nip17.encode(
         event, receiver, params['pubkey'] ?? '', params['privkey'] ?? '',
