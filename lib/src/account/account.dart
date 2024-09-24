@@ -373,7 +373,7 @@ class Account {
     if (json['pubkey'] == null) json['pubkey'] = currentPubkey;
     if (json['id'] == null) {
       var tags = (json['tags'] as List<dynamic>)
-          .map((e) => (e as List<dynamic>).map((e) => e as String).toList())
+          .map((e) => (e as List<dynamic>).map((e) => e.toString()).toList())
           .toList();
       json['id'] = Event.processEventId(json['pubkey'], json['created_at'],
           json['kind'], tags, json['content']);
