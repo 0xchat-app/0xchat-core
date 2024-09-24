@@ -467,10 +467,14 @@ class Contacts {
       UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(toPubkey);
       List<String>? dmRelays = toUser?.dmRelayList;
       bool hasConnected = false;
-      for (var relay in dmRelays ?? []) {
-        if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1){
-          hasConnected = true;
-          break;
+      if(dmRelays == null || dmRelays.isEmpty) {
+        hasConnected = true;
+      } else{
+        for (var relay in dmRelays) {
+          if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1){
+            hasConnected = true;
+            break;
+          }
         }
       }
       if (!hasConnected) {
@@ -481,7 +485,7 @@ class Contacts {
       }
       Connect.sharedInstance.sendEvent(giftwrappedEvent!, toRelays: dmRelays,
           sendCallBack: (ok, relay) async {
-        messageDB.status = ok.status ? 1 : 2;
+            messageDB.status = ok.status ? 1 : 2;
         await Messages.saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
         if (!completer.isCompleted) {
           completer.complete(OKEvent(event!.id, ok.status, ok.message));
