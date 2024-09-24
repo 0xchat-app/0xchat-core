@@ -85,11 +85,15 @@ void _isolateEntry(SendPort sendPort) {
       final task = message[0] as Future Function();
       final replyPort = message[1] as SendPort;
       final rootIsolateToken = message[2] as RootIsolateToken;
-      final result = await task();
-
-      // Attach root isolate token to the current isolate
-      BackgroundIsolateBinaryMessenger.ensureInitialized(rootIsolateToken);
-      replyPort.send(result);
+      try {
+        // Attach root isolate token to the current isolate
+        BackgroundIsolateBinaryMessenger.ensureInitialized(rootIsolateToken);
+        final result = await task();
+        replyPort.send(result);
+      } catch (e, stackTrace) {
+        print('_isolateEntry Error: $e\n$stackTrace');
+        replyPort.send("Error: $e");
+      }
     }
   });
 }
