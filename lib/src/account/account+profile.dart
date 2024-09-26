@@ -404,8 +404,13 @@ extension AccountProfile on Account {
   // profile badge
   UserDBISAR? _handleKind30008Event(UserDBISAR? db, Event event) {
     if (db != null && db.lastUpdatedTime < event.createdAt) {
-      List<BadgeAward> profileBadges = Nip58.getProfileBadges(event);
-      db.badges = jsonEncode(profileBadges.map((e) => e.awardId).toList());
+      try{
+        List<BadgeAward> profileBadges = Nip58.getProfileBadges(event);
+        db.badges = jsonEncode(profileBadges.map((e) => e.awardId).toList());
+      }
+      catch(e){
+        LogUtils.d(e);
+      }
     }
     return db;
   }
