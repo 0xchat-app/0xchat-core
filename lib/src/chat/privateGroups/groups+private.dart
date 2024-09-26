@@ -178,6 +178,7 @@ extension PrivateGroups on Groups {
     messageDB.type = map['contentType'];
     messageDB.decryptSecret = map['decryptSecret'];
     await Messages.saveMessageToDB(messageDB);
+    EventCache.sharedInstance.receiveEvent(event, '');
 
     if (local) {
       if (!completer.isCompleted) {
