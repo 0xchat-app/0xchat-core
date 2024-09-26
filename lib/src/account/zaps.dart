@@ -355,14 +355,14 @@ class Zaps {
     var queryBuilder = isar.zapRecordsDBISARs.filter();
     List<ZapRecordsDBISAR?> maps = [];
     if (bolt11 != null) {
-      maps = await queryBuilder.bolt11EqualTo(bolt11).limit(limit).findAll();
+      maps = await queryBuilder.bolt11EqualTo(bolt11).sortByPaidAtDesc().limit(limit).findAll();
     }
     if (sender != null) {
-      maps = await queryBuilder.senderEqualTo(sender).limit(limit).findAll();
+      maps = await queryBuilder.senderEqualTo(sender).sortByPaidAtDesc().limit(limit).findAll();
     }
     if (recipient != null) {
       maps =
-          await queryBuilder.recipientEqualTo(recipient).limit(limit).findAll();
+          await queryBuilder.recipientEqualTo(recipient).sortByPaidAtDesc().limit(limit).findAll();
     }
 
     for (ZapRecordsDBISAR? records in maps) {
