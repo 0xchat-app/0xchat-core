@@ -46,8 +46,8 @@ class ThreadPoolManager {
     final port = ReceivePort();
     sendPort.send([task, port.sendPort, _rootIsolateToken]);
     port.listen((message) {
-      completer.complete(message);
       port.close(); // Close the port once the task is completed
+      completer.complete(message);
     });
     return completer.future;
   }
