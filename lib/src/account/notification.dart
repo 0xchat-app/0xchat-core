@@ -32,7 +32,6 @@ class NotificationHelper {
     Connect.sharedInstance
         .addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 && toRelays.contains(relay)) {
-        _heartBeat(serverPubkey, privkey);
         if (unSendNotification != null) {
           Connect.sharedInstance.sendEvent(unSendNotification!,
               sendCallBack: (ok, relay) {
