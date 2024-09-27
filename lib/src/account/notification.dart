@@ -32,6 +32,7 @@ class NotificationHelper {
     Connect.sharedInstance
         .addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 && toRelays.contains(relay)) {
+        _heartBeat(serverPubkey, privkey, relay: [relay]);
         if (unSendNotification != null) {
           Connect.sharedInstance.sendEvent(unSendNotification!,
               sendCallBack: (ok, relay) {
@@ -72,10 +73,10 @@ class NotificationHelper {
     return event;
   }
 
-  Future<void> _heartBeat(String serverPubkey, String privkey) async {
+  Future<void> _heartBeat(String serverPubkey, String privkey, {List<String>? relay}) async {
     Map map = {'online': 1};
     Event event = await _encode(serverPubkey, jsonEncode(map), '', privkey);
-    Connect.sharedInstance.sendEvent(event, toRelays: toRelays);
+    Connect.sharedInstance.sendEvent(event, toRelays: relay ?? toRelays);
   }
 
   Future<void> setOffline() async {
