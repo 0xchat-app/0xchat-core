@@ -27,6 +27,7 @@ class NotificationHelper {
     serverPubkey = serverKey;
 
     startHeartBeat();
+    _heartBeat(serverPubkey, privkey);
 
     Connect.sharedInstance
         .addConnectStatusListener((relay, status, relayKinds) async {
@@ -125,7 +126,6 @@ class NotificationHelper {
     //   }
     // }
     Map map = {
-      'online': 1,
       'authors': authors,
       'kinds': kinds,
       'deviceId': deviceId,
