@@ -379,7 +379,13 @@ class BadgesHelper {
 
   static Future<void> addProfileBadgesToDB(List<String> badgeIds) async {
     UserDBISAR? userDB = Account.sharedInstance.me;
-    List<String> exitBadges = jsonDecode(userDB!.badges ?? '[]');
+    List<String> exitBadges;
+    if(userDB!.badges == null || userDB.badges!.isEmpty){
+      exitBadges = [];
+    }
+    else{
+      exitBadges = List<String>.from(jsonDecode(userDB.badges!) as List<dynamic>);
+    }
     Set<String> exitBadgesSet = Set.from(exitBadges);
     exitBadgesSet.addAll(badgeIds);
     userDB.badges = jsonEncode(exitBadgesSet.toList());
@@ -469,8 +475,8 @@ class BadgesHelper {
       String? identifies,
       String? creator}) async {
     final isar = DBISAR.sharedInstance.isar;
-    var query =
-        isar.badgeAwardDBISARs.filter().creatorEqualTo(badgeOwner ?? '');
+    var query = isar.badgeAwardDBISARs.filter().idBetween(0, Isar.maxId);
+    if (badgeOwner != null) query = query.badgeOwnerEqualTo(badgeOwner);
     if (badgeId != null) query = query.badgeIdEqualTo(badgeId);
     if (identifies != null) query = query.identifiesEqualTo(identifies);
     if (creator != null) query = query.creatorEqualTo(creator);
