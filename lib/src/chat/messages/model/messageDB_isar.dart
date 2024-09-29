@@ -293,6 +293,10 @@ class MessageDBISAR {
       case MessageType.image:
       case MessageType.video:
       case MessageType.audio:
+      case MessageType.encryptedImage:
+      case MessageType.encryptedVideo:
+      case MessageType.encryptedAudio:
+      case MessageType.encryptedFile:
         return content;
       case MessageType.file:
         return '[You\'ve received a file via 0xChat!]';
@@ -302,14 +306,14 @@ class MessageDBISAR {
           return content;
         }
         return '[You\'ve received a template via 0xChat!]';
-      case MessageType.encryptedImage:
-        return '[You\'ve received an end-to-end encrypted image via 0xChat!]';
-      case MessageType.encryptedVideo:
-        return '[You\'ve received an end-to-end encrypted video via 0xChat!]';
-      case MessageType.encryptedAudio:
-        return '[You\'ve received an end-to-end encrypted audio via 0xChat!]';
-      case MessageType.encryptedFile:
-        return '[You\'ve received an end-to-end encrypted file via 0xChat!]';
+      // case MessageType.encryptedImage:
+      //   return '[You\'ve received an end-to-end encrypted image via 0xChat!]';
+      // case MessageType.encryptedVideo:
+      //   return '[You\'ve received an end-to-end encrypted video via 0xChat!]';
+      // case MessageType.encryptedAudio:
+      //   return '[You\'ve received an end-to-end encrypted audio via 0xChat!]';
+      // case MessageType.encryptedFile:
+      //   return '[You\'ve received an end-to-end encrypted file via 0xChat!]';
       case MessageType.system:
         return '[You\'ve received a system message via 0xChat!]';
       case MessageType.call:
