@@ -207,10 +207,10 @@ extension EMember on RelayGroup {
         }
         break;
       case GroupActionKind.removeUser:
-        for (var user in users.values) {
-          content = '${user.name} $content ';
-        }
-        content = 'Admin remove ${content}from the group';
+        // for (var user in users.values) {
+        //   content = '${user.name} $content ';
+        // }
+        // content = 'Admin remove ${content}from the group';
 
         RelayGroupDBISAR? groupDB = groups[db.groupId];
         if (groupDB != null) {
@@ -220,7 +220,7 @@ extension EMember on RelayGroup {
             syncGroupToDB(groupDB);
           }
         }
-        break;
+        return;
       case GroupActionKind.editMetadata:
         await handleGroupMetadataFromModeration(moderation, relay);
         return;
