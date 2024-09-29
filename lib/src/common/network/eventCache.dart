@@ -30,7 +30,7 @@ class EventCache {
 
     if (expiredEvents.isEmpty) return;
 
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
+    DBISAR.sharedInstance.isar.writeTxn(() async {
       int result = await DBISAR.sharedInstance.isar.eventDBISARs
           .filter()
           .anyOf(expiredEvents, (q, eventId) => q.eventIdEqualTo(eventId))
