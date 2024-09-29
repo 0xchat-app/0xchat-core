@@ -25,21 +25,27 @@ class Messages {
   MessageActionsCallBack? actionsCallBack;
   MessagesDeleteCallBack? deleteCallBack;
 
-  final Completer<void> channelMessageCompleter = Completer<void>();
-  final Completer<void> groupMessageCompleter = Completer<void>();
-  final Completer<void> contactMessageCompleter = Completer<void>();
-  final Completer<void> secretChatMessageCompleter = Completer<void>();
+  late Completer<void> channelMessageCompleter;
+  late Completer<void> groupMessageCompleter;
+  late Completer<void> contactMessageCompleter;
+  late Completer<void> secretChatMessageCompleter;
 
   Future<void> init() async {
     privkey = Account.sharedInstance.currentPrivkey;
     pubkey = Account.sharedInstance.currentPubkey;
+
+    channelMessageCompleter = Completer<void>();
+    groupMessageCompleter = Completer<void>();
+    contactMessageCompleter = Completer<void>();
+    secretChatMessageCompleter = Completer<void>();
 
     Future.wait([
       channelMessageCompleter.future,
       groupMessageCompleter.future,
       contactMessageCompleter.future,
       secretChatMessageCompleter.future
-    ]).then((value) {
+    ]).then((value) async {
+      await Future.delayed(const Duration(seconds: 3));
       refindActionsFromDB();
     });
     return;
