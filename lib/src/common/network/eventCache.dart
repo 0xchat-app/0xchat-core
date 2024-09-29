@@ -15,26 +15,21 @@ class EventCache {
   final cacheTimeStamp = 24 * 60 * 60 * 7;
 
   Future<void> loadAllEventsFromDB() async {
-    List<EventDBISAR> eventDBs =
-        await DBISAR.sharedInstance.isar.eventDBISARs.where().findAll();
-    List<String> expiredEvents = [];
+    List<EventDBISAR> eventDBs = await DBISAR.sharedInstance.isar.eventDBISARs.where().findAll();
+    List<int> expiredEvents = [];
     for (var eventDB in eventDBs) {
       if (eventDB.expiration != null &&
           eventDB.expiration! > 0 &&
           eventDB.expiration! < currentUnixTimestampSeconds()) {
-        expiredEvents.add(eventDB.eventId);
+        expiredEvents.add(eventDB.id);
         continue;
       }
       cacheIds.add(eventDB.eventId);
     }
 
     if (expiredEvents.isEmpty) return;
-
     DBISAR.sharedInstance.isar.writeTxn(() async {
-      int result = await DBISAR.sharedInstance.isar.eventDBISARs
-          .filter()
-          .anyOf(expiredEvents, (q, eventId) => q.eventIdEqualTo(eventId))
-          .deleteAll();
+      int result = await DBISAR.sharedInstance.isar.eventDBISARs.deleteAll(expiredEvents);
       LogUtils.v(() => 'Deleted event caches: $result');
     });
   }
@@ -59,23 +54,18 @@ class EventCache {
     if (cacheIds.contains(event.id)) return;
     cacheIds.add(event.id);
     if (!kinds.contains(event.kind)) return;
-    EventDBISAR? eventDB = EventDBISAR(
-        eventId: event.id,
-        expiration: currentUnixTimestampSeconds() + cacheTimeStamp);
-    eventDB.eventReceiveStatus
-        .add(EventStatusISAR(relay: relay, status: true, message: ''));
+    EventDBISAR? eventDB =
+        EventDBISAR(eventId: event.id, expiration: currentUnixTimestampSeconds() + cacheTimeStamp);
+    eventDB.eventReceiveStatus.add(EventStatusISAR(relay: relay, status: true, message: ''));
     await saveEventToDB(eventDB);
   }
 
-  Future<void> sendEvent(
-      Event event, String relay, bool status, String message) async {
+  Future<void> sendEvent(Event event, String relay, bool status, String message) async {
     cacheIds.add(event.id);
     EventDBISAR? eventDB = await loadEventFromDB(event.id);
-    eventDB ??= EventDBISAR(
-        eventId: event.id,
-        expiration: currentUnixTimestampSeconds() + cacheTimeStamp);
-    eventDB.eventSendStatus
-        .add(EventStatusISAR(relay: relay, status: status, message: message));
+    eventDB ??=
+        EventDBISAR(eventId: event.id, expiration: currentUnixTimestampSeconds() + cacheTimeStamp);
+    eventDB.eventSendStatus.add(EventStatusISAR(relay: relay, status: status, message: message));
     await saveEventToDB(eventDB);
   }
 }
