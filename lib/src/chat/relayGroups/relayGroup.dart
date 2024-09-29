@@ -162,7 +162,13 @@ class RelayGroup {
   }
 
   void updateGroupSubscription({String? relay}) {
-    if (myGroups.isEmpty) return;
+    if (myGroups.isEmpty){
+      offlineGroupMessageFinishCallBack?.call();
+      if (!Messages.sharedInstance.groupMessageCompleter.isCompleted) {
+        Messages.sharedInstance.groupMessageCompleter.complete();
+      }
+      return;
+    }
     if (groupMessageSubscription.isNotEmpty) {
       Connect.sharedInstance
           .closeRequests(groupMessageSubscription, relay: relay);

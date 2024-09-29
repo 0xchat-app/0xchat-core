@@ -75,7 +75,13 @@ class Channels {
   }
 
   void _updateChannelSubscription({String? relay}) {
-    if (myChannels.isEmpty) return;
+    if (myChannels.isEmpty){
+      offlineChannelMessageFinishCallBack?.call();
+      if (!Messages.sharedInstance.channelMessageCompleter.isCompleted) {
+        Messages.sharedInstance.channelMessageCompleter.complete();
+      }
+      return;
+    }
     if (channelMessageSubscription.isNotEmpty) {
       Connect.sharedInstance
           .closeRequests(channelMessageSubscription, relay: relay);

@@ -34,8 +34,6 @@ class Messages {
     privkey = Account.sharedInstance.currentPrivkey;
     pubkey = Account.sharedInstance.currentPubkey;
 
-    refindActionsFromDB();
-
     Future.wait([
       channelMessageCompleter.future,
       groupMessageCompleter.future,
@@ -169,8 +167,9 @@ class Messages {
   Future<void> handleReactionEvent(Event event) async {
     Reactions reactions = Nip25.decode(event);
     NoteDBISAR reactionsNoteDB = NoteDBISAR.noteDBFromReactions(reactions);
-    Moment.sharedInstance.saveNoteToDB(reactionsNoteDB, ConflictAlgorithm.ignore);
     final reactedMessageDB = await loadMessageDBFromDB(reactions.reactedEventId);
+    reactionsNoteDB.findEvent = reactedMessageDB != null;
+    Moment.sharedInstance.saveNoteToDB(reactionsNoteDB, ConflictAlgorithm.ignore);
     if (reactedMessageDB == null) return;
     reactedMessageDB.reactionEventIds ??= [];
     if (!reactedMessageDB.reactionEventIds!.contains(reactions.id)) {
@@ -184,11 +183,11 @@ class Messages {
     ZapReceipt zapReceipt = await Nip57.getZapReceipt(
         event, Account.sharedInstance.currentPubkey, Account.sharedInstance.currentPrivkey);
     ZapRecordsDBISAR zapRecordsDB = ZapRecordsDBISAR.zapReceiptToZapRecordsDB(zapReceipt);
+    final reactedMessageDB = await loadMessageDBFromDB(zapRecordsDB.eventId);
     //add to zap records
+    zapRecordsDB.findEvent = reactedMessageDB != null;
     await Zaps.saveZapRecordToDB(zapRecordsDB);
     Zaps.sharedInstance.zapRecords[zapRecordsDB.bolt11] = zapRecordsDB;
-
-    final reactedMessageDB = await loadMessageDBFromDB(zapRecordsDB.eventId);
     if (reactedMessageDB == null) return;
     reactedMessageDB.zapEventIds ??= [];
     if (!reactedMessageDB.zapEventIds!.contains(zapRecordsDB.bolt11)) {

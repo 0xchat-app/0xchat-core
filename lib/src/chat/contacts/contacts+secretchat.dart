@@ -490,7 +490,13 @@ extension SecretChat on Contacts {
         if (value.sharePubkey!.isNotEmpty) pubkeys.add(value.sharePubkey!);
       }
     });
-    if (pubkeys.isEmpty) return;
+    if (pubkeys.isEmpty){
+      offlineSecretMessageFinishCallBack?.call();
+      if (!Messages.sharedInstance.secretChatMessageCompleter.isCompleted) {
+        Messages.sharedInstance.secretChatMessageCompleter.complete();
+      }
+      return;
+    }
     Map<String, List<Filter>> subscriptions = {};
     if (relay == null) {
       List<String> relays = Connect.sharedInstance.relays(relayKind: RelayKind.general);

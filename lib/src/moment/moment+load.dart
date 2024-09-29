@@ -763,8 +763,11 @@ extension Load on Moment {
     if (reactedMessageDB != null) {
       await Messages.sharedInstance.handleReactionEvent(event);
     } else {
-      await addReactionToNote(event, reactionsNoteDB.reactedId!);
-      handleNewNotes(reactionsNoteDB);
+      NoteDBISAR? noteDB = await loadNoteWithNoteId(reactionsNoteDB.reactedId!);
+      if(noteDB != null){
+        await addReactionToNote(event, reactionsNoteDB.reactedId!);
+        handleNewNotes(reactionsNoteDB);
+      }
     }
   }
 }
