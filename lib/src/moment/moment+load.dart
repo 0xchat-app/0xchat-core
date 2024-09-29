@@ -707,7 +707,7 @@ extension Load on Moment {
 
   Future<void> handleNewNotes(NoteDBISAR noteDB) async {
     await saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
-    if (noteDB.author != pubkey && noteDB.createAt > latestNoteTime) {
+    if (noteDB.createAt > latestNoteTime) {
       newNotes.add(noteDB);
       newNotesCallBack?.call(newNotes);
     }
