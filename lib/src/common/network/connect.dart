@@ -131,7 +131,7 @@ class Connect {
     _connectivitySubscription ??=
         Connectivity().onConnectivityChanged.listen((ConnectivityResult result) async {
       if (result != ConnectivityResult.none) {
-        resetConnection();
+        resetConnection(force: false);
       }
     });
   }
