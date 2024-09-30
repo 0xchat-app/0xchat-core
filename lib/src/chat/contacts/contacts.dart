@@ -331,10 +331,10 @@ class Contacts {
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       } else if (event.kind == 1059) {
         Event? innerEvent = await decodeNip17Event(event);
-        if (innerEvent != null || EventCache.sharedInstance.cacheIds.contains(innerEvent!.id))
-          return;
-        EventCache.sharedInstance.receiveEvent(innerEvent, relay);
-        if (!inBlockList(innerEvent.pubkey)) {
+        // if (innerEvent != null || EventCache.sharedInstance.cacheIds.contains(innerEvent!.id))
+        //   return;
+        // EventCache.sharedInstance.receiveEvent(innerEvent, relay);
+        if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
             case 14:
