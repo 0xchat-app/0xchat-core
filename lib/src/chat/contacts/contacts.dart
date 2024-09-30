@@ -331,7 +331,10 @@ class Contacts {
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       } else if (event.kind == 1059) {
         Event? innerEvent = await decodeNip17Event(event);
-        if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
+        if (innerEvent != null || EventCache.sharedInstance.cacheIds.contains(innerEvent!.id))
+          return;
+        EventCache.sharedInstance.receiveEvent(innerEvent, relay);
+        if (!inBlockList(innerEvent.pubkey)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
             case 14:
@@ -467,11 +470,11 @@ class Contacts {
       UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(toPubkey);
       List<String>? dmRelays = toUser?.dmRelayList;
       bool hasConnected = false;
-      if(dmRelays == null || dmRelays.isEmpty) {
+      if (dmRelays == null || dmRelays.isEmpty) {
         hasConnected = true;
-      } else{
+      } else {
         for (var relay in dmRelays) {
-          if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1){
+          if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
             hasConnected = true;
             break;
           }
@@ -485,7 +488,7 @@ class Contacts {
       }
       Connect.sharedInstance.sendEvent(giftwrappedEvent!, toRelays: dmRelays,
           sendCallBack: (ok, relay) async {
-            messageDB.status = ok.status ? 1 : 2;
+        messageDB.status = ok.status ? 1 : 2;
         await Messages.saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
         if (!completer.isCompleted) {
           completer.complete(OKEvent(event!.id, ok.status, ok.message));

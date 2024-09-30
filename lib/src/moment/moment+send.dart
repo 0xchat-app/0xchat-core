@@ -5,7 +5,6 @@ import 'package:chatcore/chat-core.dart';
 import 'package:flutter/services.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
-typedef SendMessageCallBack = void Function();
 typedef SendMessageProgressCallBack = void Function(int progress);
 
 extension Send on Moment {
@@ -62,46 +61,8 @@ extension Send on Moment {
 
   Future<OKEvent> sendPrivateMessage(List<String>? receivers, Event event,
       {SendMessageCallBack? sendMessageCallBack}) async {
-    Completer<OKEvent> completer = Completer<OKEvent>();
-    if (receivers != null) {
-      final receivePort = ReceivePort();
-      receivePort.listen((message) async {
-        sendMessageCallBack?.call();
-        Event e = await Event.fromJson(message);
-        Connect.sharedInstance.sendEvent(e);
-      });
-      for (var receiver in receivers) {
-        if (receiver.isNotEmpty) {
-          var rootToken = RootIsolateToken.instance!;
-          Map<String, dynamic> map = {
-            'event': event.toJson(),
-            'receiver': receiver,
-            'privkey': privkey,
-            'pubkey': pubkey,
-            'sendPort': receivePort.sendPort,
-            'token': rootToken
-          };
-          Isolate.spawn(encodeNip17InIsolate, map);
-        }
-      }
-      if (!completer.isCompleted) {
-        completer.complete(OKEvent(event.id, true, ''));
-      }
-    } else {
-      if (!completer.isCompleted) {
-        completer.complete(OKEvent(event.id, false, 'no receivers'));
-      }
-    }
-    return completer.future;
-  }
-
-  static Future<void> encodeNip17InIsolate(Map<String, dynamic> params) async {
-    BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
-    Event event = await Event.fromJson(params['event'], verify: false);
-    String receiver = params['receiver'] ?? '';
-    Event sealedEvent = await Nip17.encode(
-        event, receiver, params['pubkey'] ?? '', params['privkey'] ?? '');
-    params['sendPort'].send(sealedEvent.toJson());
+    return Groups.sharedInstance
+        .sendMessageEvent(receivers, event, sendMessageCallBack: sendMessageCallBack);
   }
 
   Future<OKEvent> sendNoteContacts(String content,
@@ -180,17 +141,12 @@ extension Send on Moment {
         }
         return note.private
             ? await _sendPrivateNote(content, [...note.pTags!, pubkey],
-                rootEvent: replyNoteId,
-                mentions: note.pTags,
-                hashTags: hashTags)
+                rootEvent: replyNoteId, mentions: note.pTags, hashTags: hashTags)
             : await sendPublicNote(content,
-                rootEvent: replyNoteId,
-                mentions: note.pTags,
-                hashTags: hashTags);
+                rootEvent: replyNoteId, mentions: note.pTags, hashTags: hashTags);
       } else {
         NoteDBISAR? rootNote = await loadNoteWithNoteId(rootEventId);
-        if (rootNote?.author.isNotEmpty == true &&
-            !note.pTags!.contains(rootNote?.author)) {
+        if (rootNote?.author.isNotEmpty == true && !note.pTags!.contains(rootNote?.author)) {
           note.pTags!.add(rootNote!.author);
         }
         if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
@@ -219,8 +175,7 @@ extension Send on Moment {
       if (!note.pTags!.contains(note.author)) {
         note.pTags!.add(note.author);
       }
-      Event event = await Nip25.encode(
-          reactedNoteId, note.pTags ?? [], '1', like, pubkey, privkey,
+      Event event = await Nip25.encode(reactedNoteId, note.pTags ?? [], '1', like, pubkey, privkey,
           emojiShotCode: emojiShotCode, emojiURL: emojiURL);
 
       NoteDBISAR noteDB = NoteDBISAR.noteDBFromReactions(Nip25.decode(event));
@@ -236,8 +191,7 @@ extension Send on Moment {
         OKEvent ok = await sendPrivateMessage([note.author, pubkey], event);
         if (!completer.isCompleted) completer.complete(ok);
       } else {
-        Connect.sharedInstance.sendEvent(event,
-            sendCallBack: (ok, relay) async {
+        Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
           if (!completer.isCompleted) completer.complete(ok);
         });
       }
@@ -247,16 +201,15 @@ extension Send on Moment {
     }
   }
 
-  Future<OKEvent> sendRepost(
-      String repostNoteId, String? repostNoteRelay) async {
+  Future<OKEvent> sendRepost(String repostNoteId, String? repostNoteRelay) async {
     NoteDBISAR? note = await loadNoteWithNoteId(repostNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       if (!note.pTags!.contains(note.author)) {
         note.pTags!.add(note.author);
       }
-      Event event = await Nip18.encodeReposts(repostNoteId, repostNoteRelay,
-          note.pTags ?? [], note.rawEvent, pubkey, privkey);
+      Event event = await Nip18.encodeReposts(
+          repostNoteId, repostNoteRelay, note.pTags ?? [], note.rawEvent, pubkey, privkey);
       Reposts r = await Nip18.decodeReposts(event);
       NoteDBISAR noteDB = NoteDBISAR.noteDBFromReposts(r);
       await saveNoteToDB(noteDB, null);
@@ -271,8 +224,7 @@ extension Send on Moment {
         OKEvent ok = await sendPrivateMessage([note.author, pubkey], event);
         if (!completer.isCompleted) completer.complete(ok);
       } else {
-        Connect.sharedInstance.sendEvent(event,
-            sendCallBack: (ok, relay) async {
+        Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
           if (!completer.isCompleted) completer.complete(ok);
         });
       }
@@ -291,15 +243,14 @@ extension Send on Moment {
       if (!note.pTags!.contains(note.author)) note.pTags!.add(note.author);
       String nostrNote = Nip21.encode(Nip19.encodeNote(quoteRepostNoteId));
       content = '$content\n$nostrNote';
-      Event event = await Nip18.encodeQuoteReposts(quoteRepostNoteId,
-          note.pTags ?? [], content, hashTags, pubkey, privkey);
+      Event event = await Nip18.encodeQuoteReposts(
+          quoteRepostNoteId, note.pTags ?? [], content, hashTags, pubkey, privkey);
       for (var mention in mentions ?? []) {
         if (!note.pTags!.contains(mention)) {
           note.pTags!.add(mention);
         }
       }
-      NoteDBISAR noteDB =
-          NoteDBISAR.noteDBFromQuoteReposts(Nip18.decodeQuoteReposts(event));
+      NoteDBISAR noteDB = NoteDBISAR.noteDBFromQuoteReposts(Nip18.decodeQuoteReposts(event));
       await saveNoteToDB(noteDB, null);
 
       note.quoteRepostEventIds ??= [];
@@ -312,8 +263,7 @@ extension Send on Moment {
         OKEvent ok = await sendPrivateMessage([note.author, pubkey], event);
         if (!completer.isCompleted) completer.complete(ok);
       } else {
-        Connect.sharedInstance.sendEvent(event,
-            sendCallBack: (ok, relay) async {
+        Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
           if (!completer.isCompleted) completer.complete(ok);
         });
       }

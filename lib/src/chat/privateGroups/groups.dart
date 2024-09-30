@@ -11,6 +11,7 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 typedef GroupsUpdatedCallBack = void Function();
 typedef GroupMessageCallBack = void Function(MessageDBISAR);
 typedef GroupMessageUpdateCallBack = void Function(MessageDBISAR, String);
+typedef SendMessageCallBack = void Function();
 
 class Groups {
   /// singleton
@@ -70,8 +71,7 @@ class Groups {
   }
 
   Future<void> _loadAllGroupsFromDB() async {
-    List<GroupDBISAR> maps =
-        await DBISAR.sharedInstance.isar.groupDBISARs.where().findAll();
+    List<GroupDBISAR> maps = await DBISAR.sharedInstance.isar.groupDBISARs.where().findAll();
     for (GroupDBISAR e in maps) {
       GroupDBISAR groupDB = e.withGrowableLevels();
       if (groupDB.name.isEmpty) groupDB.name = _shortGroupId(groupDB.groupId);
@@ -97,8 +97,7 @@ class Groups {
 
   Future<void> _handleGroupCreation(Event event) async {
     if (!groups.containsKey(event.id) ||
-        (groups.containsKey(event.id) &&
-            groups[event.id]?.owner != event.pubkey)) {
+        (groups.containsKey(event.id) && groups[event.id]?.owner != event.pubkey)) {
       Channel group = Nip28.getChannelCreation(event);
       GroupDBISAR groupDB = _channelToGroupDB(group, event.createdAt);
       await syncGroupToDB(groupDB);
@@ -118,17 +117,15 @@ class Groups {
 
   Future<void> _handleGroupMessage(Event event) async {
     ChannelMessage groupMessage = Nip28.getChannelMessage(event);
-    String subType = groupMessage.actionsType != null
-        ? Nip28.actionToType(groupMessage.actionsType!)
-        : '';
+    String subType =
+        groupMessage.actionsType != null ? Nip28.actionToType(groupMessage.actionsType!) : '';
     GroupDBISAR? groupDB = myGroups[groupMessage.channelId];
     if (groupDB == null) return;
     switch (subType) {
       case 'invite':
         break;
       case 'request':
-        if (groupDB.owner != pubkey &&
-            groupDB.members?.contains(groupMessage.sender) == false) {
+        if (groupDB.owner != pubkey && groupDB.members?.contains(groupMessage.sender) == false) {
           return;
         }
         break;
@@ -165,8 +162,7 @@ class Groups {
     groupMessageCallBack?.call(messageDB);
   }
 
-  Future<void> receiveGroupEvents(
-      Event event, String relay, String giftWrappedEventId) async {
+  Future<void> receiveGroupEvents(Event event, String relay, String giftWrappedEventId) async {
     MessageDBISAR messageDB = MessageDBISAR(messageId: giftWrappedEventId);
     await Messages.saveMessageToDB(messageDB);
     switch (event.kind) {
@@ -232,8 +228,7 @@ class Groups {
   Future<OKEvent> syncMyGroupListToRelay() async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<String> list = myGroups.keys.toList();
-    Event event = await Nip51.createCategorizedBookmarks(
-        identifier, [], list, privkey, pubkey);
+    Event event = await Nip51.createCategorizedBookmarks(identifier, [], list, privkey, pubkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (ok.status) {
         Account.sharedInstance.me!.lastGroupsListUpdatedTime = event.createdAt;
@@ -248,9 +243,7 @@ class Groups {
     if (keyword.isNotEmpty) {
       RegExp regex = RegExp(keyword, caseSensitive: false);
       List<GroupDBISAR> filteredFriends = myGroups.values
-          .where((channel) =>
-              regex.hasMatch(channel.name) ||
-              regex.hasMatch(channel.about ?? ''))
+          .where((channel) => regex.hasMatch(channel.name) || regex.hasMatch(channel.about ?? ''))
           .toList();
       return filteredFriends;
     }
@@ -258,14 +251,10 @@ class Groups {
   }
 
   List<String> getAllUnMuteGroups() {
-    return myGroups.entries
-        .where((e) => e.value.mute == false)
-        .map((e) => e.key)
-        .toList();
+    return myGroups.entries.where((e) => e.value.mute == false).map((e) => e.key).toList();
   }
 
-  Future<Event?> getSendGroupMessageEvent(
-      String groupId, MessageType type, String content,
+  Future<Event?> getSendGroupMessageEvent(String groupId, MessageType type, String content,
       {String? source,
       String? groupRelay,
       String? replyMessage,
@@ -274,21 +263,19 @@ class Groups {
       String? replyUserRelay,
       String? actionsType,
       String? decryptSecret}) async {
-    Event event = await Nip28.sendChannelMessage(groupId,
-        MessageDBISAR.getContent(type, content, source), pubkey, privkey,
+    Event event = await Nip28.sendChannelMessage(
+        groupId, MessageDBISAR.getContent(type, content, source), pubkey, privkey,
         channelRelay: groupRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDBISAR.getSubContent(type, content,
-            decryptSecret: decryptSecret),
+        subContent: MessageDBISAR.getSubContent(type, content, decryptSecret: decryptSecret),
         actionsType: actionsType);
     return event;
   }
 
-  Future<OKEvent> sendGroupMessage(
-      String groupId, MessageType type, String content,
+  Future<OKEvent> sendGroupMessage(String groupId, MessageType type, String content,
       {String? source,
       String? groupRelay,
       String? replyMessage,
@@ -301,15 +288,14 @@ class Groups {
       List<String>? inviteUsers,
       String? decryptSecret}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    event ??= await Nip28.sendChannelMessage(groupId,
-        MessageDBISAR.getContent(type, content, source), pubkey, privkey,
+    event ??= await Nip28.sendChannelMessage(
+        groupId, MessageDBISAR.getContent(type, content, source), pubkey, privkey,
         channelRelay: groupRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDBISAR.getSubContent(type, content,
-            decryptSecret: decryptSecret),
+        subContent: MessageDBISAR.getSubContent(type, content, decryptSecret: decryptSecret),
         actionsType: actionsType);
 
     MessageDBISAR messageDB = MessageDBISAR(
@@ -355,8 +341,7 @@ class Groups {
           ok = await sendToGroup(groupId, event);
       }
       messageDB.status = ok.status ? 1 : 2;
-      await Messages.saveMessageToDB(messageDB,
-          conflictAlgorithm: ConflictAlgorithm.replace);
+      await Messages.saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
       if (!completer.isCompleted) completer.complete(ok);
     }
 
@@ -381,21 +366,22 @@ class Groups {
     }
   }
 
-  Future<OKEvent> sendMessageEvent(List<String>? receivers, Event event) async {
+  Future<OKEvent> sendMessageEvent(List<String>? receivers, Event event,
+      {SendMessageCallBack? sendMessageCallBack}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (receivers != null) {
       await Future.forEach(receivers, (receiver) async {
         if (receiver.isNotEmpty) {
-          Event? e =
-              await Contacts.sharedInstance.encodeNip17Event(event, receiver);
+          Event? e = await Contacts.sharedInstance.encodeNip17Event(event, receiver);
           if (e != null) {
-            UserDBISAR? user =
-                await Account.sharedInstance.getUserInfo(receiver);
+            UserDBISAR? user = await Account.sharedInstance.getUserInfo(receiver);
             Connect.sharedInstance.sendEvent(e, toRelays: user?.relayList);
+            sendMessageCallBack?.call();
           }
         }
       });
       if (!completer.isCompleted) {
+        EventCache.sharedInstance.receiveEvent(event, '');
         completer.complete(OKEvent(event.id, true, ''));
       }
     } else {
@@ -410,16 +396,13 @@ class Groups {
     BackgroundIsolateBinaryMessenger.ensureInitialized(params['token']);
     Event event = await Event.fromJson(params['event']);
     String receiver = params['receiver'] ?? '';
-    Event sealedEvent = await Nip17.encode(
-        event, receiver, params['pubkey'] ?? '', params['privkey'] ?? '');
-    params['sendPort']
-        .send({'receiver': receiver, 'event': sealedEvent.toJson()});
+    Event sealedEvent =
+        await Nip17.encode(event, receiver, params['pubkey'] ?? '', params['privkey'] ?? '');
+    params['sendPort'].send({'receiver': receiver, 'event': sealedEvent.toJson()});
   }
 
-  static String encodeGroup(
-      String groupId, List<String>? relays, String? author) {
-    String nevent =
-        Nip19.encodeShareableEntity('nevent', groupId, relays, author, null);
+  static String encodeGroup(String groupId, List<String>? relays, String? author) {
+    String nevent = Nip19.encodeShareableEntity('nevent', groupId, relays, author, null);
     return Nip21.encode(nevent);
   }
 
@@ -437,11 +420,7 @@ class Groups {
         };
       }
     } else if (encodedGroup.startsWith('note')) {
-      return {
-        'groupId': Nip19.decodeNote(encodedGroup),
-        'relays': [],
-        'author': null
-      };
+      return {'groupId': Nip19.decodeNote(encodedGroup), 'relays': [], 'author': null};
     }
     return null;
   }
