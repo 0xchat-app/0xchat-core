@@ -149,6 +149,7 @@ extension PrivateGroups on Groups {
         );
       }
       replaceMessageDB.messageId = event!.id;
+      replaceMessageDB.content = event.content;
       groupMessageUpdateCallBack?.call(replaceMessageDB, replaceMessageId);
       messageDB = replaceMessageDB;
     } else {

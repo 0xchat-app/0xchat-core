@@ -408,6 +408,7 @@ class Contacts {
         ));
       }
       replaceMessageDB.messageId = event.id;
+      replaceMessageDB.content = event.content;
       privateChatMessageUpdateCallBack?.call(replaceMessageDB, replaceMessageId);
       messageDB = replaceMessageDB;
     } else {

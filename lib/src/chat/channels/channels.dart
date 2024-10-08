@@ -527,6 +527,7 @@ class Channels {
         );
       }
       replaceMessageDB.messageId = event.id;
+      replaceMessageDB.content = event.content;
       channelMessageUpdateCallBack?.call(replaceMessageDB, replaceMessageId);
       messageDB = replaceMessageDB;
     } else {
