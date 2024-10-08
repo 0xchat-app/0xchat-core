@@ -81,7 +81,6 @@ class Contacts {
 
     Account.sharedInstance.contactListUpdateCallback = () async {
       await _syncContactsFromDB();
-      _subscriptMoment();
     };
     // subscript friend requests
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
@@ -102,7 +101,6 @@ class Contacts {
   }
 
   Future<void> _updateSubscriptions({String? relay}) async {
-    _subscriptMoment(relay: relay);
     subscriptSecretChat(relay: relay);
   }
 
@@ -169,8 +167,6 @@ class Contacts {
     _syncContactsToRelay(okCallBack: (OKEvent ok, String relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
-    _preloadKind4Messages(pubkeys, currentUnixTimestampSeconds());
-    _subscriptMoment();
     contactUpdatedCallBack?.call();
     return completer.future;
   }
@@ -183,7 +179,6 @@ class Contacts {
       _syncContactsToRelay(okCallBack: (OKEvent ok, String relay) {
         if (!completer.isCompleted) completer.complete(ok);
       });
-      _subscriptMoment();
       contactUpdatedCallBack?.call();
     }
     return completer.future;
@@ -271,24 +266,6 @@ class Contacts {
     }
   }
 
-  Future<void> _preloadKind4Messages(List<String> pubkeys, int until) async {
-    Filter f1 =
-        Filter(kinds: [4], authors: [pubkey], p: pubkeys, until: until, limit: pubkeys.length * 20);
-    Filter f2 =
-        Filter(kinds: [4], authors: pubkeys, p: [pubkey], until: until, limit: pubkeys.length * 20);
-    Connect.sharedInstance.addSubscription([f1, f2], eventCallBack: (event, relay) async {
-      if (event.kind == 4 || event.kind == 44) {
-        if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
-      }
-    }, eoseCallBack: (String requestId, OKEvent ok, String relay, List<String> unCompletedRelays) {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
-    });
-  }
-
-  Future<void> _subscriptMoment({String? relay}) async {
-    // await Moment.sharedInstance.updateSubscriptions(relay: relay);
-  }
-
   Future<void> _subscriptMessages({String? relay}) async {
     if (friendMessageSubscription.isNotEmpty) {
       await Connect.sharedInstance.closeRequests(friendMessageSubscription, relay: relay);
@@ -331,10 +308,10 @@ class Contacts {
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       } else if (event.kind == 1059) {
         Event? innerEvent = await decodeNip17Event(event);
-        // if (innerEvent != null || EventCache.sharedInstance.cacheIds.contains(innerEvent!.id))
-        //   return;
-        // EventCache.sharedInstance.receiveEvent(innerEvent, relay);
-        if (innerEvent != null && !inBlockList(innerEvent.pubkey)) {
+        if (innerEvent == null || EventCache.sharedInstance.cacheIds.contains(innerEvent.id))
+          return;
+        EventCache.sharedInstance.receiveEvent(innerEvent, relay);
+        if (!inBlockList(innerEvent.pubkey)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
             case 14:

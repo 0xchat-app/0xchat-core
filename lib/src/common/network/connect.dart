@@ -105,6 +105,11 @@ class Connect {
 
   Map<String, List<Future<bool>>> eventCheckerFutures = {};
 
+  Map<String, List<String>> subscriptionsWaitingQueue = {};
+  Map<String, List<String>> subscriptionsSendingQueue = {};
+
+  final int MAX_SUBSCRIPTIONS_COUNT = 10;
+
   void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
       timer = Timer.periodic(Duration(seconds: 5), (Timer t) {
@@ -277,6 +282,8 @@ class Connect {
     requestsMap.clear();
     auths.clear();
     eventCheckerFutures.clear();
+    subscriptionsWaitingQueue.clear();
+    subscriptionsSendingQueue.clear();
   }
 
   Future closeConnect(String relay) async {
@@ -316,7 +323,7 @@ class Connect {
     /// Create a subscription message request with one or many filters
     String requestsId = generate64RandomHexChars();
     for (String relay in filters.keys) {
-      Request requestWithFilter = Request(generate64RandomHexChars(), filters[relay]!);
+      Request requestWithFilter = Request(requestsId, filters[relay]!);
       String subscriptionString = requestWithFilter.serialize();
 
       /// add request to request map
@@ -332,20 +339,47 @@ class Connect {
       requestsMap[requestWithFilter.subscriptionId + relay] = requests;
 
       /// Send a request message to the WebSocket server
-      _send(subscriptionString, toRelays: [relay]);
+      _addSubscriptionToQueue(requestsId, relay);
 
       LogUtils.v(() => '$subscriptionString, $relay');
     }
     return requestsId;
   }
 
+  void _addSubscriptionToQueue(String subscriptionId, String relay) {
+    var waitingQueue = subscriptionsWaitingQueue[relay] ?? [];
+    waitingQueue.add(subscriptionId);
+    subscriptionsWaitingQueue[relay] = waitingQueue;
+    _sendSubscription(relay);
+  }
+
+  void _sendSubscription(String relay) {
+    var sendingQueue = subscriptionsSendingQueue[relay] ?? [];
+    var waitingQueue = subscriptionsWaitingQueue[relay] ?? [];
+
+    if (sendingQueue.length < MAX_SUBSCRIPTIONS_COUNT && waitingQueue.isNotEmpty) {
+      String subscriptionId = waitingQueue.removeLast();
+      sendingQueue.add(subscriptionId);
+      subscriptionsSendingQueue[relay] = sendingQueue;
+      var request = requestsMap[subscriptionId + relay];
+      if (request != null) _send(request.subscriptionString, toRelays: [relay]);
+    } else {
+      LogUtils.v(() =>
+          'sendingQueue: ${sendingQueue.length}, waitingQueue: ${waitingQueue.length}, $relay');
+    }
+  }
+
   Future closeSubscription(String subscriptionId, String relay) async {
     LogUtils.v(() => Close(subscriptionId).serialize());
     if (subscriptionId.isNotEmpty) {
       _send(Close(subscriptionId).serialize(), toRelays: [relay]);
-
-      /// remove the mapping
+      // remove the mapping
       requestsMap.remove(subscriptionId + relay);
+      // remove the sending queue
+      var sendingQueue = subscriptionsSendingQueue[relay] ?? [];
+      sendingQueue.remove(subscriptionId);
+      subscriptionsSendingQueue[relay] = sendingQueue;
+      _sendSubscription(relay);
     }
   }
 
