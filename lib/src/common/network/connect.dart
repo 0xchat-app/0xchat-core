@@ -106,7 +106,6 @@ class Connect {
   Map<String, List<Future<bool>>> eventCheckerFutures = {};
 
   Map<String, List<String>> subscriptionsWaitingQueue = {};
-  Map<String, List<String>> subscriptionsSendingQueue = {};
 
   final int MAX_SUBSCRIPTIONS_COUNT = 10;
 
@@ -153,30 +152,25 @@ class Connect {
     for (var eventId in okMapKeys) {
       var start = sendsMap[eventId]!.sendsTime;
       if (now - start > timeout * 1000) {
-        // timeout
+        // ok timeout
         OKEvent ok = OKEvent(eventId, false, 'Time Out');
-        if (sendsMap[eventId]!.okCallBack != null) {
-          for (var relay in sendsMap[eventId]!.relays) {
-            sendsMap[eventId]!.okCallBack!(ok, relay);
-          }
-          sendsMap.remove(eventId);
+        Iterable<String> relays = List<String>.from(sendsMap[eventId]!.relays);
+        for (var relay in relays) {
+          _handleOk(ok, relay);
         }
       }
     }
     Iterable<String> requestMapKeys = List<String>.from(requestsMap.keys);
     for (var subscriptionId in requestMapKeys) {
-      EOSECallBack? callBack = requestsMap[subscriptionId]!.eoseCallBack;
-      if (requestsMap[subscriptionId] != null && callBack != null) {
+      if (requestsMap[subscriptionId] != null) {
         var start = requestsMap[subscriptionId]!.requestTime;
         if (start > 0 && now - start > timeout * 1000 * 2) {
-          // timeout
-          OKEvent ok = OKEvent(subscriptionId, false, 'Time Out');
+          // request timeout
           Iterable<String> relays = List<String>.from(requestsMap[subscriptionId]!.relays);
           for (var relay in relays) {
-            if (subscriptionId.endsWith(relay)) {
-              callBack(requestsMap[subscriptionId]!.subscriptions[relay] ?? '', ok, relay, []);
-              requestsMap[subscriptionId]?.relays.remove(relay);
-            }
+            if (requestsMap[subscriptionId] != null)
+              _handleEOSE(jsonEncode([requestsMap[subscriptionId]!.requestId]), relay,
+                  error: true);
           }
         }
       }
@@ -283,7 +277,6 @@ class Connect {
     auths.clear();
     eventCheckerFutures.clear();
     subscriptionsWaitingQueue.clear();
-    subscriptionsSendingQueue.clear();
   }
 
   Future closeConnect(String relay) async {
@@ -348,37 +341,38 @@ class Connect {
 
   void _addSubscriptionToQueue(String subscriptionId, String relay) {
     var waitingQueue = subscriptionsWaitingQueue[relay] ?? [];
-    waitingQueue.add(subscriptionId);
-    subscriptionsWaitingQueue[relay] = waitingQueue;
+    if (!waitingQueue.contains(subscriptionId)) {
+      waitingQueue.add(subscriptionId);
+      subscriptionsWaitingQueue[relay] = waitingQueue;
+    }
     _sendSubscription(relay);
   }
 
   void _sendSubscription(String relay) {
-    var sendingQueue = subscriptionsSendingQueue[relay] ?? [];
+    var sendingQueue = 0;
+    for (var key in requestsMap.keys) {
+      if (key.contains(relay) && requestsMap[key]!.relays.contains(relay)){
+        ++sendingQueue;
+      }
+    }
     var waitingQueue = subscriptionsWaitingQueue[relay] ?? [];
 
-    if (sendingQueue.length < MAX_SUBSCRIPTIONS_COUNT && waitingQueue.isNotEmpty) {
+    if (sendingQueue < MAX_SUBSCRIPTIONS_COUNT && waitingQueue.isNotEmpty) {
       String subscriptionId = waitingQueue.removeLast();
-      sendingQueue.add(subscriptionId);
-      subscriptionsSendingQueue[relay] = sendingQueue;
       var request = requestsMap[subscriptionId + relay];
       if (request != null) _send(request.subscriptionString, toRelays: [relay]);
     } else {
-      LogUtils.v(() =>
-          'sendingQueue: ${sendingQueue.length}, waitingQueue: ${waitingQueue.length}, $relay');
+      LogUtils.v(
+          () => 'sendingQueue: ${sendingQueue}, waitingQueue: ${waitingQueue.length}, $relay');
     }
   }
 
   Future closeSubscription(String subscriptionId, String relay) async {
-    LogUtils.v(() => Close(subscriptionId).serialize());
+    LogUtils.v(() => 'send ${Close(subscriptionId).serialize()}, $relay');
     if (subscriptionId.isNotEmpty) {
       _send(Close(subscriptionId).serialize(), toRelays: [relay]);
       // remove the mapping
       requestsMap.remove(subscriptionId + relay);
-      // remove the sending queue
-      var sendingQueue = subscriptionsSendingQueue[relay] ?? [];
-      sendingQueue.remove(subscriptionId);
-      subscriptionsSendingQueue[relay] = sendingQueue;
       _sendSubscription(relay);
     }
   }
@@ -516,8 +510,8 @@ class Connect {
     }
   }
 
-  Future<void> _handleEOSE(String eose, String relay) async {
-    LogUtils.v(() => 'receive EOSE: $eose, $relay');
+  Future<void> _handleEOSE(String eose, String relay, {bool error = false}) async {
+    LogUtils.v(() => 'receive EOSE: $eose, $relay, timeout: $error');
     String subscriptionId = jsonDecode(eose)[0];
     String requestsMapKey = subscriptionId + relay;
     if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
@@ -525,14 +519,7 @@ class Connect {
         await Future.wait(eventCheckerFutures[subscriptionId]!);
         eventCheckerFutures.remove(subscriptionId);
       }
-      _removeRequestsMapRelay(subscriptionId, relay);
-      var relays = requestsMap[requestsMapKey]?.relays;
-      if (relays != null) {
-        // all relays have EOSE
-        EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
-        OKEvent ok = OKEvent(subscriptionId, true, '');
-        if (callBack != null) callBack(subscriptionId, ok, relay, relays);
-      }
+      _removeRequestsMapRelay(subscriptionId, relay, error);
     }
   }
 
@@ -550,12 +537,7 @@ class Connect {
         _sendAuth(relay);
         return;
       }
-      _removeRequestsMapRelay(subscriptionId, relay);
-      var relays = requestsMap[requestsMapKey]!.relays;
-      // all relays have EOSE
-      EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
-      OKEvent ok = OKEvent(subscriptionId, false, closed.message);
-      if (callBack != null) callBack(subscriptionId, ok, relay, relays);
+      _removeRequestsMapRelay(subscriptionId, relay, true);
     }
   }
 
@@ -566,13 +548,7 @@ class Connect {
     List<String> requestsMapKeys =
         requestsMap.keys.where((element) => element.contains(relay)).toList();
     for (var requestsMapKey in requestsMapKeys) {
-      _removeRequestsMapRelay(requestsMapKey.replaceAll(relay, ''), relay);
-      var relays = requestsMap[requestsMapKey]!.relays;
-      // all relays have EOSE
-      String subscriptionId = requestsMapKey.replaceAll(relay, '');
-      EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
-      OKEvent ok = OKEvent(subscriptionId, false, n);
-      if (callBack != null) callBack(subscriptionId, ok, relay, relays);
+      _removeRequestsMapRelay(requestsMapKey.replaceAll(relay, ''), relay, true);
     }
 
     noticeCallBack?.call(n, relay);
@@ -612,17 +588,13 @@ class Connect {
           List<String> requestsMapKeys =
               requestsMap.keys.where((element) => element.contains(relay)).toList();
           for (var requestsMapKey in requestsMapKeys) {
-            _removeRequestsMapRelay(requestsMapKey.replaceAll(relay, ''), relay);
-            var relays = requestsMap[requestsMapKey]!.relays;
-            // all relays have EOSE
-            String subscriptionId = requestsMapKey.replaceAll(relay, '');
-            EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
-            if (callBack != null) {
-              OKEvent okEvent = OKEvent(subscriptionId, false, ok.message);
-              callBack(subscriptionId, okEvent, relay, relays);
-            }
+            _removeRequestsMapRelay(requestsMapKey.replaceAll(relay, ''), relay, true);
           }
         }
+      } else {
+        var relays = sendsMap[ok.eventId]!.relays;
+        relays.remove(relay);
+        if (relays.isEmpty) sendsMap.remove(ok.eventId);
       }
     }
   }
@@ -637,7 +609,7 @@ class Connect {
     }
   }
 
-  void _removeRequestsMapRelay(String subscriptionId, String removeRelay) {
+  void _removeRequestsMapRelay(String subscriptionId, String removeRelay, bool error) {
     var requestsMapKey = subscriptionId + removeRelay;
     var request = requestsMap[requestsMapKey];
     if (request == null) return;
@@ -645,6 +617,14 @@ class Connect {
       if (r.requestId == request.requestId) {
         r.relays.remove(removeRelay);
       }
+    }
+    // all relays have EOSE
+    EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
+    OKEvent ok = OKEvent(subscriptionId, !error, '');
+    if (callBack != null) callBack(subscriptionId, ok, removeRelay, request.relays);
+    if (error) {
+      requestsMap.remove(requestsMapKey);
+      _sendSubscription(removeRelay);
     }
   }
 
