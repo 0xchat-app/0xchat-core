@@ -161,7 +161,9 @@ class Connect {
     Iterable<String> requestMapKeys = List<String>.from(requestsMap.keys);
     for (var requestMapKey in requestMapKeys) {
       var request = requestsMap[requestMapKey];
-      if (request != null && request.closeSubscription) {
+      if (request != null) {
+        // call closeSubscription type eoseCallBack only once
+        if (request.closeSubscription == false && request.eoseCallBack == null) continue;
         var start = request.requestTime;
         if (start > 0 && now - start > timeout * 1000) {
           // request timeout
@@ -514,7 +516,7 @@ class Connect {
   }
 
   Future<void> _handleEOSE(String eose, String relay, bool timeout) async {
-    LogUtils.v(() => 'receive EOSE: $eose, $relay');
+    LogUtils.v(() => 'receive EOSE: $eose, $relay, timeout: $timeout');
     String subscriptionId = jsonDecode(eose)[0];
     String requestsMapKey = subscriptionId + relay;
     if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
@@ -627,6 +629,7 @@ class Connect {
     EOSECallBack? callBack = request.eoseCallBack;
     OKEvent ok = OKEvent(subscriptionId, !error, '');
     if (callBack != null) callBack(subscriptionId, ok, removeRelay, request.relays);
+    requestsMap[requestsMapKey]?.eoseCallBack = null;
     if (request.closeSubscription) _closeSubscription(subscriptionId, removeRelay);
   }
 
