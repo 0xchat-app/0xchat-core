@@ -169,8 +169,7 @@ class Connect {
           Iterable<String> relays = List<String>.from(requestsMap[subscriptionId]!.relays);
           for (var relay in relays) {
             if (requestsMap[subscriptionId] != null)
-              _handleEOSE(jsonEncode([requestsMap[subscriptionId]!.requestId]), relay,
-                  error: true);
+              _handleEOSE(jsonEncode([requestsMap[subscriptionId]!.requestId]), relay, error: true);
           }
         }
       }
@@ -351,14 +350,14 @@ class Connect {
   void _sendSubscription(String relay) {
     var sendingQueue = 0;
     for (var key in requestsMap.keys) {
-      if (key.contains(relay) && requestsMap[key]!.relays.contains(relay)){
+      if (key.contains(relay) && requestsMap[key]!.relays.contains(relay)) {
         ++sendingQueue;
       }
     }
     var waitingQueue = subscriptionsWaitingQueue[relay] ?? [];
 
     if (sendingQueue < MAX_SUBSCRIPTIONS_COUNT && waitingQueue.isNotEmpty) {
-      String subscriptionId = waitingQueue.removeLast();
+      String subscriptionId = waitingQueue.removeAt(0);
       var request = requestsMap[subscriptionId + relay];
       if (request != null) _send(request.subscriptionString, toRelays: [relay]);
     } else {
@@ -500,7 +499,7 @@ class Connect {
       return;
     }
     // ignore the expired event
-    if (Nip40.expired(event)){
+    if (Nip40.expired(event)) {
       EventCache.sharedInstance.receiveEvent(event, relay);
       return;
     }
