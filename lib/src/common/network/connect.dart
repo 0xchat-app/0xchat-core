@@ -481,6 +481,7 @@ class Connect {
       if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
         EventCallBack? callBack = requestsMap[requestsMapKey]!.eventCallBack;
         if (callBack != null) {
+          EventCache.sharedInstance.receiveEvent(event, relay);
           // check sign
           if (await event.isValid() == false) {
             return false;
@@ -496,12 +497,13 @@ class Connect {
   Future<void> _handleEvent(Event event, String relay) async {
     LogUtils.v(() => 'Received event, subscriptionId: ${event.subscriptionId}, ${event.toJson()}');
     if (EventCache.sharedInstance.cacheIds.contains(event.id)) {
+      return;
+    }
+    // ignore the expired event
+    if (Nip40.expired(event)){
       EventCache.sharedInstance.receiveEvent(event, relay);
       return;
     }
-    EventCache.sharedInstance.receiveEvent(event, relay);
-    // ignore the expired event
-    if (Nip40.expired(event)) return;
 
     Future<bool> future = _checkValidEvent(event, relay);
     if (event.subscriptionId != null && event.subscriptionId!.isNotEmpty) {
