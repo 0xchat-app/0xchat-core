@@ -173,10 +173,6 @@ extension EMessage on RelayGroup {
     Connect.sharedInstance.addSubscription([f], relays: [groupDB.relay],
         eventCallBack: (event, relay) async {
       handleGroupEvents(event, relay);
-    }, eoseCallBack: (String requestId, OKEvent ok, String relay, List<String> unCompletedRelays) {
-      if (unCompletedRelays.isEmpty) {
-        Connect.sharedInstance.closeRequests(requestId);
-      }
     });
   }
 }

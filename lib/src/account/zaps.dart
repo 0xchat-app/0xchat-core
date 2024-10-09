@@ -111,7 +111,7 @@ class Zaps {
       subscriptions[relay] = [f1, f2];
     }
 
-    zapsSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
+    zapsSubscription = Connect.sharedInstance.addSubscriptions(subscriptions, closeSubscription: false,
         eventCallBack: (event, relay) async {
       updateZapRecordTime(event.createdAt, relay);
       Zaps.handleZapRecordEvent(event);
@@ -331,7 +331,6 @@ class Zaps {
         eventCallBack: (event, relay) async {
       zapReceiptList.add(event);
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (zapReceiptList.isNotEmpty) {
         List<ZapRecordsDBISAR> result = [];
         for (var event in zapReceiptList) {

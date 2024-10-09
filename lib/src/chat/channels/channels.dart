@@ -36,10 +36,6 @@ class Channels {
   Map<String, bool> offlineChannelMessageFinish = {};
 
   Future<void> init({ChannelsUpdatedCallBack? callBack}) async {
-    if (channelMessageSubscription.isNotEmpty) {
-      Connect.sharedInstance.closeRequests(channelMessageSubscription);
-    }
-
     privkey = Account.sharedInstance.currentPrivkey;
     pubkey = Account.sharedInstance.currentPubkey;
     myChannelsUpdatedCallBack = callBack;
@@ -112,7 +108,7 @@ class Channels {
     }
 
     channelMessageSubscription = Connect.sharedInstance
-        .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
+        .addSubscriptions(subscriptions, closeSubscription: false, eventCallBack: (event, relay) async {
       switch (event.kind) {
         case 42:
           _receiveChannelMessages(event, relay);
@@ -260,7 +256,6 @@ class Channels {
         _syncChannelToDB(channelDB);
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty && !completer.isCompleted) {
         completer.complete();
         Connect.sharedInstance.closeTempConnects(relays ?? []);
@@ -287,7 +282,6 @@ class Channels {
         _syncChannelToDB(channelDB);
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty && !completer.isCompleted) {
         completer.complete();
         Connect.sharedInstance.closeTempConnects(relays ?? []);
@@ -342,11 +336,6 @@ class Channels {
         default:
           LogUtils.v(() => 'unhandled message $event');
           break;
-      }
-    }, eoseCallBack: (String requestId, OKEvent ok, String relay,
-            List<String> unCompletedRelays) {
-      if (unCompletedRelays.isEmpty) {
-        Connect.sharedInstance.closeRequests(requestId);
       }
     });
   }
@@ -417,7 +406,6 @@ class Channels {
       _syncChannelToDB(channelDB);
       if (!completer.isCompleted) completer.complete(channelDB);
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty && !completer.isCompleted) completer.complete(null);
     });
     return completer.future;
@@ -661,7 +649,6 @@ class Channels {
         searchCallBack?.call([channelDB]);
       }
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         if (!completer.isCompleted) completer.complete(result.values.toList());
         await Future.forEach(result.values, (channel) async {

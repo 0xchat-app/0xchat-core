@@ -43,7 +43,6 @@ extension AccountProfile on Account {
             eventCallBack: (event, relay) async {
       events.add(event);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         for (var event in events) {
           switch (event.kind) {
@@ -108,7 +107,6 @@ extension AccountProfile on Account {
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         userCache[pubkey] = ValueNotifier<UserDBISAR>(db!);
         if (pubkey == currentPubkey) me = db;
@@ -167,7 +165,6 @@ extension AccountProfile on Account {
       pQueue.remove(p);
       Account.saveUserToDB(users[p]!);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         pQueue.removeWhere((key) => users.keys.contains(key));
         if (!completer.isCompleted) completer.complete();

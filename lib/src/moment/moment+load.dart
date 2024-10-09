@@ -186,7 +186,6 @@ extension Load on Moment {
       if (!completer.isCompleted) completer.complete(noteDB);
       if (noteDB != null) saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         if (!completer.isCompleted) {
           NoteDBISAR? note = await loadNoteWithNoteId(noteId, reload: false);
@@ -299,7 +298,6 @@ extension Load on Moment {
         noteCallBack?.call(noteDB!);
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (ok.status) {
         NoteDBISAR? noteDB = notesCache[noteId];
         noteDB?.lastUpdatedTime[relay] = currentUnixTimestampSeconds();
@@ -444,7 +442,6 @@ extension Load on Moment {
         eventCallBack: (event, relay) async {
       result[event.id] = event;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         List<NoteDBISAR> r = [];
         List<Event> values = List.from(result.values);
@@ -479,7 +476,6 @@ extension Load on Moment {
         eventCallBack: (event, relay) async {
       result[event.id] = event;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         for (Event event in result.values) {
           NoteDBISAR? noteDB;

@@ -54,7 +54,6 @@ extension EInfo on RelayGroup {
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty && !completer.isCompleted) {
         if (groupDB != null) await syncGroupToDB(groupDB);
         Connect.sharedInstance.closeConnects(tempRelays, RelayKind.temp);
@@ -162,7 +161,6 @@ extension EInfo on RelayGroup {
       RelayGroupDBISAR groupDB = handleGroupMembers(event, relay);
       completer.complete(groupDB);
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unCompletedRelays.isEmpty && !completer.isCompleted) {
         completer.complete(group);
       }
@@ -194,7 +192,6 @@ extension EInfo on RelayGroup {
         result[groupDB.groupId] = groupDB;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       // for (var groupDB in List.from(result.values.toList())) {
       //   groupDB = await searchGroupMembersFromRelays(groupDB);
       //   result[groupDB.groupId] = groupDB;
@@ -227,7 +224,6 @@ extension EInfo on RelayGroup {
         completer.complete(groupDB);
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       Connect.sharedInstance.closeConnects([relay], RelayKind.temp);
       if (!completer.isCompleted) {
         completer.complete(RelayGroupDBISAR(groupId: groupId, relay: relay));

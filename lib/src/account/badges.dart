@@ -137,7 +137,6 @@ class BadgesHelper {
         }
       }
     }, eoseCallBack: (requestId, status, relay, unRelays) {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         if (!completer.isCompleted) completer.complete(badges);
       }
@@ -173,7 +172,6 @@ class BadgesHelper {
         eventCallBack: (event, relay) async {
       badge = Nip58.getBadgeDefinition(event);
     }, eoseCallBack: (requestId, status, relay, unRelays) {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty && badge != null) {
         BadgeDBISAR badgeDB = _badgeToBadgeDB(badge!);
         saveBadgeToDB(badgeDB);
@@ -267,7 +265,6 @@ class BadgesHelper {
             }
           }
     }, eoseCallBack: (requestId, status, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         // cache to DB
         await syncUserBadgesToDB(
@@ -426,7 +423,6 @@ class BadgesHelper {
         }
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         if (!completer.isCompleted) completer.complete(result);
       }

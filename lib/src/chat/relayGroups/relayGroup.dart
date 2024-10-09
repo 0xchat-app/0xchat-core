@@ -239,7 +239,7 @@ class RelayGroup {
     }
 
     groupMessageSubscription = Connect.sharedInstance
-        .addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
+        .addSubscriptions(subscriptions, closeSubscription: false, eventCallBack: (event, relay) async {
       _updateGroupMessageTime(event.createdAt, relay);
       handleGroupEvents(event, relay);
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {

@@ -301,8 +301,8 @@ class Contacts {
           Filter(kinds: [4], authors: [pubkey], since: (friendMessageUntil + 1), limit: maxLimit);
       subscriptions[relay] = [f1, f2];
     }
-    friendMessageSubscription =
-        Connect.sharedInstance.addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
+    friendMessageSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
+        closeSubscription: false, eventCallBack: (event, relay) async {
       if (event.kind == 4) {
         updateFriendMessageTime(event.createdAt, relay);
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);

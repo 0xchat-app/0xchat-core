@@ -128,10 +128,6 @@ class Config {
           LogUtils.v(() => 'config unhandled message ${event.toJson()}');
           break;
       }
-    }, eoseCallBack: (String requestId, OKEvent ok, String relay, List<String> unCompletedRelays) {
-      if (unCompletedRelays.isEmpty) {
-        Connect.sharedInstance.closeRequests(requestId);
-      }
     });
   }
 

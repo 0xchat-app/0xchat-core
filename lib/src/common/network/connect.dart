@@ -40,9 +40,10 @@ class Requests {
   EventCallBack? eventCallBack;
   EOSECallBack? eoseCallBack;
   String subscriptionString;
+  bool closeSubscription;
 
   Requests(this.requestId, this.relays, this.requestTime, this.subscriptions, this.eventCallBack,
-      this.eoseCallBack, this.subscriptionString);
+      this.eoseCallBack, this.subscriptionString, this.closeSubscription);
 }
 
 class AuthData {
@@ -161,16 +162,14 @@ class Connect {
       }
     }
     Iterable<String> requestMapKeys = List<String>.from(requestsMap.keys);
-    for (var subscriptionId in requestMapKeys) {
-      if (requestsMap[subscriptionId] != null) {
-        var start = requestsMap[subscriptionId]!.requestTime;
+    for (var requestMapKey in requestMapKeys) {
+      if (requestsMap[requestMapKey] != null) {
+        var start = requestsMap[requestMapKey]!.requestTime;
         if (start > 0 && now - start > timeout * 1000 * 2) {
           // request timeout
-          Iterable<String> relays = List<String>.from(requestsMap[subscriptionId]!.relays);
-          for (var relay in relays) {
-            if (requestsMap[subscriptionId] != null)
-              _handleEOSE(jsonEncode([requestsMap[subscriptionId]!.requestId]), relay, error: true);
-          }
+          String relay = requestMapKey.substring(64);
+          print('_checkTimeout: _handleEOSE');
+          _handleEOSE(jsonEncode([requestsMap[requestMapKey]!.requestId]), relay, true);
         }
       }
     }
@@ -289,7 +288,8 @@ class Connect {
       {EventCallBack? eventCallBack,
       EOSECallBack? eoseCallBack,
       List<String>? relays,
-      RelayKind relayKind = RelayKind.general}) {
+      RelayKind relayKind = RelayKind.general,
+      bool closeSubscription = true}) {
     Map<String, List<Filter>> result = {};
     List<String> rs = [];
     if (relays != null) {
@@ -307,11 +307,14 @@ class Connect {
     for (var relay in subscriptionRelays) {
       result[relay] = filters;
     }
-    return addSubscriptions(result, eventCallBack: eventCallBack, eoseCallBack: eoseCallBack);
+    return addSubscriptions(result,
+        eventCallBack: eventCallBack,
+        eoseCallBack: eoseCallBack,
+        closeSubscription: closeSubscription);
   }
 
   String addSubscriptions(Map<String, List<Filter>> filters,
-      {EventCallBack? eventCallBack, EOSECallBack? eoseCallBack}) {
+      {EventCallBack? eventCallBack, EOSECallBack? eoseCallBack, bool closeSubscription = true}) {
     /// Create a subscription message request with one or many filters
     String requestsId = generate64RandomHexChars();
     for (String relay in filters.keys) {
@@ -326,7 +329,8 @@ class Connect {
           {},
           eventCallBack,
           eoseCallBack,
-          subscriptionString);
+          subscriptionString,
+          closeSubscription);
       requests.subscriptions[relay] = requestWithFilter.subscriptionId;
       requestsMap[requestWithFilter.subscriptionId + relay] = requests;
 
@@ -366,7 +370,7 @@ class Connect {
     }
   }
 
-  Future closeSubscription(String subscriptionId, String relay) async {
+  Future _closeSubscription(String subscriptionId, String relay) async {
     LogUtils.v(() => 'send ${Close(subscriptionId).serialize()}, $relay');
     if (subscriptionId.isNotEmpty) {
       _send(Close(subscriptionId).serialize(), toRelays: [relay]);
@@ -383,12 +387,12 @@ class Connect {
       if (requests!.requestId == requestId) {
         if (relay != null) {
           if (requests.subscriptions[relay] != null) {
-            await closeSubscription(requests.subscriptions[relay]!, relay);
+            await _closeSubscription(requests.subscriptions[relay]!, relay);
           }
         } else {
           for (var relay in relays()) {
             if (requests.subscriptions[relay] != null) {
-              await closeSubscription(requests.subscriptions[relay]!, relay);
+              await _closeSubscription(requests.subscriptions[relay]!, relay);
             }
           }
         }
@@ -452,7 +456,7 @@ class Connect {
         _handleEvent(m.message, relay);
         break;
       case "EOSE":
-        _handleEOSE(m.message, relay);
+        _handleEOSE(m.message, relay, false);
         break;
       case "CLOSED":
         _handleCLOSED(m.message, relay);
@@ -506,21 +510,22 @@ class Connect {
 
     Future<bool> future = _checkValidEvent(event, relay);
     if (event.subscriptionId != null && event.subscriptionId!.isNotEmpty) {
-      eventCheckerFutures[event.subscriptionId!] ??= [];
-      eventCheckerFutures[event.subscriptionId!]?.add(future);
+      eventCheckerFutures[event.subscriptionId! + relay] ??= [];
+      eventCheckerFutures[event.subscriptionId! + relay]?.add(future);
     }
   }
 
-  Future<void> _handleEOSE(String eose, String relay, {bool error = false}) async {
-    LogUtils.v(() => 'receive EOSE: $eose, $relay, timeout: $error');
+  Future<void> _handleEOSE(String eose, String relay, bool timeout) async {
+    LogUtils.v(() => 'receive EOSE: $eose, $relay');
     String subscriptionId = jsonDecode(eose)[0];
     String requestsMapKey = subscriptionId + relay;
+    print('_handleEOSE: ${requestsMap[requestsMapKey]}');
     if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
-      if (eventCheckerFutures.containsKey(subscriptionId)) {
-        await Future.wait(eventCheckerFutures[subscriptionId]!);
-        eventCheckerFutures.remove(subscriptionId);
+      if (eventCheckerFutures.containsKey(requestsMapKey)) {
+        await Future.wait(eventCheckerFutures[requestsMapKey]!);
+        eventCheckerFutures.remove(requestsMapKey);
       }
-      _removeRequestsMapRelay(subscriptionId, relay, error);
+      _removeRequestsMapRelay(subscriptionId, relay, timeout);
     }
   }
 
@@ -614,19 +619,18 @@ class Connect {
     var requestsMapKey = subscriptionId + removeRelay;
     var request = requestsMap[requestsMapKey];
     if (request == null) return;
+    request.relays.remove(removeRelay);
+    // remove others relay
     for (var r in requestsMap.values) {
       if (r.requestId == request.requestId) {
         r.relays.remove(removeRelay);
       }
     }
     // all relays have EOSE
-    EOSECallBack? callBack = requestsMap[requestsMapKey]!.eoseCallBack;
+    EOSECallBack? callBack = request.eoseCallBack;
     OKEvent ok = OKEvent(subscriptionId, !error, '');
     if (callBack != null) callBack(subscriptionId, ok, removeRelay, request.relays);
-    if (error) {
-      requestsMap.remove(requestsMapKey);
-      _sendSubscription(removeRelay);
-    }
+    if (request.closeSubscription) _closeSubscription(subscriptionId, removeRelay);
   }
 
   Future<void> _sendAuth(String relay) async {

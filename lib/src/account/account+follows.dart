@@ -41,7 +41,6 @@ extension AccountFollows on Account {
         lastTimeStamp = event.createdAt;
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      Connect.sharedInstance.closeSubscription(requestId, relay);
       if (unRelays.isEmpty) {
         UserDBISAR? user =
             (pubkey == currentPubkey) ? me : await getUserInfo(pubkey);

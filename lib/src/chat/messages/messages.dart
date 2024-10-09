@@ -156,9 +156,7 @@ class Messages {
           LogUtils.v(() => 'unhandled message $event');
           break;
       }
-    },
-        eoseCallBack:
-            (String requestId, OKEvent ok, String relay, List<String> unCompletedRelays) {});
+    });
   }
 
   Future<MessageDBISAR?> loadMessageDBFromDB(String messageId) async {

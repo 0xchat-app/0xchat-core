@@ -519,7 +519,7 @@ extension SecretChat on Contacts {
       subscriptions[relay] = [f];
     }
     secretSessionSubscription =
-        Connect.sharedInstance.addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
+        Connect.sharedInstance.addSubscriptions(subscriptions, closeSubscription: false, eventCallBack: (event, relay) async {
       SecretSessionDBISAR? session = _getSessionFromPubkey(event.pubkey);
       if (session != null) {
         Event? innerEvent =
