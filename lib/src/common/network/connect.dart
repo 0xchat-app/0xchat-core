@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
 import 'package:chatcore/chat-core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
@@ -84,8 +83,8 @@ class Connect {
   factory Connect() => sharedInstance;
   static final Connect sharedInstance = Connect._internal();
 
-  // 15 seconds time out
-  static final int timeout = 15;
+  static final int timeout = 10;
+  static final int MAX_SUBSCRIPTIONS_COUNT = 10;
 
   NoticeCallBack? noticeCallBack;
   StreamSubscription? _connectivitySubscription;
@@ -107,8 +106,6 @@ class Connect {
   Map<String, List<Future<bool>>> eventCheckerFutures = {};
 
   Map<String, List<String>> subscriptionsWaitingQueue = {};
-
-  final int MAX_SUBSCRIPTIONS_COUNT = 10;
 
   void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
@@ -163,13 +160,13 @@ class Connect {
     }
     Iterable<String> requestMapKeys = List<String>.from(requestsMap.keys);
     for (var requestMapKey in requestMapKeys) {
-      if (requestsMap[requestMapKey] != null) {
-        var start = requestsMap[requestMapKey]!.requestTime;
-        if (start > 0 && now - start > timeout * 1000 * 2) {
+      var request = requestsMap[requestMapKey];
+      if (request != null && request.closeSubscription) {
+        var start = request.requestTime;
+        if (start > 0 && now - start > timeout * 1000) {
           // request timeout
           String relay = requestMapKey.substring(64);
-          print('_checkTimeout: _handleEOSE');
-          _handleEOSE(jsonEncode([requestsMap[requestMapKey]!.requestId]), relay, true);
+          _handleEOSE(jsonEncode([request.requestId]), relay, true);
         }
       }
     }
@@ -480,8 +477,9 @@ class Connect {
     String? subscriptionId = event.subscriptionId;
     if (subscriptionId != null) {
       String requestsMapKey = subscriptionId + relay;
-
       if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
+        // reset requestTime
+        requestsMap[requestsMapKey]!.requestTime = DateTime.now().millisecondsSinceEpoch;
         EventCallBack? callBack = requestsMap[requestsMapKey]!.eventCallBack;
         if (callBack != null) {
           EventCache.sharedInstance.receiveEvent(event, relay);
@@ -519,7 +517,6 @@ class Connect {
     LogUtils.v(() => 'receive EOSE: $eose, $relay');
     String subscriptionId = jsonDecode(eose)[0];
     String requestsMapKey = subscriptionId + relay;
-    print('_handleEOSE: ${requestsMap[requestsMapKey]}');
     if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
       if (eventCheckerFutures.containsKey(requestsMapKey)) {
         await Future.wait(eventCheckerFutures[requestsMapKey]!);
