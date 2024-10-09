@@ -370,8 +370,14 @@ class Messages {
     }
   }
 
-  static List<MessageDBISAR> loadMessagesFromCache(
-      {String? receiver, String? groupId, String? sessionId, int? until, String? messageId}) {
+  static List<MessageDBISAR> loadMessagesFromCache({
+    String? receiver,
+    String? groupId,
+    String? sessionId,
+    List<MessageType> messageTypes = const [],
+    int? until,
+    String? messageId,
+  }) {
     final Map<Type, List<dynamic>> buffers = DBISAR.sharedInstance.getBuffers();
     List<MessageDBISAR> result = [];
     for (MessageDBISAR message in buffers[MessageDBISAR]?.toList() ?? []) {
@@ -391,6 +397,9 @@ class Messages {
       if (query && sessionId != null) {
         query = message.sessionId == sessionId;
       }
+      if (query && messageTypes.isNotEmpty) {
+        query = messageTypes.any((messageType) => message.type == MessageDBISAR.messageTypeToString(messageType));
+      }
       if (query && until != null) {
         query = message.createTime < until;
       }
@@ -399,13 +408,15 @@ class Messages {
     return result;
   }
 
-  static Future<Map> loadMessagesFromDB(
-      {String? receiver,
-      String? groupId,
-      String? sessionId,
-      int? until,
-      int? since,
-      int? limit}) async {
+  static Future<Map> loadMessagesFromDB({
+    String? receiver,
+    String? groupId,
+    String? sessionId,
+    List<MessageType> messageTypes = const [],
+    int? until,
+    int? since,
+    int? limit,
+  }) async {
     assert(until == null || since == null, 'unsupported filter');
 
     final isar = DBISAR.sharedInstance.isar;
@@ -433,27 +444,39 @@ class Messages {
         ? queryBuilder.and().groupIdEqualTo(groupId)
         : queryBuilder.and().groupIdIsEmpty();
 
-    var queryBuilderAfteSort = queryBuilder.sortByCreateTimeDesc();
+    if (messageTypes.isNotEmpty) {
+      queryBuilder = queryBuilder.anyOf(messageTypes, (q, messageType) {
+        final messageTypeStr = MessageDBISAR.messageTypeToString(messageType);
+        return q.typeEqualTo(messageTypeStr);
+      });
+    }
+
+    var queryBuilderAfterSort = queryBuilder.sortByCreateTimeDesc();
     if (until != null) {
-      queryBuilderAfteSort = queryBuilder
+      queryBuilderAfterSort = queryBuilder
           .and()
           .createTimeLessThan(until, include: true)
           .sortByCreateTimeDesc();
     }
     if (since != null) {
-      queryBuilderAfteSort = queryBuilder
+      queryBuilderAfterSort = queryBuilder
           .and()
           .createTimeGreaterThan(since, include: true)
           .sortByCreateTime();
     }
 
     final messages = limit == null
-        ? await queryBuilderAfteSort.findAll()
-        : await queryBuilderAfteSort.limit(limit).findAll();
+        ? await queryBuilderAfterSort.findAll()
+        : await queryBuilderAfterSort.limit(limit).findAll();
 
     int theLastTime = 0;
     List<MessageDBISAR> result = loadMessagesFromCache(
-        receiver: receiver, groupId: groupId, sessionId: sessionId, until: until);
+      receiver: receiver,
+      groupId: groupId,
+      sessionId: sessionId,
+      messageTypes: messageTypes,
+      until: until,
+    );
     for (var message in messages) {
       message = message.withGrowableLevels();
       theLastTime = message.createTime > theLastTime ? message.createTime : theLastTime;
