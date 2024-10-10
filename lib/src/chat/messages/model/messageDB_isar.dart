@@ -207,17 +207,18 @@ class MessageDBISAR {
         path.endsWith('.mkv') ||
         path.endsWith('.webm')) {
       return MessageType.video;
-    } else if (path.endsWith('.pdf') ||
-        path.endsWith('.doc') ||
-        path.endsWith('.docx') ||
-        path.endsWith('.xls') ||
-        path.endsWith('.xlsx') ||
-        path.endsWith('.ppt') ||
-        path.endsWith('.pptx') ||
-        path.endsWith('.txt') ||
-        path.endsWith('.csv')) {
-      return MessageType.file;
     }
+    // else if (path.endsWith('.pdf') ||
+    //     path.endsWith('.doc') ||
+    //     path.endsWith('.docx') ||
+    //     path.endsWith('.xls') ||
+    //     path.endsWith('.xlsx') ||
+    //     path.endsWith('.ppt') ||
+    //     path.endsWith('.pptx') ||
+    //     path.endsWith('.txt') ||
+    //     path.endsWith('.csv')) {
+    //   return MessageType.file;
+    // }
 
     if (mimeType != null) {
       if (mimeType.startsWith('image/')) {
@@ -226,9 +227,10 @@ class MessageDBISAR {
         return MessageType.audio;
       } else if (mimeType.startsWith('video/')) {
         return MessageType.video;
-      } else if (mimeType.startsWith('application/')) {
-        return MessageType.file;
       }
+      // else if (mimeType.startsWith('application/')) {
+      //   return MessageType.file;
+      // }
     }
 
     if (uri.queryParameters.containsKey('blurhash')) {
@@ -246,9 +248,10 @@ class MessageDBISAR {
           return MessageType.audio;
         } else if (contentType.startsWith('video/')) {
           return MessageType.video;
-        } else if (contentType.startsWith('application/')) {
-          return MessageType.file;
         }
+        // else if (contentType.startsWith('application/')) {
+        //   return MessageType.file;
+        // }
       }
     } catch (e) {
       print(e);
