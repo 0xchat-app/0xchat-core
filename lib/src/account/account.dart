@@ -332,7 +332,7 @@ class Account {
 
     if (relays == null && Connect.sharedInstance.relays().isEmpty) return null;
     if (relays != null && relays.isNotEmpty) {
-      await Connect.sharedInstance.connectRelays(relays);
+      await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.temp);
     }
     Filter f = Filter(ids: [eventId]);
     Connect.sharedInstance.addSubscription([f], relays: relays,

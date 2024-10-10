@@ -160,6 +160,7 @@ extension Load on Moment {
         tempRelays.add(relay);
       }
     }
+    EventCache.sharedInstance.cacheIds.remove(noteId);
     Filter f = Filter(ids: [noteId]);
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) async {
