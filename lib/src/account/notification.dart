@@ -15,7 +15,7 @@ class NotificationHelper {
   String privkey = '';
   String serverPubkey = '';
   Timer? timer;
-  List<String> toRelays = Relays.sharedInstance.recommendDMRelays;
+  List<String> toRelays = [Config.sharedInstance.wssHost];
 
   Event? unSendNotification;
 

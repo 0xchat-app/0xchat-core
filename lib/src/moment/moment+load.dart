@@ -146,10 +146,8 @@ extension Load on Moment {
   Future<NoteDBISAR?> loadPublicNoteFromRelay(String noteId,
       {List<String>? relays}) async {
     if (noteId.isEmpty) return null;
-    // cache future
-    if (loadingNoteIds.keys.contains(noteId)) return loadingNoteIds[noteId];
+
     Completer<NoteDBISAR?> completer = Completer<NoteDBISAR?>();
-    loadingNoteIds[noteId] = completer.future;
 
     List<String> tempRelays = [];
     for (var relay in relays ?? []) {

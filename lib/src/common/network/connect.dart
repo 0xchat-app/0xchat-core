@@ -324,7 +324,7 @@ class Connect {
       Requests requests = Requests(
           requestsId,
           filters.keys.toList(),
-          DateTime.now().millisecondsSinceEpoch,
+          0,
           {},
           eventCallBack,
           eoseCallBack,
@@ -362,7 +362,10 @@ class Connect {
     if (sendingQueue < MAX_SUBSCRIPTIONS_COUNT && waitingQueue.isNotEmpty) {
       String subscriptionId = waitingQueue.removeAt(0);
       var request = requestsMap[subscriptionId + relay];
-      if (request != null) _send(request.subscriptionString, toRelays: [relay]);
+      if (request != null){
+        requestsMap[subscriptionId + relay]!.requestTime = DateTime.now().millisecondsSinceEpoch;
+        _send(request.subscriptionString, toRelays: [relay]);
+      }
     } else {
       LogUtils.v(
           () => 'sendingQueue: ${sendingQueue}, waitingQueue: ${waitingQueue.length}, $relay');
