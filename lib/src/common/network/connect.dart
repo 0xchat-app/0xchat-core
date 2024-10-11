@@ -321,15 +321,8 @@ class Connect {
       String subscriptionString = requestWithFilter.serialize();
 
       /// add request to request map
-      Requests requests = Requests(
-          requestsId,
-          filters.keys.toList(),
-          0,
-          {},
-          eventCallBack,
-          eoseCallBack,
-          subscriptionString,
-          closeSubscription);
+      Requests requests = Requests(requestsId, filters.keys.toList(), 0, {}, eventCallBack,
+          eoseCallBack, subscriptionString, closeSubscription);
       requests.subscriptions[relay] = requestWithFilter.subscriptionId;
       requestsMap[requestWithFilter.subscriptionId + relay] = requests;
 
@@ -353,7 +346,9 @@ class Connect {
   void _sendSubscription(String relay) {
     var sendingQueue = 0;
     for (var key in requestsMap.keys) {
-      if (key.contains(relay) && requestsMap[key]!.relays.contains(relay)) {
+      if (key.contains(relay) &&
+          requestsMap[key]!.relays.contains(relay) &&
+          requestsMap[key]!.requestTime > 0) {
         ++sendingQueue;
       }
     }
@@ -362,7 +357,7 @@ class Connect {
     if (sendingQueue < MAX_SUBSCRIPTIONS_COUNT && waitingQueue.isNotEmpty) {
       String subscriptionId = waitingQueue.removeAt(0);
       var request = requestsMap[subscriptionId + relay];
-      if (request != null){
+      if (request != null) {
         requestsMap[subscriptionId + relay]!.requestTime = DateTime.now().millisecondsSinceEpoch;
         _send(request.subscriptionString, toRelays: [relay]);
       }
