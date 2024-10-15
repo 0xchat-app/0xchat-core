@@ -73,7 +73,8 @@ extension IsolateEvent on Contacts {
   static Future<Map<String, dynamic>?> decodeKind14InIsolate(Map<String, dynamic> params) async {
     String receiver = params['receiver'] ?? '';
     Event event = await Event.fromJson(params['event'], verify: false);
-    EDMessage? message = await Nip17.decodeSealedGossipDM(event, receiver);
+    EDMessage? message =
+        await Nip17.decodeSealedGossipDM(event, receiver, Contacts.sharedInstance.pubkey);
     return message?.toMap();
   }
 
