@@ -372,13 +372,14 @@ class Contacts {
 
   Future<Event?> getSendMessageEvent(
       String friendPubkey, String replayId, MessageType type, String content,
-      {String? source, int? kind, int? expiration, String? decryptSecret}) async {
+      {String? source, int? kind, int? expiration, EncryptedFile? encryptedFile}) async {
     Event? event;
     expiration = expiration != null ? (expiration + currentUnixTimestampSeconds()) : null;
     event ??= await Nip17.encodeInnerEvent(
         friendPubkey, MessageDBISAR.getContent(type, content, source), replayId, pubkey, privkey,
-        subContent: MessageDBISAR.getSubContent(type, content, decryptSecret: decryptSecret),
-        expiration: expiration);
+        subContent: MessageDBISAR.getSubContent(type, content),
+        expiration: expiration,
+        encryptedFile: encryptedFile);
     return event;
   }
 
@@ -390,11 +391,11 @@ class Contacts {
       int? expiration,
       bool local = false,
       String? source,
-      String? decryptSecret,
+      EncryptedFile? encryptedFile,
       String? replaceMessageId}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= await getSendMessageEvent(toPubkey, replyId, type, content,
-        kind: kind, expiration: expiration, decryptSecret: decryptSecret, source: source);
+        kind: kind, expiration: expiration, encryptedFile: encryptedFile, source: source);
     if (event == null) return OKEvent('', false, 'event == null');
     expiration = expiration != null ? (expiration + currentUnixTimestampSeconds()) : null;
     late MessageDBISAR messageDB;
@@ -428,14 +429,15 @@ class Contacts {
           plaintEvent: jsonEncode(event),
           chatType: 0,
           expiration: expiration,
-          decryptSecret: decryptSecret);
+          decryptSecret: encryptedFile?.secret,
+          decryptNonce: encryptedFile?.nonce,
+          decryptAlgo: encryptedFile?.algorithm);
       privateChatMessageCallBack?.call(messageDB);
     }
-    var map = await MessageDBISAR.decodeContent(
-        MessageDBISAR.getSubContent(type, content, decryptSecret: decryptSecret) ?? content);
+    var map =
+        await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(type, content) ?? content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
-    messageDB.decryptSecret = map['decryptSecret'];
     await Messages.saveMessageToDB(messageDB);
 
     if (local) {

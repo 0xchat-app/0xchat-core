@@ -54,7 +54,7 @@ extension EMessage on RelayGroup {
         rootEvent: rootEvent,
         replyEvent: replyEvent,
         replyUsers: replyUsers,
-        subContent: MessageDBISAR.getSubContent(type, content, decryptSecret: decryptSecret));
+        subContent: MessageDBISAR.getSubContent(type, content));
     return event;
   }
 
@@ -77,7 +77,7 @@ extension EMessage on RelayGroup {
         rootEvent: rootEvent,
         replyEvent: replyEvent,
         replyUsers: replyUsers,
-        subContent: MessageDBISAR.getSubContent(type, content, decryptSecret: decryptSecret),
+        subContent: MessageDBISAR.getSubContent(type, content),
         createAt: createAt);
 
     late MessageDBISAR messageDB;
@@ -114,10 +114,9 @@ extension EMessage on RelayGroup {
       groupMessageCallBack?.call(messageDB);
     }
     var map = await MessageDBISAR.decodeContent(
-        MessageDBISAR.getSubContent(type, content, decryptSecret: decryptSecret) ?? event.content);
+        MessageDBISAR.getSubContent(type, content) ?? event.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
-    messageDB.decryptSecret = map['decryptSecret'];
     await Messages.saveMessageToDB(messageDB);
 
     if (local) {

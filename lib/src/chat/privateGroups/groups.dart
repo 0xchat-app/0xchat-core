@@ -270,7 +270,7 @@ class Groups {
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDBISAR.getSubContent(type, content, decryptSecret: decryptSecret),
+        subContent: MessageDBISAR.getSubContent(type, content),
         actionsType: actionsType);
     return event;
   }
@@ -295,7 +295,7 @@ class Groups {
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDBISAR.getSubContent(type, content, decryptSecret: decryptSecret),
+        subContent: MessageDBISAR.getSubContent(type, content),
         actionsType: actionsType);
 
     MessageDBISAR messageDB = MessageDBISAR(

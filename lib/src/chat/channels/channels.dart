@@ -46,8 +46,7 @@ class Channels {
       myChannelsUpdatedCallBack?.call();
     };
     // subscript friend requests
-    Connect.sharedInstance
-        .addConnectStatusListener((relay, status, relayKinds) async {
+    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 &&
           Account.sharedInstance.me != null &&
           relayKinds.contains(RelayKind.general)) {
@@ -62,16 +61,13 @@ class Channels {
   Future<void> _loadAllChannelsFromDB() async {
     final isar = DBISAR.sharedInstance.isar;
     List<Object?> maps = await isar.channelDBISARs.where().findAll();
-    channels = {
-      for (var channelDB in maps)
-        (channelDB as ChannelDBISAR).channelId: channelDB
-    };
+    channels = {for (var channelDB in maps) (channelDB as ChannelDBISAR).channelId: channelDB};
     myChannels = _myChannels();
     myChannelsUpdatedCallBack?.call();
   }
 
   void _updateChannelSubscription({String? relay}) {
-    if (myChannels.isEmpty){
+    if (myChannels.isEmpty) {
       offlineChannelMessageFinishCallBack?.call();
       if (!Messages.sharedInstance.channelMessageCompleter.isCompleted) {
         Messages.sharedInstance.channelMessageCompleter.complete();
@@ -79,16 +75,14 @@ class Channels {
       return;
     }
     if (channelMessageSubscription.isNotEmpty) {
-      Connect.sharedInstance
-          .closeRequests(channelMessageSubscription, relay: relay);
+      Connect.sharedInstance.closeRequests(channelMessageSubscription, relay: relay);
     }
 
     Map<String, List<Filter>> subscriptions = {};
 
     if (relay == null) {
       for (String relayURL in Connect.sharedInstance.relays()) {
-        int channelMessageUntil =
-            Relays.sharedInstance.getChannelMessageUntil(relayURL);
+        int channelMessageUntil = Relays.sharedInstance.getChannelMessageUntil(relayURL);
         Filter f = Filter(
             e: myChannels.keys.toList(),
             kinds: [42],
@@ -97,8 +91,7 @@ class Channels {
         subscriptions[relayURL] = [f];
       }
     } else {
-      int channelMessageUntil =
-          Relays.sharedInstance.getChannelMessageUntil(relay);
+      int channelMessageUntil = Relays.sharedInstance.getChannelMessageUntil(relay);
       Filter f = Filter(
           e: myChannels.keys.toList(),
           kinds: [42],
@@ -107,8 +100,8 @@ class Channels {
       subscriptions[relay] = [f];
     }
 
-    channelMessageSubscription = Connect.sharedInstance
-        .addSubscriptions(subscriptions, closeSubscription: false, eventCallBack: (event, relay) async {
+    channelMessageSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
+        closeSubscription: false, eventCallBack: (event, relay) async {
       switch (event.kind) {
         case 42:
           _receiveChannelMessages(event, relay);
@@ -174,10 +167,8 @@ class Channels {
       Relays.sharedInstance.setChannelMessageUntil(eventTime, relay);
       Relays.sharedInstance.setChannelMessageSince(eventTime, relay);
     } else {
-      Relays.sharedInstance.relays[relay] = RelayDBISAR(
-          url: relay,
-          channelMessageUntil: eventTime,
-          channelMessageSince: eventTime);
+      Relays.sharedInstance.relays[relay] =
+          RelayDBISAR(url: relay, channelMessageUntil: eventTime, channelMessageSince: eventTime);
     }
     if (offlineChannelMessageFinish[relay] == true) {
       Relays.sharedInstance.syncRelaysToDB(r: relay);
@@ -238,14 +229,12 @@ class Channels {
     return channelDB;
   }
 
-  Future<void> syncChannelsCreationFromRelay(
-      List<String> channelIds, List<String>? relays) async {
+  Future<void> syncChannelsCreationFromRelay(List<String> channelIds, List<String>? relays) async {
     Completer<void> completer = Completer<void>();
     Filter f = Filter(
       ids: channelIds,
     );
-    await Connect.sharedInstance
-        .connectRelays(relays ?? [], relayKind: RelayKind.temp);
+    await Connect.sharedInstance.connectRelays(relays ?? [], relayKind: RelayKind.temp);
     Connect.sharedInstance.addSubscription([f], relays: relays,
         eventCallBack: (event, relay) async {
       Channel? channel;
@@ -264,19 +253,15 @@ class Channels {
     return completer.future;
   }
 
-  Future<void> syncChannelsMetadataFromRelay(
-      List<String> channelIds, List<String>? relays) async {
+  Future<void> syncChannelsMetadataFromRelay(List<String> channelIds, List<String>? relays) async {
     Completer<void> completer = Completer<void>();
     Filter f = Filter(
       ids: channelIds,
       kinds: [41],
     );
-    await Connect.sharedInstance
-        .connectRelays(relays ?? [], relayKind: RelayKind.temp);
-    Connect.sharedInstance.addSubscription([f], relays: relays,
-        eventCallBack: (event, relay) {
-      if (channels.containsKey(event.id) &&
-          channels[event.id]!.updateTime < event.createdAt) {
+    await Connect.sharedInstance.connectRelays(relays ?? [], relayKind: RelayKind.temp);
+    Connect.sharedInstance.addSubscription([f], relays: relays, eventCallBack: (event, relay) {
+      if (channels.containsKey(event.id) && channels[event.id]!.updateTime < event.createdAt) {
         Channel channel = Nip28.getChannelMetadata(event);
         ChannelDBISAR channelDB = getChannelDBFromChannel(channel);
         _syncChannelToDB(channelDB);
@@ -308,11 +293,9 @@ class Channels {
   Future<void> _syncMyChannelListToRelay({OKCallBack? callBack}) async {
     List<String> list = myChannels.keys.toList();
     Event event = await Nip51.createPublicChatList([], list, privkey, pubkey);
-    Connect.sharedInstance.sendEvent(event,
-        sendCallBack: (OKEvent ok, String relay) {
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (OKEvent ok, String relay) {
       if (ok.status) {
-        Account.sharedInstance.me!.lastChannelsListUpdatedTime =
-            event.createdAt;
+        Account.sharedInstance.me!.lastChannelsListUpdatedTime = event.createdAt;
         _syncMyChannelListToDB();
       }
       callBack?.call(ok, relay);
@@ -323,12 +306,9 @@ class Channels {
     loadChannelMessages(channelId, null, until, limit);
   }
 
-  void loadChannelMessages(
-      String channelId, int? since, int? until, int? limit) {
-    Filter f = Filter(
-        e: [channelId], kinds: [42], limit: limit, until: until, since: since);
-    Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event, relay) async {
+  void loadChannelMessages(String channelId, int? since, int? until, int? limit) {
+    Filter f = Filter(e: [channelId], kinds: [42], limit: limit, until: until, since: since);
+    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
       switch (event.kind) {
         case 42:
           _receiveChannelMessages(event, relay);
@@ -347,13 +327,12 @@ class Channels {
     _updateChannelSubscription(relay: relay);
   }
 
-  Future<ChannelDBISAR?> createChannel(String name, String about,
-      String picture, List<String> badges, String relay,
+  Future<ChannelDBISAR?> createChannel(
+      String name, String about, String picture, List<String> badges, String relay,
       {OKCallBack? callBack}) async {
     Completer<ChannelDBISAR?> completer = Completer<ChannelDBISAR?>();
     Map<String, String> additional = {'badges': jsonEncode(badges)};
-    Event event = await Nip28.createChannel(
-        name, about, picture, additional, pubkey, privkey);
+    Event event = await Nip28.createChannel(name, about, picture, additional, pubkey, privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (ok.status == true) {
         // update channel
@@ -386,8 +365,7 @@ class Channels {
     return completer.future;
   }
 
-  Future<ChannelDBISAR?> updateChannelMetadataFromRelay(
-      String owner, String channelId,
+  Future<ChannelDBISAR?> updateChannelMetadataFromRelay(String owner, String channelId,
       {List<String>? relays}) async {
     Completer<ChannelDBISAR?> completer = Completer<ChannelDBISAR?>();
     Filter f = Filter(
@@ -396,11 +374,9 @@ class Channels {
       e: [channelId],
     );
     if (relays != null) {
-      await Connect.sharedInstance
-          .connectRelays(relays, relayKind: RelayKind.temp);
+      await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.temp);
     }
-    Connect.sharedInstance.addSubscription([f], relays: relays,
-        eventCallBack: (event, relay) {
+    Connect.sharedInstance.addSubscription([f], relays: relays, eventCallBack: (event, relay) {
       Channel channel = Nip28.getChannelMetadata(event);
       ChannelDBISAR channelDB = getChannelDBFromChannel(channel);
       _syncChannelToDB(channelDB);
@@ -424,16 +400,13 @@ class Channels {
       }
     }
     if (unknownChannels.isEmpty) return;
-    await syncChannelsCreationFromRelay(
-        unknownChannels, relay == null ? null : [relay]);
-    await syncChannelsMetadataFromRelay(
-        unknownChannels, relay == null ? null : [relay]);
+    await syncChannelsCreationFromRelay(unknownChannels, relay == null ? null : [relay]);
+    await syncChannelsMetadataFromRelay(unknownChannels, relay == null ? null : [relay]);
 
     myChannelsUpdatedCallBack?.call();
   }
 
-  Future<OKEvent> setChannel(ChannelDBISAR channelDB,
-      {OKCallBack? callBack}) async {
+  Future<OKEvent> setChannel(ChannelDBISAR channelDB, {OKCallBack? callBack}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = await Nip28.setChannelMetaData(
         channelDB.name!,
@@ -457,8 +430,7 @@ class Channels {
     return completer.future;
   }
 
-  Future<Event?> getSendChannelMessageEvent(
-      String channelId, MessageType type, String content,
+  Future<Event?> getSendChannelMessageEvent(String channelId, MessageType type, String content,
       {String? source,
       String? channelRelay,
       String? replyMessage,
@@ -466,20 +438,18 @@ class Channels {
       String? replyUser,
       String? replyUserRelay,
       String? decryptSecret}) async {
-    Event event = await Nip28.sendChannelMessage(channelId,
-        MessageDBISAR.getContent(type, content, source), pubkey, privkey,
+    Event event = await Nip28.sendChannelMessage(
+        channelId, MessageDBISAR.getContent(type, content, source), pubkey, privkey,
         channelRelay: channelRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDBISAR.getSubContent(type, content,
-            decryptSecret: decryptSecret));
+        subContent: MessageDBISAR.getSubContent(type, content));
     return event;
   }
 
-  Future<OKEvent> sendChannelMessage(
-      String channelId, MessageType type, String content,
+  Future<OKEvent> sendChannelMessage(String channelId, MessageType type, String content,
       {String? source,
       String? channelRelay,
       String? replyMessage,
@@ -491,28 +461,24 @@ class Channels {
       String? decryptSecret,
       String? replaceMessageId}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    event ??= await Nip28.sendChannelMessage(channelId,
-        MessageDBISAR.getContent(type, content, source), pubkey, privkey,
+    event ??= await Nip28.sendChannelMessage(
+        channelId, MessageDBISAR.getContent(type, content, source), pubkey, privkey,
         channelRelay: channelRelay,
         replyMessage: replyMessage,
         replyMessageRelay: replyMessageRelay,
         replyUser: replyUser,
         replyUserRelay: replyUserRelay,
-        subContent: MessageDBISAR.getSubContent(type, content,
-            decryptSecret: decryptSecret));
+        subContent: MessageDBISAR.getSubContent(type, content));
 
     late MessageDBISAR messageDB;
     if (replaceMessageId != null) {
-      final replaceMessageDB =
-          await Messages.sharedInstance.loadMessageDBFromDB(replaceMessageId);
+      final replaceMessageDB = await Messages.sharedInstance.loadMessageDBFromDB(replaceMessageId);
       if (replaceMessageDB == null) {
-        return Future.value(
-            OKEvent(
-              event.innerEvent?.id ?? event.id,
-              false,
-              'The message to be replaced was not found',
-            )
-        );
+        return Future.value(OKEvent(
+          event.innerEvent?.id ?? event.id,
+          false,
+          'The message to be replaced was not found',
+        ));
       }
       replaceMessageDB.messageId = event.id;
       replaceMessageDB.content = event.content;
@@ -536,12 +502,10 @@ class Channels {
           chatType: 2);
       channelMessageCallBack?.call(messageDB);
     }
-    var map = await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(
-            type, content,
-            decryptSecret: decryptSecret) ?? content);
+    var map =
+        await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(type, content) ?? content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
-    messageDB.decryptSecret = map['decryptSecret'];
     await Messages.saveMessageToDB(messageDB);
 
     if (local) {
@@ -551,8 +515,7 @@ class Channels {
     } else {
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
-        await Messages.saveMessageToDB(messageDB,
-            conflictAlgorithm: ConflictAlgorithm.replace);
+        await Messages.saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
         if (!completer.isCompleted) completer.complete(ok);
       });
     }
@@ -560,12 +523,10 @@ class Channels {
     return completer.future;
   }
 
-  Future<OKEvent> hideMessage(String messageId, String reason,
-      {OKCallBack? callBack}) async {
+  Future<OKEvent> hideMessage(String messageId, String reason, {OKCallBack? callBack}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Messages.deleteMessagesFromDB(messageIds: [messageId]);
-    Event event =
-        await Nip28.hideChannelMessage(messageId, reason, pubkey, privkey);
+    Event event = await Nip28.hideChannelMessage(messageId, reason, pubkey, privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) completer.complete(ok);
     });
@@ -609,16 +570,14 @@ class Channels {
     if (keyword.isNotEmpty) {
       RegExp regex = RegExp(keyword, caseSensitive: false);
       List<ChannelDBISAR> filteredChannels = channels.values
-          .where((channel) =>
-              regex.hasMatch(channel.name!) || regex.hasMatch(channel.about!))
+          .where((channel) => regex.hasMatch(channel.name!) || regex.hasMatch(channel.about!))
           .toList();
       return filteredChannels;
     }
     return null;
   }
 
-  Future<ChannelDBISAR?> searchChannel(
-      String channelId, List<String>? relays) async {
+  Future<ChannelDBISAR?> searchChannel(String channelId, List<String>? relays) async {
     if (channels[channelId] == null) {
       await syncChannelsCreationFromRelay([channelId], relays);
       await syncChannelsMetadataFromRelay([channelId], relays);
@@ -629,18 +588,15 @@ class Channels {
 
   // get 20 latest channels
   Future<List<ChannelDBISAR>> searchChannelsFromRelay(
-      {List<String>? channelIds,
-      ChannelsSearchCallBack? searchCallBack}) async {
+      {List<String>? channelIds, ChannelsSearchCallBack? searchCallBack}) async {
     Completer<List<ChannelDBISAR>> completer = Completer<List<ChannelDBISAR>>();
 
-    Filter f = channelIds == null
-        ? Filter(kinds: [40], limit: 20)
-        : Filter(ids: channelIds, kinds: [40]);
+    Filter f =
+        channelIds == null ? Filter(kinds: [40], limit: 20) : Filter(ids: channelIds, kinds: [40]);
     Map<String, ChannelDBISAR> result = {};
     result.addAll(channels);
     searchCallBack?.call(channels.values.toList());
-    Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event, relay) async {
+    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
       Channel channel = Nip28.getChannelCreation(event);
       if (!channels.containsKey(channel.channelId)) {
         ChannelDBISAR channelDB = getChannelDBFromChannel(channel);
@@ -652,8 +608,7 @@ class Channels {
       if (unRelays.isEmpty) {
         if (!completer.isCompleted) completer.complete(result.values.toList());
         await Future.forEach(result.values, (channel) async {
-          await updateChannelMetadataFromRelay(
-              channel.creator, channel.channelId);
+          await updateChannelMetadataFromRelay(channel.creator, channel.channelId);
         });
       }
     });
@@ -669,10 +624,7 @@ class Channels {
   }
 
   List<String> getAllUnMuteChannels() {
-    return myChannels.entries
-        .where((e) => e.value.mute == false)
-        .map((e) => e.key)
-        .toList();
+    return myChannels.entries.where((e) => e.value.mute == false).map((e) => e.key).toList();
   }
 
   Future<void> _setMuteChannel(String channelId, bool mute) async {
@@ -683,10 +635,8 @@ class Channels {
     }
   }
 
-  static String encodeChannel(
-      String channelId, List<String>? relays, String? author) {
-    String nevent =
-        Nip19.encodeShareableEntity('nevent', channelId, relays, author, 40);
+  static String encodeChannel(String channelId, List<String>? relays, String? author) {
+    String nevent = Nip19.encodeShareableEntity('nevent', channelId, relays, author, 40);
     return Nip21.encode(nevent);
   }
 
@@ -694,8 +644,7 @@ class Channels {
     if (encodedChannel.startsWith('nostr:')) {
       encodedChannel = Nip21.decode(encodedChannel)!;
     }
-    if (encodedChannel.startsWith('nevent') ||
-        encodedChannel.startsWith('naddr')) {
+    if (encodedChannel.startsWith('nevent') || encodedChannel.startsWith('naddr')) {
       Map result = Nip19.decodeShareableEntity(encodedChannel);
       if (result['prefix'] == 'nevent' || result['prefix'] == 'naddr') {
         return {

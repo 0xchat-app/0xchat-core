@@ -459,6 +459,7 @@ class Connect {
         _handleCLOSED(m.message, relay);
         break;
       case "NOTICE":
+      case "NOTIFY":
         _handleNotice(m.message, relay);
         break;
       case "OK":

@@ -351,9 +351,16 @@ extension SecretChat on Contacts {
     }
   }
 
-  Future<Event?> getSendSecretMessageEvent(String sessionId, String toPubkey, String replayId,
-      MessageType type, String content, int? expiration,
-      {String? source, String? decryptSecret}) async {
+  Future<Event?> getSendSecretMessageEvent(
+    String sessionId,
+    String toPubkey,
+    String replayId,
+    MessageType type,
+    String content,
+    int? expiration, {
+    String? source,
+    EncryptedFile? encryptedFile,
+  }) async {
     expiration = expiration != null ? (expiration + currentUnixTimestampSeconds()) : null;
     SecretSessionDBISAR? sessionDB = secretSessionMap[sessionId];
     if (sessionDB != null &&
@@ -361,8 +368,7 @@ extension SecretChat on Contacts {
         sessionDB.shareSecretKey!.isNotEmpty) {
       return await Nip17.encodeInnerEvent(
           toPubkey, MessageDBISAR.getContent(type, content, source), replayId, pubkey, privkey,
-          subContent: MessageDBISAR.getSubContent(type, content, decryptSecret: decryptSecret),
-          expiration: expiration);
+          subContent: MessageDBISAR.getSubContent(type, content), expiration: expiration);
     }
     return null;
   }
@@ -373,7 +379,7 @@ extension SecretChat on Contacts {
       bool local = false,
       int? expiration,
       String? source,
-      String? decryptSecret,
+      EncryptedFile? encryptedFile,
       String? replaceMessageId}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
@@ -383,7 +389,7 @@ extension SecretChat on Contacts {
       _connectToRelay(sessionDB.relay);
       event ??= await getSendSecretMessageEvent(
           sessionId, toPubkey, replayId, type, content, expiration,
-          decryptSecret: decryptSecret, source: source);
+          encryptedFile: encryptedFile, source: source);
       expiration = expiration != null ? (expiration + currentUnixTimestampSeconds()) : null;
 
       late MessageDBISAR messageDB;
@@ -403,26 +409,29 @@ extension SecretChat on Contacts {
         messageDB = replaceMessageDB;
       } else {
         messageDB = MessageDBISAR(
-            messageId: event!.id,
-            sender: pubkey,
-            receiver: toPubkey,
-            groupId: '',
-            sessionId: sessionId,
-            kind: event.kind,
-            tags: jsonEncode(event.tags),
-            content: event.content,
-            createTime: event.createdAt,
-            decryptContent: content,
-            type: MessageDBISAR.messageTypeToString(type),
-            status: 0,
-            plaintEvent: jsonEncode(event),
-            chatType: 3,
-            expiration: expiration,
-            decryptSecret: decryptSecret);
+          messageId: event!.id,
+          sender: pubkey,
+          receiver: toPubkey,
+          groupId: '',
+          sessionId: sessionId,
+          kind: event.kind,
+          tags: jsonEncode(event.tags),
+          content: event.content,
+          createTime: event.createdAt,
+          decryptContent: content,
+          type: MessageDBISAR.messageTypeToString(type),
+          status: 0,
+          plaintEvent: jsonEncode(event),
+          chatType: 3,
+          expiration: expiration,
+          decryptSecret: encryptedFile?.secret,
+          decryptNonce: encryptedFile?.nonce,
+          decryptAlgo: encryptedFile?.algorithm,
+        );
         secretChatMessageCallBack?.call(messageDB);
       }
-      var map = await MessageDBISAR.decodeContent(
-          MessageDBISAR.getSubContent(type, content, decryptSecret: decryptSecret) ?? content);
+      var map =
+          await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(type, content) ?? content);
       messageDB.decryptContent = map['content'];
       messageDB.type = map['contentType'];
       messageDB.decryptSecret = map['decryptSecret'];
@@ -491,7 +500,7 @@ extension SecretChat on Contacts {
         if (value.sharePubkey!.isNotEmpty) pubkeys.add(value.sharePubkey!);
       }
     });
-    if (pubkeys.isEmpty){
+    if (pubkeys.isEmpty) {
       offlineSecretMessageFinishCallBack?.call();
       if (!Messages.sharedInstance.secretChatMessageCompleter.isCompleted) {
         Messages.sharedInstance.secretChatMessageCompleter.complete();
@@ -518,8 +527,8 @@ extension SecretChat on Contacts {
           since: friendRequestUntil > offset2 ? (friendRequestUntil - offset2 + 1) : 1);
       subscriptions[relay] = [f];
     }
-    secretSessionSubscription =
-        Connect.sharedInstance.addSubscriptions(subscriptions, closeSubscription: false, eventCallBack: (event, relay) async {
+    secretSessionSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
+        closeSubscription: false, eventCallBack: (event, relay) async {
       SecretSessionDBISAR? session = _getSessionFromPubkey(event.pubkey);
       if (session != null) {
         Event? innerEvent =

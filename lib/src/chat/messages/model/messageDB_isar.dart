@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:isar/isar.dart';
@@ -57,8 +56,7 @@ class MessageDBISAR {
   String plaintEvent;
 
   /// add type
-  int?
-      chatType; // 0 private chat 1 group chat 2 channel chat 3 secret chat 4 relay group chat
+  int? chatType; // 0 private chat 1 group chat 2 channel chat 3 secret chat 4 relay group chat
   String? subType; // subtype of template/system type
 
   /// add previewData
@@ -69,7 +67,8 @@ class MessageDBISAR {
 
   /// add decryptSecret
   String? decryptSecret;
-
+  String? decryptNonce;
+  String? decryptAlgo;
   // actions
   List<String>? reactionEventIds;
   List<String>? zapEventIds;
@@ -95,17 +94,14 @@ class MessageDBISAR {
     this.previewData,
     this.expiration,
     this.decryptSecret,
+    this.decryptNonce,
+    this.decryptAlgo,
     this.reactionEventIds,
     this.zapEventIds,
   });
 
   static MessageDBISAR fromMap(Map<String, Object?> map) {
     return _messageInfoFromMap(map);
-  }
-
-  static Uint8List getRandomSecret() {
-    Keychain k = Keychain.generate();
-    return hexToBytes(k.private);
   }
 
   static String messageTypeToString(MessageType type) {
@@ -260,7 +256,6 @@ class MessageDBISAR {
     return MessageType.text;
   }
 
-
   static Future<Map<String, dynamic>> decodeContent(String content) async {
     content = content.trim();
     try {
@@ -282,8 +277,7 @@ class MessageDBISAR {
       }
       return {'contentType': 'text', 'content': content};
     } catch (e) {
-      LogUtils.v(
-          () => 'decodeContent fail: $content, error msg: ${e.toString()}');
+      LogUtils.v(() => 'decodeContent fail: $content, error msg: ${e.toString()}');
       MessageType type = await identifyUrl(content);
       return {'contentType': messageTypeToString(type), 'content': content};
     }
@@ -304,8 +298,7 @@ class MessageDBISAR {
       case MessageType.file:
         return '[You\'ve received a file via 0xChat!]';
       case MessageType.template:
-        if (Zaps.isLightningInvoice(content) ||
-            getNostrScheme(content) != null) {
+        if (Zaps.isLightningInvoice(content) || getNostrScheme(content) != null) {
           return content;
         }
         return '[You\'ve received a template via 0xChat!]';
@@ -326,45 +319,58 @@ class MessageDBISAR {
     }
   }
 
-  static String? getSubContent(MessageType type, String content,
-      {String? decryptSecret}) {
+  static String? getSubContent(MessageType type, String content) {
     switch (type) {
       case MessageType.text:
       case MessageType.image:
       case MessageType.video:
       case MessageType.audio:
-        return null;
-      case MessageType.file:
-      case MessageType.template:
       case MessageType.encryptedImage:
       case MessageType.encryptedVideo:
       case MessageType.encryptedAudio:
       case MessageType.encryptedFile:
+        return null;
+      case MessageType.file:
+      case MessageType.template:
       case MessageType.system:
       case MessageType.call:
-        return jsonEncode({
-          'contentType': messageTypeToString(type),
-          'content': content,
-          'decryptSecret': decryptSecret
-        });
+        return jsonEncode({'contentType': messageTypeToString(type), 'content': content});
       default:
         return null;
     }
   }
 
-  static Future<MessageDBISAR?> fromPrivateMessage(
-      Event event, String receiver, String privkey,
+  static String mimeTypeToTpyeString(String mimeType) {
+    if (mimeType.startsWith('image/')) {
+      return 'encryptedImage';
+    } else if (mimeType.startsWith('audio/')) {
+      return 'encryptedAudio';
+    } else if (mimeType.startsWith('video/')) {
+      return 'encryptedVideo';
+    }
+    return 'encryptedFile';
+  }
+
+  static String tpyeStringToMimeType(MessageType type) {
+    if (type == MessageType.encryptedImage) {
+      return 'image/png';
+    } else if (type == MessageType.encryptedAudio) {
+      return 'audio/mp3';
+    } else if (type == MessageType.encryptedVideo) {
+      return 'video/mp4';
+    }
+    return '';
+  }
+
+  static Future<MessageDBISAR?> fromPrivateMessage(Event event, String receiver, String privkey,
       {int chatType = 0}) async {
     EDMessage? message;
     if (event.kind == 4) {
-      message = await Contacts.sharedInstance
-          .decodeNip4Event(event, receiver, privkey);
+      message = await Contacts.sharedInstance.decodeNip4Event(event, receiver, privkey);
     } else if (event.kind == 44) {
-      message = await Contacts.sharedInstance
-          .decodeNip44Event(event, receiver, privkey);
-    } else if (event.kind == 14) {
-      message =
-          await Contacts.sharedInstance.decodeKind14Event(event, receiver);
+      message = await Contacts.sharedInstance.decodeNip44Event(event, receiver, privkey);
+    } else if (event.kind == 14 || event.kind == 15) {
+      message = await Contacts.sharedInstance.decodeKind14Event(event, receiver);
       if (message?.groupId?.isNotEmpty == true) {
         Groups.sharedInstance.createPrivateGroup(
             message!.sender, message.groupId!, message.subject, message.members,
@@ -385,23 +391,24 @@ class MessageDBISAR {
         replyId: message.replyId,
         plaintEvent: jsonEncode(event),
         chatType: chatType,
-        expiration:
-            message.expiration == null ? null : int.parse(message.expiration!));
+        expiration: message.expiration == null ? null : int.parse(message.expiration!),
+        decryptAlgo: message.algorithm,
+        decryptNonce: message.nonce,
+        decryptSecret: message.secret);
     var map = await decodeContent(message.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
-    messageDB.decryptSecret = map['decryptSecret'];
+    if (map['decryptSecret'] != null && message.mimeType != null) {
+      messageDB.type = mimeTypeToTpyeString(message.mimeType!);
+      messageDB.decryptSecret = map['decryptSecret'];
+    }
     return messageDB;
   }
 
-  static Future<void> savePreviewData(
-      String messageId, String previewData) async {
+  static Future<void> savePreviewData(String messageId, String previewData) async {
     final isar = DBISAR.sharedInstance.isar;
 
-    final message = await isar.messageDBISARs
-        .filter()
-        .messageIdEqualTo(messageId)
-        .findFirst();
+    final message = await isar.messageDBISARs.filter().messageIdEqualTo(messageId).findFirst();
 
     if (message != null) {
       message.previewData = previewData;
@@ -410,8 +417,7 @@ class MessageDBISAR {
   }
 
   static String? getNostrScheme(String content) {
-    final regexNostr =
-        r'((nostr:)?(npub|note|nprofile|nevent|nrelay|naddr)[0-9a-zA-Z]+)';
+    final regexNostr = r'((nostr:)?(npub|note|nprofile|nevent|nrelay|naddr)[0-9a-zA-Z]+)';
     final urlRegexp = RegExp(regexNostr);
     final match = urlRegexp.firstMatch(content);
     return match?.group(0);
@@ -440,8 +446,7 @@ MessageDBISAR _messageInfoFromMap(Map<String, dynamic> map) {
     previewData: map['previewData']?.toString(),
     expiration: map['expiration'],
     decryptSecret: map['decryptSecret']?.toString(),
-    reactionEventIds:
-        UserDBISAR.decodeStringList(map['reactionEventIds'].toString()),
+    reactionEventIds: UserDBISAR.decodeStringList(map['reactionEventIds'].toString()),
     zapEventIds: UserDBISAR.decodeStringList(map['zapEventIds'].toString()),
   );
 }

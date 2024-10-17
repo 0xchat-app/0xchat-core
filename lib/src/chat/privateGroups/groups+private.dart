@@ -55,14 +55,12 @@ extension PrivateGroups on Groups {
     return myGroups[groupId];
   }
 
-  Future<GroupDBISAR?> addMembersToPrivateGroup(
-      String groupId, List<String> members) async {
+  Future<GroupDBISAR?> addMembersToPrivateGroup(String groupId, List<String> members) async {
     GroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB == null) return null;
     List<String> existingMembers = groupDB.members ?? [];
     Set<String> uniqueMembersSet = {...existingMembers, ...members};
-    return await createPrivateGroup(
-        pubkey, '', groupDB.name, uniqueMembersSet.toList());
+    return await createPrivateGroup(pubkey, '', groupDB.name, uniqueMembersSet.toList());
   }
 
   Future<GroupDBISAR?> removeMembersFromPrivateGroup(
@@ -74,20 +72,18 @@ extension PrivateGroups on Groups {
     for (String member in membersToRemove) {
       updatedMembersSet.remove(member);
     }
-    return await createPrivateGroup(
-        pubkey, '', groupDB.name, updatedMembersSet.toList());
+    return await createPrivateGroup(pubkey, '', groupDB.name, updatedMembersSet.toList());
   }
 
-  Future<OKEvent> updatePrivateGroupName(
-      String sender, String groupId, String name,
+  Future<OKEvent> updatePrivateGroupName(String sender, String groupId, String name,
       {int createAt = 0}) async {
     GroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB != null) {
       groupDB.name = name;
       syncGroupToDB(groupDB);
       UserDBISAR? user = await Account.sharedInstance.getUserInfo(sender);
-      sendPrivateGroupMessage(groupId, MessageType.system,
-          "${user?.name} update group name to $name",
+      sendPrivateGroupMessage(
+          groupId, MessageType.system, "${user?.name} update group name to $name",
           local: true, createAt: createAt);
       return OKEvent(groupId, true, '');
     } else {
@@ -95,58 +91,48 @@ extension PrivateGroups on Groups {
     }
   }
 
-  Future<Event?> getSendPrivateGroupMessageEvent(
-      String groupId, MessageType type, String content,
+  Future<Event?> getSendPrivateGroupMessageEvent(String groupId, MessageType type, String content,
       {String? source,
       String? replyMessage,
-      String? decryptSecret,
+      EncryptedFile? encryptedFile,
       int createAt = 0}) async {
     GroupDBISAR? groupDB = myGroups[groupId];
     if (groupDB == null) return null;
     List<String>? members = groupDB.members;
     if (members == null) return null;
     Event event = await Nip17.encodeInnerEvent(
-        '',
-        MessageDBISAR.getContent(type, content, source),
-        replyMessage ?? '',
-        pubkey,
-        privkey,
-        subContent: MessageDBISAR.getSubContent(type, content,
-            decryptSecret: decryptSecret),
+        '', MessageDBISAR.getContent(type, content, source), replyMessage ?? '', pubkey, privkey,
+        subContent: MessageDBISAR.getSubContent(type, content),
         members: members,
         subject: groupDB.name,
         createAt: createAt);
     return event;
   }
 
-  Future<OKEvent> sendPrivateGroupMessage(
-      String groupId, MessageType type, String content,
+  Future<OKEvent> sendPrivateGroupMessage(String groupId, MessageType type, String content,
       {String? source,
       String? replyMessage,
       Event? event,
       bool local = false,
-      String? decryptSecret,
+      EncryptedFile? encryptedFile,
       int createAt = 0,
       String? replaceMessageId}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     event ??= await getSendPrivateGroupMessageEvent(groupId, type, content,
         source: source,
         replyMessage: replyMessage,
-        decryptSecret: decryptSecret,
+        encryptedFile: encryptedFile,
         createAt: createAt);
 
     late MessageDBISAR messageDB;
     if (replaceMessageId != null) {
-      final replaceMessageDB =
-          await Messages.sharedInstance.loadMessageDBFromDB(replaceMessageId);
+      final replaceMessageDB = await Messages.sharedInstance.loadMessageDBFromDB(replaceMessageId);
       if (replaceMessageDB == null) {
-        return Future.value(
-            OKEvent(
-              event?.innerEvent?.id ?? event!.id,
-              false,
-              'The message to be replaced was not found',
-            )
-        );
+        return Future.value(OKEvent(
+          event?.innerEvent?.id ?? event!.id,
+          false,
+          'The message to be replaced was not found',
+        ));
       }
       replaceMessageDB.messageId = event!.id;
       replaceMessageDB.content = event.content;
@@ -154,30 +140,30 @@ extension PrivateGroups on Groups {
       messageDB = replaceMessageDB;
     } else {
       messageDB = MessageDBISAR(
-          messageId: event!.id,
-          sender: event.pubkey,
-          receiver: '',
-          groupId: groupId,
-          kind: event.kind,
-          tags: jsonEncode(event.tags),
-          replyId: replyMessage ?? '',
-          content: event.content,
-          decryptContent: content,
-          type: MessageDBISAR.messageTypeToString(type),
-          createTime: event.createdAt,
-          status: 0,
-          plaintEvent: jsonEncode(event),
-          chatType: 1,
-          decryptSecret: decryptSecret);
+        messageId: event!.id,
+        sender: event.pubkey,
+        receiver: '',
+        groupId: groupId,
+        kind: event.kind,
+        tags: jsonEncode(event.tags),
+        replyId: replyMessage ?? '',
+        content: event.content,
+        decryptContent: content,
+        type: MessageDBISAR.messageTypeToString(type),
+        createTime: event.createdAt,
+        status: 0,
+        plaintEvent: jsonEncode(event),
+        chatType: 1,
+        decryptSecret: encryptedFile?.secret,
+        decryptNonce: encryptedFile?.nonce,
+        decryptAlgo: encryptedFile?.algorithm,
+      );
       groupMessageCallBack?.call(messageDB);
     }
-    var map = await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(
-            type, content,
-            decryptSecret: decryptSecret) ??
-        messageDB.content);
+    var map = await MessageDBISAR.decodeContent(
+        MessageDBISAR.getSubContent(type, content) ?? messageDB.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
-    messageDB.decryptSecret = map['decryptSecret'];
     await Messages.saveMessageToDB(messageDB);
     EventCache.sharedInstance.receiveEvent(event, '');
 
@@ -188,8 +174,7 @@ extension PrivateGroups on Groups {
     } else {
       OKEvent ok = await sendToGroup(groupId, event);
       messageDB.status = ok.status ? 1 : 2;
-      await Messages.saveMessageToDB(messageDB,
-          conflictAlgorithm: ConflictAlgorithm.replace);
+      await Messages.saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
       if (!completer.isCompleted) completer.complete(ok);
     }
 
