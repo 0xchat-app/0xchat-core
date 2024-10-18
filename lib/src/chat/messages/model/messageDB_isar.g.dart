@@ -32,103 +32,113 @@ const MessageDBISARSchema = CollectionSchema(
       name: r'createTime',
       type: IsarType.long,
     ),
-    r'decryptContent': PropertySchema(
+    r'decryptAlgo': PropertySchema(
       id: 3,
+      name: r'decryptAlgo',
+      type: IsarType.string,
+    ),
+    r'decryptContent': PropertySchema(
+      id: 4,
       name: r'decryptContent',
       type: IsarType.string,
     ),
+    r'decryptNonce': PropertySchema(
+      id: 5,
+      name: r'decryptNonce',
+      type: IsarType.string,
+    ),
     r'decryptSecret': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'decryptSecret',
       type: IsarType.string,
     ),
     r'expiration': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'expiration',
       type: IsarType.long,
     ),
     r'groupId': PropertySchema(
-      id: 6,
+      id: 8,
       name: r'groupId',
       type: IsarType.string,
     ),
     r'kind': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'kind',
       type: IsarType.long,
     ),
     r'messageId': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'messageId',
       type: IsarType.string,
     ),
     r'plaintEvent': PropertySchema(
-      id: 9,
+      id: 11,
       name: r'plaintEvent',
       type: IsarType.string,
     ),
     r'previewData': PropertySchema(
-      id: 10,
+      id: 12,
       name: r'previewData',
       type: IsarType.string,
     ),
     r'reactionEventIds': PropertySchema(
-      id: 11,
+      id: 13,
       name: r'reactionEventIds',
       type: IsarType.stringList,
     ),
     r'read': PropertySchema(
-      id: 12,
+      id: 14,
       name: r'read',
       type: IsarType.bool,
     ),
     r'receiver': PropertySchema(
-      id: 13,
+      id: 15,
       name: r'receiver',
       type: IsarType.string,
     ),
     r'replyId': PropertySchema(
-      id: 14,
+      id: 16,
       name: r'replyId',
       type: IsarType.string,
     ),
     r'reportList': PropertySchema(
-      id: 15,
+      id: 17,
       name: r'reportList',
       type: IsarType.stringList,
     ),
     r'sender': PropertySchema(
-      id: 16,
+      id: 18,
       name: r'sender',
       type: IsarType.string,
     ),
     r'sessionId': PropertySchema(
-      id: 17,
+      id: 19,
       name: r'sessionId',
       type: IsarType.string,
     ),
     r'status': PropertySchema(
-      id: 18,
+      id: 20,
       name: r'status',
       type: IsarType.long,
     ),
     r'subType': PropertySchema(
-      id: 19,
+      id: 21,
       name: r'subType',
       type: IsarType.string,
     ),
     r'tags': PropertySchema(
-      id: 20,
+      id: 22,
       name: r'tags',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 21,
+      id: 23,
       name: r'type',
       type: IsarType.string,
     ),
     r'zapEventIds': PropertySchema(
-      id: 22,
+      id: 24,
       name: r'zapEventIds',
       type: IsarType.stringList,
     )
@@ -168,7 +178,19 @@ int _messageDBISAREstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.content.length * 3;
+  {
+    final value = object.decryptAlgo;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.decryptContent.length * 3;
+  {
+    final value = object.decryptNonce;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   {
     final value = object.decryptSecret;
     if (value != null) {
@@ -244,26 +266,28 @@ void _messageDBISARSerialize(
   writer.writeLong(offsets[0], object.chatType);
   writer.writeString(offsets[1], object.content);
   writer.writeLong(offsets[2], object.createTime);
-  writer.writeString(offsets[3], object.decryptContent);
-  writer.writeString(offsets[4], object.decryptSecret);
-  writer.writeLong(offsets[5], object.expiration);
-  writer.writeString(offsets[6], object.groupId);
-  writer.writeLong(offsets[7], object.kind);
-  writer.writeString(offsets[8], object.messageId);
-  writer.writeString(offsets[9], object.plaintEvent);
-  writer.writeString(offsets[10], object.previewData);
-  writer.writeStringList(offsets[11], object.reactionEventIds);
-  writer.writeBool(offsets[12], object.read);
-  writer.writeString(offsets[13], object.receiver);
-  writer.writeString(offsets[14], object.replyId);
-  writer.writeStringList(offsets[15], object.reportList);
-  writer.writeString(offsets[16], object.sender);
-  writer.writeString(offsets[17], object.sessionId);
-  writer.writeLong(offsets[18], object.status);
-  writer.writeString(offsets[19], object.subType);
-  writer.writeString(offsets[20], object.tags);
-  writer.writeString(offsets[21], object.type);
-  writer.writeStringList(offsets[22], object.zapEventIds);
+  writer.writeString(offsets[3], object.decryptAlgo);
+  writer.writeString(offsets[4], object.decryptContent);
+  writer.writeString(offsets[5], object.decryptNonce);
+  writer.writeString(offsets[6], object.decryptSecret);
+  writer.writeLong(offsets[7], object.expiration);
+  writer.writeString(offsets[8], object.groupId);
+  writer.writeLong(offsets[9], object.kind);
+  writer.writeString(offsets[10], object.messageId);
+  writer.writeString(offsets[11], object.plaintEvent);
+  writer.writeString(offsets[12], object.previewData);
+  writer.writeStringList(offsets[13], object.reactionEventIds);
+  writer.writeBool(offsets[14], object.read);
+  writer.writeString(offsets[15], object.receiver);
+  writer.writeString(offsets[16], object.replyId);
+  writer.writeStringList(offsets[17], object.reportList);
+  writer.writeString(offsets[18], object.sender);
+  writer.writeString(offsets[19], object.sessionId);
+  writer.writeLong(offsets[20], object.status);
+  writer.writeString(offsets[21], object.subType);
+  writer.writeString(offsets[22], object.tags);
+  writer.writeString(offsets[23], object.type);
+  writer.writeStringList(offsets[24], object.zapEventIds);
 }
 
 MessageDBISAR _messageDBISARDeserialize(
@@ -276,28 +300,30 @@ MessageDBISAR _messageDBISARDeserialize(
     chatType: reader.readLongOrNull(offsets[0]),
     content: reader.readStringOrNull(offsets[1]) ?? '',
     createTime: reader.readLongOrNull(offsets[2]) ?? 0,
-    decryptContent: reader.readStringOrNull(offsets[3]) ?? '',
-    decryptSecret: reader.readStringOrNull(offsets[4]),
-    expiration: reader.readLongOrNull(offsets[5]),
-    groupId: reader.readStringOrNull(offsets[6]) ?? '',
-    kind: reader.readLongOrNull(offsets[7]) ?? 0,
-    messageId: reader.readStringOrNull(offsets[8]) ?? '',
-    plaintEvent: reader.readStringOrNull(offsets[9]) ?? '',
-    previewData: reader.readStringOrNull(offsets[10]),
-    reactionEventIds: reader.readStringList(offsets[11]),
-    read: reader.readBoolOrNull(offsets[12]) ?? false,
-    receiver: reader.readStringOrNull(offsets[13]) ?? '',
-    replyId: reader.readStringOrNull(offsets[14]) ?? '',
-    sender: reader.readStringOrNull(offsets[16]) ?? '',
-    sessionId: reader.readStringOrNull(offsets[17]) ?? '',
-    status: reader.readLongOrNull(offsets[18]),
-    subType: reader.readStringOrNull(offsets[19]),
-    tags: reader.readStringOrNull(offsets[20]) ?? '',
-    type: reader.readStringOrNull(offsets[21]) ?? 'text',
-    zapEventIds: reader.readStringList(offsets[22]),
+    decryptAlgo: reader.readStringOrNull(offsets[3]),
+    decryptContent: reader.readStringOrNull(offsets[4]) ?? '',
+    decryptNonce: reader.readStringOrNull(offsets[5]),
+    decryptSecret: reader.readStringOrNull(offsets[6]),
+    expiration: reader.readLongOrNull(offsets[7]),
+    groupId: reader.readStringOrNull(offsets[8]) ?? '',
+    kind: reader.readLongOrNull(offsets[9]) ?? 0,
+    messageId: reader.readStringOrNull(offsets[10]) ?? '',
+    plaintEvent: reader.readStringOrNull(offsets[11]) ?? '',
+    previewData: reader.readStringOrNull(offsets[12]),
+    reactionEventIds: reader.readStringList(offsets[13]),
+    read: reader.readBoolOrNull(offsets[14]) ?? false,
+    receiver: reader.readStringOrNull(offsets[15]) ?? '',
+    replyId: reader.readStringOrNull(offsets[16]) ?? '',
+    sender: reader.readStringOrNull(offsets[18]) ?? '',
+    sessionId: reader.readStringOrNull(offsets[19]) ?? '',
+    status: reader.readLongOrNull(offsets[20]),
+    subType: reader.readStringOrNull(offsets[21]),
+    tags: reader.readStringOrNull(offsets[22]) ?? '',
+    type: reader.readStringOrNull(offsets[23]) ?? 'text',
+    zapEventIds: reader.readStringList(offsets[24]),
   );
   object.id = id;
-  object.reportList = reader.readStringList(offsets[15]);
+  object.reportList = reader.readStringList(offsets[17]);
   return object;
 }
 
@@ -315,44 +341,48 @@ P _messageDBISARDeserializeProp<P>(
     case 2:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 3:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    case 4:
       return (reader.readStringOrNull(offset)) as P;
-    case 5:
-      return (reader.readLongOrNull(offset)) as P;
-    case 6:
+    case 4:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 5:
+      return (reader.readStringOrNull(offset)) as P;
+    case 6:
+      return (reader.readStringOrNull(offset)) as P;
     case 7:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 8:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 9:
-      return (reader.readStringOrNull(offset) ?? '') as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 10:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 11:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 12:
-      return (reader.readBoolOrNull(offset) ?? false) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 13:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    case 14:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    case 15:
       return (reader.readStringList(offset)) as P;
+    case 14:
+      return (reader.readBoolOrNull(offset) ?? false) as P;
+    case 15:
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 16:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 17:
-      return (reader.readStringOrNull(offset) ?? '') as P;
+      return (reader.readStringList(offset)) as P;
     case 18:
-      return (reader.readLongOrNull(offset)) as P;
-    case 19:
-      return (reader.readStringOrNull(offset)) as P;
-    case 20:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 19:
+      return (reader.readStringOrNull(offset) ?? '') as P;
+    case 20:
+      return (reader.readLongOrNull(offset)) as P;
     case 21:
-      return (reader.readStringOrNull(offset) ?? 'text') as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 22:
+      return (reader.readStringOrNull(offset) ?? '') as P;
+    case 23:
+      return (reader.readStringOrNull(offset) ?? 'text') as P;
+    case 24:
       return (reader.readStringList(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -822,6 +852,160 @@ extension MessageDBISARQueryFilter
   }
 
   QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptAlgoIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'decryptAlgo',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptAlgoIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'decryptAlgo',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptAlgoEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'decryptAlgo',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptAlgoGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'decryptAlgo',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptAlgoLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'decryptAlgo',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptAlgoBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'decryptAlgo',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptAlgoStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'decryptAlgo',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptAlgoEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'decryptAlgo',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptAlgoContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'decryptAlgo',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptAlgoMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'decryptAlgo',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptAlgoIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'decryptAlgo',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptAlgoIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'decryptAlgo',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
       decryptContentEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -952,6 +1136,160 @@ extension MessageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'decryptContent',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptNonceIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'decryptNonce',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptNonceIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'decryptNonce',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptNonceEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'decryptNonce',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptNonceGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'decryptNonce',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptNonceLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'decryptNonce',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptNonceBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'decryptNonce',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptNonceStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'decryptNonce',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptNonceEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'decryptNonce',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptNonceContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'decryptNonce',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptNonceMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'decryptNonce',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptNonceIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'decryptNonce',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      decryptNonceIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'decryptNonce',
         value: '',
       ));
     });
@@ -3686,6 +4024,19 @@ extension MessageDBISARQuerySortBy
     });
   }
 
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy> sortByDecryptAlgo() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'decryptAlgo', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      sortByDecryptAlgoDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'decryptAlgo', Sort.desc);
+    });
+  }
+
   QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
       sortByDecryptContent() {
     return QueryBuilder.apply(this, (query) {
@@ -3697,6 +4048,20 @@ extension MessageDBISARQuerySortBy
       sortByDecryptContentDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'decryptContent', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      sortByDecryptNonce() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'decryptNonce', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      sortByDecryptNonceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'decryptNonce', Sort.desc);
     });
   }
 
@@ -3941,6 +4306,19 @@ extension MessageDBISARQuerySortThenBy
     });
   }
 
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy> thenByDecryptAlgo() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'decryptAlgo', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      thenByDecryptAlgoDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'decryptAlgo', Sort.desc);
+    });
+  }
+
   QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
       thenByDecryptContent() {
     return QueryBuilder.apply(this, (query) {
@@ -3952,6 +4330,20 @@ extension MessageDBISARQuerySortThenBy
       thenByDecryptContentDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'decryptContent', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      thenByDecryptNonce() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'decryptNonce', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      thenByDecryptNonceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'decryptNonce', Sort.desc);
     });
   }
 
@@ -4189,11 +4581,25 @@ extension MessageDBISARQueryWhereDistinct
     });
   }
 
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QDistinct> distinctByDecryptAlgo(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'decryptAlgo', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<MessageDBISAR, MessageDBISAR, QDistinct>
       distinctByDecryptContent({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'decryptContent',
           caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QDistinct> distinctByDecryptNonce(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'decryptNonce', caseSensitive: caseSensitive);
     });
   }
 
@@ -4353,10 +4759,23 @@ extension MessageDBISARQueryProperty
     });
   }
 
+  QueryBuilder<MessageDBISAR, String?, QQueryOperations> decryptAlgoProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'decryptAlgo');
+    });
+  }
+
   QueryBuilder<MessageDBISAR, String, QQueryOperations>
       decryptContentProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'decryptContent');
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, String?, QQueryOperations>
+      decryptNonceProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'decryptNonce');
     });
   }
 
