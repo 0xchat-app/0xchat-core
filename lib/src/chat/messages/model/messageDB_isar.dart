@@ -398,9 +398,11 @@ class MessageDBISAR {
     var map = await decodeContent(message.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
-    if (map['decryptSecret'] != null && message.mimeType != null) {
-      messageDB.type = mimeTypeToTpyeString(message.mimeType!);
+    if (map['decryptSecret'] != null) {
       messageDB.decryptSecret = map['decryptSecret'];
+    }
+    if(message.mimeType != null){
+      messageDB.type = mimeTypeToTpyeString(message.mimeType!);
     }
     return messageDB;
   }
