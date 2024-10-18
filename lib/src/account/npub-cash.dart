@@ -8,6 +8,31 @@ class NpubCash {
     return '${Nip19.encodePubkey(pubkey)}@npub.cash';
   }
 
+  static Future<String?> balance() async {
+    String url = 'https://npub.cash/api/v1/balance';
+    String authToken = await Nip98.base64Event(
+        url,
+        Account.sharedInstance.currentPubkey,
+        Account.sharedInstance.currentPrivkey);
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Nostr $authToken',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      var body = json.decode(response.body);
+      if (body['error'] == false) {
+        var data = body['data'];
+        return data;
+      }
+    } else {
+      LogUtils.v(() => 'Request failed with status: ${response.statusCode}');
+    }
+    return null;
+  }
+
   static Future<String?> claim() async {
     String url = 'https://npub.cash/api/v1/claim';
     String authToken = await Nip98.base64Event(

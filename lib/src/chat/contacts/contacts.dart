@@ -315,6 +315,7 @@ class Contacts {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
             case 14:
+            case 15:
               _handlePrivateMessage(innerEvent, relay);
               break;
             case 10100:
