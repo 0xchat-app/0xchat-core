@@ -170,7 +170,7 @@ extension EMember on RelayGroup {
     String? groupId = Nip29.getGroupIdFromEvent(event);
     if (groupId == null) return;
     UserDBISAR? user = await Account.sharedInstance.getUserInfo(event.pubkey);
-    String content = '${user?.name} leave the group';
+    String content = '${user?.name} left the group';
 
     RelayGroupDBISAR? groupDB = groups[groupId];
     if (groupDB != null) {
@@ -195,7 +195,7 @@ extension EMember on RelayGroup {
         for (var user in users.values) {
           content = '${user.name} $content ';
         }
-        content = '${content}join the group';
+        content = '${content}joined the group';
 
         RelayGroupDBISAR? groupDB = groups[db.groupId];
         if (groupDB != null) {
@@ -234,10 +234,10 @@ extension EMember on RelayGroup {
       case GroupActionKind.editGroupStatus:
         String private = moderation.private ? 'PRIVATE' : 'PUBLIC';
         String closed = moderation.closed ? 'CLOSED' : 'OPEN';
-        content = 'Admin change group status to $closed, $private';
+        content = 'Admin changed group status to $closed, $private';
         break;
       case GroupActionKind.deleteGroup:
-        content = 'Admin delete the group';
+        content = 'Admin deleted the group';
         break;
       default:
         return;
