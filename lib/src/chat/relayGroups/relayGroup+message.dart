@@ -150,7 +150,7 @@ extension EMessage on RelayGroup {
 
   void loadGroupMessages(String groupId, int? since, int? until, int? limit) {
     RelayGroupDBISAR? groupDB = groups[groupId]?.value;
-    if (groupDB == null) return;
+    if (groupDB == null || groupDB.relay.isEmpty) return;
     Filter f = Filter(h: [
       groupDB.groupId
     ], kinds: [

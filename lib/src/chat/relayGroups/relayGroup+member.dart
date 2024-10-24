@@ -271,7 +271,7 @@ extension EMember on RelayGroup {
     RelayGroupDBISAR? relayGroupDB = groups[groupId]?.value;
     relayGroupDB ??= RelayGroupDBISAR(groupId: groupId, relay: relay);
     relayGroupDB.members ??= [];
-
+    if(relayGroupDB.relay.isEmpty) return false;
     Filter f = Filter(kinds: [9000, 9001], p: [user], h: [groupId], limit: 1);
 
     Completer<bool> completer = Completer<bool>();
