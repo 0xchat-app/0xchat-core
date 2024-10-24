@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
@@ -34,8 +35,8 @@ extension PrivateGroups on Groups {
     members = members.toSet().toList();
     if (groupId.isEmpty) groupId = ChatRoom.generateChatRoomID(members);
     if (myGroups.containsKey(groupId)) {
-      myGroups[groupId]?.members = members;
-      if (name != null && name.isNotEmpty && name != myGroups[groupId]?.name) {
+      myGroups[groupId]?.value.members = members;
+      if (name != null && name.isNotEmpty && name != myGroups[groupId]?.value.name) {
         updatePrivateGroupName(sender, groupId, name, createAt: createAt);
       }
     } else {
@@ -45,18 +46,18 @@ extension PrivateGroups on Groups {
           updateTime: currentUnixTimestampSeconds(),
           name: name ?? '',
           members: members);
-      groups[groupId] = groupDB;
-      myGroups[groupId] = groupDB;
+      groups[groupId] = ValueNotifier(groupDB);
+      myGroups[groupId] = ValueNotifier(groupDB);
       // update my group list
       await syncGroupToDB(groupDB);
       await syncMyGroupListToDB();
     }
     myGroupsUpdatedCallBack?.call();
-    return myGroups[groupId];
+    return myGroups[groupId]?.value;
   }
 
   Future<GroupDBISAR?> addMembersToPrivateGroup(String groupId, List<String> members) async {
-    GroupDBISAR? groupDB = myGroups[groupId];
+    GroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return null;
     List<String> existingMembers = groupDB.members ?? [];
     Set<String> uniqueMembersSet = {...existingMembers, ...members};
@@ -65,7 +66,7 @@ extension PrivateGroups on Groups {
 
   Future<GroupDBISAR?> removeMembersFromPrivateGroup(
       String groupId, List<String> membersToRemove) async {
-    GroupDBISAR? groupDB = myGroups[groupId];
+    GroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return null;
     List<String> existingMembers = groupDB.members ?? [];
     Set<String> updatedMembersSet = existingMembers.toSet();
@@ -77,7 +78,7 @@ extension PrivateGroups on Groups {
 
   Future<OKEvent> updatePrivateGroupName(String sender, String groupId, String name,
       {int createAt = 0}) async {
-    GroupDBISAR? groupDB = myGroups[groupId];
+    GroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB != null) {
       groupDB.name = name;
       syncGroupToDB(groupDB);
@@ -96,7 +97,7 @@ extension PrivateGroups on Groups {
       String? replyMessage,
       EncryptedFile? encryptedFile,
       int createAt = 0}) async {
-    GroupDBISAR? groupDB = myGroups[groupId];
+    GroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return null;
     List<String>? members = groupDB.members;
     if (members == null) return null;

@@ -26,8 +26,8 @@ class Groups {
   // memory storage
   String pubkey = '';
   String privkey = '';
-  Map<String, GroupDBISAR> groups = {};
-  Map<String, GroupDBISAR> myGroups = {};
+  Map<String, ValueNotifier<GroupDBISAR>> groups = {};
+  Map<String, ValueNotifier<GroupDBISAR>> myGroups = {};
 
   Map<String, List<String>> currentGroupRelays = {};
 
@@ -57,7 +57,7 @@ class Groups {
   }
 
   bool checkInGroup(String groupId) {
-    return groups[groupId]?.members?.contains(pubkey) == true;
+    return groups[groupId]?.value.members?.contains(pubkey) == true;
   }
 
   bool checkInMyGroupList(String groupId) {
@@ -75,19 +75,19 @@ class Groups {
     for (GroupDBISAR e in maps) {
       GroupDBISAR groupDB = e.withGrowableLevels();
       if (groupDB.name.isEmpty) groupDB.name = _shortGroupId(groupDB.groupId);
-      groups[groupDB.groupId] = groupDB;
+      groups[groupDB.groupId] = ValueNotifier(groupDB);
     }
     myGroups = _myGroups();
   }
 
-  Map<String, GroupDBISAR> _myGroups() {
-    Map<String, GroupDBISAR> result = {};
+  Map<String, ValueNotifier<GroupDBISAR>> _myGroups() {
+    Map<String, ValueNotifier<GroupDBISAR>> result = {};
     UserDBISAR? me = Account.sharedInstance.me;
     if (me != null && me.groupsList != null && me.groupsList!.isNotEmpty) {
       List<String> groupList = me.groupsList!;
       for (String groupId in groupList) {
         if (!groups.containsKey(groupId)) {
-          groups[groupId] = GroupDBISAR(groupId: groupId);
+          groups[groupId] = ValueNotifier(GroupDBISAR(groupId: groupId));
         }
         result[groupId] = groups[groupId]!;
       }
@@ -97,7 +97,7 @@ class Groups {
 
   Future<void> _handleGroupCreation(Event event) async {
     if (!groups.containsKey(event.id) ||
-        (groups.containsKey(event.id) && groups[event.id]?.owner != event.pubkey)) {
+        (groups.containsKey(event.id) && groups[event.id]?.value.owner != event.pubkey)) {
       Channel group = Nip28.getChannelCreation(event);
       GroupDBISAR groupDB = _channelToGroupDB(group, event.createdAt);
       await syncGroupToDB(groupDB);
@@ -107,8 +107,8 @@ class Groups {
   Future<void> _handleGroupMetadata(Event event) async {
     Channel group = Nip28.getChannelMetadata(event);
     if (groups.containsKey(group.channelId) &&
-        groups[group.channelId]?.owner.isNotEmpty == true &&
-        groups[group.channelId]?.owner != group.owner) {
+        groups[group.channelId]?.value.owner.isNotEmpty == true &&
+        groups[group.channelId]?.value.owner != group.owner) {
       return;
     }
     GroupDBISAR groupDB = _channelToGroupDB(group, event.createdAt);
@@ -119,7 +119,7 @@ class Groups {
     ChannelMessage groupMessage = Nip28.getChannelMessage(event);
     String subType =
         groupMessage.actionsType != null ? Nip28.actionToType(groupMessage.actionsType!) : '';
-    GroupDBISAR? groupDB = myGroups[groupMessage.channelId];
+    GroupDBISAR? groupDB = myGroups[groupMessage.channelId]?.value;
     if (groupDB == null) return;
     switch (subType) {
       case 'invite':
@@ -182,7 +182,7 @@ class Groups {
   }
 
   GroupDBISAR _channelToGroupDB(Channel group, int updateTime) {
-    GroupDBISAR? groupDB = groups[group.channelId];
+    GroupDBISAR? groupDB = groups[group.channelId]?.value;
     if (groupDB != null && groupDB.updateTime < updateTime) {
       groupDB.name = group.name;
       groupDB.about = group.about;
@@ -207,9 +207,15 @@ class Groups {
   }
 
   Future<void> syncGroupToDB(GroupDBISAR groupDB) async {
-    groups[groupDB.groupId] = groupDB;
+    if (groups.containsKey(groupDB.groupId)) {
+      groups[groupDB.groupId]?.value = groupDB;
+    } else {
+      groups[groupDB.groupId] = ValueNotifier(groupDB);
+    }
     if (myGroups.containsKey(groupDB.groupId)) {
-      myGroups[groupDB.groupId] = groupDB;
+      myGroups[groupDB.groupId]?.value = groupDB;
+    } else {
+      myGroups[groupDB.groupId] = ValueNotifier(groupDB);
     }
     await saveGroupToDB(groupDB);
   }
@@ -243,7 +249,9 @@ class Groups {
     if (keyword.isNotEmpty) {
       RegExp regex = RegExp(keyword, caseSensitive: false);
       List<GroupDBISAR> filteredFriends = myGroups.values
-          .where((channel) => regex.hasMatch(channel.name) || regex.hasMatch(channel.about ?? ''))
+          .where((channel) =>
+              regex.hasMatch(channel.value.name) || regex.hasMatch(channel.value.about ?? ''))
+          .map((e) => e.value)
           .toList();
       return filteredFriends;
     }
@@ -251,7 +259,7 @@ class Groups {
   }
 
   List<String> getAllUnMuteGroups() {
-    return myGroups.entries.where((e) => e.value.mute == false).map((e) => e.key).toList();
+    return myGroups.entries.where((e) => e.value.value.mute == false).map((e) => e.key).toList();
   }
 
   Future<Event?> getSendGroupMessageEvent(String groupId, MessageType type, String content,
@@ -349,7 +357,7 @@ class Groups {
   }
 
   Future<OKEvent> sendToGroup(String groupId, Event event) async {
-    GroupDBISAR? groupDB = groups[groupId];
+    GroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB != null) {
       return await sendMessageEvent(groupDB.members, event);
     } else {
@@ -358,7 +366,7 @@ class Groups {
   }
 
   Future<OKEvent> sendToOwner(String groupId, Event event) async {
-    GroupDBISAR? groupDB = groups[groupId];
+    GroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB != null) {
       return await sendMessageEvent([groupDB.owner], event);
     } else {

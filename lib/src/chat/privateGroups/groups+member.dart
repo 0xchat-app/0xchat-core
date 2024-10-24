@@ -20,7 +20,7 @@ extension Member on Groups {
   Future<OKEvent> requestGroup(String groupId, String groupOwner,
       String groupName, String content) async {
     content = "${Account.sharedInstance.me?.name} request to join the group";
-    GroupDBISAR? groupDB = groups[groupId];
+    GroupDBISAR? groupDB = groups[groupId]?.value;
     groupDB ??=
         GroupDBISAR(groupId: groupId, owner: groupOwner, name: groupName);
     if (groupDB.owner.isEmpty) groupDB.owner = groupOwner;
@@ -28,8 +28,8 @@ extension Member on Groups {
     await Groups.saveGroupToDB(groupDB);
     OKEvent? okEvent;
     if (!checkInGroup(groupId)) {
-      groups[groupId] = groupDB;
-      myGroups[groupId] = groupDB;
+      groups[groupId]?.value = groupDB;
+      myGroups[groupId]?.value = groupDB;
       okEvent = await sendGroupMessage(groupId, MessageType.system, content,
           actionsType: 'request');
       okEvent = await syncMyGroupListToRelay();
@@ -41,7 +41,7 @@ extension Member on Groups {
 
   Future<OKEvent> joinGroup(String groupId, String content) async {
     if (groups.containsKey(groupId) &&
-        groups[groupId]?.members?.contains(pubkey) == true) {
+        groups[groupId]?.value.members?.contains(pubkey) == true) {
       myGroups[groupId] = groups[groupId]!;
       OKEvent ok = await syncMyGroupListToRelay();
       if (ok.status) {
@@ -80,14 +80,14 @@ extension Member on Groups {
 
   Future<void> _setMuteGroup(String groupId, bool mute) async {
     if (myGroups.containsKey(groupId)) {
-      GroupDBISAR groupDB = myGroups[groupId]!;
+      GroupDBISAR groupDB = myGroups[groupId]!.value;
       groupDB.mute = mute;
       await syncGroupToDB(groupDB);
     }
   }
 
   Future<List<UserDBISAR>> getAllGroupMembers(String groupId) async {
-    GroupDBISAR? groupDB = groups[groupId];
+    GroupDBISAR? groupDB = groups[groupId]?.value;
     List<UserDBISAR> result = [];
     if (groupDB != null && groupDB.members != null) {
       await Future.forEach(groupDB.members!, (member) async {
