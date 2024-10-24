@@ -108,7 +108,7 @@ extension EMember on RelayGroup {
 
   Future<OKEvent> sendLeaveRequest(String groupId, String content) async {
     RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
-    if (groupDB == null) return OKEvent(groupId, false, 'group not found');
+    if (groupDB == null || groupDB.relay.isEmpty) return OKEvent(groupId, false, 'group not found');
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = await Nip29.encodeLeaveRequest(groupId, content, pubkey, privkey);
     Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
