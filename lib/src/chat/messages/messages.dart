@@ -377,6 +377,7 @@ class Messages {
     List<MessageType> messageTypes = const [],
     int? until,
     String? messageId,
+    bool? hasPreviewData,
   }) {
     final Map<Type, List<dynamic>> buffers = DBISAR.sharedInstance.getBuffers();
     List<MessageDBISAR> result = [];
@@ -400,6 +401,9 @@ class Messages {
       if (query && messageTypes.isNotEmpty) {
         query = messageTypes.any((messageType) => message.type == MessageDBISAR.messageTypeToString(messageType));
       }
+      if (query && hasPreviewData != null) {
+        query = hasPreviewData ? message.previewData != null : message.previewData == null;
+      }
       if (query && until != null) {
         query = message.createTime < until;
       }
@@ -416,6 +420,7 @@ class Messages {
     int? until,
     int? since,
     int? limit,
+    bool? hasPreviewData,
   }) async {
     assert(until == null || since == null, 'unsupported filter');
 
@@ -451,6 +456,12 @@ class Messages {
       });
     }
 
+    if (hasPreviewData != null) {
+      queryBuilder = queryBuilder.anyOf(messageTypes, (q, messageType) {
+        return hasPreviewData ? q.previewDataIsNotNull() : q.previewDataIsNull();
+      });
+    }
+
     var queryBuilderAfterSort = queryBuilder.sortByCreateTimeDesc();
     if (until != null) {
       queryBuilderAfterSort = queryBuilder
@@ -476,6 +487,7 @@ class Messages {
       sessionId: sessionId,
       messageTypes: messageTypes,
       until: until,
+      hasPreviewData: hasPreviewData
     );
     for (var message in messages) {
       message = message.withGrowableLevels();
