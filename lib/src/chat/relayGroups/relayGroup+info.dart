@@ -16,7 +16,7 @@ extension EInfo on RelayGroup {
       await Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.temp);
       tempRelays.add(relay);
     }
-    RelayGroupDBISAR? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     groupDB ??= RelayGroupDBISAR(groupId: groupId, relay: relay, author: author ?? '');
     Completer<RelayGroupDBISAR?> completer = Completer<RelayGroupDBISAR?>();
     Filter f = Filter(kinds: [39000, 39001, 39002], d: [groupId]);
@@ -65,7 +65,7 @@ extension EInfo on RelayGroup {
 
   RelayGroupDBISAR handleGroupMetadata(Event event, String relay) {
     Group group = Nip29.decodeMetadata(event, relay);
-    RelayGroupDBISAR? groupDB = groups[group.groupId];
+    RelayGroupDBISAR? groupDB = groups[group.groupId]?.value;
     groupDB ??= RelayGroupDBISAR(groupId: group.groupId, relay: relay);
     if (event.createdAt < groupDB.lastUpdatedTime) return groupDB;
     groupDB.name = group.name;
@@ -81,7 +81,7 @@ extension EInfo on RelayGroup {
   }
 
   Future<void> handleGroupMetadataFromModeration(GroupModeration moderation, String relay) async {
-    RelayGroupDBISAR? groupDB = groups[moderation.groupId];
+    RelayGroupDBISAR? groupDB = groups[moderation.groupId]?.value;
     groupDB ??= RelayGroupDBISAR(groupId: moderation.groupId, relay: relay);
     if (moderation.createdAt < groupDB.lastUpdatedTime) return;
     groupDB.name = moderation.name;
@@ -95,7 +95,7 @@ extension EInfo on RelayGroup {
   Future<void> handleGroupAdmins(Event event, String relay) async {
     String groupId = Nip29.getGroupIdFromEvent(event) ?? '';
     List<GroupAdmin> admins = Nip29.decodeGroupAdmins(event);
-    RelayGroupDBISAR? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     groupDB ??= RelayGroupDBISAR(groupId: groupId, relay: relay);
     if (event.createdAt < groupDB.lastAdminsUpdatedTime) return;
     groupDB.admins = admins;
@@ -107,7 +107,7 @@ extension EInfo on RelayGroup {
   RelayGroupDBISAR handleGroupMembers(Event event, String relay) {
     String groupId = Nip29.getGroupIdFromEvent(event) ?? '';
     List<String> members = Nip29.decodeGroupMembers(event);
-    RelayGroupDBISAR? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     groupDB ??= RelayGroupDBISAR(groupId: groupId, relay: relay);
     if (event.createdAt < groupDB.lastMembersUpdatedTime) return groupDB;
     groupDB.members = members;
@@ -118,11 +118,11 @@ extension EInfo on RelayGroup {
   }
 
   List<GroupAdmin>? getGroupAdminsFromLocal(String groupId) {
-    return groups[groupId]?.admins;
+    return groups[groupId]?.value.admins;
   }
 
   Future<List<UserDBISAR>> getGroupMembersFromLocal(String groupId) async {
-    RelayGroupDBISAR? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     List<UserDBISAR> result = [];
     if (groupDB != null && groupDB.members != null) {
       await Future.forEach(groupDB.members!, (member) async {
@@ -208,8 +208,8 @@ extension EInfo on RelayGroup {
     SimpleGroups simpleGroups = getHostAndGroupId(id);
     String groupId = simpleGroups.groupId;
     relay ??= simpleGroups.relay;
-    if (groups.containsKey(groupId) && groups[groupId]!.lastUpdatedTime > 0) {
-      return groups[groupId]!;
+    if (groups.containsKey(groupId) && groups[groupId]!.value.lastUpdatedTime > 0) {
+      return groups[groupId]!.value;
     } else {
       RelayGroupDBISAR groupDB = RelayGroupDBISAR(groupId: groupId, relay: relay);
       syncGroupToDB(groupDB);

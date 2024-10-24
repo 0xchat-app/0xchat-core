@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:chatcore/chat-core.dart';
@@ -31,7 +32,7 @@ extension EMember on RelayGroup {
             picture: picture,
             about: about,
             lastUpdatedTime: event.createdAt);
-        myGroups[groupId] = relayGroupDB;
+        myGroups[groupId] = ValueNotifier(relayGroupDB) ;
         await syncGroupToDB(relayGroupDB);
         await editGroupStatus(groupId, closed, closed, '');
         await editMetadata(groupId, name, about, picture, '');
@@ -77,7 +78,7 @@ extension EMember on RelayGroup {
               picture: picture,
               about: about,
               lastUpdatedTime: currentUnixTimestampSeconds());
-          myGroups[groupId] = relayGroupDB;
+          myGroups[groupId] = ValueNotifier(relayGroupDB);
           await syncGroupToDB(relayGroupDB);
           await editGroupStatus(groupId, closed, closed, '');
           await editMetadata(groupId, name, about, picture, '');
@@ -94,7 +95,7 @@ extension EMember on RelayGroup {
   }
 
   Future<OKEvent> leaveGroup(String groupId, String reason) async {
-    RelayGroupDBISAR? groupDB = myGroups[groupId];
+    RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     OKEvent ok = await sendLeaveRequest(groupId, reason);
     if (ok.status) {
@@ -106,7 +107,7 @@ extension EMember on RelayGroup {
   }
 
   Future<OKEvent> sendLeaveRequest(String groupId, String content) async {
-    RelayGroupDBISAR? groupDB = myGroups[groupId];
+    RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return OKEvent(groupId, false, 'group not found');
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = await Nip29.encodeLeaveRequest(groupId, content, pubkey, privkey);
@@ -132,12 +133,12 @@ extension EMember on RelayGroup {
     SimpleGroups simpleGroups = getHostAndGroupId(input);
     String groupId = simpleGroups.groupId;
     String relay = simpleGroups.relay;
-    RelayGroupDBISAR? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB != null) relay = groupDB.relay;
     if (relay.isEmpty) return OKEvent(input, false, 'empty relay');
     if (groupDB == null) {
       groupDB = RelayGroupDBISAR(groupId: groupId, relay: relay);
-      groups[groupId] = groupDB;
+      groups[groupId] = ValueNotifier(groupDB);
     }
     if (groupDB.lastUpdatedTime > 0 && groupDB.closed == false) {
       //open group, auto join
@@ -149,7 +150,7 @@ extension EMember on RelayGroup {
     syncGroupToDB(groupDB);
 
     if (!myGroups.containsKey(groupId)) {
-      myGroups[groupId] = groupDB;
+      myGroups[groupId] = ValueNotifier(groupDB);
       syncMyGroupListToRelay();
     }
 
@@ -172,7 +173,7 @@ extension EMember on RelayGroup {
     UserDBISAR? user = await Account.sharedInstance.getUserInfo(event.pubkey);
     String content = '${user?.name} left the group';
 
-    RelayGroupDBISAR? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB != null) {
       groupDB.members ??= [];
       if (groupDB.members!.contains(event.pubkey)) {
@@ -197,7 +198,7 @@ extension EMember on RelayGroup {
         }
         content = '${content}joined the group';
 
-        RelayGroupDBISAR? groupDB = groups[db.groupId];
+        RelayGroupDBISAR? groupDB = groups[db.groupId]?.value;
         if (groupDB != null) {
           groupDB.members ??= [];
           if (!groupDB.members!.contains(pubkey) && moderation.users.contains(pubkey)) {
@@ -212,7 +213,7 @@ extension EMember on RelayGroup {
         // }
         // content = 'Admin remove ${content}from the group';
 
-        RelayGroupDBISAR? groupDB = groups[db.groupId];
+        RelayGroupDBISAR? groupDB = groups[db.groupId]?.value;
         if (groupDB != null) {
           groupDB.members ??= [];
           if (groupDB.members!.contains(pubkey) && moderation.users.contains(pubkey)) {
@@ -257,7 +258,7 @@ extension EMember on RelayGroup {
 
   Future<void> _setMuteGroup(String groupId, bool mute) async {
     if (myGroups.containsKey(groupId)) {
-      RelayGroupDBISAR groupDB = myGroups[groupId]!;
+      RelayGroupDBISAR groupDB = myGroups[groupId]!.value;
       groupDB.mute = mute;
       await syncGroupToDB(groupDB);
     }
@@ -267,7 +268,7 @@ extension EMember on RelayGroup {
     SimpleGroups simpleGroups = getHostAndGroupId(groupId);
     groupId = simpleGroups.groupId;
     String relay = simpleGroups.relay;
-    RelayGroupDBISAR? relayGroupDB = groups[groupId];
+    RelayGroupDBISAR? relayGroupDB = groups[groupId]?.value;
     relayGroupDB ??= RelayGroupDBISAR(groupId: groupId, relay: relay);
     relayGroupDB.members ??= [];
 

@@ -9,7 +9,7 @@ extension EMessage on RelayGroup {
   Future<void> handleGroupMessage(Event event, String relay) async {
     if (Contacts.sharedInstance.inBlockList(event.pubkey)) return;
     GroupMessage groupMessage = Nip29.decodeGroupMessage(event);
-    RelayGroupDBISAR? groupDB = groups[groupMessage.groupId];
+    RelayGroupDBISAR? groupDB = groups[groupMessage.groupId]?.value;
     if (groupDB == null) return;
 
     MessageDBISAR messageDB = MessageDBISAR(
@@ -70,7 +70,7 @@ extension EMessage on RelayGroup {
       int createAt = 0,
       String? replaceMessageId}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    RelayGroupDBISAR? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     event ??= await Nip29.encodeGroupMessageReply(
         groupId, MessageDBISAR.getContent(type, content, source), previous, pubkey, privkey,
@@ -135,7 +135,7 @@ extension EMessage on RelayGroup {
   }
 
   Future<OKEvent> sendToGroup(String groupId, Event event) async {
-    RelayGroupDBISAR? groupDB = myGroups[groupId];
+    RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
       Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
@@ -149,7 +149,7 @@ extension EMessage on RelayGroup {
   }
 
   void loadGroupMessages(String groupId, int? since, int? until, int? limit) {
-    RelayGroupDBISAR? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB == null) return;
     Filter f = Filter(h: [
       groupDB.groupId

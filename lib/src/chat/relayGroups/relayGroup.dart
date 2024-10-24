@@ -23,8 +23,8 @@ class RelayGroup {
   // memory storage
   String pubkey = '';
   String privkey = '';
-  Map<String, RelayGroupDBISAR> groups = {};
-  Map<String, RelayGroupDBISAR> myGroups = {};
+  Map<String, ValueNotifier<RelayGroupDBISAR>> groups = {};
+  Map<String, ValueNotifier<RelayGroupDBISAR>> myGroups = {};
   Map<String, bool> offlineGroupMessageFinish = {};
   List<String> groupRelays = [];
 
@@ -45,8 +45,7 @@ class RelayGroup {
     Account.sharedInstance.relayGroupListUpdateCallback = () {
       groupListUpdated();
     };
-    Connect.sharedInstance
-        .addConnectStatusListener((relay, status, relayKinds) async {
+    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 && Account.sharedInstance.me != null) {
         if (groupRelays.contains(relay)) {
           _udpateGroupInfos(relay: relay);
@@ -70,7 +69,7 @@ class RelayGroup {
   }
 
   bool checkInGroup(String groupId) {
-    return groups[groupId]?.members?.contains(pubkey) == true;
+    return groups[groupId]?.value.members?.contains(pubkey) == true;
   }
 
   bool checkInMyGroupList(String groupId) {
@@ -85,13 +84,12 @@ class RelayGroup {
 
   Future<void> _loadAllGroupsFromDB() async {
     final isar = DBISAR.sharedInstance.isar;
-    List<RelayGroupDBISAR> maps =
-        await isar.relayGroupDBISARs.where().findAll();
+    List<RelayGroupDBISAR> maps = await isar.relayGroupDBISARs.where().findAll();
     for (RelayGroupDBISAR e in maps) {
       RelayGroupDBISAR groupDB = e.withGrowableLevels();
       if (groupDB.groupId.isNotEmpty) {
         if (groupDB.name.isEmpty) groupDB.name = groupDB.groupId;
-        groups[groupDB.groupId] = groupDB;
+        groups[groupDB.groupId] = ValueNotifier(groupDB);
       }
     }
     myGroups = _myGroups();
@@ -117,12 +115,10 @@ class RelayGroup {
     }
   }
 
-  Map<String, RelayGroupDBISAR> _myGroups() {
-    Map<String, RelayGroupDBISAR> result = {};
+  Map<String, ValueNotifier<RelayGroupDBISAR>> _myGroups() {
+    Map<String, ValueNotifier<RelayGroupDBISAR>> result = {};
     UserDBISAR? me = Account.sharedInstance.me;
-    if (me != null &&
-        me.relayGroupsList != null &&
-        me.relayGroupsList!.isNotEmpty) {
+    if (me != null && me.relayGroupsList != null && me.relayGroupsList!.isNotEmpty) {
       List<String> groupList = me.relayGroupsList!;
       groupRelays.clear();
       for (String id in groupList) {
@@ -131,11 +127,11 @@ class RelayGroup {
         if (groupId.isEmpty) continue;
         if (!groups.containsKey(groupId)) {
           groups[groupId] =
-              RelayGroupDBISAR(groupId: groupId, relay: simpleGroups.relay);
+              ValueNotifier(RelayGroupDBISAR(groupId: groupId, relay: simpleGroups.relay));
           getGroupMetadataFromRelay(groupId);
         }
         result[groupId] = groups[groupId]!;
-        groupRelays.add(groups[groupId]!.relay);
+        groupRelays.add(groups[groupId]!.value.relay);
       }
       connectToRelays(groupRelays);
     }
@@ -150,19 +146,18 @@ class RelayGroup {
 
   Future<void> _udpateGroupInfos({String? relay}) async {
     if (myGroups.isEmpty) return;
-    List<RelayGroupDBISAR> values = List.from(myGroups.values);
-    for (var group in values) {
-      if (group.lastUpdatedTime == 0 &&
-          (relay == null || group.relay == relay)) {
-        RelayGroupDBISAR? relayGroupDB =
-            await getGroupMetadataFromRelay(group.groupId);
-        if (relayGroupDB != null) myGroups[group.groupId] = relayGroupDB;
+    List<ValueNotifier<RelayGroupDBISAR>> values = List.from(myGroups.values);
+    for (var value in values) {
+      var group = value.value;
+      if (group.lastUpdatedTime == 0 && (relay == null || group.relay == relay)) {
+        RelayGroupDBISAR? relayGroupDB = await getGroupMetadataFromRelay(group.groupId);
+        if (relayGroupDB != null) myGroups[group.groupId] = ValueNotifier(relayGroupDB);
       }
     }
   }
 
   void updateGroupSubscription({String? relay}) {
-    if (myGroups.isEmpty){
+    if (myGroups.isEmpty) {
       offlineGroupMessageFinishCallBack?.call();
       if (!Messages.sharedInstance.groupMessageCompleter.isCompleted) {
         Messages.sharedInstance.groupMessageCompleter.complete();
@@ -170,19 +165,17 @@ class RelayGroup {
       return;
     }
     if (groupMessageSubscription.isNotEmpty) {
-      Connect.sharedInstance
-          .closeRequests(groupMessageSubscription, relay: relay);
+      Connect.sharedInstance.closeRequests(groupMessageSubscription, relay: relay);
     }
 
     Map<String, List<Filter>> subscriptions = {};
     List<String> groupList = [];
     for (var g in myGroups.values) {
-      if (g.members?.contains(pubkey) == true) groupList.add(g.groupId);
+      if (g.value.members?.contains(pubkey) == true) groupList.add(g.value.groupId);
     }
     if (relay == null) {
       for (String relayURL in groupRelays) {
-        int groupMessageUntil =
-            Relays.sharedInstance.getGroupMessageUntil(relayURL);
+        int groupMessageUntil = Relays.sharedInstance.getGroupMessageUntil(relayURL);
         Filter f = Filter(
             h: groupList,
             kinds: [
@@ -238,8 +231,8 @@ class RelayGroup {
       subscriptions[relay] = [f];
     }
 
-    groupMessageSubscription = Connect.sharedInstance
-        .addSubscriptions(subscriptions, closeSubscription: false, eventCallBack: (event, relay) async {
+    groupMessageSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
+        closeSubscription: false, eventCallBack: (event, relay) async {
       _updateGroupMessageTime(event.createdAt, relay);
       handleGroupEvents(event, relay);
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
@@ -261,7 +254,7 @@ class RelayGroup {
     });
   }
 
-  void handleGroupEvents(Event event, String relay){
+  void handleGroupEvents(Event event, String relay) {
     switch (event.kind) {
       case 7:
         handleGroupReaction(event, relay);
@@ -313,10 +306,8 @@ class RelayGroup {
       Relays.sharedInstance.setGroupMessageUntil(eventTime, relay);
       Relays.sharedInstance.setGroupMessageSince(eventTime, relay);
     } else {
-      Relays.sharedInstance.relays[relay] = RelayDBISAR(
-          url: relay,
-          groupMessageUntil: eventTime,
-          groupMessageSince: eventTime);
+      Relays.sharedInstance.relays[relay] =
+          RelayDBISAR(url: relay, groupMessageUntil: eventTime, groupMessageSince: eventTime);
     }
     if (offlineGroupMessageFinish[relay] == true) {
       Relays.sharedInstance.syncRelaysToDB(r: relay);
@@ -337,9 +328,15 @@ class RelayGroup {
   }
 
   Future<void> syncGroupToDB(RelayGroupDBISAR groupDB) async {
-    groups[groupDB.groupId] = groupDB;
+    if (groups.containsKey(groupDB.groupId)) {
+      groups[groupDB.groupId]?.value = groupDB;
+    } else {
+      groups[groupDB.groupId] = ValueNotifier(groupDB);
+    }
     if (myGroups.containsKey(groupDB.groupId)) {
-      myGroups[groupDB.groupId] = groupDB;
+      myGroups[groupDB.groupId]?.value = groupDB;
+    } else {
+      myGroups[groupDB.groupId] = ValueNotifier(groupDB);
     }
     await saveGroupToDB(groupDB);
   }
@@ -347,7 +344,7 @@ class RelayGroup {
   Future<void> _syncMyGroupListToDB() async {
     UserDBISAR? me = Account.sharedInstance.me;
     me!.relayGroupsList =
-        myGroups.values.map((e) => '${e.relay}\'${e.groupId}').toList();
+        myGroups.values.map((e) => '${e.value.relay}\'${e.value.groupId}').toList();
     await Account.sharedInstance.syncMe();
     groupListUpdated();
   }
@@ -356,7 +353,7 @@ class RelayGroup {
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<SimpleGroups> list = [];
     for (var group in myGroups.values) {
-      list.add(SimpleGroups(group.groupId, group.relay));
+      list.add(SimpleGroups(group.value.groupId, group.value.relay));
     }
     Event event = await Nip51.createSimpleGroupList([], list, privkey, pubkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
@@ -384,14 +381,13 @@ class RelayGroup {
         return await searchGroupsMetadataFromRelays([keyword], null);
       }
       if (isGroupIdentifier(keyword)) {
-        RelayGroupDBISAR? group =
-            await searchGroupsMetadataWithGroupID(keyword, null);
+        RelayGroupDBISAR? group = await searchGroupsMetadataWithGroupID(keyword, null);
         if (group != null) return [group];
       }
       RegExp regex = RegExp(keyword, caseSensitive: false);
       List<RelayGroupDBISAR> result = groups.values
-          .where((group) =>
-              regex.hasMatch(group.name) || regex.hasMatch(group.about))
+          .where((group) => regex.hasMatch(group.value.name) || regex.hasMatch(group.value.about))
+          .map((e) => e.value)
           .toList();
       return result;
     }
@@ -415,16 +411,16 @@ class RelayGroup {
 
   List<String> getAllUnMuteGroups() {
     return myGroups.entries
-        .where((e) => e.value.mute == false)
-        .map((e) => e.value.identifier)
+        .where((e) => e.value.value.mute == false)
+        .map((e) => e.value.value.identifier)
         .toList();
   }
 
   String? encodeGroup(String groupId) {
-    RelayGroupDBISAR? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB == null) return null;
-    String nevent = Nip19.encodeShareableEntity(
-        'naddr', groupId, [groupDB.relay], groupDB.author, 39000);
+    String nevent =
+        Nip19.encodeShareableEntity('naddr', groupId, [groupDB.relay], groupDB.author, 39000);
     return Nip21.encode(nevent);
   }
 
@@ -443,11 +439,7 @@ class RelayGroup {
         };
       }
     } else if (encodedGroup.startsWith('note')) {
-      return {
-        'groupId': Nip19.decodeNote(encodedGroup),
-        'relays': [],
-        'author': null
-      };
+      return {'groupId': Nip19.decodeNote(encodedGroup), 'relays': [], 'author': null};
     }
     return null;
   }

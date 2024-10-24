@@ -213,7 +213,7 @@ class Zaps {
             break;
           case ZapType.relayGroup:
             RelayGroupDBISAR? relayGroupDB =
-                RelayGroup.sharedInstance.groups[groupId];
+                RelayGroup.sharedInstance.groups[groupId]?.value;
             if (relayGroupDB != null) {
               toRelays.addAll(
                   Connect.sharedInstance.relays(relayKind: RelayKind.general));

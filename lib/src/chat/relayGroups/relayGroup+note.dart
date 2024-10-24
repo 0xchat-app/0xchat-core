@@ -26,7 +26,7 @@ extension ENote on RelayGroup {
       String? replyEvent,
       List<String>? mentions,
       List<String>? hashTags}) async {
-    RelayGroupDBISAR? groupDB = myGroups[groupId];
+    RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event;
@@ -62,7 +62,7 @@ extension ENote on RelayGroup {
     if (groupId.isEmpty) {
       return OKEvent(replyNoteId, false, 'group not exit');
     }
-    RelayGroupDBISAR? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB == null) {
       return OKEvent(replyNoteId, false, 'group not exit');
     }
@@ -111,7 +111,7 @@ extension ENote on RelayGroup {
     if (groupId.isEmpty) {
       return OKEvent(reactedNoteId, false, 'group not exit');
     }
-    RelayGroupDBISAR? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB == null) {
       return OKEvent(reactedNoteId, false, 'group not exit');
     }
@@ -157,7 +157,7 @@ extension ENote on RelayGroup {
     if (groupId.isEmpty) {
       return OKEvent(repostNoteId, false, 'group not exit');
     }
-    RelayGroupDBISAR? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB == null) {
       return OKEvent(repostNoteId, false, 'group not exit');
     }
@@ -200,7 +200,7 @@ extension ENote on RelayGroup {
     if (groupId.isEmpty) {
       return OKEvent(quoteRepostNoteId, false, 'group not exit');
     }
-    RelayGroupDBISAR? groupDB = groups[groupId];
+    RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB == null) {
       return OKEvent(quoteRepostNoteId, false, 'group not exit');
     }
