@@ -25,8 +25,8 @@ class Channels {
   // memory storage
   String pubkey = '';
   String privkey = '';
-  Map<String, ChannelDBISAR> channels = {};
-  Map<String, ChannelDBISAR> myChannels = {};
+  Map<String, ValueNotifier<ChannelDBISAR>> channels = {};
+  Map<String, ValueNotifier<ChannelDBISAR>> myChannels = {};
   int maxLimit = 500;
 
   ChannelsUpdatedCallBack? myChannelsUpdatedCallBack;
@@ -61,7 +61,7 @@ class Channels {
   Future<void> _loadAllChannelsFromDB() async {
     final isar = DBISAR.sharedInstance.isar;
     List<Object?> maps = await isar.channelDBISARs.where().findAll();
-    channels = {for (var channelDB in maps) (channelDB as ChannelDBISAR).channelId: channelDB};
+    channels = {for (var channelDB in maps) (channelDB as ChannelDBISAR).channelId: ValueNotifier(channelDB)};
     myChannels = _myChannels();
     myChannelsUpdatedCallBack?.call();
   }
@@ -175,8 +175,8 @@ class Channels {
     }
   }
 
-  Map<String, ChannelDBISAR> _myChannels() {
-    Map<String, ChannelDBISAR> result = {};
+  Map<String, ValueNotifier<ChannelDBISAR>> _myChannels() {
+    Map<String, ValueNotifier<ChannelDBISAR>> result = {};
     UserDBISAR? me = Account.sharedInstance.me;
     if (me != null && me.channelsList != null && me.channelsList!.isNotEmpty) {
       List<String> channelList = me.channelsList!;
@@ -186,7 +186,7 @@ class Channels {
         } else {
           ChannelDBISAR channelDB = ChannelDBISAR(channelId: channelId);
           channelDB.name = channelDB.shortChannelId;
-          channels[channelId] = channelDB;
+          channels[channelId] = ValueNotifier(channelDB);
           result[channelId] = channels[channelId]!;
         }
       }
@@ -204,7 +204,7 @@ class Channels {
   }
 
   ChannelDBISAR getChannelDBFromChannel(Channel channel) {
-    ChannelDBISAR? channelDB = channels[channel.channelId];
+    ChannelDBISAR? channelDB = channels[channel.channelId]?.value;
     if (channelDB == null) {
       channelDB = ChannelDBISAR(
           channelId: channel.channelId,
@@ -214,7 +214,7 @@ class Channels {
           picture: channel.picture);
       if (channel.createdAt > 0) channelDB.createTime = channel.createdAt;
       if (channel.updatedAt > 0) channelDB.updateTime = channel.updatedAt;
-      channels[channel.channelId] = channelDB;
+      channels[channel.channelId] = ValueNotifier(channelDB);
     } else {
       if (channel.createdAt > 0) channelDB.createTime = channel.createdAt;
       if (channel.updatedAt >= channelDB.updateTime) {
@@ -261,7 +261,7 @@ class Channels {
     );
     await Connect.sharedInstance.connectRelays(relays ?? [], relayKind: RelayKind.temp);
     Connect.sharedInstance.addSubscription([f], relays: relays, eventCallBack: (event, relay) {
-      if (channels.containsKey(event.id) && channels[event.id]!.updateTime < event.createdAt) {
+      if (channels.containsKey(event.id) && channels[event.id]!.value.updateTime < event.createdAt) {
         Channel channel = Nip28.getChannelMetadata(event);
         ChannelDBISAR channelDB = getChannelDBFromChannel(channel);
         _syncChannelToDB(channelDB);
@@ -276,9 +276,17 @@ class Channels {
   }
 
   Future<void> _syncChannelToDB(ChannelDBISAR channelDB) async {
-    channels[channelDB.channelId] = channelDB;
+    if (channels.containsKey(channelDB.channelId)) {
+      channels[channelDB.channelId]?.value = channelDB;
+    }
+    else{
+      channels[channelDB.channelId] = ValueNotifier(channelDB);
+    }
     if (myChannels.containsKey(channelDB.channelId)) {
-      myChannels[channelDB.channelId] = channelDB;
+      myChannels[channelDB.channelId]?.value = channelDB;
+    }
+    else{
+      myChannels[channelDB.channelId] = ValueNotifier(channelDB);
     }
     await DBISAR.sharedInstance.saveToDB(channelDB);
   }
@@ -349,8 +357,8 @@ class Channels {
         channelDB.channelId = event.id;
         channelDB.creator = pubkey;
         channelDB.createTime = event.createdAt;
-        channels[channelDB.channelId] = channelDB;
-        myChannels[channelDB.channelId] = channelDB;
+        channels[channelDB.channelId] = ValueNotifier(channelDB);
+        myChannels[channelDB.channelId] = ValueNotifier(channelDB);
         _updateChannelSubscription();
         await _syncChannelToDB(channelDB);
         // update my channel list
@@ -392,11 +400,11 @@ class Channels {
     List<String> unknownChannels = [];
     List<String> keys = List.from(channels.keys.toList());
     for (var channelId in channelIds) {
-      if (!keys.contains(channelId) || channels[channelId]?.createTime == 0) {
+      if (!keys.contains(channelId) || channels[channelId]?.value.createTime == 0) {
         unknownChannels.add(channelId);
         ChannelDBISAR channelDB = ChannelDBISAR(channelId: channelId);
         channelDB.name = channelDB.shortChannelId;
-        channels[channelId] = channelDB;
+        channels[channelId] = ValueNotifier(channelDB);
       }
     }
     if (unknownChannels.isEmpty) return;
@@ -421,8 +429,8 @@ class Channels {
         privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (ok.status) {
-        channels[channelDB.channelId] = channelDB;
-        myChannels[channelDB.channelId] = channelDB;
+        channels[channelDB.channelId]?.value = channelDB;
+        myChannels[channelDB.channelId]?.value = channelDB;
         await _syncChannelToDB(channelDB);
       }
       if (!completer.isCompleted) completer.complete(ok);
@@ -545,7 +553,7 @@ class Channels {
   Future<OKEvent> joinChannel(String channelId) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     if (channels[channelId] == null) {
-      channels[channelId] = ChannelDBISAR(channelId: channelId);
+      channels[channelId] = ValueNotifier(ChannelDBISAR(channelId: channelId));
     }
     myChannels[channelId] = channels[channelId]!;
     _loadChannelPreMessages(channelId, currentUnixTimestampSeconds(), 100);
@@ -570,8 +578,8 @@ class Channels {
     if (keyword.isNotEmpty) {
       RegExp regex = RegExp(keyword, caseSensitive: false);
       List<ChannelDBISAR> filteredChannels = channels.values
-          .where((channel) => regex.hasMatch(channel.name!) || regex.hasMatch(channel.about!))
-          .toList();
+          .where((channel) => regex.hasMatch(channel.value.name!) || regex.hasMatch(channel.value.about!))
+          .map((e) => e.value).toList();
       return filteredChannels;
     }
     return null;
@@ -583,7 +591,7 @@ class Channels {
       await syncChannelsMetadataFromRelay([channelId], relays);
     }
     // print('searchChannel 333: ${channels[channelId]?.channelId}');
-    return channels[channelId];
+    return channels[channelId]?.value;
   }
 
   // get 20 latest channels
@@ -594,8 +602,10 @@ class Channels {
     Filter f =
         channelIds == null ? Filter(kinds: [40], limit: 20) : Filter(ids: channelIds, kinds: [40]);
     Map<String, ChannelDBISAR> result = {};
-    result.addAll(channels);
-    searchCallBack?.call(channels.values.toList());
+    for(var channel in channels.values){
+      result[channel.value.channelId] = channel.value;
+    }
+    searchCallBack?.call(channels.values.map((e) => e.value).toList());
     Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
       Channel channel = Nip28.getChannelCreation(event);
       if (!channels.containsKey(channel.channelId)) {
@@ -624,12 +634,12 @@ class Channels {
   }
 
   List<String> getAllUnMuteChannels() {
-    return myChannels.entries.where((e) => e.value.mute == false).map((e) => e.key).toList();
+    return myChannels.entries.where((e) => e.value.value.mute == false).map((e) => e.key).toList();
   }
 
   Future<void> _setMuteChannel(String channelId, bool mute) async {
     if (myChannels.containsKey(channelId)) {
-      ChannelDBISAR channelDB = myChannels[channelId]!;
+      ChannelDBISAR channelDB = myChannels[channelId]!.value;
       channelDB.mute = mute;
       await _syncChannelToDB(channelDB);
     }
