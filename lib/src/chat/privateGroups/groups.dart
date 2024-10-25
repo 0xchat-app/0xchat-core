@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/chat/privateGroups/model/groupDB_isar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:isar/isar.dart';
@@ -229,6 +230,12 @@ class Groups {
     UserDBISAR? me = Account.sharedInstance.me;
     me!.groupsList = list;
     await Account.sharedInstance.syncMe();
+  }
+
+  ValueNotifier<GroupDBISAR> getPrivateGroupNotifier(String groupId) {
+    if (groups.containsKey(groupId)) return groups[groupId]!;
+    groups[groupId] = ValueNotifier(GroupDBISAR(groupId: groupId));
+    return groups[groupId]!;
   }
 
   Future<OKEvent> syncMyGroupListToRelay() async {

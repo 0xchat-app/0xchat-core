@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/chat/relayGroups/model/relayGroupDB_isar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
@@ -80,6 +81,12 @@ class RelayGroup {
     myGroups = _myGroups();
     updateGroupSubscription();
     myGroupsUpdatedCallBack?.call();
+  }
+
+  ValueNotifier<RelayGroupDBISAR> getRelayGroupNotifier(String groupId) {
+    if (groups.containsKey(groupId)) return groups[groupId]!;
+    groups[groupId] = ValueNotifier(RelayGroupDBISAR(groupId: groupId));
+    return groups[groupId]!;
   }
 
   Future<void> _loadAllGroupsFromDB() async {

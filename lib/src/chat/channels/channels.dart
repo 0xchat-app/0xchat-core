@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
+import 'package:chatcore/src/chat/channels/model/channelDB_isar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
@@ -583,6 +584,12 @@ class Channels {
       return filteredChannels;
     }
     return null;
+  }
+
+  ValueNotifier<ChannelDBISAR> getChannelNotifier(String channelId) {
+    if (channels.containsKey(channelId)) return channels[channelId]!;
+    channels[channelId] = ValueNotifier(ChannelDBISAR(channelId: channelId));
+    return channels[channelId]!;
   }
 
   Future<ChannelDBISAR?> searchChannel(String channelId, List<String>? relays) async {
