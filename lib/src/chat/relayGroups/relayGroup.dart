@@ -79,8 +79,8 @@ class RelayGroup {
 
   void groupListUpdated() {
     myGroups = _myGroups();
-    updateGroupSubscription();
     myGroupsUpdatedCallBack?.call();
+    updateGroupSubscription();
   }
 
   ValueNotifier<RelayGroupDBISAR> getRelayGroupNotifier(String groupId) {
@@ -138,7 +138,9 @@ class RelayGroup {
           getGroupMetadataFromRelay(groupId);
         }
         result[groupId] = groups[groupId]!;
-        groupRelays.add(groups[groupId]!.value.relay);
+        if (!groupRelays.contains(groups[groupId]!.value.relay)) {
+          groupRelays.add(groups[groupId]!.value.relay);
+        }
       }
       connectToRelays(groupRelays);
     }

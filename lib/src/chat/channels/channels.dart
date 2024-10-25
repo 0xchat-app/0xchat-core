@@ -405,7 +405,9 @@ class Channels {
         unknownChannels.add(channelId);
         ChannelDBISAR channelDB = ChannelDBISAR(channelId: channelId);
         channelDB.name = channelDB.shortChannelId;
-        channels[channelId] = ValueNotifier(channelDB);
+        var channel = ValueNotifier(channelDB);
+        channels[channelId] = channel;
+        myChannels[channelId] = channel;
       }
     }
     if (unknownChannels.isEmpty) return;
