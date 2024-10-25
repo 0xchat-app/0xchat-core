@@ -148,9 +148,12 @@ extension EMessage on RelayGroup {
     }
   }
 
-  void loadGroupMessages(String groupId, int? since, int? until, int? limit) {
+  Future<void> loadGroupMessages(String groupId, int? since, int? until, int? limit) async {
     RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB == null || groupDB.relay.isEmpty) return;
+    if (groupDB.relay.isNotEmpty) {
+      await Connect.sharedInstance.connectRelays([groupDB.relay], relayKind: RelayKind.temp);
+    }
     Filter f = Filter(h: [
       groupDB.groupId
     ], kinds: [

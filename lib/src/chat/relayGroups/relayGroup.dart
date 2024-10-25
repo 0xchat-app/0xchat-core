@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/chat/relayGroups/model/relayGroupDB_isar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
@@ -136,6 +134,7 @@ class RelayGroup {
           groups[groupId] =
               ValueNotifier(RelayGroupDBISAR(groupId: groupId, relay: simpleGroups.relay));
           getGroupMetadataFromRelay(groupId);
+          loadGroupMessages(groupId, null, null, 200);
         }
         result[groupId] = groups[groupId]!;
         if (!groupRelays.contains(groups[groupId]!.value.relay)) {
@@ -182,6 +181,7 @@ class RelayGroup {
     for (var g in myGroups.values) {
       if (g.value.members?.contains(pubkey) == true) groupList.add(g.value.groupId);
     }
+    if(groupList.isEmpty) return;
     if (relay == null) {
       for (String relayURL in groupRelays) {
         int groupMessageUntil = Relays.sharedInstance.getGroupMessageUntil(relayURL);
@@ -336,7 +336,7 @@ class RelayGroup {
     });
   }
 
-  Future<void> syncGroupToDB(RelayGroupDBISAR groupDB) async {
+  void _setGroup(RelayGroupDBISAR groupDB){
     if (groups.containsKey(groupDB.groupId)) {
       groups[groupDB.groupId]?.value = groupDB;
     } else {
@@ -344,9 +344,11 @@ class RelayGroup {
     }
     if (myGroups.containsKey(groupDB.groupId)) {
       myGroups[groupDB.groupId]?.value = groupDB;
-    } else {
-      myGroups[groupDB.groupId] = ValueNotifier(groupDB);
     }
+  }
+
+  Future<void> syncGroupToDB(RelayGroupDBISAR groupDB) async {
+    _setGroup(groupDB);
     await saveGroupToDB(groupDB);
   }
 

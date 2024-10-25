@@ -276,7 +276,7 @@ class Channels {
     return completer.future;
   }
 
-  Future<void> _syncChannelToDB(ChannelDBISAR channelDB) async {
+  void _setChannel(ChannelDBISAR channelDB){
     if (channels.containsKey(channelDB.channelId)) {
       channels[channelDB.channelId]?.value = channelDB;
     }
@@ -286,9 +286,10 @@ class Channels {
     if (myChannels.containsKey(channelDB.channelId)) {
       myChannels[channelDB.channelId]?.value = channelDB;
     }
-    else{
-      myChannels[channelDB.channelId] = ValueNotifier(channelDB);
-    }
+  }
+
+  Future<void> _syncChannelToDB(ChannelDBISAR channelDB) async {
+    _setChannel(channelDB);
     await DBISAR.sharedInstance.saveToDB(channelDB);
   }
 
@@ -358,8 +359,9 @@ class Channels {
         channelDB.channelId = event.id;
         channelDB.creator = pubkey;
         channelDB.createTime = event.createdAt;
-        channels[channelDB.channelId] = ValueNotifier(channelDB);
-        myChannels[channelDB.channelId] = ValueNotifier(channelDB);
+        var channel = ValueNotifier(channelDB);
+        channels[channelDB.channelId] = channel;
+        myChannels[channelDB.channelId] = channel;
         _updateChannelSubscription();
         await _syncChannelToDB(channelDB);
         // update my channel list
@@ -432,8 +434,6 @@ class Channels {
         privkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (ok.status) {
-        channels[channelDB.channelId]?.value = channelDB;
-        myChannels[channelDB.channelId]?.value = channelDB;
         await _syncChannelToDB(channelDB);
       }
       if (!completer.isCompleted) completer.complete(ok);

@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:isar/isar.dart';
-
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 

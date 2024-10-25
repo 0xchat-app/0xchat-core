@@ -56,7 +56,7 @@ extension EInfo on RelayGroup {
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       if (unCompletedRelays.isEmpty && !completer.isCompleted) {
         if (groupDB != null) await syncGroupToDB(groupDB);
-        Connect.sharedInstance.closeConnects(tempRelays, RelayKind.temp);
+        // Connect.sharedInstance.closeConnects(tempRelays, RelayKind.temp);
         completer.complete(groupDB);
       }
     });
