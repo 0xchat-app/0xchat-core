@@ -76,7 +76,7 @@ extension Load on Moment {
   }
 
   Future<List<NoteDBISAR>?> loadUserNotesFromDB(List<String> userPubkeys,
-      {int limit = 50, int? until, bool? private, bool? isReacted}) async {
+      {int limit = 50, int? until, bool? private, bool? isReacted, String? root}) async {
     // remove blocklist pubkeys
     userPubkeys = userPubkeys
         .where((pubkey) => !Contacts.sharedInstance.inBlockList(pubkey))
@@ -88,7 +88,8 @@ extension Load on Moment {
         until: until,
         limit: limit,
         isReacted: isReacted,
-        private: private);
+        private: private,
+        root: root);
 
     for (var note in notes) {
       notesCache[note.noteId] = note;
