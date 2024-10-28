@@ -34,6 +34,7 @@ extension Load on Moment {
   Future<List<NoteDBISAR>?> loadContactsNotesFromDB(
       {int limit = 50, int? until, bool? private = false}) async {
     List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
+    authors.add(pubkey);
     return await loadUserNotesFromDB(authors,
         limit: limit, until: until, private: private);
   }
