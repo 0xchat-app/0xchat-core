@@ -97,7 +97,7 @@ class Zaps {
       for (String relayURL in Connect.sharedInstance.relays()) {
         int zapRecordUntil = Relays.sharedInstance.getZapRecordUntil(relayURL);
         Filter f1 =
-            Filter(kinds: [9735], p: [currentPubkey], since: zapRecordUntil);
+            Filter(kinds: [1, 6, 7, 9735], p: [currentPubkey], since: zapRecordUntil);
         Filter f2 =
             Filter(kinds: [9735], P: [currentPubkey], since: zapRecordUntil);
         subscriptions[relayURL] = [f1, f2];
@@ -105,7 +105,7 @@ class Zaps {
     } else {
       int zapRecordUntil = Relays.sharedInstance.getZapRecordUntil(relay);
       Filter f1 =
-          Filter(kinds: [9735], p: [currentPubkey], since: zapRecordUntil);
+          Filter(kinds: [1, 6, 7, 9735], p: [currentPubkey], since: zapRecordUntil);
       Filter f2 =
           Filter(kinds: [9735], P: [currentPubkey], since: zapRecordUntil);
       subscriptions[relay] = [f1, f2];
@@ -114,7 +114,24 @@ class Zaps {
     zapsSubscription = Connect.sharedInstance.addSubscriptions(subscriptions, closeSubscription: false,
         eventCallBack: (event, relay) async {
       updateZapRecordTime(event.createdAt, relay);
-      Zaps.handleZapRecordEvent(event);
+      if (Contacts.sharedInstance.inBlockList(event.pubkey)) return;
+      switch (event.kind) {
+        case 1:
+          Moment.sharedInstance.handleNoteEvent(event, relay, false);
+          break;
+        case 6:
+          Moment.sharedInstance.handleRepostsEvent(event, relay, false);
+          break;
+        case 7:
+          Moment.sharedInstance.handleReactionEvent(event, relay, false);
+          break;
+        case 9735:
+          Zaps.handleZapRecordEvent(event);
+          break;
+        default:
+          LogUtils.v(() => 'moment unhandled message ${event.toJson()}');
+          break;
+      }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
       offlineZapRecordFinish[relay] = true;
       if (ok.status) {
