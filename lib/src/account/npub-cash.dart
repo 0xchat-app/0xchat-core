@@ -8,7 +8,7 @@ class NpubCash {
     return '${Nip19.encodePubkey(pubkey)}@npub.cash';
   }
 
-  static Future<String?> balance() async {
+  static Future<int?> balance() async {
     String url = 'https://npub.cash/api/v1/balance';
     String authToken = await Nip98.base64Event(
         url,
