@@ -442,12 +442,12 @@ class Messages {
               .and()
               .sessionIdIsEmpty()));
     }
-    queryBuilder = sessionId != null
-        ? queryBuilder.and().sessionIdEqualTo(sessionId)
-        : queryBuilder.and().sessionIdIsEmpty();
-    queryBuilder = groupId != null
-        ? queryBuilder.and().groupIdEqualTo(groupId)
-        : queryBuilder.and().groupIdIsEmpty();
+    if (sessionId != null){
+      queryBuilder = queryBuilder.sessionIdEqualTo(sessionId);
+    }
+    if (groupId != null){
+      queryBuilder = queryBuilder.groupIdEqualTo(groupId);
+    }
 
     if (messageTypes.isNotEmpty) {
       queryBuilder = queryBuilder.anyOf(messageTypes, (q, messageType) {
