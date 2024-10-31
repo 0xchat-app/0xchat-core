@@ -51,10 +51,12 @@ class Channels {
           Account.sharedInstance.me != null &&
           relayKinds.contains(RelayKind.general)) {
         _updateSubscriptions(relay: relay);
+        updateChannelMetadataFromRelay('', myChannels.keys.toList(), relays: [relay]);
         syncMyChannelsFromRelay(relay: relay);
       }
     });
     await _loadAllChannelsFromDB();
+    updateChannelMetadataFromRelay('', myChannels.keys.toList());
     _updateSubscriptions();
   }
 
@@ -375,16 +377,16 @@ class Channels {
     return completer.future;
   }
 
-  Future<ChannelDBISAR?> updateChannelMetadataFromRelay(String owner, String channelId,
+  Future<ChannelDBISAR?> updateChannelMetadataFromRelay(String owner, List<String> channelIds,
       {List<String>? relays}) async {
     Completer<ChannelDBISAR?> completer = Completer<ChannelDBISAR?>();
     Filter f1 = Filter(
       authors: owner.isNotEmpty ? [owner] : null,
       kinds: [41],
-      e: [channelId],
+      e: channelIds,
     );
     Filter f2 = Filter(
-      ids: [channelId],
+      ids: channelIds,
     );
     if (relays != null) {
       await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.temp);
@@ -633,7 +635,7 @@ class Channels {
       if (unRelays.isEmpty) {
         if (!completer.isCompleted) completer.complete(result.values.toList());
         await Future.forEach(result.values, (channel) async {
-          await updateChannelMetadataFromRelay(channel.creator, channel.channelId);
+          await updateChannelMetadataFromRelay(channel.creator, [channel.channelId]);
         });
       }
     });
