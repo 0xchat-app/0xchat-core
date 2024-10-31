@@ -52,7 +52,6 @@ class Channels {
           relayKinds.contains(RelayKind.general)) {
         _updateSubscriptions(relay: relay);
         updateChannelMetadataFromRelay('', myChannels.keys.toList(), relays: [relay]);
-        syncMyChannelsFromRelay(relay: relay);
       }
     });
     await _loadAllChannelsFromDB();
