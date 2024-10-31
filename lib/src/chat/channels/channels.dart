@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/chat/channels/model/channelDB_isar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
@@ -379,19 +378,26 @@ class Channels {
   Future<ChannelDBISAR?> updateChannelMetadataFromRelay(String owner, String channelId,
       {List<String>? relays}) async {
     Completer<ChannelDBISAR?> completer = Completer<ChannelDBISAR?>();
-    Filter f = Filter(
+    Filter f1 = Filter(
       authors: owner.isNotEmpty ? [owner] : null,
       kinds: [41],
       e: [channelId],
     );
+    Filter f2 = Filter(
+      ids: [channelId],
+    );
     if (relays != null) {
       await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.temp);
     }
-    Connect.sharedInstance.addSubscription([f], relays: relays, eventCallBack: (event, relay) {
-      Channel channel = Nip28.getChannelMetadata(event);
-      ChannelDBISAR channelDB = getChannelDBFromChannel(channel);
-      _syncChannelToDB(channelDB);
-      if (!completer.isCompleted) completer.complete(channelDB);
+    Connect.sharedInstance.addSubscription([f1, f2], relays: relays, eventCallBack: (event, relay) {
+      Channel? channel;
+      if (event.kind == 40) channel = Nip28.getChannelCreation(event);
+      if (event.kind == 41) channel = Nip28.getChannelMetadata(event);
+      if(channel != null){
+        ChannelDBISAR channelDB = getChannelDBFromChannel(channel);
+        _syncChannelToDB(channelDB);
+        if (!completer.isCompleted) completer.complete(channelDB);
+      }
     }, eoseCallBack: (requestId, ok, relay, unRelays) {
       if (unRelays.isEmpty && !completer.isCompleted) completer.complete(null);
     });
