@@ -421,6 +421,7 @@ class Messages {
     int? since,
     int? limit,
     bool? hasPreviewData,
+    String? decryptContentLike,
   }) async {
     assert(until == null || since == null, 'unsupported filter');
 
@@ -454,6 +455,13 @@ class Messages {
         final messageTypeStr = MessageDBISAR.messageTypeToString(messageType);
         return q.typeEqualTo(messageTypeStr);
       });
+    }
+
+    if (decryptContentLike != null) {
+      queryBuilder = queryBuilder.decryptContentContains(
+        decryptContentLike,
+        caseSensitive: false,
+      );
     }
 
     if (hasPreviewData != null) {
