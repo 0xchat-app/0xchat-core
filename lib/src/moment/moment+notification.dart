@@ -4,8 +4,7 @@ import 'package:chatcore/chat-core.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
 extension Notification on Moment {
-  Future<List<NotificationDBISAR>?> loadNotificationsFromDB(int until,
-      {int limit = 50}) async {
+  Future<List<NotificationDBISAR>?> loadNotificationsFromDB(int until, {int limit = 50}) async {
     final isar = DBISAR.sharedInstance.isar;
     List<NotificationDBISAR> notifications = await isar.notificationDBISARs
         .filter()
@@ -17,8 +16,7 @@ extension Notification on Moment {
     return notifications;
   }
 
-  Future<void> handleZapNotification(
-      ZapRecordsDBISAR zapRecordsDB, Event zapEvent) async {
+  Future<void> handleZapNotification(ZapRecordsDBISAR zapRecordsDB, Event zapEvent) async {
     final reactedMessageDB =
         await Messages.sharedInstance.loadMessageDBFromDB(zapRecordsDB.eventId);
     if (reactedMessageDB != null) {
@@ -26,14 +24,12 @@ extension Notification on Moment {
     } else {
       await addZapRecordToNote(zapEvent, zapRecordsDB.eventId);
       NotificationDBISAR notificationDB =
-          NotificationDBISAR.notificationDBFromZapRecordsDB(
-              zapRecordsDB, zapEvent.id);
+          NotificationDBISAR.notificationDBFromZapRecordsDB(zapRecordsDB, zapEvent.id);
       await saveNotificationToDB(notificationDB);
-      if (notificationDB.author != pubkey &&
-          notificationDB.createAt > latestNotificationTime) {
+      if (notificationDB.author != pubkey && notificationDB.createAt > latestNotificationTime) {
         newNotifications.add(notificationDB);
         newNotificationCallBack?.call(newNotifications);
-      } else {
+      } else if (notificationDB.author != pubkey) {
         myZapNotificationCallBack?.call([notificationDB]);
       }
     }
