@@ -25,7 +25,9 @@ class NpubCash {
       var body = json.decode(response.body);
       if (body['error'] == false) {
         var data = body['data'];
-        return data;
+        if(data != null){
+          return int.parse(data);
+        }
       }
     } else {
       LogUtils.v(() => 'Request failed with status: ${response.statusCode}');
