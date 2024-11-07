@@ -37,9 +37,8 @@ class DBISAR {
   ];
 
   Future open(String pubkey) async {
-    Directory directory = Platform.isAndroid
-        ? await getApplicationDocumentsDirectory()
-        : await getLibraryDirectory();
+    Directory directory =
+        Platform.isAndroid ? await getApplicationDocumentsDirectory() : await getLibraryDirectory();
     var dbPath = directory.path;
     LogUtils.v(() => 'DBISAR open: $dbPath, pubkey: $pubkey');
     isar = Isar.getInstance(pubkey) ??
@@ -50,8 +49,14 @@ class DBISAR {
         );
   }
 
-  Map<Type, List<dynamic>> getBuffers(){
+  Map<Type, List<dynamic>> getBuffers() {
     return Map.from(_buffers);
+  }
+
+  Future<void> saveObjectsToDB<T>(List<T> objects) async {
+    for (var object in objects) {
+      await saveToDB(object);
+    }
   }
 
   Future<void> saveToDB<T>(T object) async {
@@ -71,7 +76,7 @@ class DBISAR {
     _timer?.cancel();
     _timer = null;
 
-    if(_buffers.isEmpty) return;
+    if (_buffers.isEmpty) return;
 
     final Map<Type, List<dynamic>> typeMap = Map.from(_buffers);
     _buffers.clear();
@@ -95,6 +100,6 @@ class DBISAR {
     _buffers.clear();
     _timer?.cancel();
     _timer = null;
-    if(isar.isOpen) await isar.close();
+    if (isar.isOpen) await isar.close();
   }
 }
