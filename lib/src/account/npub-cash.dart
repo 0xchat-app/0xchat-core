@@ -11,9 +11,7 @@ class NpubCash {
   static Future<int?> balance() async {
     String url = 'https://npub.cash/api/v1/balance';
     String authToken = await Nip98.base64Event(
-        url,
-        Account.sharedInstance.currentPubkey,
-        Account.sharedInstance.currentPrivkey);
+        url, Account.sharedInstance.currentPubkey, Account.sharedInstance.currentPrivkey);
     final response = await http.get(
       Uri.parse(url),
       headers: {
@@ -25,8 +23,12 @@ class NpubCash {
       var body = json.decode(response.body);
       if (body['error'] == false) {
         var data = body['data'];
-        if(data != null){
-          return int.parse(data);
+        if (data != null) {
+          if (data is String) {
+            return int.tryParse(data) ?? 0;
+          } else if (data is int) {
+            return data;
+          }
         }
       }
     } else {
@@ -38,9 +40,7 @@ class NpubCash {
   static Future<String?> claim() async {
     String url = 'https://npub.cash/api/v1/claim';
     String authToken = await Nip98.base64Event(
-        url,
-        Account.sharedInstance.currentPubkey,
-        Account.sharedInstance.currentPrivkey);
+        url, Account.sharedInstance.currentPubkey, Account.sharedInstance.currentPrivkey);
     final response = await http.get(
       Uri.parse(url),
       headers: {
