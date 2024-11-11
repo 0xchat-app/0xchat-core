@@ -368,7 +368,8 @@ extension SecretChat on Contacts {
         sessionDB.shareSecretKey!.isNotEmpty) {
       return await Nip17.encodeInnerEvent(
           toPubkey, MessageDBISAR.getContent(type, content, source), replayId, pubkey, privkey,
-          subContent: MessageDBISAR.getSubContent(type, content), expiration: expiration);
+          subContent: MessageDBISAR.getSubContent(type, content), expiration: expiration,
+        encryptedFile: encryptedFile,);
     }
     return null;
   }
@@ -435,6 +436,9 @@ extension SecretChat on Contacts {
       messageDB.decryptContent = map['content'];
       messageDB.type = map['contentType'];
       messageDB.decryptSecret = map['decryptSecret'];
+      if (encryptedFile?.mimeType != null) {
+        messageDB.type = MessageDBISAR.mimeTypeToTpyeString(encryptedFile!.mimeType);
+      }
       await Messages.saveMessageToDB(messageDB);
 
       if (local) {

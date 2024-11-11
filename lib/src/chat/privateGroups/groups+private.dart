@@ -106,7 +106,8 @@ extension PrivateGroups on Groups {
         subContent: MessageDBISAR.getSubContent(type, content),
         members: members,
         subject: groupDB.name,
-        createAt: createAt);
+        createAt: createAt,
+      encryptedFile: encryptedFile,);
     return event;
   }
 
@@ -165,6 +166,9 @@ extension PrivateGroups on Groups {
         MessageDBISAR.getSubContent(type, content) ?? messageDB.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
+    if (encryptedFile?.mimeType != null) {
+      messageDB.type = MessageDBISAR.mimeTypeToTpyeString(encryptedFile!.mimeType);
+    }
     await Messages.saveMessageToDB(messageDB);
     EventCache.sharedInstance.receiveEvent(event, '');
 

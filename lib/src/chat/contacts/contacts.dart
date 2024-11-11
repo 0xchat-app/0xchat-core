@@ -439,6 +439,9 @@ class Contacts {
         await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(type, content) ?? content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
+    if (encryptedFile?.mimeType != null) {
+      messageDB.type = MessageDBISAR.mimeTypeToTpyeString(encryptedFile!.mimeType);
+    }
     await Messages.saveMessageToDB(messageDB);
 
     if (local) {
