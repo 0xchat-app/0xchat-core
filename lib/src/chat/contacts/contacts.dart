@@ -372,12 +372,12 @@ class Contacts {
   }
 
   Future<Event?> getSendMessageEvent(
-      String friendPubkey, String replayId, MessageType type, String content,
+      String friendPubkey, String replyId, MessageType type, String content,
       {String? source, int? kind, int? expiration, EncryptedFile? encryptedFile}) async {
     Event? event;
     expiration = expiration != null ? (expiration + currentUnixTimestampSeconds()) : null;
     event ??= await Nip17.encodeInnerEvent(
-        friendPubkey, MessageDBISAR.getContent(type, content, source), replayId, pubkey, privkey,
+        friendPubkey, MessageDBISAR.getContent(type, content, source), replyId, pubkey, privkey,
         subContent: MessageDBISAR.getSubContent(type, content),
         expiration: expiration,
         encryptedFile: encryptedFile);
