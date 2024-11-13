@@ -507,9 +507,29 @@ class Contacts {
     return false;
   }
 
+  Future<bool> connectUserGeneralRelays(String pubkey) async {
+    UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(pubkey);
+    List<String>? relays = toUser?.relayList ?? [];
+    if (relays.isEmpty) return true;
+    await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.temp);
+    for (var relay in relays) {
+      int? status = Connect.sharedInstance.webSockets[relay]?.connectStatus;
+      if (status == 1 || status == 0) return true;
+    }
+    return false;
+  }
+
   Future<void> closeUserDMRelays(String pubkey) async {
     UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(pubkey);
     List<String>? relays = toUser?.dmRelayList;
+    if (relays?.isNotEmpty == true) {
+      await Connect.sharedInstance.closeTempConnects(relays!);
+    }
+  }
+
+  Future<void> closeUserGeneralRelays(String pubkey) async {
+    UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(pubkey);
+    List<String>? relays = toUser?.relayList;
     if (relays?.isNotEmpty == true) {
       await Connect.sharedInstance.closeTempConnects(relays!);
     }

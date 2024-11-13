@@ -6,8 +6,7 @@ import 'package:chatcore/chat-core.dart';
 
 extension AccountProfile on Account {
   Future<void> loginSuccess() async {
-    Connect.sharedInstance
-        .addConnectStatusListener((relay, status, relayKinds) async {
+    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 &&
           Account.sharedInstance.me != null &&
           relayKinds.contains(RelayKind.general)) {
@@ -20,25 +19,12 @@ extension AccountProfile on Account {
 
   Future<UserDBISAR> reloadMyProfileFromRelay({String? relay}) async {
     Completer<UserDBISAR> completer = Completer<UserDBISAR>();
-    Filter f = Filter(kinds: [
-      0,
-      3,
-      10000,
-      10002,
-      10005,
-      10009,
-      10050,
-      30000,
-      30001,
-      30003,
-      30008
-    ], authors: [
-      currentPubkey
-    ]);
+    Filter f = Filter(
+        kinds: [0, 3, 10000, 10002, 10005, 10009, 10050, 30000, 30001, 30003, 30008],
+        authors: [currentPubkey]);
     List<Event> events = [];
-    Connect.sharedInstance
-        .addSubscription([f], relays: relay == null ? null : [relay],
-            eventCallBack: (event, relay) async {
+    Connect.sharedInstance.addSubscription([f], relays: relay == null ? null : [relay],
+        eventCallBack: (event, relay) async {
       events.add(event);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       if (unRelays.isEmpty) {
@@ -90,12 +76,14 @@ extension AccountProfile on Account {
   Future<UserDBISAR> reloadProfileFromRelay(String pubkey) async {
     Completer<UserDBISAR> completer = Completer<UserDBISAR>();
     UserDBISAR? db = await getUserInfo(pubkey);
-    Filter f = Filter(kinds: [0, 10050, 30008], authors: [pubkey]);
-    Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event, relay) async {
+    Filter f = Filter(kinds: [0, 10002, 10050, 30008], authors: [pubkey]);
+    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
       switch (event.kind) {
         case 0:
           db = _handleKind0Event(db, event);
+          break;
+        case 10002:
+          db = _handleKind10002Event(db, event);
           break;
         case 10050:
           db = _handleKind10050Event(db, event);
@@ -141,12 +129,11 @@ extension AccountProfile on Account {
     }
 
     Filter f = Filter(
-      kinds: [0, 10050, 30008],
+      kinds: [0, 10002, 10050, 30008],
       authors: users.keys.toList(),
     );
 
-    Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event, relay) async {
+    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
       String p = event.pubkey;
       UserDBISAR db = users[p] ?? UserDBISAR(pubKey: p);
       if (event.kind == 0) {
@@ -154,6 +141,9 @@ extension AccountProfile on Account {
       }
       if (event.kind == 10050) {
         users[p] = _handleKind10050Event(db, event)!;
+      }
+      if (event.kind == 10002) {
+        users[p] = _handleKind10002Event(db, event)!;
       }
       if (event.kind == 30008) {
         users[p] = _handleKind30008Event(db, event)!;
@@ -199,8 +189,7 @@ extension AccountProfile on Account {
     };
     Map additionMap = jsonDecode(db.otherField ?? '{}');
     map.addAll(additionMap);
-    Event event =
-        await Nip1.setMetadata(jsonEncode(map), currentPubkey, currentPrivkey);
+    Event event = await Nip1.setMetadata(jsonEncode(map), currentPubkey, currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (ok.status) {
         completer.complete(db);
@@ -212,7 +201,7 @@ extension AccountProfile on Account {
   }
 
   UserDBISAR? _handleKind0Event(UserDBISAR? db, Event event) {
-    if(event.content.isEmpty) return db;
+    if (event.content.isEmpty) return db;
     Map map = jsonDecode(event.content);
     if (db != null && db.lastUpdatedTime < event.createdAt) {
       db.name = map['name']?.toString();
@@ -252,8 +241,7 @@ extension AccountProfile on Account {
         'lud16',
         'lud06'
       };
-      Map filteredMap = Map.from(map)
-        ..removeWhere((key, value) => keysToRemove.contains(key));
+      Map filteredMap = Map.from(map)..removeWhere((key, value) => keysToRemove.contains(key));
       db.otherField = jsonEncode(filteredMap);
     } else {
       if (db?.lnurl == null || db?.lnurl == 'null' || db!.lnurl!.isEmpty) {
@@ -309,8 +297,10 @@ extension AccountProfile on Account {
       Set<String> relaySet = Set.from(db.relayList!);
       relaySet.addAll(result.map((e) => e.url).toList());
       db.relayList = relaySet.toList();
-      Relays.sharedInstance.connectGeneralRelays();
-      relayListUpdateCallback?.call();
+      if (db.pubKey == currentPubkey) {
+        Relays.sharedInstance.connectGeneralRelays();
+        relayListUpdateCallback?.call();
+      }
     }
     return db;
   }
@@ -361,8 +351,8 @@ extension AccountProfile on Account {
     if (result.identifier == Contacts.identifier) {
       // contact list
       db.lastFriendsListUpdatedTime = event.createdAt;
-      Event e = await Nip51.createCategorizedPeople(Contacts.identifier, [],
-          result.people, currentPrivkey, currentPubkey);
+      Event e = await Nip51.createCategorizedPeople(
+          Contacts.identifier, [], result.people, currentPrivkey, currentPubkey);
       db.friendsList = e.content;
       contactListUpdateCallback?.call();
     }
@@ -399,11 +389,10 @@ extension AccountProfile on Account {
   // profile badge
   UserDBISAR? _handleKind30008Event(UserDBISAR? db, Event event) {
     if (db != null && db.lastUpdatedTime < event.createdAt) {
-      try{
+      try {
         List<BadgeAward> profileBadges = Nip58.getProfileBadges(event);
         db.badges = jsonEncode(profileBadges.map((e) => e.awardId).toList());
-      }
-      catch(e){
+      } catch (e) {
         LogUtils.d(e);
       }
     }
