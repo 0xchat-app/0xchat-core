@@ -171,6 +171,7 @@ class MessageDBISAR {
 
     try {
       uri = Uri.parse(urlString);
+      if (uri.host.isEmpty) return MessageType.text;
     } catch (e) {
       print(e);
       return MessageType.text;
