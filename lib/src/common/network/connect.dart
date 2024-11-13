@@ -413,6 +413,7 @@ class Connect {
 
   void _send(String data, {List<String>? toRelays, String? eventId, String? subscriptionId}) {
     if (toRelays != null && toRelays.isNotEmpty) {
+      toRelays = Set.from(toRelays).cast<String>().toList();
       for (var relay in toRelays) {
         if (webSockets.containsKey(relay)) {
           var socket = webSockets[relay]?.socket;

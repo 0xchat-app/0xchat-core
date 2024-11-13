@@ -453,6 +453,7 @@ class Contacts {
       Event? giftwrappedEvent = await Contacts.sharedInstance.encodeNip17Event(event, toPubkey);
       UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(toPubkey);
       List<String>? dmRelays = toUser?.dmRelayList;
+      List<String>? generalRelays = toUser?.relayList;
       bool hasConnected = false;
       if (dmRelays == null || dmRelays.isEmpty) {
         hasConnected = true;
@@ -461,6 +462,17 @@ class Contacts {
           if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
             hasConnected = true;
             break;
+          }
+        }
+      }
+      if (!hasConnected) {
+        if (generalRelays != null && generalRelays.isNotEmpty) {
+          dmRelays = generalRelays;
+          for (var relay in generalRelays) {
+            if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
+              hasConnected = true;
+              break;
+            }
           }
         }
       }
@@ -495,6 +507,7 @@ class Contacts {
   Future<bool> connectUserDMRelays(String pubkey) async {
     UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(pubkey);
     List<String>? relays = toUser?.dmRelayList ?? [];
+    relays.addAll(toUser?.relayList ?? []);
     if (relays.isEmpty) return true;
     for (var relay in relays) {
       if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) return true;
@@ -521,9 +534,10 @@ class Contacts {
 
   Future<void> closeUserDMRelays(String pubkey) async {
     UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(pubkey);
-    List<String>? relays = toUser?.dmRelayList;
-    if (relays?.isNotEmpty == true) {
-      await Connect.sharedInstance.closeTempConnects(relays!);
+    List<String>? relays = toUser?.dmRelayList ?? [];
+    relays.addAll(toUser?.relayList ?? []);
+    if (relays.isNotEmpty) {
+      await Connect.sharedInstance.closeTempConnects(relays);
     }
   }
 
