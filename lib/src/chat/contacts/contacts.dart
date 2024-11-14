@@ -506,8 +506,9 @@ class Contacts {
 
   Future<bool> connectUserDMRelays(String pubkey) async {
     UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(pubkey);
-    List<String>? relays = toUser?.dmRelayList ?? [];
-    relays.addAll(toUser?.relayList ?? []);
+    List<String>? dmRelays = toUser?.dmRelayList ?? [];
+    List<String>? generalRelays = toUser?.relayList ?? [];
+    var relays = [...dmRelays, ...generalRelays];
     if (relays.isEmpty) return true;
     for (var relay in relays) {
       if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) return true;
