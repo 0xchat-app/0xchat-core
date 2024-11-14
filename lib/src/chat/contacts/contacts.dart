@@ -535,7 +535,9 @@ class Contacts {
 
   Future<void> closeUserDMRelays(String pubkey) async {
     UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(pubkey);
-    List<String>? relays = toUser?.dmRelayList ?? [];
+    List<String>? dmRelays = toUser?.dmRelayList ?? [];
+    List<String>? generalRelays = toUser?.relayList ?? [];
+    var relays = [...dmRelays, ...generalRelays];
     relays.addAll(toUser?.relayList ?? []);
     if (relays.isNotEmpty) {
       await Connect.sharedInstance.closeTempConnects(relays);
