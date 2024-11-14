@@ -436,7 +436,11 @@ extension SecretChat on Contacts {
       messageDB.decryptContent = map['content'];
       messageDB.type = map['contentType'];
       messageDB.decryptSecret = map['decryptSecret'];
-      if (encryptedFile?.mimeType != null) {
+      if (encryptedFile?.mimeType != null &&
+          (messageDB.type == 'image' ||
+              messageDB.type == 'video' ||
+              messageDB.type == 'audio' ||
+              messageDB.type == 'file')) {
         messageDB.type = MessageDBISAR.mimeTypeToTpyeString(encryptedFile!.mimeType);
       }
       await Messages.saveMessageToDB(messageDB);

@@ -166,7 +166,11 @@ extension PrivateGroups on Groups {
         MessageDBISAR.getSubContent(type, content) ?? messageDB.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
-    if (encryptedFile?.mimeType != null) {
+    if (encryptedFile?.mimeType != null &&
+        (messageDB.type == 'image' ||
+            messageDB.type == 'video' ||
+            messageDB.type == 'audio' ||
+            messageDB.type == 'file')) {
       messageDB.type = MessageDBISAR.mimeTypeToTpyeString(encryptedFile!.mimeType);
     }
     await Messages.saveMessageToDB(messageDB);

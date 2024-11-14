@@ -402,7 +402,11 @@ class MessageDBISAR {
     if (map['decryptSecret'] != null) {
       messageDB.decryptSecret = map['decryptSecret'];
     }
-    if(message.mimeType != null){
+    if (message.mimeType != null &&
+        (messageDB.type == 'image' ||
+            messageDB.type == 'video' ||
+            messageDB.type == 'audio' ||
+            messageDB.type == 'file')) {
       messageDB.type = mimeTypeToTpyeString(message.mimeType!);
     }
     return messageDB;
