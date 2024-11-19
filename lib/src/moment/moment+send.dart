@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:isolate';
 
 import 'package:chatcore/chat-core.dart';
-import 'package:flutter/services.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 typedef SendMessageProgressCallBack = void Function(int progress);

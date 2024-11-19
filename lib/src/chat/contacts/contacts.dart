@@ -273,8 +273,8 @@ class Contacts {
 
     Map<String, List<Filter>> subscriptions = {};
     if (relay == null) {
-      List<String> relays = Connect.sharedInstance.relays(relayKind: RelayKind.general);
-      relays.addAll(Connect.sharedInstance.relays(relayKind: RelayKind.dm));
+      List<String> relays = Connect.sharedInstance.relays(relayKinds: [RelayKind.general]);
+      relays.addAll(Connect.sharedInstance.relays(relayKinds: [RelayKind.dm]));
       for (String relayURL in relays) {
         int friendMessageUntil = Relays.sharedInstance.getFriendMessageUntil(relayURL);
 

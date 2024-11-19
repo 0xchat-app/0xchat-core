@@ -37,7 +37,7 @@ class Zaps {
     for (var relay in relays) {
       if (relay.isNotEmpty &&
           !Connect.sharedInstance
-              .relays(relayKind: RelayKind.nwc)
+              .relays(relayKinds: [RelayKind.nwc])
               .contains(relay)) {
         Connect.sharedInstance.connect(relay, relayKind: RelayKind.nwc);
       }
@@ -218,14 +218,14 @@ class Zaps {
           case ZapType.normal:
           case ZapType.channelChat:
             toRelays.addAll(
-                Connect.sharedInstance.relays(relayKind: RelayKind.general));
+                Connect.sharedInstance.relays(relayKinds: [RelayKind.general]));
             break;
           case ZapType.privateChat:
           case ZapType.privateGroup:
             UserDBISAR? toUser =
                 await Account.sharedInstance.getUserInfo(recipient);
             toRelays.addAll(
-                Connect.sharedInstance.relays(relayKind: RelayKind.general));
+                Connect.sharedInstance.relays(relayKinds: [RelayKind.general]));
             toRelays.addAll(toUser?.dmRelayList ?? []);
             break;
           case ZapType.relayGroup:
@@ -233,7 +233,7 @@ class Zaps {
                 RelayGroup.sharedInstance.groups[groupId]?.value;
             if (relayGroupDB != null) {
               toRelays.addAll(
-                  Connect.sharedInstance.relays(relayKind: RelayKind.general));
+                  Connect.sharedInstance.relays(relayKinds: [RelayKind.general]));
               toRelays.add(relayGroupDB.relay);
             } else {
               return {"invoice": '', "zapsDB": zapsDB};
@@ -241,7 +241,7 @@ class Zaps {
             break;
           case ZapType.donate:
             toRelays.addAll(
-                Connect.sharedInstance.relays(relayKind: RelayKind.general));
+                Connect.sharedInstance.relays(relayKinds: [RelayKind.general]));
             toRelays.add(Config.sharedInstance.wssHost);
             break;
         }

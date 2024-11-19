@@ -13,7 +13,7 @@ extension SecretChat on Contacts {
   Future<void> _connectToRelay(String? relay) async {
     if (relay != null &&
         relay.isNotEmpty &&
-        !Connect.sharedInstance.relays(relayKind: RelayKind.secretChat).contains(relay)) {
+        !Connect.sharedInstance.relays(relayKinds: [RelayKind.secretChat]).contains(relay)) {
       await Connect.sharedInstance.connect(relay, relayKind: RelayKind.secretChat);
     }
   }
@@ -517,8 +517,8 @@ extension SecretChat on Contacts {
     }
     Map<String, List<Filter>> subscriptions = {};
     if (relay == null) {
-      List<String> relays = Connect.sharedInstance.relays(relayKind: RelayKind.general);
-      relays.addAll(Connect.sharedInstance.relays(relayKind: RelayKind.secretChat));
+      List<String> relays = Connect.sharedInstance.relays(relayKinds: [RelayKind.general]);
+      relays.addAll(Connect.sharedInstance.relays(relayKinds: [RelayKind.secretChat]));
       for (var r in relays) {
         int friendRequestUntil = Relays.sharedInstance.getFriendRequestUntil(r);
         Filter f = Filter(

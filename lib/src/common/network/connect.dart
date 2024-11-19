@@ -69,7 +69,8 @@ class ISocket {
 enum RelayKind {
   general,
   dm,
-  inboxOutbox,
+  inbox,
+  outbox,
   relayGroup,
   secretChat,
   nwc,
@@ -194,11 +195,11 @@ class Connect {
     }
   }
 
-  List<String> relays({RelayKind relayKind = RelayKind.general}) {
+  List<String> relays({List<RelayKind> relayKinds = const [RelayKind.general]}) {
     List<String> result = [];
     for (var relay in webSockets.keys) {
       if (webSockets[relay]?.connectStatus == 1 &&
-          webSockets[relay]?.relayKinds.contains(relayKind) == true) {
+          webSockets[relay]!.relayKinds.map((e) => relayKinds.contains(e)).isNotEmpty) {
         result.add(relay);
       }
     }
@@ -299,7 +300,7 @@ class Connect {
           .toList());
     }
     List<String> subscriptionRelays =
-        rs.isNotEmpty == true ? rs : Connect.sharedInstance.relays(relayKind: relayKind);
+        rs.isNotEmpty == true ? rs : Connect.sharedInstance.relays(relayKinds: [relayKind]);
     if (subscriptionRelays.isEmpty) {
       eoseCallBack?.call('', OKEvent('', false, 'no relays connected'), '', []);
       return '';
@@ -401,10 +402,13 @@ class Connect {
 
   /// send an event to relay/relays
   void sendEvent(Event event,
-      {OKCallBack? sendCallBack, List<String>? toRelays, RelayKind relayKind = RelayKind.general}) {
+      {OKCallBack? sendCallBack,
+      List<String>? toRelays,
+      List<RelayKind> relayKinds = const [RelayKind.general, RelayKind.inbox]}) {
     String eventString = event.serialize();
-    List<String> rs =
-        (toRelays == null || toRelays.isEmpty) ? relays(relayKind: relayKind) : List.from(toRelays);
+    List<String> rs = (toRelays == null || toRelays.isEmpty)
+        ? relays(relayKinds: relayKinds)
+        : List.from(toRelays);
     LogUtils.v(() => 'send event toRelays: ${jsonEncode(rs)}, eventString: $eventString');
     Sends sends = Sends(generate64RandomHexChars(), rs, DateTime.now().millisecondsSinceEpoch,
         event.id, sendCallBack, eventString);

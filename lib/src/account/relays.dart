@@ -53,28 +53,23 @@ class Relays {
 
   Future<void> connectGeneralRelays() async {
     List<String> connectedGeneralRelays =
-        Connect.sharedInstance.relays(relayKind: RelayKind.general);
+        Connect.sharedInstance.relays(relayKinds: [RelayKind.general]);
     List<String> generalRelays = Account.sharedInstance.me?.relayList ?? [];
-    List<String> notInGeneralRelays = connectedGeneralRelays
-        .where((relay) => !generalRelays.contains(relay))
-        .toList();
-    await Connect.sharedInstance
-        .closeConnects(notInGeneralRelays, RelayKind.general);
+    List<String> notInGeneralRelays =
+        connectedGeneralRelays.where((relay) => !generalRelays.contains(relay)).toList();
+    await Connect.sharedInstance.closeConnects(notInGeneralRelays, RelayKind.general);
 
     int updatedTime = Account.sharedInstance.me?.lastRelayListUpdatedTime ?? 0;
     if (updatedTime > 0 && generalRelays.isNotEmpty) {
-      Connect.sharedInstance
-          .connectRelays(generalRelays, relayKind: RelayKind.general);
+      Connect.sharedInstance.connectRelays(generalRelays, relayKind: RelayKind.general);
     } else {
       // startup relays
-      Connect.sharedInstance
-          .connectRelays(recommendGeneralRelays, relayKind: RelayKind.general);
+      Connect.sharedInstance.connectRelays(recommendGeneralRelays, relayKind: RelayKind.general);
     }
   }
 
   Future<void> connectDMRelays() async {
-    List<String> connectedDMRelays =
-        Connect.sharedInstance.relays(relayKind: RelayKind.dm);
+    List<String> connectedDMRelays = Connect.sharedInstance.relays(relayKinds: [RelayKind.dm]);
     List<String> dmRelays = Account.sharedInstance.me?.dmRelayList ?? [];
     List<String> notInDMRelays =
         connectedDMRelays.where((relay) => !dmRelays.contains(relay)).toList();
@@ -84,16 +79,17 @@ class Relays {
   }
 
   Future<void> connectInboxOutboxRelays() async {
-    List<String> connectedDMRelays =
-    Connect.sharedInstance.relays(relayKind: RelayKind.inboxOutbox);
+    List<String> connectedBoxRelays =
+        Connect.sharedInstance.relays(relayKinds: [RelayKind.inbox, RelayKind.outbox]);
     List<String> inbox = Account.sharedInstance.me?.inboxRelayList ?? [];
     List<String> outbox = Account.sharedInstance.me?.outboxRelayList ?? [];
     var relays = [...inbox, ...outbox];
     List<String> notInRelays =
-    connectedDMRelays.where((relay) => !relays.contains(relay)).toList();
-    await Connect.sharedInstance.closeConnects(notInRelays, RelayKind.inboxOutbox);
-
-    Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.inboxOutbox);
+        connectedBoxRelays.where((relay) => !relays.contains(relay)).toList();
+    await Connect.sharedInstance.closeConnects(notInRelays, RelayKind.inbox);
+    await Connect.sharedInstance.closeConnects(notInRelays, RelayKind.outbox);
+    Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.inbox);
+    Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.outbox);
   }
 
   Future<List<RelayDBISAR>?> _loadRelaysFromDB() async {
@@ -116,51 +112,35 @@ class Relays {
   }
 
   int getFriendMessageUntil(String relayURL) {
-    return relays.containsKey(relayURL)
-        ? relays[relayURL]!.friendMessageUntil
-        : 0;
+    return relays.containsKey(relayURL) ? relays[relayURL]!.friendMessageUntil : 0;
   }
 
   int getFriendMessageSince(String relayURL) {
-    return relays.containsKey(relayURL)
-        ? relays[relayURL]!.friendMessageSince
-        : 0;
+    return relays.containsKey(relayURL) ? relays[relayURL]!.friendMessageSince : 0;
   }
 
   int getFriendRequestUntil(String relayURL) {
-    return relays.containsKey(relayURL)
-        ? relays[relayURL]!.friendRequestUntil
-        : 0;
+    return relays.containsKey(relayURL) ? relays[relayURL]!.friendRequestUntil : 0;
   }
 
   int getFriendRequestSince(String relayURL) {
-    return relays.containsKey(relayURL)
-        ? relays[relayURL]!.friendRequestSince
-        : 0;
+    return relays.containsKey(relayURL) ? relays[relayURL]!.friendRequestSince : 0;
   }
 
   int getChannelMessageSince(String relayURL) {
-    return relays.containsKey(relayURL)
-        ? relays[relayURL]!.channelMessageSince
-        : 0;
+    return relays.containsKey(relayURL) ? relays[relayURL]!.channelMessageSince : 0;
   }
 
   int getChannelMessageUntil(String relayURL) {
-    return relays.containsKey(relayURL)
-        ? relays[relayURL]!.channelMessageUntil
-        : 0;
+    return relays.containsKey(relayURL) ? relays[relayURL]!.channelMessageUntil : 0;
   }
 
   int getGroupMessageSince(String relayURL) {
-    return relays.containsKey(relayURL)
-        ? relays[relayURL]!.groupMessageSince
-        : 0;
+    return relays.containsKey(relayURL) ? relays[relayURL]!.groupMessageSince : 0;
   }
 
   int getGroupMessageUntil(String relayURL) {
-    return relays.containsKey(relayURL)
-        ? relays[relayURL]!.groupMessageUntil
-        : 0;
+    return relays.containsKey(relayURL) ? relays[relayURL]!.groupMessageUntil : 0;
   }
 
   int getMomentSince(String relayURL) {
@@ -180,22 +160,17 @@ class Relays {
   }
 
   int getCommonMessageUntil(String relayURL) {
-    return relays.containsKey(relayURL)
-        ? relays[relayURL]!.commonMessagesUntil
-        : 0;
+    return relays.containsKey(relayURL) ? relays[relayURL]!.commonMessagesUntil : 0;
   }
 
   int getCommonMessageSince(String relayURL) {
-    return relays.containsKey(relayURL)
-        ? relays[relayURL]!.commonMessagesSince
-        : 0;
+    return relays.containsKey(relayURL) ? relays[relayURL]!.commonMessagesSince : 0;
   }
 
   void setCommonMessageUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.getCommonMessageUntil(relay);
     if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
-    relays[relay]!.commonMessagesUntil =
-        updateTime > until ? updateTime : until;
+    relays[relay]!.commonMessagesUntil = updateTime > until ? updateTime : until;
   }
 
   void setFriendMessageUntil(int updateTime, String relay) {
@@ -214,8 +189,7 @@ class Relays {
   void setChannelMessageUntil(int updateTime, String relay) {
     int until = Relays.sharedInstance.getChannelMessageUntil(relay);
     if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
-    relays[relay]!.channelMessageUntil =
-        updateTime > until ? updateTime : until;
+    relays[relay]!.channelMessageUntil = updateTime > until ? updateTime : until;
   }
 
   void setMomentUntil(int updateTime, String relay) {
@@ -239,8 +213,7 @@ class Relays {
   void setCommonMessageSince(int updateTime, String relay) {
     int since = Relays.sharedInstance.getCommonMessageSince(relay);
     if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
-    relays[relay]!.commonMessagesSince =
-        updateTime < since ? updateTime : since;
+    relays[relay]!.commonMessagesSince = updateTime < since ? updateTime : since;
   }
 
   void setFriendMessageSince(int updateTime, String relay) {
@@ -259,8 +232,7 @@ class Relays {
   void setChannelMessageSince(int updateTime, String relay) {
     int since = Relays.sharedInstance.getChannelMessageSince(relay);
     if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
-    relays[relay]!.channelMessageSince =
-        updateTime < since ? updateTime : since;
+    relays[relay]!.channelMessageSince = updateTime < since ? updateTime : since;
   }
 
   void setMomentSince(int updateTime, String relay) {
@@ -286,16 +258,14 @@ class Relays {
     return await isar.relayDBISARs.filter().urlEqualTo(relayURL).findFirst();
   }
 
-  static Future<RelayDBISAR?> getRelayDetails(String relayURL,
-      {bool? refresh}) async {
+  static Future<RelayDBISAR?> getRelayDetails(String relayURL, {bool? refresh}) async {
     if (refresh != true) {
       RelayDBISAR? relayDB = await getRelayDetailsFromDB(relayURL);
       if (relayDB?.pubkey?.isNotEmpty == true) return relayDB;
     }
 
     var url = Uri.parse(relayURL).replace(scheme: 'https');
-    var response =
-        await http.get(url, headers: {'Accept': 'application/nostr+json'});
+    var response = await http.get(url, headers: {'Accept': 'application/nostr+json'});
 
     if (response.statusCode == 200) {
       RelayDBISAR? relayDB = Relays.sharedInstance.relays.containsKey(relayURL)
