@@ -166,9 +166,23 @@ class MessageDBISAR {
     }
   }
 
+  static bool isImageBase64(String str) {
+    final base64Pattern = r'^data:image\/[a-zA-Z0-9\+\-\.]+;base64,';
+    if (RegExp(base64Pattern).hasMatch(str)) {
+      final base64Data = str.split(',').last;
+      return _isValidBase64(base64Data);
+    }
+    return false;
+  }
+
+  static bool _isValidBase64(String str) {
+    final base64RegExp = RegExp(r'^[A-Za-z0-9+/]+={0,2}$');
+    return base64RegExp.hasMatch(str);
+  }
+
   static Future<MessageType> identifyUrl(String urlString) async {
     final Uri uri;
-
+    if (isImageBase64(urlString)) return MessageType.image;
     try {
       uri = Uri.parse(urlString);
       if (uri.host.isEmpty) return MessageType.text;
