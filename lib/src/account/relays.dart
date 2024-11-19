@@ -48,6 +48,7 @@ class Relays {
     }
     connectGeneralRelays();
     connectDMRelays();
+    connectInboxOutboxRelays();
   }
 
   Future<void> connectGeneralRelays() async {
@@ -80,6 +81,19 @@ class Relays {
     await Connect.sharedInstance.closeConnects(notInDMRelays, RelayKind.dm);
 
     Connect.sharedInstance.connectRelays(dmRelays, relayKind: RelayKind.dm);
+  }
+
+  Future<void> connectInboxOutboxRelays() async {
+    List<String> connectedDMRelays =
+    Connect.sharedInstance.relays(relayKind: RelayKind.inboxOutbox);
+    List<String> inbox = Account.sharedInstance.me?.inboxRelayList ?? [];
+    List<String> outbox = Account.sharedInstance.me?.outboxRelayList ?? [];
+    var relays = [...inbox, ...outbox];
+    List<String> notInRelays =
+    connectedDMRelays.where((relay) => !relays.contains(relay)).toList();
+    await Connect.sharedInstance.closeConnects(notInRelays, RelayKind.inboxOutbox);
+
+    Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.inboxOutbox);
   }
 
   Future<List<RelayDBISAR>?> _loadRelaysFromDB() async {

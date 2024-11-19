@@ -117,128 +117,138 @@ const UserDBISARSchema = CollectionSchema(
       name: r'groupsList',
       type: IsarType.stringList,
     ),
-    r'lastBadgesListUpdatedTime': PropertySchema(
+    r'inboxRelayList': PropertySchema(
       id: 20,
+      name: r'inboxRelayList',
+      type: IsarType.stringList,
+    ),
+    r'lastBadgesListUpdatedTime': PropertySchema(
+      id: 21,
       name: r'lastBadgesListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastBlockListUpdatedTime': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'lastBlockListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastChannelsListUpdatedTime': PropertySchema(
-      id: 22,
+      id: 23,
       name: r'lastChannelsListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastDMRelayListUpdatedTime': PropertySchema(
-      id: 23,
+      id: 24,
       name: r'lastDMRelayListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastFollowingListUpdatedTime': PropertySchema(
-      id: 24,
+      id: 25,
       name: r'lastFollowingListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastFriendsListUpdatedTime': PropertySchema(
-      id: 25,
+      id: 26,
       name: r'lastFriendsListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastGroupsListUpdatedTime': PropertySchema(
-      id: 26,
+      id: 27,
       name: r'lastGroupsListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastRelayGroupsListUpdatedTime': PropertySchema(
-      id: 27,
+      id: 28,
       name: r'lastRelayGroupsListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastRelayListUpdatedTime': PropertySchema(
-      id: 28,
+      id: 29,
       name: r'lastRelayListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastUpdatedTime': PropertySchema(
-      id: 29,
+      id: 30,
       name: r'lastUpdatedTime',
       type: IsarType.long,
     ),
     r'lnurl': PropertySchema(
-      id: 30,
+      id: 31,
       name: r'lnurl',
       type: IsarType.string,
     ),
     r'mainRelay': PropertySchema(
-      id: 31,
+      id: 32,
       name: r'mainRelay',
       type: IsarType.string,
     ),
     r'mute': PropertySchema(
-      id: 32,
+      id: 33,
       name: r'mute',
       type: IsarType.bool,
     ),
     r'name': PropertySchema(
-      id: 33,
+      id: 34,
       name: r'name',
       type: IsarType.string,
     ),
     r'nickName': PropertySchema(
-      id: 34,
+      id: 35,
       name: r'nickName',
       type: IsarType.string,
     ),
     r'nwcURI': PropertySchema(
-      id: 35,
+      id: 36,
       name: r'nwcURI',
       type: IsarType.string,
     ),
     r'otherField': PropertySchema(
-      id: 36,
+      id: 37,
       name: r'otherField',
       type: IsarType.string,
     ),
+    r'outboxRelayList': PropertySchema(
+      id: 38,
+      name: r'outboxRelayList',
+      type: IsarType.stringList,
+    ),
     r'picture': PropertySchema(
-      id: 37,
+      id: 39,
       name: r'picture',
       type: IsarType.string,
     ),
     r'privkey': PropertySchema(
-      id: 38,
+      id: 40,
       name: r'privkey',
       type: IsarType.string,
     ),
     r'pubKey': PropertySchema(
-      id: 39,
+      id: 41,
       name: r'pubKey',
       type: IsarType.string,
     ),
     r'relayGroupsList': PropertySchema(
-      id: 40,
+      id: 42,
       name: r'relayGroupsList',
       type: IsarType.stringList,
     ),
     r'relayList': PropertySchema(
-      id: 41,
+      id: 43,
       name: r'relayList',
       type: IsarType.stringList,
     ),
     r'settings': PropertySchema(
-      id: 42,
+      id: 44,
       name: r'settings',
       type: IsarType.string,
     ),
     r'toAliasPrivkey': PropertySchema(
-      id: 43,
+      id: 45,
       name: r'toAliasPrivkey',
       type: IsarType.string,
     ),
     r'toAliasPubkey': PropertySchema(
-      id: 44,
+      id: 46,
       name: r'toAliasPubkey',
       type: IsarType.string,
     )
@@ -458,6 +468,18 @@ int _userDBISAREstimateSize(
     }
   }
   {
+    final list = object.inboxRelayList;
+    if (list != null) {
+      bytesCount += 3 + list.length * 3;
+      {
+        for (var i = 0; i < list.length; i++) {
+          final value = list[i];
+          bytesCount += value.length * 3;
+        }
+      }
+    }
+  }
+  {
     final value = object.lnurl;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -491,6 +513,18 @@ int _userDBISAREstimateSize(
     final value = object.otherField;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final list = object.outboxRelayList;
+    if (list != null) {
+      bytesCount += 3 + list.length * 3;
+      {
+        for (var i = 0; i < list.length; i++) {
+          final value = list[i];
+          bytesCount += value.length * 3;
+        }
+      }
     }
   }
   {
@@ -577,31 +611,33 @@ void _userDBISARSerialize(
   writer.writeString(offsets[17], object.friendsList);
   writer.writeString(offsets[18], object.gender);
   writer.writeStringList(offsets[19], object.groupsList);
-  writer.writeLong(offsets[20], object.lastBadgesListUpdatedTime);
-  writer.writeLong(offsets[21], object.lastBlockListUpdatedTime);
-  writer.writeLong(offsets[22], object.lastChannelsListUpdatedTime);
-  writer.writeLong(offsets[23], object.lastDMRelayListUpdatedTime);
-  writer.writeLong(offsets[24], object.lastFollowingListUpdatedTime);
-  writer.writeLong(offsets[25], object.lastFriendsListUpdatedTime);
-  writer.writeLong(offsets[26], object.lastGroupsListUpdatedTime);
-  writer.writeLong(offsets[27], object.lastRelayGroupsListUpdatedTime);
-  writer.writeLong(offsets[28], object.lastRelayListUpdatedTime);
-  writer.writeLong(offsets[29], object.lastUpdatedTime);
-  writer.writeString(offsets[30], object.lnurl);
-  writer.writeString(offsets[31], object.mainRelay);
-  writer.writeBool(offsets[32], object.mute);
-  writer.writeString(offsets[33], object.name);
-  writer.writeString(offsets[34], object.nickName);
-  writer.writeString(offsets[35], object.nwcURI);
-  writer.writeString(offsets[36], object.otherField);
-  writer.writeString(offsets[37], object.picture);
-  writer.writeString(offsets[38], object.privkey);
-  writer.writeString(offsets[39], object.pubKey);
-  writer.writeStringList(offsets[40], object.relayGroupsList);
-  writer.writeStringList(offsets[41], object.relayList);
-  writer.writeString(offsets[42], object.settings);
-  writer.writeString(offsets[43], object.toAliasPrivkey);
-  writer.writeString(offsets[44], object.toAliasPubkey);
+  writer.writeStringList(offsets[20], object.inboxRelayList);
+  writer.writeLong(offsets[21], object.lastBadgesListUpdatedTime);
+  writer.writeLong(offsets[22], object.lastBlockListUpdatedTime);
+  writer.writeLong(offsets[23], object.lastChannelsListUpdatedTime);
+  writer.writeLong(offsets[24], object.lastDMRelayListUpdatedTime);
+  writer.writeLong(offsets[25], object.lastFollowingListUpdatedTime);
+  writer.writeLong(offsets[26], object.lastFriendsListUpdatedTime);
+  writer.writeLong(offsets[27], object.lastGroupsListUpdatedTime);
+  writer.writeLong(offsets[28], object.lastRelayGroupsListUpdatedTime);
+  writer.writeLong(offsets[29], object.lastRelayListUpdatedTime);
+  writer.writeLong(offsets[30], object.lastUpdatedTime);
+  writer.writeString(offsets[31], object.lnurl);
+  writer.writeString(offsets[32], object.mainRelay);
+  writer.writeBool(offsets[33], object.mute);
+  writer.writeString(offsets[34], object.name);
+  writer.writeString(offsets[35], object.nickName);
+  writer.writeString(offsets[36], object.nwcURI);
+  writer.writeString(offsets[37], object.otherField);
+  writer.writeStringList(offsets[38], object.outboxRelayList);
+  writer.writeString(offsets[39], object.picture);
+  writer.writeString(offsets[40], object.privkey);
+  writer.writeString(offsets[41], object.pubKey);
+  writer.writeStringList(offsets[42], object.relayGroupsList);
+  writer.writeStringList(offsets[43], object.relayList);
+  writer.writeString(offsets[44], object.settings);
+  writer.writeString(offsets[45], object.toAliasPrivkey);
+  writer.writeString(offsets[46], object.toAliasPubkey);
 }
 
 UserDBISAR _userDBISARDeserialize(
@@ -631,31 +667,33 @@ UserDBISAR _userDBISARDeserialize(
     friendsList: reader.readStringOrNull(offsets[17]),
     gender: reader.readStringOrNull(offsets[18]),
     groupsList: reader.readStringList(offsets[19]),
-    lastBadgesListUpdatedTime: reader.readLongOrNull(offsets[20]) ?? 0,
-    lastBlockListUpdatedTime: reader.readLongOrNull(offsets[21]) ?? 0,
-    lastChannelsListUpdatedTime: reader.readLongOrNull(offsets[22]) ?? 0,
-    lastDMRelayListUpdatedTime: reader.readLongOrNull(offsets[23]) ?? 0,
-    lastFollowingListUpdatedTime: reader.readLongOrNull(offsets[24]) ?? 0,
-    lastFriendsListUpdatedTime: reader.readLongOrNull(offsets[25]) ?? 0,
-    lastGroupsListUpdatedTime: reader.readLongOrNull(offsets[26]) ?? 0,
-    lastRelayGroupsListUpdatedTime: reader.readLongOrNull(offsets[27]) ?? 0,
-    lastRelayListUpdatedTime: reader.readLongOrNull(offsets[28]) ?? 0,
-    lastUpdatedTime: reader.readLongOrNull(offsets[29]) ?? 0,
-    lnurl: reader.readStringOrNull(offsets[30]),
-    mainRelay: reader.readStringOrNull(offsets[31]),
-    mute: reader.readBoolOrNull(offsets[32]),
-    name: reader.readStringOrNull(offsets[33]),
-    nickName: reader.readStringOrNull(offsets[34]),
-    nwcURI: reader.readStringOrNull(offsets[35]),
-    otherField: reader.readStringOrNull(offsets[36]),
-    picture: reader.readStringOrNull(offsets[37]),
-    privkey: reader.readStringOrNull(offsets[38]),
-    pubKey: reader.readStringOrNull(offsets[39]) ?? '',
-    relayGroupsList: reader.readStringList(offsets[40]),
-    relayList: reader.readStringList(offsets[41]),
-    settings: reader.readStringOrNull(offsets[42]),
-    toAliasPrivkey: reader.readStringOrNull(offsets[43]),
-    toAliasPubkey: reader.readStringOrNull(offsets[44]),
+    inboxRelayList: reader.readStringList(offsets[20]),
+    lastBadgesListUpdatedTime: reader.readLongOrNull(offsets[21]) ?? 0,
+    lastBlockListUpdatedTime: reader.readLongOrNull(offsets[22]) ?? 0,
+    lastChannelsListUpdatedTime: reader.readLongOrNull(offsets[23]) ?? 0,
+    lastDMRelayListUpdatedTime: reader.readLongOrNull(offsets[24]) ?? 0,
+    lastFollowingListUpdatedTime: reader.readLongOrNull(offsets[25]) ?? 0,
+    lastFriendsListUpdatedTime: reader.readLongOrNull(offsets[26]) ?? 0,
+    lastGroupsListUpdatedTime: reader.readLongOrNull(offsets[27]) ?? 0,
+    lastRelayGroupsListUpdatedTime: reader.readLongOrNull(offsets[28]) ?? 0,
+    lastRelayListUpdatedTime: reader.readLongOrNull(offsets[29]) ?? 0,
+    lastUpdatedTime: reader.readLongOrNull(offsets[30]) ?? 0,
+    lnurl: reader.readStringOrNull(offsets[31]),
+    mainRelay: reader.readStringOrNull(offsets[32]),
+    mute: reader.readBoolOrNull(offsets[33]),
+    name: reader.readStringOrNull(offsets[34]),
+    nickName: reader.readStringOrNull(offsets[35]),
+    nwcURI: reader.readStringOrNull(offsets[36]),
+    otherField: reader.readStringOrNull(offsets[37]),
+    outboxRelayList: reader.readStringList(offsets[38]),
+    picture: reader.readStringOrNull(offsets[39]),
+    privkey: reader.readStringOrNull(offsets[40]),
+    pubKey: reader.readStringOrNull(offsets[41]) ?? '',
+    relayGroupsList: reader.readStringList(offsets[42]),
+    relayList: reader.readStringList(offsets[43]),
+    settings: reader.readStringOrNull(offsets[44]),
+    toAliasPrivkey: reader.readStringOrNull(offsets[45]),
+    toAliasPubkey: reader.readStringOrNull(offsets[46]),
   );
   object.id = id;
   return object;
@@ -709,7 +747,7 @@ P _userDBISARDeserializeProp<P>(
     case 19:
       return (reader.readStringList(offset)) as P;
     case 20:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
+      return (reader.readStringList(offset)) as P;
     case 21:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 22:
@@ -729,13 +767,13 @@ P _userDBISARDeserializeProp<P>(
     case 29:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 30:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 31:
       return (reader.readStringOrNull(offset)) as P;
     case 32:
-      return (reader.readBoolOrNull(offset)) as P;
-    case 33:
       return (reader.readStringOrNull(offset)) as P;
+    case 33:
+      return (reader.readBoolOrNull(offset)) as P;
     case 34:
       return (reader.readStringOrNull(offset)) as P;
     case 35:
@@ -745,18 +783,22 @@ P _userDBISARDeserializeProp<P>(
     case 37:
       return (reader.readStringOrNull(offset)) as P;
     case 38:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringList(offset)) as P;
     case 39:
-      return (reader.readStringOrNull(offset) ?? '') as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 40:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 41:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 42:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringList(offset)) as P;
     case 43:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringList(offset)) as P;
     case 44:
+      return (reader.readStringOrNull(offset)) as P;
+    case 45:
+      return (reader.readStringOrNull(offset)) as P;
+    case 46:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -4940,6 +4982,250 @@ extension UserDBISARQueryFilter
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'inboxRelayList',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'inboxRelayList',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'inboxRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'inboxRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'inboxRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'inboxRelayList',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'inboxRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'inboxRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'inboxRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListElementMatches(String pattern,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'inboxRelayList',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'inboxRelayList',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'inboxRelayList',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'inboxRelayList',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'inboxRelayList',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'inboxRelayList',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'inboxRelayList',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'inboxRelayList',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      inboxRelayListLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'inboxRelayList',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
       lastBadgesListUpdatedTimeEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -6419,6 +6705,251 @@ extension UserDBISARQueryFilter
         property: r'otherField',
         value: '',
       ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'outboxRelayList',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'outboxRelayList',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'outboxRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'outboxRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'outboxRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'outboxRelayList',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'outboxRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'outboxRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListElementContains(String value,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'outboxRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListElementMatches(String pattern,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'outboxRelayList',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'outboxRelayList',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'outboxRelayList',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'outboxRelayList',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'outboxRelayList',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'outboxRelayList',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'outboxRelayList',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'outboxRelayList',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      outboxRelayListLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'outboxRelayList',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
     });
   }
 
@@ -8793,6 +9324,12 @@ extension UserDBISARQueryWhereDistinct
     });
   }
 
+  QueryBuilder<UserDBISAR, UserDBISAR, QDistinct> distinctByInboxRelayList() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'inboxRelayList');
+    });
+  }
+
   QueryBuilder<UserDBISAR, UserDBISAR, QDistinct>
       distinctByLastBadgesListUpdatedTime() {
     return QueryBuilder.apply(this, (query) {
@@ -8907,6 +9444,12 @@ extension UserDBISARQueryWhereDistinct
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'otherField', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QDistinct> distinctByOutboxRelayList() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'outboxRelayList');
     });
   }
 
@@ -9107,6 +9650,13 @@ extension UserDBISARQueryProperty
     });
   }
 
+  QueryBuilder<UserDBISAR, List<String>?, QQueryOperations>
+      inboxRelayListProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'inboxRelayList');
+    });
+  }
+
   QueryBuilder<UserDBISAR, int, QQueryOperations>
       lastBadgesListUpdatedTimeProperty() {
     return QueryBuilder.apply(this, (query) {
@@ -9215,6 +9765,13 @@ extension UserDBISARQueryProperty
   QueryBuilder<UserDBISAR, String?, QQueryOperations> otherFieldProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'otherField');
+    });
+  }
+
+  QueryBuilder<UserDBISAR, List<String>?, QQueryOperations>
+      outboxRelayListProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'outboxRelayList');
     });
   }
 

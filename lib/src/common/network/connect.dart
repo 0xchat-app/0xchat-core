@@ -69,6 +69,7 @@ class ISocket {
 enum RelayKind {
   general,
   dm,
+  inboxOutbox,
   relayGroup,
   secretChat,
   nwc,

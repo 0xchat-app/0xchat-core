@@ -260,15 +260,15 @@ extension AccountProfile on Account {
       // following list
       List<Profile> profiles = Nip2.decode(event);
       db.followingList = profiles.map((e) => e.key).toList();
-      // relay list
-      if (db.lastRelayListUpdatedTime == 0) {
-        Map map = jsonDecode(event.content);
-        db.relayList ??= [];
-        Set<String> relaySet = Set.from(db.relayList!);
-        relaySet.addAll(map.keys.map((e) => e.toString()).toList());
-        db.relayList = relaySet.toList();
-        relayListUpdateCallback?.call();
-      }
+      // // relay list
+      // if(event.content.isNotEmpty){
+      //   Map map = jsonDecode(event.content);
+      //   db.relayList ??= [];
+      //   Set<String> relaySet = Set.from(db.relayList!);
+      //   relaySet.addAll(map.keys.map((e) => e.toString()).toList());
+      //   db.relayList = relaySet.toList();
+      //   relayListUpdateCallback?.call();
+      // }
     }
     return db;
   }
@@ -293,12 +293,18 @@ extension AccountProfile on Account {
     if (db != null && db.lastRelayListUpdatedTime < event.createdAt) {
       db.lastRelayListUpdatedTime = event.createdAt;
       List<Relay> result = Nip65.decode(event);
-      db.relayList ??= [];
-      Set<String> relaySet = Set.from(db.relayList!);
-      relaySet.addAll(result.map((e) => e.url).toList());
-      db.relayList = relaySet.toList();
+      db.inboxRelayList ??= [];
+      db.outboxRelayList ??= [];
+      for (var relay in result) {
+        if ((relay.r == 'read' || relay.r == null) && !db.inboxRelayList!.contains(relay.url)) {
+          db.inboxRelayList!.add(relay.url);
+        }
+        if ((relay.r == 'write' || relay.r == null) && !db.outboxRelayList!.contains(relay.url)) {
+          db.outboxRelayList!.add(relay.url);
+        }
+      }
       if (db.pubKey == currentPubkey) {
-        Relays.sharedInstance.connectGeneralRelays();
+        Relays.sharedInstance.connectInboxOutboxRelays();
         relayListUpdateCallback?.call();
       }
     }

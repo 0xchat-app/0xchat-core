@@ -308,8 +308,9 @@ class Contacts {
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
       } else if (event.kind == 1059) {
         Event? innerEvent = await decodeNip17Event(event);
-        if (innerEvent == null || EventCache.sharedInstance.cacheIds.contains(innerEvent.id))
+        if (innerEvent == null || EventCache.sharedInstance.cacheIds.contains(innerEvent.id)) {
           return;
+        }
         EventCache.sharedInstance.receiveEvent(innerEvent, relay);
         if (!inBlockList(innerEvent.pubkey)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
@@ -457,11 +458,13 @@ class Contacts {
       Event? giftwrappedEvent = await Contacts.sharedInstance.encodeNip17Event(event, toPubkey);
       UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(toPubkey);
       List<String>? dmRelays = toUser?.dmRelayList;
-      List<String>? generalRelays = toUser?.relayList;
+      List<String>? inboxRelays = toUser?.inboxRelayList;
+      List<String> userRelays = [];
       bool hasConnected = false;
       if (dmRelays == null || dmRelays.isEmpty) {
         hasConnected = true;
       } else {
+        userRelays = [...dmRelays];
         for (var relay in dmRelays) {
           if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
             hasConnected = true;
@@ -470,9 +473,9 @@ class Contacts {
         }
       }
       if (!hasConnected) {
-        if (generalRelays != null && generalRelays.isNotEmpty) {
-          dmRelays = generalRelays;
-          for (var relay in generalRelays) {
+        if (inboxRelays != null && inboxRelays.isNotEmpty) {
+          userRelays = [...inboxRelays];
+          for (var relay in inboxRelays) {
             if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
               hasConnected = true;
               break;
@@ -486,7 +489,7 @@ class Contacts {
         }
         return completer.future;
       }
-      Connect.sharedInstance.sendEvent(giftwrappedEvent!, toRelays: dmRelays,
+      Connect.sharedInstance.sendEvent(giftwrappedEvent!, toRelays: userRelays,
           sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
         await Messages.saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
@@ -499,7 +502,13 @@ class Contacts {
               await Contacts.sharedInstance.encodeNip17Event(event!, pubkey);
           UserDBISAR? me = await Account.sharedInstance.getUserInfo(pubkey);
           List<String>? myDMRelays = me?.dmRelayList;
-          Connect.sharedInstance.sendEvent(giftwrappedEventToSelf!, toRelays: myDMRelays);
+          List<String> myRelays = [];
+          if (myDMRelays == null || myDMRelays.isEmpty) {
+            myRelays = [...(me?.inboxRelayList ?? [])];
+          } else {
+            myRelays = [...myDMRelays];
+          }
+          Connect.sharedInstance.sendEvent(giftwrappedEventToSelf!, toRelays: myRelays);
         }
       });
 
