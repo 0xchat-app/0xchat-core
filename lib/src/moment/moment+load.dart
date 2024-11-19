@@ -22,28 +22,24 @@ extension Load on Moment {
   //   return notes;
   // }
 
-  Future<List<NoteDBISAR>?> loadAllNotesFromDB(
-      {int limit = 50, int? until, bool? private}) async {
+  Future<List<NoteDBISAR>?> loadAllNotesFromDB({int limit = 50, int? until, bool? private}) async {
     List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
     authors.addAll(Account.sharedInstance.me?.followingList ?? []);
     authors.add(pubkey);
-    return await loadUserNotesFromDB(authors,
-        limit: limit, until: until, private: private);
+    return await loadUserNotesFromDB(authors, limit: limit, until: until, private: private);
   }
 
   Future<List<NoteDBISAR>?> loadContactsNotesFromDB(
       {int limit = 50, int? until, bool? private = false}) async {
     List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
     authors.add(pubkey);
-    return await loadUserNotesFromDB(authors,
-        limit: limit, until: until, private: private);
+    return await loadUserNotesFromDB(authors, limit: limit, until: until, private: private);
   }
 
   Future<List<NoteDBISAR>?> loadFollowsNotesFromDB(
       {int limit = 50, int? until, bool? private = false}) async {
     List<String> authors = Account.sharedInstance.me?.followingList ?? [];
-    return await loadUserNotesFromDB(authors,
-        limit: limit, until: until, private: private);
+    return await loadUserNotesFromDB(authors, limit: limit, until: until, private: private);
   }
 
   Future<List<NoteDBISAR>?> loadMyReactedNotesFromDB(
@@ -51,8 +47,7 @@ extension Load on Moment {
     List<String> authors = [pubkey];
     List<NoteDBISAR>? reactedNotes = await loadUserNotesFromDB(authors,
         limit: limit, until: until, private: private, isReacted: true);
-    List<ZapRecordsDBISAR?> zapRecords =
-        await Zaps.searchZapRecordsFromDB(sender: pubkey);
+    List<ZapRecordsDBISAR?> zapRecords = await Zaps.searchZapRecordsFromDB(sender: pubkey);
     List<String> reactedIds = [];
     for (NoteDBISAR note in reactedNotes ?? []) {
       if (note.reactedId != null) reactedIds.add(note.reactedId!);
@@ -71,17 +66,16 @@ extension Load on Moment {
     return result;
   }
 
-  Future<List<NoteDBISAR>?> loadMyNotesFromDB(
-      {int limit = 50, int? until}) async {
+  Future<List<NoteDBISAR>?> loadMyNotesFromDB({int limit = 50, int? until}) async {
     return await loadUserNotesFromDB([pubkey], limit: limit, until: until);
   }
 
   Future<List<NoteDBISAR>?> loadUserNotesFromDB(List<String> userPubkeys,
       {int limit = 50, int? until, bool? private, bool? isReacted, String? root}) async {
     // remove blocklist pubkeys
-    userPubkeys = userPubkeys
-        .where((pubkey) => !Contacts.sharedInstance.inBlockList(pubkey))
-        .toList();
+    userPubkeys =
+        userPubkeys.where((pubkey) => !Contacts.sharedInstance.inBlockList(pubkey)).toList();
+    if (userPubkeys.isEmpty) return null;
     until ??= currentUnixTimestampSeconds() + 1;
 
     List<NoteDBISAR>? notes = await searchNotesFromDB(
@@ -94,8 +88,7 @@ extension Load on Moment {
 
     for (var note in notes) {
       notesCache[note.noteId] = note;
-      latestNoteTime =
-          note.createAt > latestNoteTime ? note.createAt : latestNoteTime;
+      latestNoteTime = note.createAt > latestNoteTime ? note.createAt : latestNoteTime;
     }
     return notes;
   }
@@ -128,35 +121,29 @@ extension Load on Moment {
       noteId = result['special'];
       relays = result['relays'];
       if (noteId != null) {
-        return await loadNoteWithNoteId(noteId,
-            private: private, reload: reload, relays: relays);
+        return await loadNoteWithNoteId(noteId, private: private, reload: reload, relays: relays);
       }
     }
     return null;
   }
 
-  Future<void> saveNoteToDB(
-      NoteDBISAR noteDB, ConflictAlgorithm? conflictAlgorithm) async {
-    if (!notesCache.containsKey(noteDB.noteId) ||
-        conflictAlgorithm != ConflictAlgorithm.ignore) {
+  Future<void> saveNoteToDB(NoteDBISAR noteDB, ConflictAlgorithm? conflictAlgorithm) async {
+    if (!notesCache.containsKey(noteDB.noteId) || conflictAlgorithm != ConflictAlgorithm.ignore) {
       notesCache[noteDB.noteId] = noteDB;
     }
     await DBISAR.sharedInstance.saveToDB(noteDB);
     notesCache[noteDB.noteId] = noteDB;
   }
 
-  Future<NoteDBISAR?> loadPublicNoteFromRelay(String noteId,
-      {List<String>? relays}) async {
+  Future<NoteDBISAR?> loadPublicNoteFromRelay(String noteId, {List<String>? relays}) async {
     if (noteId.isEmpty) return null;
 
     Completer<NoteDBISAR?> completer = Completer<NoteDBISAR?>();
 
     List<String> tempRelays = [];
     for (var relay in relays ?? []) {
-      if (relay.isNotEmpty &&
-          !Connect.sharedInstance.webSockets.keys.contains(relay)) {
-        await Connect.sharedInstance
-            .connectRelays([relay], relayKind: RelayKind.temp);
+      if (relay.isNotEmpty && !Connect.sharedInstance.webSockets.keys.contains(relay)) {
+        await Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.temp);
         tempRelays.add(relay);
       }
     }
@@ -203,8 +190,7 @@ extension Load on Moment {
     List<NoteDBISAR> notes1 = await searchNotesFromDB(root: noteDB.noteId);
     List<NoteDBISAR> notes2 = await searchNotesFromDB(reply: noteDB.noteId);
     List<NoteDBISAR> notes3 = await searchNotesFromDB(repostId: noteDB.noteId);
-    List<NoteDBISAR> notes4 =
-        await searchNotesFromDB(quoteRepostId: noteDB.noteId);
+    List<NoteDBISAR> notes4 = await searchNotesFromDB(quoteRepostId: noteDB.noteId);
     List<NoteDBISAR> notes5 = await searchNotesFromDB(reactedId: noteDB.noteId);
 
     List<NoteDBISAR> notes = [];
@@ -221,21 +207,18 @@ extension Load on Moment {
 
     for (var note in notes) {
       // check reply
-      if (note.reply == noteDB.noteId &&
-          !noteDB.replyEventIds!.contains(note.noteId)) {
+      if (note.reply == noteDB.noteId && !noteDB.replyEventIds!.contains(note.noteId)) {
         noteDB.replyEventIds!.add(note.noteId);
         noteDB.replyCount++;
         if (note.author == pubkey) noteDB.replyCountByMe++;
-      } else if ((note.root == noteDB.noteId &&
-              (note.reply == null || note.reply!.isEmpty)) &&
+      } else if ((note.root == noteDB.noteId && (note.reply == null || note.reply!.isEmpty)) &&
           !noteDB.replyEventIds!.contains(note.noteId)) {
         noteDB.replyEventIds!.add(note.noteId);
         noteDB.replyCount++;
         if (note.author == pubkey) noteDB.replyCountByMe++;
       }
       // check repost
-      if (note.repostId == noteDB.noteId &&
-          !noteDB.repostEventIds!.contains(note.noteId)) {
+      if (note.repostId == noteDB.noteId && !noteDB.repostEventIds!.contains(note.noteId)) {
         noteDB.repostEventIds!.add(note.noteId);
         noteDB.repostCount++;
         if (note.author == pubkey) noteDB.repostCountByMe++;
@@ -248,8 +231,7 @@ extension Load on Moment {
         if (note.author == pubkey) noteDB.quoteRepostCountByMe++;
       }
       // check reaction
-      if (note.reactedId == noteDB.noteId &&
-          !noteDB.reactionEventIds!.contains(note.noteId)) {
+      if (note.reactedId == noteDB.noteId && !noteDB.reactionEventIds!.contains(note.noteId)) {
         noteDB.reactionEventIds!.add(note.noteId);
         noteDB.reactionCount++;
         if (note.author == pubkey) noteDB.reactionCountByMe++;
@@ -270,12 +252,10 @@ extension Load on Moment {
       int lastUpdatedTime = noteDB.getLastUpdatedTime(relayURL);
       Filter f = lastUpdatedTime == 0
           ? Filter(kinds: [1, 6, 7, 9735], e: [noteId])
-          : Filter(
-              kinds: [1, 6, 7, 9735], e: [noteId], since: lastUpdatedTime + 1);
+          : Filter(kinds: [1, 6, 7, 9735], e: [noteId], since: lastUpdatedTime + 1);
       subscriptions[relayURL] = [f];
     }
-    Connect.sharedInstance.addSubscriptions(subscriptions,
-        eventCallBack: (event, relay) async {
+    Connect.sharedInstance.addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       if (Contacts.sharedInstance.inBlockList(event.pubkey)) return;
       if (!result.containsKey(event.id)) {
         result[event.id] = event;
@@ -316,11 +296,8 @@ extension Load on Moment {
     if (noteDB == null) return;
     noteDB.zapEventIds ??= [];
     ZapReceipt zapReceipt = await Nip57.getZapReceipt(
-        zapEvent,
-        Account.sharedInstance.currentPubkey,
-        Account.sharedInstance.currentPrivkey);
-    ZapRecordsDBISAR zapRecordsDB =
-        ZapRecordsDBISAR.zapReceiptToZapRecordsDB(zapReceipt);
+        zapEvent, Account.sharedInstance.currentPubkey, Account.sharedInstance.currentPrivkey);
+    ZapRecordsDBISAR zapRecordsDB = ZapRecordsDBISAR.zapReceiptToZapRecordsDB(zapReceipt);
     if (noteDB.zapEventIds?.contains(zapRecordsDB.bolt11) == true) return;
     Zaps.saveZapRecordToDB(zapRecordsDB);
     noteDB.zapEventIds?.add(zapRecordsDB.bolt11);
@@ -328,8 +305,7 @@ extension Load on Moment {
     noteDB.zapAmount += ZapRecordsDBISAR.getZapAmount(zapRecordsDB.bolt11);
     if (zapRecordsDB.sender == pubkey) {
       noteDB.zapCountByMe++;
-      noteDB.zapAmountByMe +=
-          ZapRecordsDBISAR.getZapAmount(zapRecordsDB.bolt11);
+      noteDB.zapAmountByMe += ZapRecordsDBISAR.getZapAmount(zapRecordsDB.bolt11);
     }
     saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
@@ -370,8 +346,7 @@ extension Load on Moment {
     saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
 
-  Future<void> addQuoteRepostToNote(
-      Event quoteRepostEvent, String noteId) async {
+  Future<void> addQuoteRepostToNote(Event quoteRepostEvent, String noteId) async {
     NoteDBISAR? noteDB = await loadNoteWithNoteId(noteId);
     if (noteDB == null) return;
     noteDB.quoteRepostEventIds ??= [];
@@ -407,40 +382,39 @@ extension Load on Moment {
     saveNoteToDB(noteDB, ConflictAlgorithm.replace);
   }
 
-  Future<List<NoteDBISAR>?> loadAllNewNotesFromRelay(
-      {int? until, int? since, int? limit}) async {
+  Future<List<NoteDBISAR>?> loadAllNewNotesFromRelay({int? until, int? since, int? limit}) async {
     List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
     authors.addAll(Account.sharedInstance.me?.followingList ?? []);
     authors.add(pubkey);
-    return await loadNewNotesFromRelay(
-        limit: limit, authors: authors, until: until, since: since);
+    return await loadNewNotesFromRelay(limit: limit, authors: authors, until: until, since: since);
   }
 
   Future<List<NoteDBISAR>?> loadContactsNewNotesFromRelay(
       {int? until, int? since, int? limit}) async {
     List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
     authors.add(pubkey);
-    return await loadNewNotesFromRelay(
-        limit: limit, authors: authors, until: until, since: since);
+    return await loadNewNotesFromRelay(limit: limit, authors: authors, until: until, since: since);
   }
 
   Future<List<NoteDBISAR>?> loadFollowsNewNotesFromRelay(
       {int? until, int? since, int? limit}) async {
     List<String> authors = Account.sharedInstance.me?.followingList ?? [];
     authors.add(pubkey);
-    return await loadNewNotesFromRelay(
-        limit: limit, authors: authors, until: until, since: since);
+    return await loadNewNotesFromRelay(limit: limit, authors: authors, until: until, since: since);
   }
 
   Future<List<NoteDBISAR>?> loadNewNotesFromRelay(
       {int? limit = 50, List<String>? authors, int? until, int? since}) async {
     Completer<List<NoteDBISAR>?> completer = Completer<List<NoteDBISAR>?>();
+    if (authors != null) {
+      // remove blocklist pubkeys
+      authors = authors.where((pubkey) => !Contacts.sharedInstance.inBlockList(pubkey)).toList();
+      if (authors.isEmpty) return null;
+    }
     authors ??= [pubkey];
-    Filter f = Filter(
-        kinds: [1], authors: authors, limit: limit, until: until, since: since);
+    Filter f = Filter(kinds: [1], authors: authors, limit: limit, until: until, since: since);
     Map<String, Event> result = {};
-    Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event, relay) async {
+    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
       result[event.id] = event;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       if (unRelays.isEmpty) {
@@ -473,8 +447,7 @@ extension Load on Moment {
     Completer<List<NoteDBISAR>?> completer = Completer<List<NoteDBISAR>?>();
     Filter f = Filter(kinds: [1], t: hashTags, until: until, limit: limit);
     Map<String, Event> result = {};
-    Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event, relay) async {
+    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
       result[event.id] = event;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       if (unRelays.isEmpty) {
@@ -512,8 +485,7 @@ extension Load on Moment {
       List<String> invoices, bool private) async {
     List<ZapRecordsDBISAR> result = [];
     for (var invoice in invoices) {
-      List<ZapRecordsDBISAR> zapRecords =
-          await Zaps.getZapReceipt('', invoice: invoice);
+      List<ZapRecordsDBISAR> zapRecords = await Zaps.getZapReceipt('', invoice: invoice);
       if (zapRecords.isNotEmpty) result.add(zapRecords.first);
     }
     return result;
@@ -531,14 +503,13 @@ extension Load on Moment {
     NoteDBISAR? noteDB = await loadNoteWithNoteId(noteId, reload: reload);
     if (noteDB != null) {
       noteDB = await loadPublicNoteActionsFromDB(noteDB);
-      result['reply'] = await loadNoteIdsToNoteDBs(
-          noteDB.replyEventIds ?? [], noteDB.private, reload);
+      result['reply'] =
+          await loadNoteIdsToNoteDBs(noteDB.replyEventIds ?? [], noteDB.private, reload);
       actionsCallBack?.call(result);
       if (!noteDB.private && reload) {
-        await loadPublicNoteActionsFromRelay(noteDB,
-            noteCallBack: (noteDB) async {
-          result['reply'] = await loadNoteIdsToNoteDBs(
-              noteDB.replyEventIds ?? [], noteDB.private, reload);
+        await loadPublicNoteActionsFromRelay(noteDB, noteCallBack: (noteDB) async {
+          result['reply'] =
+              await loadNoteIdsToNoteDBs(noteDB.replyEventIds ?? [], noteDB.private, reload);
           // result['repost'] = await _loadNoteIdsToNoteDBs(
           //     noteDB.repostEventIds ?? [], noteDB.private, reload);
           // result['quoteRepost'] = await _loadNoteIdsToNoteDBs(
@@ -597,9 +568,8 @@ extension Load on Moment {
         query = noteDB.reactedId == reactedId;
       }
       if (query && isReacted != null) {
-        query = isReacted
-            ? noteDB.reactedId?.isNotEmpty == true
-            : noteDB.reactedId?.isEmpty == true;
+        query =
+            isReacted ? noteDB.reactedId?.isNotEmpty == true : noteDB.reactedId?.isEmpty == true;
       }
       if (query && private != null) {
         query = noteDB.private == private;
@@ -637,8 +607,7 @@ extension Load on Moment {
       queryBuilder = queryBuilder.groupIdIsEmpty();
     }
     if (authors != null) {
-      queryBuilder =
-          queryBuilder.anyOf(authors, (q, author) => q.authorEqualTo(author));
+      queryBuilder = queryBuilder.anyOf(authors, (q, author) => q.authorEqualTo(author));
     }
     if (root != null) {
       queryBuilder = queryBuilder.rootEqualTo(root);
@@ -659,42 +628,24 @@ extension Load on Moment {
       queryBuilder = queryBuilder.createAtLessThan(until);
     }
     if (isReacted != null) {
-      queryBuilder = isReacted
-          ? queryBuilder.reactedIdIsNotEmpty()
-          : queryBuilder.reactedIdIsEmpty();
+      queryBuilder =
+          isReacted ? queryBuilder.reactedIdIsNotEmpty() : queryBuilder.reactedIdIsEmpty();
     }
     if (private != null) {
       queryBuilder = queryBuilder.privateEqualTo(private);
     }
-    List<NoteDBISAR> result = searchNotesFromCache(
-        noteId,
-        groupId,
-        authors,
-        root,
-        reply,
-        repostId,
-        quoteRepostId,
-        reactedId,
-        isReacted,
-        private,
-        until,
-        limit);
+    List<NoteDBISAR> result = searchNotesFromCache(noteId, groupId, authors, root, reply, repostId,
+        quoteRepostId, reactedId, isReacted, private, until, limit);
     if (limit != null) {
-      final searchResult = await queryBuilder
-          .idBetween(0, Isar.maxId)
-          .sortByCreateAtDesc()
-          .limit(limit)
-          .findAll();
+      final searchResult =
+          await queryBuilder.idBetween(0, Isar.maxId).sortByCreateAtDesc().limit(limit).findAll();
       for (NoteDBISAR note in searchResult) {
         note = note.withGrowableLevels();
         result.add(note);
       }
       return result;
     }
-    final searchResult = await queryBuilder
-        .idBetween(0, Isar.maxId)
-        .sortByCreateAtDesc()
-        .findAll();
+    final searchResult = await queryBuilder.idBetween(0, Isar.maxId).sortByCreateAtDesc().findAll();
     for (NoteDBISAR note in searchResult) {
       note = note.withGrowableLevels();
       result.add(note);
@@ -709,11 +660,9 @@ extension Load on Moment {
       newNotesCallBack?.call(newNotes);
     }
     if (noteDB.pTags?.contains(pubkey) == true) {
-      NotificationDBISAR notificationDB =
-          NotificationDBISAR.notificationDBFromNoteDB(noteDB);
+      NotificationDBISAR notificationDB = NotificationDBISAR.notificationDBFromNoteDB(noteDB);
       await saveNotificationToDB(notificationDB);
-      if (notificationDB.author != pubkey &&
-          notificationDB.createAt > latestNotificationTime) {
+      if (notificationDB.author != pubkey && notificationDB.createAt > latestNotificationTime) {
         newNotifications.add(notificationDB);
         newNotificationCallBack?.call(newNotifications);
       }
@@ -735,8 +684,7 @@ extension Load on Moment {
     handleNewNotes(noteDB);
   }
 
-  Future<void> handleRepostsEvent(
-      Event event, String relay, bool private) async {
+  Future<void> handleRepostsEvent(Event event, String relay, bool private) async {
     Reposts repost = await Nip18.decodeReposts(event);
     // save repost event to DB
     if (repost.repostNote != null) {
@@ -750,18 +698,17 @@ extension Load on Moment {
     handleNewNotes(noteDB);
   }
 
-  Future<void> handleReactionEvent(
-      Event event, String relay, bool private) async {
+  Future<void> handleReactionEvent(Event event, String relay, bool private) async {
     Reactions reactions = Nip25.decode(event);
     NoteDBISAR reactionsNoteDB = NoteDBISAR.noteDBFromReactions(reactions);
     reactionsNoteDB.private = private;
-    final reactedMessageDB = await Messages.sharedInstance
-        .loadMessageDBFromDB(reactions.reactedEventId);
+    final reactedMessageDB =
+        await Messages.sharedInstance.loadMessageDBFromDB(reactions.reactedEventId);
     if (reactedMessageDB != null) {
       await Messages.sharedInstance.handleReactionEvent(event);
     } else {
       NoteDBISAR? noteDB = await loadNoteWithNoteId(reactionsNoteDB.reactedId!);
-      if(noteDB != null){
+      if (noteDB != null) {
         await addReactionToNote(event, reactionsNoteDB.reactedId!);
         handleNewNotes(reactionsNoteDB);
       }
