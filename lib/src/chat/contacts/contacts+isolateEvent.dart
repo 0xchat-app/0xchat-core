@@ -73,8 +73,7 @@ extension IsolateEvent on Contacts {
   static Future<Map<String, dynamic>?> decodeKind14InIsolate(Map<String, dynamic> params) async {
     String receiver = params['receiver'] ?? '';
     Event event = await Event.fromJson(params['event'], verify: false);
-    EDMessage? message =
-        await Nip17.decodeSealedGossipDM(event, receiver, Contacts.sharedInstance.pubkey);
+    EDMessage? message = await Nip17.decodeSealedGossipDM(event, receiver, params['pubkey']);
     return message?.toMap();
   }
 
@@ -82,6 +81,7 @@ extension IsolateEvent on Contacts {
     Map<String, dynamic> map = {
       'event': event.toJson(),
       'receiver': receiver,
+      'pubkey': Account.sharedInstance.currentPubkey
     };
     var message =
         await ThreadPoolManager.sharedInstance.runOtherTask(() => decodeKind14InIsolate(map));
