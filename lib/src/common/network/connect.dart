@@ -404,7 +404,7 @@ class Connect {
   void sendEvent(Event event,
       {OKCallBack? sendCallBack,
       List<String>? toRelays,
-      List<RelayKind> relayKinds = const [RelayKind.general, RelayKind.inbox]}) {
+      List<RelayKind> relayKinds = const [RelayKind.general, RelayKind.outbox]}) {
     String eventString = event.serialize();
     List<String> rs = (toRelays == null || toRelays.isEmpty)
         ? relays(relayKinds: relayKinds)
