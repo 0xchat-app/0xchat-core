@@ -520,8 +520,8 @@ class Contacts {
   Future<bool> connectUserDMRelays(String pubkey) async {
     UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(pubkey);
     List<String>? dmRelays = toUser?.dmRelayList ?? [];
-    List<String>? generalRelays = toUser?.relayList ?? [];
-    var relays = [...dmRelays, ...generalRelays];
+    List<String>? inboxRelays = toUser?.inboxRelayList ?? [];
+    var relays = [...dmRelays, ...inboxRelays];
     if (relays.isEmpty) return true;
     for (var relay in relays) {
       if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) return true;
@@ -534,23 +534,11 @@ class Contacts {
     return false;
   }
 
-  Future<bool> connectUserGeneralRelays(String pubkey) async {
-    UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(pubkey);
-    List<String>? relays = toUser?.relayList ?? [];
-    if (relays.isEmpty) return true;
-    await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.temp);
-    for (var relay in relays) {
-      int? status = Connect.sharedInstance.webSockets[relay]?.connectStatus;
-      if (status == 1 || status == 0) return true;
-    }
-    return false;
-  }
-
   Future<void> closeUserDMRelays(String pubkey) async {
     UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(pubkey);
     List<String>? dmRelays = toUser?.dmRelayList ?? [];
-    List<String>? generalRelays = toUser?.relayList ?? [];
-    var relays = [...dmRelays, ...generalRelays];
+    List<String>? inboxRelays = toUser?.inboxRelayList ?? [];
+    var relays = [...dmRelays, ...inboxRelays];
     relays.addAll(toUser?.relayList ?? []);
     if (relays.isNotEmpty) {
       await Connect.sharedInstance.closeTempConnects(relays);
