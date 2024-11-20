@@ -290,7 +290,7 @@ extension AccountProfile on Account {
 
   // relay list
   UserDBISAR? _handleKind10002Event(UserDBISAR? db, Event event) {
-    if (db != null && db.lastRelayListUpdatedTime < event.createdAt) {
+    if (db != null) {
       db.lastRelayListUpdatedTime = event.createdAt;
       List<Relay> result = Nip65.decode(event);
       db.inboxRelayList ??= [];

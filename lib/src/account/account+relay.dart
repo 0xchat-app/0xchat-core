@@ -13,6 +13,24 @@ extension AccountRelay on Account {
     return result;
   }
 
+  List<RelayDBISAR> getMyInboxRelayList() {
+    List<String> inboxRelays = me?.inboxRelayList ?? [];
+    List<RelayDBISAR> result = [];
+    for (var relay in inboxRelays) {
+      result.add(Relays.sharedInstance.relays[relay] ?? RelayDBISAR(url: relay));
+    }
+    return result;
+  }
+
+  List<RelayDBISAR> getMyOutboxRelayList() {
+    List<String> outboxRelays = me?.outboxRelayList ?? [];
+    List<RelayDBISAR> result = [];
+    for (var relay in outboxRelays) {
+      result.add(Relays.sharedInstance.relays[relay] ?? RelayDBISAR(url: relay));
+    }
+    return result;
+  }
+
   List<RelayDBISAR> getMyGeneralRelayList() {
     List<String> generalRelays = me?.relayList ?? [];
     List<RelayDBISAR> result = [];
@@ -62,8 +80,7 @@ extension AccountRelay on Account {
     Relays.sharedInstance.connectDMRelays();
     syncMe();
     Completer<OKEvent> completer = Completer<OKEvent>();
-    Event event =
-        await Nip17.encodeDMRelays(relays, currentPubkey, currentPrivkey);
+    Event event = await Nip17.encodeDMRelays(relays, currentPubkey, currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
         completer.complete(ok);
@@ -90,9 +107,45 @@ extension AccountRelay on Account {
     return await setGeneralRelayListToRelay(relays);
   }
 
+  Future<OKEvent> addInboxRelay(String relay) async {
+    if (relay.isEmpty) return OKEvent(relay, false, 'empty relay');
+    List<String> relays = me?.inboxRelayList ?? [];
+    if (relays.contains(relay)) return OKEvent(relay, false, 'already exit');
+    relays.add(relay);
+    Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.inbox);
+    return await setInboxRelayListToRelay(relays);
+  }
+
+  Future<OKEvent> removeInboxRelay(String relay) async {
+    if (relay.isEmpty) return OKEvent(relay, false, 'empty relay');
+    List<String> relays = List.from(me!.inboxRelayList ?? []);
+    if (!relays.contains(relay)) return OKEvent(relay, false, 'not exit');
+    relays.remove(relay);
+    Connect.sharedInstance.closeConnects([relay], RelayKind.inbox);
+    return await setInboxRelayListToRelay(relays);
+  }
+
+  Future<OKEvent> addOutboxRelay(String relay) async {
+    if (relay.isEmpty) return OKEvent(relay, false, 'empty relay');
+    List<String> relays = me?.outboxRelayList ?? [];
+    if (relays.contains(relay)) return OKEvent(relay, false, 'already exit');
+    relays.add(relay);
+    Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.outbox);
+    return await setOutboxRelayListToRelay(relays);
+  }
+
+  Future<OKEvent> removeOutboxRelay(String relay) async {
+    if (relay.isEmpty) return OKEvent(relay, false, 'empty relay');
+    List<String> relays = List.from(me!.outboxRelayList ?? []);
+    if (!relays.contains(relay)) return OKEvent(relay, false, 'not exit');
+    relays.remove(relay);
+    Connect.sharedInstance.closeConnects([relay], RelayKind.outbox);
+    return await setOutboxRelayListToRelay(relays);
+  }
+
   Future<OKEvent> addDMRelay(String relay) async {
     if (relay.isEmpty) return OKEvent(relay, false, 'empty relay');
-    List<String> relays = List.from(me?.dmRelayList ?? []) ;
+    List<String> relays = List.from(me?.dmRelayList ?? []);
     if (relays.contains(relay)) return OKEvent(relay, false, 'already exit');
     relays.add(relay);
     Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.dm);
@@ -140,10 +193,33 @@ extension AccountRelay on Account {
     me!.lastRelayListUpdatedTime = currentUnixTimestampSeconds();
     Relays.sharedInstance.connectGeneralRelays();
     syncMe();
+    return OKEvent('', true, '');
+  }
+
+  Future<OKEvent> setInboxRelayListToRelay(List<String> relays) async {
+    me!.inboxRelayList = relays;
+    me!.lastRelayListUpdatedTime = currentUnixTimestampSeconds();
+    Relays.sharedInstance.connectInboxOutboxRelays();
+    syncMe();
+    return setInboxOutboxToRelay();
+  }
+
+  Future<OKEvent> setOutboxRelayListToRelay(List<String> relays) async {
+    me!.outboxRelayList = relays;
+    me!.lastRelayListUpdatedTime = currentUnixTimestampSeconds();
+    Relays.sharedInstance.connectInboxOutboxRelays();
+    syncMe();
+    return setInboxOutboxToRelay();
+  }
+
+  Future<OKEvent> setInboxOutboxToRelay() async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<Relay> list = [];
-    for (var relay in relays) {
-      list.add(Relay(relay, null));
+    for(var relay in me!.inboxRelayList ?? []){
+      list.add(Relay(relay, 'read'));
+    }
+    for(var relay in me!.outboxRelayList ?? []){
+      list.add(Relay(relay, 'write'));
     }
     Event event = await Nip65.encode(list, currentPubkey, currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
