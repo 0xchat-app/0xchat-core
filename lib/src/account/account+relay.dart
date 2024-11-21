@@ -95,7 +95,7 @@ extension AccountRelay on Account {
     if (relays.contains(relay)) return OKEvent(relay, false, 'already exit');
     relays.add(relay);
     Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.general);
-    return await setGeneralRelayListToRelay(relays);
+    return await setGeneralRelayListToLocal(relays);
   }
 
   Future<OKEvent> removeGeneralRelay(String relay) async {
@@ -104,7 +104,7 @@ extension AccountRelay on Account {
     if (!relays.contains(relay)) return OKEvent(relay, false, 'not exit');
     relays.remove(relay);
     Connect.sharedInstance.closeConnects([relay], RelayKind.general);
-    return await setGeneralRelayListToRelay(relays);
+    return await setGeneralRelayListToLocal(relays);
   }
 
   Future<OKEvent> addInboxRelay(String relay) async {
@@ -192,7 +192,7 @@ extension AccountRelay on Account {
     return general.length + dm.length + inbox.length + outbox.length;
   }
 
-  Future<OKEvent> setGeneralRelayListToRelay(List<String> relays) async {
+  Future<OKEvent> setGeneralRelayListToLocal(List<String> relays) async {
     me!.relayList = relays;
     me!.lastRelayListUpdatedTime = currentUnixTimestampSeconds();
     Relays.sharedInstance.connectGeneralRelays();
