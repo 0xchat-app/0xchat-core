@@ -175,6 +175,8 @@ extension AccountRelay on Account {
   int getConnectedRelaysCount() {
     List<RelayDBISAR> myRelays = getMyGeneralRelayList();
     myRelays.addAll(getMyDMRelayList());
+    myRelays.addAll(getMyInboxRelayList());
+    myRelays.addAll(getMyOutboxRelayList());
     int connected = 0;
     for (var relay in myRelays) {
       if (relay.connectStatus == 1) ++connected;
@@ -185,7 +187,9 @@ extension AccountRelay on Account {
   int getAllRelaysCount() {
     List<RelayDBISAR> general = getMyGeneralRelayList();
     List<RelayDBISAR> dm = getMyDMRelayList();
-    return general.length + dm.length;
+    List<RelayDBISAR> inbox = getMyInboxRelayList();
+    List<RelayDBISAR> outbox = getMyOutboxRelayList();
+    return general.length + dm.length + inbox.length + outbox.length;
   }
 
   Future<OKEvent> setGeneralRelayListToRelay(List<String> relays) async {
