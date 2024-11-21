@@ -388,7 +388,7 @@ class Groups {
           Event? e = await Contacts.sharedInstance.encodeNip17Event(event, receiver);
           if (e != null) {
             UserDBISAR? user = await Account.sharedInstance.getUserInfo(receiver);
-            var relay = [
+            List<String> relay = [
               ...user?.inboxRelayList ?? [],
               ...user?.dmRelayList ?? [],
               ...Account.sharedInstance.me?.relayList ?? []
