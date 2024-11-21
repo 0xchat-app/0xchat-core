@@ -86,7 +86,9 @@ class Contacts {
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 &&
           Account.sharedInstance.me != null &&
-          (relayKinds.contains(RelayKind.general) || relayKinds.contains(RelayKind.dm))) {
+          (relayKinds.contains(RelayKind.general) ||
+              relayKinds.contains(RelayKind.inbox) ||
+              relayKinds.contains(RelayKind.dm))) {
         _subscriptMessages(relay: relay);
         _updateSubscriptions(relay: relay);
       }
@@ -273,8 +275,9 @@ class Contacts {
 
     Map<String, List<Filter>> subscriptions = {};
     if (relay == null) {
-      List<String> relays = Connect.sharedInstance.relays(relayKinds: [RelayKind.general]);
+      List<String> relays = Connect.sharedInstance.relays(relayKinds: [RelayKind.inbox]);
       relays.addAll(Connect.sharedInstance.relays(relayKinds: [RelayKind.dm]));
+      relays.addAll(Connect.sharedInstance.relays(relayKinds: [RelayKind.general]));
       for (String relayURL in relays) {
         int friendMessageUntil = Relays.sharedInstance.getFriendMessageUntil(relayURL);
 
