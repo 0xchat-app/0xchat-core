@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:isolate';
 import 'package:chatcore/chat-core.dart';
-import 'package:chatcore/src/chat/privateGroups/model/groupDB_isar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:isar/isar.dart';
@@ -390,7 +388,13 @@ class Groups {
           Event? e = await Contacts.sharedInstance.encodeNip17Event(event, receiver);
           if (e != null) {
             UserDBISAR? user = await Account.sharedInstance.getUserInfo(receiver);
-            Connect.sharedInstance.sendEvent(e, toRelays: user?.relayList);
+            var relay = [
+              ...user?.inboxRelayList ?? [],
+              ...user?.dmRelayList ?? [],
+              ...Account.sharedInstance.me?.relayList ?? []
+            ];
+            await Connect.sharedInstance.connectRelays(relay, relayKind: RelayKind.temp);
+            Connect.sharedInstance.sendEvent(e, toRelays: relay);
             sendMessageCallBack?.call();
           }
         }

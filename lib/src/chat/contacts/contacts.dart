@@ -459,28 +459,12 @@ class Contacts {
       UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(toPubkey);
       List<String>? dmRelays = toUser?.dmRelayList;
       List<String>? inboxRelays = toUser?.inboxRelayList;
-      List<String> userRelays = [];
+      List<String> userRelays = [...(dmRelays ?? []), ...(inboxRelays ?? [])];
       bool hasConnected = false;
-      if (dmRelays == null || dmRelays.isEmpty) {
-        hasConnected = true;
-      } else {
-        userRelays = [...dmRelays];
-        for (var relay in dmRelays) {
-          if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
-            hasConnected = true;
-            break;
-          }
-        }
-      }
-      if (!hasConnected) {
-        if (inboxRelays != null && inboxRelays.isNotEmpty) {
-          userRelays = [...inboxRelays];
-          for (var relay in inboxRelays) {
-            if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
-              hasConnected = true;
-              break;
-            }
-          }
+      for (var relay in userRelays) {
+        if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
+          hasConnected = true;
+          break;
         }
       }
       if (!hasConnected) {
@@ -502,12 +486,8 @@ class Contacts {
               await Contacts.sharedInstance.encodeNip17Event(event!, pubkey);
           UserDBISAR? me = await Account.sharedInstance.getUserInfo(pubkey);
           List<String>? myDMRelays = me?.dmRelayList;
-          List<String> myRelays = [];
-          if (myDMRelays == null || myDMRelays.isEmpty) {
-            myRelays = [...(me?.inboxRelayList ?? [])];
-          } else {
-            myRelays = [...myDMRelays];
-          }
+          List<String>? myInboxRelays = me?.inboxRelayList;
+          List<String> myRelays = [...(myDMRelays ?? []), ...(myInboxRelays ?? [])];
           Connect.sharedInstance.sendEvent(giftwrappedEventToSelf!, toRelays: myRelays);
         }
       });
