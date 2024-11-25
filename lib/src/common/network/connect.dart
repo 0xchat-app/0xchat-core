@@ -256,7 +256,7 @@ class Connect {
 
   Future closeConnects(List<String> relays, RelayKind relayKind) async {
     await Future.forEach(relays, (relay) async {
-      webSockets[relay]?.relayKinds.remove(relayKind);
+      webSockets[relay]?.relayKinds.removeWhere((e) => (e == RelayKind.temp || e == relayKind));
       if (webSockets[relay]?.relayKinds.isEmpty == true) {
         await closeConnect(relay);
       }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -62,10 +64,11 @@ class Relays {
     int updatedTime = Account.sharedInstance.me?.lastRelayListUpdatedTime ?? 0;
     if (updatedTime > 0 && generalRelays.isNotEmpty) {
       Connect.sharedInstance.connectRelays(generalRelays, relayKind: RelayKind.general);
-    } else {
-      // startup relays
-      Connect.sharedInstance.connectRelays(recommendGeneralRelays, relayKind: RelayKind.general);
     }
+    // else {
+    //   // startup relays
+    //   Connect.sharedInstance.connectRelays(recommendGeneralRelays, relayKind: RelayKind.general);
+    // }
   }
 
   Future<void> connectDMRelays() async {
