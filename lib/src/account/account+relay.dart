@@ -173,7 +173,7 @@ extension AccountRelay on Account {
   }
 
   int getConnectedRelaysCount() {
-    List<RelayDBISAR> myRelays = getMyGeneralRelayList();
+    Set<RelayDBISAR> myRelays = Set.from(getMyGeneralRelayList());
     myRelays.addAll(getMyDMRelayList());
     myRelays.addAll(getMyInboxRelayList());
     myRelays.addAll(getMyOutboxRelayList());
@@ -185,11 +185,11 @@ extension AccountRelay on Account {
   }
 
   int getAllRelaysCount() {
-    List<RelayDBISAR> general = getMyGeneralRelayList();
-    List<RelayDBISAR> dm = getMyDMRelayList();
-    List<RelayDBISAR> inbox = getMyInboxRelayList();
-    List<RelayDBISAR> outbox = getMyOutboxRelayList();
-    return general.length + dm.length + inbox.length + outbox.length;
+    Set<RelayDBISAR> allRelays = Set.from(getMyGeneralRelayList());
+    allRelays.addAll(getMyDMRelayList());
+    allRelays.addAll(getMyInboxRelayList());
+    allRelays.addAll(getMyOutboxRelayList());
+    return allRelays.length;
   }
 
   Future<OKEvent> setGeneralRelayListToLocal(List<String> relays) async {
