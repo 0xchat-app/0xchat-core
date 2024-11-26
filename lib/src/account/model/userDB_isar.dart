@@ -15,7 +15,9 @@ extension UserDBISARExtensions on UserDBISAR {
     ..followingList = followingList?.toList()
     ..followersList = followersList?.toList()
     ..relayList = relayList?.toList()
-    ..dmRelayList = dmRelayList?.toList();
+    ..dmRelayList = dmRelayList?.toList()
+    ..inboxRelayList = inboxRelayList?.toList()
+    ..outboxRelayList = outboxRelayList?.toList();
 }
 
 @collection
@@ -183,7 +185,7 @@ class UserDBISAR {
   @ignore
   String get shortEncodedPubkey {
     String k = encodedPubkey;
-    if(k.length < 7) return k;
+    if (k.length < 7) return k;
     final String start = k.substring(0, 6);
     final String end = k.substring(k.length - 6);
 
@@ -254,8 +256,7 @@ UserDBISAR _userInfoFromMap(Map<String, dynamic> map) {
     friendsList: map['friendsList'].toString(),
     channelsList: UserDBISAR.decodeStringList(map['channelsList'].toString()),
     groupsList: UserDBISAR.decodeStringList(map['groupsList'].toString()),
-    relayGroupsList:
-        UserDBISAR.decodeStringList(map['relayGroupsList'].toString()),
+    relayGroupsList: UserDBISAR.decodeStringList(map['relayGroupsList'].toString()),
     badgesList: UserDBISAR.decodeStringList(map['badgesList'].toString()),
     blockedList: UserDBISAR.decodeStringList(map['blockedList'].toString()),
     followingList: UserDBISAR.decodeStringList(map['followingList'].toString()),
