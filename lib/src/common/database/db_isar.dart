@@ -96,7 +96,7 @@ class DBISAR {
     }
   }
 
-  Future<void> closDatabase() async {
+  Future<void> closeDatabase() async {
     _buffers.clear();
     _timer?.cancel();
     _timer = null;

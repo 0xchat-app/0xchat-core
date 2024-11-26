@@ -197,7 +197,7 @@ class DB {
   Future<void> closDatabase() async {
     // allTablenames.clear();
     // await db.close();
-    await DBISAR.sharedInstance.closDatabase();
+    await DBISAR.sharedInstance.closeDatabase();
   }
 
   Future<void> deleteDatabaseFile(String path) async {
