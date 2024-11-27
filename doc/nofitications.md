@@ -38,8 +38,7 @@ The 'content' is encrypted using the NIP04 protocol. The decrypted content is as
     "kinds": "<list of event kinds to be notified about>",
     "deviceId": "<device token>",
     "relays": "<list of relays for the push server to subscribe to>",
-    "#e": "<list of channels to be notified about>",
-    "#p": "<list of alias keys of friends to be notified about>"
+    "#e": "<list of groups to be notified about>",
 }
 
 ```
