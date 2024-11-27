@@ -18,14 +18,14 @@ class ThreadPoolManager {
       ThreadPoolManager._internal(RootIsolateToken.instance!);
 
   Future<void> initialize() async {
-    // _databaseSendPort = await _createIsolate((sendPort) {
-    //   _databaseIsolate = sendPort.isolate;
-    //   return sendPort.sendPort;
-    // });
-    // _algorithmSendPort = await _createIsolate((sendPort) {
-    //   _algorithmIsolate = sendPort.isolate;
-    //   return sendPort.sendPort;
-    // });
+    _databaseSendPort = await _createIsolate((sendPort) {
+      _databaseIsolate = sendPort.isolate;
+      return sendPort.sendPort;
+    });
+    _algorithmSendPort = await _createIsolate((sendPort) {
+      _algorithmIsolate = sendPort.isolate;
+      return sendPort.sendPort;
+    });
     _otherSendPort = await _createIsolate((sendPort) {
       _otherIsolate = sendPort.isolate;
       return sendPort.sendPort;
@@ -52,13 +52,13 @@ class ThreadPoolManager {
     return completer.future;
   }
 
-  // Future<dynamic> runDatabaseTask(Future<dynamic> Function() task) {
-  //   return _runTask(task, _databaseSendPort);
-  // }
-  //
-  // Future<dynamic> runAlgorithmTask(Future<dynamic> Function() task) {
-  //   return _runTask(task, _algorithmSendPort);
-  // }
+  Future<dynamic> runDatabaseTask(Future<dynamic> Function() task) {
+    return _runTask(task, _databaseSendPort);
+  }
+
+  Future<dynamic> runAlgorithmTask(Future<dynamic> Function() task) {
+    return _runTask(task, _algorithmSendPort);
+  }
 
   Future<dynamic> runOtherTask(Future<dynamic> Function() task) {
     return _runTask(task, _otherSendPort);
