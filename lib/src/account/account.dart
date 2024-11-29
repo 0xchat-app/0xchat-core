@@ -25,6 +25,10 @@ class Account {
   String currentPrivkey = '';
   Timer? timer;
 
+  String NIP46Subscription = '';
+  RemoteSignerConnection? currentConnection;
+  Map<String, Completer<NIP46CommandResult>> resultCompleters = {};
+
   // Map<String, UserDB> userCache = {};
   Map<String, ValueNotifier<UserDBISAR>> userCache = {};
 
