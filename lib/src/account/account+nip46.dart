@@ -46,7 +46,7 @@ extension AccountNIP46 on Account {
           NIP46CommandResult result = await Nip46.decode(
               event, currentConnection!.clientPubkey!, currentConnection!.clientPrivkey!);
           Completer? completer = resultCompleters[result.id];
-          if(completer != null && !completer.isCompleted) completer.complete(result);
+          if (completer != null && !completer.isCompleted) completer.complete(result);
           resultCompleters.remove(result.id);
           break;
         default:
@@ -56,29 +56,91 @@ extension AccountNIP46 on Account {
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {});
   }
 
-  Future<NIP46CommandResult> sendToRemoteSigner(Event event){
-    var id = generate64RandomHexChars();
+  Future<NIP46CommandResult> sendToRemoteSigner(Event event, String id) {
     Completer<NIP46CommandResult> completer = Completer<NIP46CommandResult>();
     resultCompleters[id] = completer;
     Connect.sharedInstance.sendEvent(event, toRelays: currentConnection!.relays);
     return completer.future;
   }
 
-  Future<void> sendConnect() async {
-
+  Future<bool> sendConnect() async {
+    NIP46Command command =
+        NIP46Command.connect(currentConnection!.pubkey, currentConnection!.secret);
+    var id = generate64RandomHexChars();
+    Event event = await Nip46.encode(currentConnection!.pubkey, id, command,
+        currentConnection!.clientPubkey!, currentConnection!.clientPrivkey!);
+    NIP46CommandResult result = await sendToRemoteSigner(event, id);
+    print('sendConnect result: ${result.toString()}');
+    return true;
   }
 
-  Future<void> sendSignEvent() async {}
+  Future<void> sendSignEvent(Event unsignedEvent) async {
+    NIP46Command command = NIP46Command.signEvent(unsignedEvent.toJson());
+    var id = generate64RandomHexChars();
+    Event event = await Nip46.encode(currentConnection!.pubkey, id, command,
+        currentConnection!.clientPubkey!, currentConnection!.clientPrivkey!);
+    NIP46CommandResult result = await sendToRemoteSigner(event, id);
+    print('sendSignEvent result: ${result.toString()}');
+    return result.result;
+  }
 
-  Future<void> sendGetRelays() async {}
+  Future<void> sendGetRelays() async {
+    NIP46Command command = NIP46Command.getRelays();
+    var id = generate64RandomHexChars();
+    Event event = await Nip46.encode(currentConnection!.pubkey, id, command,
+        currentConnection!.clientPubkey!, currentConnection!.clientPrivkey!);
+    NIP46CommandResult result = await sendToRemoteSigner(event, id);
+    print('sendGetRelays result: ${result.toString()}');
+    return result.result;
+  }
 
-  Future<void> sendGetPublicKey() async {}
+  Future<String> sendGetPublicKey() async {
+    NIP46Command command = NIP46Command.getPublicKey();
+    var id = generate64RandomHexChars();
+    Event event = await Nip46.encode(currentConnection!.pubkey, id, command,
+        currentConnection!.clientPubkey!, currentConnection!.clientPrivkey!);
+    NIP46CommandResult result = await sendToRemoteSigner(event, id);
+    print('sendGetPublicKey result: ${result.toString()}');
+    return result.result;
+  }
 
-  Future<void> sendNip04Encrypt() async {}
+  Future<void> sendNip04Encrypt(String thirdPartyPubkey, String plaintext) async {
+    NIP46Command command = NIP46Command.nip04Encrypt(thirdPartyPubkey, plaintext);
+    var id = generate64RandomHexChars();
+    Event event = await Nip46.encode(currentConnection!.pubkey, id, command,
+        currentConnection!.clientPubkey!, currentConnection!.clientPrivkey!);
+    NIP46CommandResult result = await sendToRemoteSigner(event, id);
+    print('sendNip04Encrypt result: ${result.toString()}');
+    return result.result;
+  }
 
-  Future<void> sendNip04Decrypt() async {}
+  Future<String> sendNip04Decrypt(String thirdPartyPubkey, String ciphertext) async {
+    NIP46Command command = NIP46Command.nip04Decrypt(thirdPartyPubkey, ciphertext);
+    var id = generate64RandomHexChars();
+    Event event = await Nip46.encode(currentConnection!.pubkey, id, command,
+        currentConnection!.clientPubkey!, currentConnection!.clientPrivkey!);
+    NIP46CommandResult result = await sendToRemoteSigner(event, id);
+    print('sendNip04Decrypt result: ${result.toString()}');
+    return result.result;
+  }
 
-  Future<void> sendNip044Encrypt() async {}
+  Future<String> sendNip044Encrypt(String thirdPartyPubkey, String plaintext) async {
+    NIP46Command command = NIP46Command.nip44Encrypt(thirdPartyPubkey, plaintext);
+    var id = generate64RandomHexChars();
+    Event event = await Nip46.encode(currentConnection!.pubkey, id, command,
+        currentConnection!.clientPubkey!, currentConnection!.clientPrivkey!);
+    NIP46CommandResult result = await sendToRemoteSigner(event, id);
+    print('sendNip044Encrypt result: ${result.toString()}');
+    return result.result;
+  }
 
-  Future<void> sendNip044Decrypt() async {}
+  Future<String> sendNip044Decrypt(String thirdPartyPubkey, String ciphertext) async {
+    NIP46Command command = NIP46Command.nip44Decrypt(thirdPartyPubkey, ciphertext);
+    var id = generate64RandomHexChars();
+    Event event = await Nip46.encode(currentConnection!.pubkey, id, command,
+        currentConnection!.clientPubkey!, currentConnection!.clientPrivkey!);
+    NIP46CommandResult result = await sendToRemoteSigner(event, id);
+    print('sendNip044Decrypt result: ${result.toString()}');
+    return result.result;
+  }
 }
