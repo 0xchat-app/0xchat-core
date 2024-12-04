@@ -272,6 +272,12 @@ class MessageDBISAR {
   }
 
   static Future<Map<String, dynamic>> decodeContent(String content) async {
+    var result =
+        await ThreadPoolManager.sharedInstance.runOtherTask(() => _decodeContentInIsolate(content));
+    return result;
+  }
+
+  static Future<Map<String, dynamic>> _decodeContentInIsolate(String content) async {
     content = content.trim();
     try {
       Map<String, dynamic> map = jsonDecode(content);
