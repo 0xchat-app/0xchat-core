@@ -500,7 +500,6 @@ class Channels {
       }
       replaceMessageDB.messageId = event.id;
       replaceMessageDB.content = event.content;
-      channelMessageUpdateCallBack?.call(replaceMessageDB, replaceMessageId);
       messageDB = replaceMessageDB;
     } else {
       messageDB = MessageDBISAR(
@@ -518,12 +517,18 @@ class Channels {
           status: 0,
           plaintEvent: jsonEncode(event),
           chatType: 2);
-      channelMessageCallBack?.call(messageDB);
     }
     var map =
         await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(type, content) ?? content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
+
+    if (replaceMessageId != null) {
+      channelMessageUpdateCallBack?.call(messageDB, replaceMessageId);
+    } else {
+      channelMessageCallBack?.call(messageDB);
+    }
+
     await Messages.saveMessageToDB(messageDB);
 
     if (local) {
@@ -533,6 +538,7 @@ class Channels {
     } else {
       Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
+        channelMessageUpdateCallBack?.call(messageDB, messageDB.messageId);
         await Messages.saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
         if (!completer.isCompleted) completer.complete(ok);
       });

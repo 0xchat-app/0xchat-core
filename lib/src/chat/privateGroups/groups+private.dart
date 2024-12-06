@@ -173,6 +173,13 @@ extension PrivateGroups on Groups {
             messageDB.type == 'file')) {
       messageDB.type = MessageDBISAR.mimeTypeToTpyeString(encryptedFile!.mimeType);
     }
+
+    if (replaceMessageId != null) {
+      groupMessageUpdateCallBack?.call(messageDB, replaceMessageId);
+    } else {
+      groupMessageCallBack?.call(messageDB);
+    }
+
     await Messages.saveMessageToDB(messageDB);
     EventCache.sharedInstance.receiveEvent(event, '');
 
@@ -183,6 +190,7 @@ extension PrivateGroups on Groups {
     } else {
       OKEvent ok = await sendToGroup(groupId, event);
       messageDB.status = ok.status ? 1 : 2;
+      groupMessageUpdateCallBack?.call(messageDB, messageDB.messageId);
       await Messages.saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
       if (!completer.isCompleted) completer.complete(ok);
     }

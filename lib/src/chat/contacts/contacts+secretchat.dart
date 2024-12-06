@@ -406,7 +406,6 @@ extension SecretChat on Contacts {
         }
         replaceMessageDB.messageId = event!.id;
         replaceMessageDB.content = event.content;
-        secretChatMessageUpdateCallBack?.call(replaceMessageDB, replaceMessageId);
         messageDB = replaceMessageDB;
       } else {
         messageDB = MessageDBISAR(
@@ -429,7 +428,6 @@ extension SecretChat on Contacts {
           decryptNonce: encryptedFile?.nonce,
           decryptAlgo: encryptedFile?.algorithm,
         );
-        secretChatMessageCallBack?.call(messageDB);
       }
       var map =
           await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(type, content) ?? content);
@@ -443,6 +441,13 @@ extension SecretChat on Contacts {
               messageDB.type == 'file')) {
         messageDB.type = MessageDBISAR.mimeTypeToTpyeString(encryptedFile!.mimeType);
       }
+
+      if (replaceMessageId != null) {
+        secretChatMessageUpdateCallBack?.call(messageDB, replaceMessageId);
+      } else {
+        secretChatMessageCallBack?.call(messageDB);
+      }
+
       await Messages.saveMessageToDB(messageDB);
 
       if (local) {
@@ -455,6 +460,7 @@ extension SecretChat on Contacts {
         Connect.sharedInstance.sendEvent(giftwrappedEvent!, toRelays: [sessionDB.relay ?? ''],
             sendCallBack: (ok, relay) async {
           messageDB.status = ok.status ? 1 : 2;
+          secretChatMessageUpdateCallBack?.call(messageDB, messageDB.messageId);
           await Messages.saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
           if (!completer.isCompleted) completer.complete(ok);
 

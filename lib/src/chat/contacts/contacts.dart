@@ -415,7 +415,6 @@ class Contacts {
       }
       replaceMessageDB.messageId = event.id;
       replaceMessageDB.content = event.content;
-      privateChatMessageUpdateCallBack?.call(replaceMessageDB, replaceMessageId);
       messageDB = replaceMessageDB;
     } else {
       messageDB = MessageDBISAR(
@@ -437,7 +436,6 @@ class Contacts {
           decryptSecret: encryptedFile?.secret,
           decryptNonce: encryptedFile?.nonce,
           decryptAlgo: encryptedFile?.algorithm);
-      privateChatMessageCallBack?.call(messageDB);
     }
     var map =
         await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(type, content) ?? content);
@@ -450,6 +448,13 @@ class Contacts {
             messageDB.type == 'file')) {
       messageDB.type = MessageDBISAR.mimeTypeToTpyeString(encryptedFile!.mimeType);
     }
+
+    if (replaceMessageId != null) {
+      privateChatMessageUpdateCallBack?.call(messageDB, replaceMessageId);
+    } else {
+      privateChatMessageCallBack?.call(messageDB);
+    }
+
     await Messages.saveMessageToDB(messageDB);
 
     if (local) {
@@ -479,6 +484,7 @@ class Contacts {
       Connect.sharedInstance.sendEvent(giftwrappedEvent!, toRelays: userRelays,
           sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
+        privateChatMessageUpdateCallBack?.call(messageDB, messageDB.messageId);
         await Messages.saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
         if (!completer.isCompleted) {
           completer.complete(OKEvent(event!.id, ok.status, ok.message));

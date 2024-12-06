@@ -92,7 +92,6 @@ extension EMessage on RelayGroup {
       }
       replaceMessageDB.messageId = event.id;
       replaceMessageDB.content = event.content;
-      groupMessageUpdateCallBack?.call(replaceMessageDB, replaceMessageId);
       messageDB = replaceMessageDB;
     } else {
       messageDB = MessageDBISAR(
@@ -111,12 +110,18 @@ extension EMessage on RelayGroup {
           plaintEvent: jsonEncode(event),
           chatType: 4,
           decryptSecret: decryptSecret);
-      groupMessageCallBack?.call(messageDB);
     }
     var map = await MessageDBISAR.decodeContent(
         MessageDBISAR.getSubContent(type, content) ?? event.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];
+
+    if (replaceMessageId != null) {
+      groupMessageUpdateCallBack?.call(messageDB, replaceMessageId);
+    } else {
+      groupMessageCallBack?.call(messageDB);
+    }
+
     await Messages.saveMessageToDB(messageDB);
 
     if (local) {
@@ -127,6 +132,7 @@ extension EMessage on RelayGroup {
       Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
           sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
+        groupMessageUpdateCallBack?.call(messageDB, messageDB.messageId);
         await Messages.saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
         if (!completer.isCompleted) completer.complete(ok);
       });
