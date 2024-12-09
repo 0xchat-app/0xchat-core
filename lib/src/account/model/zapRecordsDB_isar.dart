@@ -52,8 +52,7 @@ class ZapRecordsDBISAR {
   }
 
   static int getZapAmount(String bolt11) {
-    final requestInfo = Zaps.getPaymentRequestInfo(bolt11);
-    return (requestInfo.amount.toDouble() * 100000000).toInt();
+    return Zaps.getPaymentRequestAmount(bolt11);
   }
 }
 

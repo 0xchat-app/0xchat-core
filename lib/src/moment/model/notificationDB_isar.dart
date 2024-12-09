@@ -31,8 +31,7 @@ class NotificationDBISAR {
 
   static NotificationDBISAR notificationDBFromZapRecordsDB(
       ZapRecordsDBISAR zapRecordsDB, String eventId) {
-    final requestInfo = Zaps.getPaymentRequestInfo(zapRecordsDB.bolt11);
-    int amount = (requestInfo.amount.toDouble() * 100000000).toInt();
+    int amount = Zaps.getPaymentRequestAmount(zapRecordsDB.bolt11);
     return NotificationDBISAR(
         notificationId: eventId,
         kind: 9735,

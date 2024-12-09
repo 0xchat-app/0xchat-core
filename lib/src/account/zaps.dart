@@ -289,6 +289,11 @@ class Zaps {
     return Bolt11PaymentRequest(invoice);
   }
 
+  static int getPaymentRequestAmount(String invoice) {
+    final requestInfo = getPaymentRequestInfo(invoice);
+    return (requestInfo.amount * Decimal.fromInt(100000000)).toDouble().toInt();
+  }
+
   static Future<List<ZapRecordsDBISAR>> getZapReceiptFromLocal(
       String invoice) async {
     // load from cache
