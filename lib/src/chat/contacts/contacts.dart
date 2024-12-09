@@ -467,7 +467,11 @@ class Contacts {
       UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(toPubkey);
       List<String>? dmRelays = toUser?.dmRelayList;
       List<String>? inboxRelays = toUser?.inboxRelayList;
-      List<String> userRelays = [...(dmRelays ?? []), ...(inboxRelays ?? [])];
+      List<String>? generalRelays = toUser?.relayList;
+      List<String> userRelays = [
+        ...(dmRelays ?? []),
+        ...(inboxRelays ?? [])
+      ];
       bool hasConnected = false;
       for (var relay in userRelays) {
         if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
@@ -476,10 +480,11 @@ class Contacts {
         }
       }
       if (!hasConnected) {
-        if (!completer.isCompleted) {
-          completer.complete(OKEvent(event.id, false, 'Unable to connect to user DM relays'));
-        }
-        return completer.future;
+        userRelays = [...(generalRelays ?? [])];
+        // if (!completer.isCompleted) {
+        //   completer.complete(OKEvent(event.id, false, 'Unable to connect to user DM relays'));
+        // }
+        // return completer.future;
       }
       Connect.sharedInstance.sendEvent(giftwrappedEvent!, toRelays: userRelays,
           sendCallBack: (ok, relay) async {
