@@ -388,13 +388,30 @@ class Groups {
           Event? e = await Contacts.sharedInstance.encodeNip17Event(event, receiver);
           if (e != null) {
             UserDBISAR? user = await Account.sharedInstance.getUserInfo(receiver);
-            List<String> relay = [
+            List<String> relays = [
               ...user?.inboxRelayList ?? [],
               ...user?.dmRelayList ?? [],
-              ...Account.sharedInstance.me?.relayList ?? []
             ];
-            await Connect.sharedInstance.connectRelays(relay, relayKind: RelayKind.temp);
-            Connect.sharedInstance.sendEvent(e, toRelays: relay);
+            bool hasConnected = false;
+            for (var relay in relays) {
+              if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
+                hasConnected = true;
+                break;
+              }
+            }
+            if (!hasConnected) {
+              await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.temp);
+              for (var relay in relays) {
+                if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
+                  hasConnected = true;
+                  break;
+                }
+              }
+              if (!hasConnected) {
+                relays = [...(Account.sharedInstance.me?.relayList ?? [])];
+              }
+            }
+            Connect.sharedInstance.sendEvent(e, toRelays: relays);
             sendMessageCallBack?.call();
           }
         }

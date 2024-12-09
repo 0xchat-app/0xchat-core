@@ -467,7 +467,7 @@ class Contacts {
       UserDBISAR? toUser = await Account.sharedInstance.getUserInfo(toPubkey);
       List<String>? dmRelays = toUser?.dmRelayList;
       List<String>? inboxRelays = toUser?.inboxRelayList;
-      List<String>? generalRelays = toUser?.relayList;
+      List<String>? myGeneralRelays = Account.sharedInstance.me?.relayList;
       List<String> userRelays = [
         ...(dmRelays ?? []),
         ...(inboxRelays ?? [])
@@ -480,7 +480,7 @@ class Contacts {
         }
       }
       if (!hasConnected) {
-        userRelays = [...(generalRelays ?? [])];
+        userRelays = [...(myGeneralRelays ?? [])];
         // if (!completer.isCompleted) {
         //   completer.complete(OKEvent(event.id, false, 'Unable to connect to user DM relays'));
         // }
