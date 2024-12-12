@@ -4,7 +4,7 @@ import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:nostr_core_dart/nostr.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqlite_api.dart';
 
 typedef SecretChatRequestCallBack = void Function(SecretSessionDBISAR);
 typedef SecretChatAcceptCallBack = void Function(SecretSessionDBISAR);

@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:nostr_core_dart/nostr.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqlite_api.dart';
 
 extension PrivateGroups on Groups {
   // Future<void> connectToGroupRelays(String groupId) async {

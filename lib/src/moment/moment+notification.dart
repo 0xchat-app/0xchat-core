@@ -1,7 +1,7 @@
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqlite_api.dart';
 
 extension Notification on Moment {
   Future<List<NotificationDBISAR>?> loadNotificationsFromDB(int until, {int limit = 50}) async {

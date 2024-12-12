@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'dart:io';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import 'package:reflectable/reflectable.dart';
 import 'db_helper.dart';
@@ -28,7 +28,7 @@ class DB {
   List<Type> schemes = [];
   List<String> allTablenames = [];
   bool deleteDBIfNeedMirgration = false;
-  late Database db;
+  late Database _db;
   List<BatchOperation> insertOperations = [];
   Timer? timer;
 
@@ -66,15 +66,21 @@ class DB {
     }
   }
 
+  Future<bool> databaseExists(String path) async {
+    if (!Platform.isIOS && !Platform.isAndroid) return false;
+    return databaseFactory.databaseExists(path);
+  }
+
   Future open(String dbPath, {int? version, String? password}) async {
+    if (!Platform.isIOS && !Platform.isAndroid) return ;
     if (deleteDBIfNeedMirgration) {
       bool exists = await databaseExists(dbPath);
       if (exists) {
         LogUtils.v(() => "delete Table");
-        await deleteDatabase(dbPath);
+        await deleteDatabaseFile(dbPath);
       }
     }
-    db = await openDatabase(dbPath, version: version, password: password,
+    _db = await openDatabase(dbPath, version: version, password: password,
         onCreate: (db, version) async {
       var batch = db.batch();
       for (var type in schemes) {
@@ -132,7 +138,7 @@ class DB {
       }
     });
     List<Map<String, dynamic>> tables =
-        await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'");
+        await _db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'");
     allTablenames = tables.map((item) => item["name"].toString()).toList();
   }
 
@@ -140,7 +146,7 @@ class DB {
     try {
       List<BatchOperation> batchOperations = List.from(insertOperations);
       // insertOperations.clear();
-      var batch = db.batch();
+      var batch = _db.batch();
       for (var batchOperation in batchOperations) {
         batch.insert(batchOperation.table, batchOperation.values,
             conflictAlgorithm: batchOperation.conflictAlgorithm);
@@ -161,26 +167,26 @@ class DB {
     await openDatabase(newPath, version: version, password: password,
         onCreate: (newDb, version) async {
       // all table from oldDB
-      List<Map> list = await db
+      List<Map> list = await _db
           .rawQuery('SELECT name FROM sqlite_master WHERE type="table"');
       await Future.forEach(list, (Map row) async {
         String tableName = row['name'];
         // create new table
-        String createTableSql = await db
+        String createTableSql = await _db
             .query('sqlite_master',
                 columns: ['sql'], where: 'name = ?', whereArgs: [tableName])
             .then((value) => value.first['sql'] as String);
         await newDb.execute(createTableSql);
         // copy all data to new DB
-        List<Map<String, Object?>> tableData = await db.query(tableName);
+        List<Map<String, Object?>> tableData = await _db.query(tableName);
         await Future.forEach(tableData, (Map<String, Object?> row) async {
           await newDb.insert(tableName, row);
         });
       });
-      String dbPath = db.path;
-      await db.close();
-      await deleteDatabase(dbPath);
-      db = newDb;
+      String dbPath = _db.path;
+      await _db.close();
+      await deleteDatabaseFile(dbPath);
+      _db = newDb;
       if (!completer.isCompleted) completer.complete();
     });
     return completer.future;
@@ -210,7 +216,7 @@ class DB {
   }
 
   Future<void> execute(String sql, [List<Object?>? arguments]) async {
-    await db.execute(sql, arguments);
+    await _db.execute(sql, arguments);
   }
 
   // Future<int> insert<T extends DBObject>(T object,
@@ -280,7 +286,7 @@ class DB {
       String? orderBy,
       int? limit,
       int? offset}) async {
-    List<Map<String, Object?>> maps = await db.query(table,
+    List<Map<String, Object?>> maps = await _db.query(table,
         distinct: distinct,
         columns: columns,
         where: where,
@@ -333,12 +339,12 @@ class DB {
 
   Future<List<Map<String, Object?>>> rawQuery(String sql,
       [List<Object?>? arguments]) async {
-    return db.rawQuery(sql, arguments);
+    return _db.rawQuery(sql, arguments);
   }
 
   Future createTableForDBObject<T extends DBObject>(String tableName) async {
     if (!allTablenames.contains(tableName)) {
-      bool result = await DBHelper.createTable(T, db);
+      bool result = await DBHelper.createTable(T, _db);
       if (result) allTablenames.add(tableName);
     }
   }

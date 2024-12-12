@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqlite_api.dart';
 
 typedef GroupsUpdatedCallBack = void Function();
 typedef GroupMessageCallBack = void Function(MessageDBISAR);

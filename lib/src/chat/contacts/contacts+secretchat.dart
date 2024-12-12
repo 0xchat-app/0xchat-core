@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
-import 'package:sqflite_sqlcipher/sqflite.dart';
+import 'package:sqflite_sqlcipher/sqlite_api.dart';
 
 extension SecretChat on Contacts {
   Future<void> saveSecretDB(SecretSessionDBISAR secretSessionDB) async {
