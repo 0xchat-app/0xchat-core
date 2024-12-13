@@ -37,8 +37,8 @@ class DBISAR {
   ];
 
   Future open(String pubkey) async {
-    Directory directory =
-        Platform.isAndroid ? await getApplicationDocumentsDirectory() : await getLibraryDirectory();
+    bool isOS = Platform.isIOS || Platform.isMacOS;
+    Directory directory = isOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
     var dbPath = directory.path;
     LogUtils.v(() => 'DBISAR open: $dbPath, pubkey: $pubkey');
     isar = Isar.getInstance(pubkey) ??
