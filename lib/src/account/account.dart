@@ -26,7 +26,7 @@ class Account {
   Timer? timer;
 
   String NIP46Subscription = '';
-  RemoteSignerConnection? currentConnection;
+  RemoteSignerConnection? currentRemoteConnection;
   Map<String, Completer<NIP46CommandResult>> resultCompleters = {};
 
   // Map<String, UserDB> userCache = {};
@@ -150,12 +150,12 @@ class Account {
     return null;
   }
 
-  Future<UserDBISAR?> loginWithPubKey(String pubkey) async {
+  Future<UserDBISAR?> loginWithPubKey(String pubkey, SignerApplication signerApplication) async {
     UserDBISAR? userDB = await getUserFromDB(pubkey: pubkey);
     if (userDB != null) {
       me = userDB;
       currentPubkey = userDB.pubKey;
-      currentPrivkey = '';
+      currentPrivkey = SignerHelper.getSignerApplicationKey(signerApplication, '');
       userCache[currentPubkey] = ValueNotifier<UserDBISAR>(userDB);
       loginSuccess();
     }
@@ -383,7 +383,8 @@ class Account {
     Event event = await Event.fromJson(json, verify: false);
     if (SignerHelper.needSigner(currentPrivkey)) {
       final pubkey = Account.sharedInstance.currentPubkey;
-      event.sig = await SignerHelper.signMessage(event.id, pubkey) ?? '';
+      final privkey = Account.sharedInstance.currentPrivkey;
+      event.sig = await SignerHelper.signMessage(event.id, pubkey, privkey) ?? '';
     } else {
       event.sig = event.getSignature(currentPrivkey);
     }
@@ -406,7 +407,8 @@ class Account {
     privkey ??= Account.sharedInstance.currentPrivkey;
     if (SignerHelper.needSigner(privkey)) {
       final pubkey = Account.sharedInstance.currentPubkey;
-      return await SignerHelper.signMessage(secret, pubkey) ?? '';
+      final privkey = Account.sharedInstance.currentPrivkey;
+      return await SignerHelper.signMessage(secret, pubkey, privkey) ?? '';
     }
     final hexMessage = hex.encode(
         SHA256Digest().process(Uint8List.fromList(utf8.encode(secret))));
