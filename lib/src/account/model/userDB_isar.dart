@@ -96,6 +96,10 @@ class UserDBISAR {
   // nostr wallet connect URI
   String? nwcURI;
 
+  // nip46
+  String? remoteSignerURI;
+  String? clientPrivateKey;
+
   String? settings;
 
   UserDBISAR({
@@ -146,6 +150,8 @@ class UserDBISAR {
     this.otherField = '{}',
     this.nwcURI,
     this.settings,
+    this.clientPrivateKey,
+    this.remoteSignerURI
   });
 
   static UserDBISAR fromMap(Map<String, Object?> map) {

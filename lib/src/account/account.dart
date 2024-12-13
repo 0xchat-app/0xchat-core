@@ -26,7 +26,7 @@ class Account {
   Timer? timer;
 
   String NIP46Subscription = '';
-  RemoteSignerConnection? currentConnection;
+  RemoteSignerConnection? currentRemoteConnection;
   Map<String, Completer<NIP46CommandResult>> resultCompleters = {};
 
   // Map<String, UserDB> userCache = {};
@@ -150,12 +150,12 @@ class Account {
     return null;
   }
 
-  Future<UserDBISAR?> loginWithPubKey(String pubkey) async {
+  Future<UserDBISAR?> loginWithPubKey(String pubkey, SignerApplication signerApplication) async {
     UserDBISAR? userDB = await getUserFromDB(pubkey: pubkey);
     if (userDB != null) {
       me = userDB;
       currentPubkey = userDB.pubKey;
-      currentPrivkey = '';
+      currentPrivkey = SignerHelper.getSignerApplicationKey(signerApplication, '');
       userCache[currentPubkey] = ValueNotifier<UserDBISAR>(userDB);
       loginSuccess();
     }
