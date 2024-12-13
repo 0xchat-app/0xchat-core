@@ -383,7 +383,8 @@ class Account {
     Event event = await Event.fromJson(json, verify: false);
     if (SignerHelper.needSigner(currentPrivkey)) {
       final pubkey = Account.sharedInstance.currentPubkey;
-      event.sig = await SignerHelper.signMessage(event.id, pubkey) ?? '';
+      final privkey = Account.sharedInstance.currentPrivkey;
+      event.sig = await SignerHelper.signMessage(event.id, pubkey, privkey) ?? '';
     } else {
       event.sig = event.getSignature(currentPrivkey);
     }
@@ -406,7 +407,8 @@ class Account {
     privkey ??= Account.sharedInstance.currentPrivkey;
     if (SignerHelper.needSigner(privkey)) {
       final pubkey = Account.sharedInstance.currentPubkey;
-      return await SignerHelper.signMessage(secret, pubkey) ?? '';
+      final privkey = Account.sharedInstance.currentPrivkey;
+      return await SignerHelper.signMessage(secret, pubkey, privkey) ?? '';
     }
     final hexMessage = hex.encode(
         SHA256Digest().process(Uint8List.fromList(utf8.encode(secret))));

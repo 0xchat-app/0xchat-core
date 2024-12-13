@@ -71,10 +71,31 @@ extension AccountNIP46 on Account {
         currentConnection!.clientPubkey!, currentConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
     print('sendConnect result: ${result.toString()}');
+
+    SignerHelper.sharedInstance.signEventHandle = (Event unsignedEvent) async {
+      return await sendSignEvent(unsignedEvent);
+    };
+    SignerHelper.sharedInstance.nip04encryptEventHandle =
+        (String plainText, String peerPubkey) async {
+      return await sendNip04Encrypt(peerPubkey, plainText);
+    };
+    SignerHelper.sharedInstance.nip04decryptEventHandle =
+        (String encryptedText, String peerPubkey) async {
+      return await sendNip04Decrypt(peerPubkey, encryptedText);
+    };
+    SignerHelper.sharedInstance.nip44encryptEventHandle =
+        (String plainText, String peerPubkey) async {
+      return await sendNip44Encrypt(peerPubkey, plainText);
+    };
+    SignerHelper.sharedInstance.nip44encryptEventHandle =
+        (String encryptedText, String peerPubkey) async {
+      return await sendNip44Decrypt(peerPubkey, encryptedText);
+    };
+
     return true;
   }
 
-  Future<void> sendSignEvent(Event unsignedEvent) async {
+  Future<Event> sendSignEvent(Event unsignedEvent) async {
     NIP46Command command = NIP46Command.signEvent(unsignedEvent.toJson());
     var id = generate64RandomHexChars();
     Event event = await Nip46.encode(currentConnection!.pubkey, id, command,
@@ -104,7 +125,7 @@ extension AccountNIP46 on Account {
     return result.result;
   }
 
-  Future<void> sendNip04Encrypt(String thirdPartyPubkey, String plaintext) async {
+  Future<String> sendNip04Encrypt(String thirdPartyPubkey, String plaintext) async {
     NIP46Command command = NIP46Command.nip04Encrypt(thirdPartyPubkey, plaintext);
     var id = generate64RandomHexChars();
     Event event = await Nip46.encode(currentConnection!.pubkey, id, command,
@@ -124,7 +145,7 @@ extension AccountNIP46 on Account {
     return result.result;
   }
 
-  Future<String> sendNip044Encrypt(String thirdPartyPubkey, String plaintext) async {
+  Future<String> sendNip44Encrypt(String thirdPartyPubkey, String plaintext) async {
     NIP46Command command = NIP46Command.nip44Encrypt(thirdPartyPubkey, plaintext);
     var id = generate64RandomHexChars();
     Event event = await Nip46.encode(currentConnection!.pubkey, id, command,
@@ -134,7 +155,7 @@ extension AccountNIP46 on Account {
     return result.result;
   }
 
-  Future<String> sendNip044Decrypt(String thirdPartyPubkey, String ciphertext) async {
+  Future<String> sendNip44Decrypt(String thirdPartyPubkey, String ciphertext) async {
     NIP46Command command = NIP46Command.nip44Decrypt(thirdPartyPubkey, ciphertext);
     var id = generate64RandomHexChars();
     Event event = await Nip46.encode(currentConnection!.pubkey, id, command,
