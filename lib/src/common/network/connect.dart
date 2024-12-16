@@ -200,7 +200,7 @@ class Connect {
     List<String> result = [];
     for (var relay in webSockets.keys) {
       if (webSockets[relay]?.connectStatus == 1 &&
-          webSockets[relay]!.relayKinds.map((e) => relayKinds.contains(e)).isNotEmpty) {
+          webSockets[relay]!.relayKinds.any((e) => relayKinds.contains(e))) {
         result.add(relay);
       }
     }
