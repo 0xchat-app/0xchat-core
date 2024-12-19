@@ -94,7 +94,7 @@ extension AccountNIP46 on Account {
           NIP46CommandResult result = await Nip46.decode(event,
               currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
           if(result.result == 'auth_url'){
-            print('connect waiting for auth...');
+            LogUtils.v(() => 'connect waiting for auth... ${result.toString()}');
             nip46commandResultCallback?.call(result);
             return;
           }

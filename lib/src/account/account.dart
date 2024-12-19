@@ -167,7 +167,7 @@ class Account {
     UserDBISAR? db = await _searchUserFromDB(pubkey);
     if (db == null) return null;
     if (db.remoteSignerURI != null) {
-      return await loginWithPubKey(pubkey, SignerApplication.remoteSigner);
+      return await loginWithNip46Pubkey(pubkey);
     }
     if (db.encryptedPrivKey != null &&
         db.encryptedPrivKey!.isNotEmpty &&
