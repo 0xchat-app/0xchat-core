@@ -10,6 +10,7 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
 typedef AccountUpdateCallback = void Function();
+typedef NIP46CommandResultCallback = void Function(NIP46CommandResult result);
 
 class Account {
   /// singleton
@@ -28,6 +29,7 @@ class Account {
   String NIP46Subscription = '';
   RemoteSignerConnection? currentRemoteConnection;
   Map<String, Completer<NIP46CommandResult>> resultCompleters = {};
+  NIP46CommandResultCallback? nip46commandResultCallback;
 
   // Map<String, UserDB> userCache = {};
   Map<String, ValueNotifier<UserDBISAR>> userCache = {};

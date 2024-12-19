@@ -95,6 +95,7 @@ extension AccountNIP46 on Account {
               currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
           if(result.result == 'auth_url'){
             print('connect waiting for auth...');
+            nip46commandResultCallback?.call(result);
             return;
           }
           Completer? completer = resultCompleters[result.id];
