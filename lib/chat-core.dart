@@ -6,6 +6,7 @@ export 'src/account/account.dart';
 export 'src/account/account+profile.dart';
 export 'src/account/account+relay.dart';
 export 'src/account/account+follows.dart';
+export 'src/account/account+nip46.dart';
 export 'src/account/badges.dart';
 export 'src/account/zaps.dart';
 export 'src/account/zaps+nuts.dart';

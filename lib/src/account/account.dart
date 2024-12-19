@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:chatcore/src/account/account+nip46.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:isar/isar.dart';
@@ -244,6 +243,11 @@ class Account {
 
   static String getPublicKey(String privkey) {
     return Keychain.getPublicKey(privkey);
+  }
+
+  static String getPublicKeyWithNIP46URI(String uri){
+    RemoteSignerConnection remoteSignerConnection = Nip46.parseBunkerUri(uri);
+    return remoteSignerConnection.pubkey;
   }
 
   static Future<UserDBISAR> newAccount({Keychain? user}) async {
