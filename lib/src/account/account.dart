@@ -74,7 +74,7 @@ class Account {
   }
 
   FutureOr<UserDBISAR?> getUserInfo(String pubkey) {
-    if(pubkey.length == 66 && pubkey.startsWith('02')) {
+    if (pubkey.length == 66 && pubkey.startsWith('02')) {
       pubkey = pubkey.replaceFirst('02', '');
     }
     if (!isValidPubKey(pubkey)) return null;
@@ -120,10 +120,8 @@ class Account {
   }
 
   Future<UserDBISAR?> _searchUserFromDB(String pubkey) async {
-    UserDBISAR? user = await DBISAR.sharedInstance.isar.userDBISARs
-        .filter()
-        .pubKeyEqualTo(pubkey)
-        .findFirst();
+    UserDBISAR? user =
+        await DBISAR.sharedInstance.isar.userDBISARs.filter().pubKeyEqualTo(pubkey).findFirst();
     if (user != null) {
       user = user.withGrowableLevels();
       userCache[user.pubKey] = ValueNotifier<UserDBISAR>(user);
@@ -131,8 +129,7 @@ class Account {
     return user;
   }
 
-  Future<UserDBISAR?> getUserFromDB(
-      {String pubkey = '', String privkey = ''}) async {
+  Future<UserDBISAR?> getUserFromDB({String pubkey = '', String privkey = ''}) async {
     if (privkey.isNotEmpty) {
       pubkey = Keychain.getPublicKey(privkey);
     }
@@ -166,14 +163,16 @@ class Account {
 
   Future<UserDBISAR?> loginWithPubKeyAndPassword(String pubkey) async {
     UserDBISAR? db = await _searchUserFromDB(pubkey);
-    if (db != null &&
-        db.encryptedPrivKey != null &&
+    if (db == null) return null;
+    if (db.remoteSignerURI != null) {
+      return await loginWithPubKey(pubkey, SignerApplication.remoteSigner);
+    }
+    if (db.encryptedPrivKey != null &&
         db.encryptedPrivKey!.isNotEmpty &&
         db.defaultPassword != null &&
         db.defaultPassword!.isNotEmpty) {
       String encryptedPrivKey = db.encryptedPrivKey!;
-      Uint8List privkey =
-          decryptPrivateKey(hexToBytes(encryptedPrivKey), db.defaultPassword!);
+      Uint8List privkey = decryptPrivateKey(hexToBytes(encryptedPrivKey), db.defaultPassword!);
       if (Keychain.getPublicKey(bytesToHex(privkey)) == pubkey) {
         me = db;
         currentPrivkey = bytesToHex(privkey);
@@ -194,8 +193,7 @@ class Account {
     db ??= UserDBISAR();
     db.pubKey = pubkey;
     String defaultPassword = generateStrongPassword(16);
-    Uint8List enPrivkey =
-        encryptPrivateKey(hexToBytes(privkey), defaultPassword);
+    Uint8List enPrivkey = encryptPrivateKey(hexToBytes(privkey), defaultPassword);
     db.encryptedPrivKey = bytesToHex(enPrivkey);
     db.defaultPassword = defaultPassword;
     await saveUserToDB(db);
@@ -214,8 +212,8 @@ class Account {
 
   static Future<String?> getDNSPubkey(String name, String domain) async {
     try {
-      final response = await http
-          .get(Uri.parse('https://$domain/.well-known/nostr.json?name=$name'));
+      final response =
+          await http.get(Uri.parse('https://$domain/.well-known/nostr.json?name=$name'));
 
       if (response.statusCode == 200) {
         var jsonResponse = jsonDecode(response.body);
@@ -245,7 +243,7 @@ class Account {
     return Keychain.getPublicKey(privkey);
   }
 
-  static String getPublicKeyWithNIP46URI(String uri){
+  static String getPublicKeyWithNIP46URI(String uri) {
     RemoteSignerConnection remoteSignerConnection = Nip46.parseBunkerUri(uri);
     return remoteSignerConnection.pubkey;
   }
@@ -253,8 +251,8 @@ class Account {
   static Future<UserDBISAR> newAccount({Keychain? user}) async {
     user ?? Keychain.generate();
     String defaultPassword = generateStrongPassword(16);
-    Uint8List enPrivkey = await compute(encryptPrivateKeyWithMap,
-        {'privkey': user!.private, 'password': defaultPassword});
+    Uint8List enPrivkey = await compute(
+        encryptPrivateKeyWithMap, {'privkey': user!.private, 'password': defaultPassword});
     UserDBISAR db = UserDBISAR();
     db.pubKey = user.public;
     db.encryptedPrivKey = bytesToHex(enPrivkey);
@@ -269,8 +267,8 @@ class Account {
 
   Future<UserDBISAR> newAccountWithPassword(String password) async {
     var user = Keychain.generate();
-    Uint8List enPrivkey = await compute(decryptPrivateKeyWithMap,
-        {'privkey': user.private, 'password': password});
+    Uint8List enPrivkey =
+        await compute(decryptPrivateKeyWithMap, {'privkey': user.private, 'password': password});
     UserDBISAR db = UserDBISAR();
     db.pubKey = user.public;
     db.encryptedPrivKey = bytesToHex(enPrivkey);
@@ -289,8 +287,7 @@ class Account {
   Future<UserDBISAR?> updatePassword(String password) async {
     UserDBISAR? db = await getUserFromDB(privkey: currentPrivkey);
     if (db != null) {
-      Uint8List enPrivkey =
-          encryptPrivateKey(hexToBytes(currentPrivkey), password);
+      Uint8List enPrivkey = encryptPrivateKey(hexToBytes(currentPrivkey), password);
       db.encryptedPrivKey = bytesToHex(enPrivkey);
       db.defaultPassword = password;
       await saveUserToDB(db);
@@ -300,6 +297,11 @@ class Account {
   }
 
   Future<void> logout() async {
+    if (me?.remoteSignerURI != null) {
+      me?.remoteSignerURI = null;
+      me?.clientPrivateKey = null;
+      await saveUserToDB(me!);
+    }
     await NotificationHelper.sharedInstance.logout();
     await Connect.sharedInstance.closeAllConnects();
     Contacts.sharedInstance.allContacts.clear();
@@ -320,8 +322,7 @@ class Account {
   static Future<Event?> loadAddress(String d, String pubkey) async {
     Completer<Event?> completer = Completer<Event?>();
     Filter f = Filter(d: [d], authors: [pubkey]);
-    Connect.sharedInstance.addSubscription([f],
-        eventCallBack: (event, relay) async {
+    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
       if (!completer.isCompleted) completer.complete(event);
     }, eoseCallBack: (requestId, status, relay, unRelays) {
       if (unRelays.isEmpty) {
@@ -331,8 +332,7 @@ class Account {
     return completer.future;
   }
 
-  static Future<Event?> loadEvent(String eventId,
-      {List<String>? relays}) async {
+  static Future<Event?> loadEvent(String eventId, {List<String>? relays}) async {
     EventCache.sharedInstance.cacheIds.remove(eventId);
     Completer<Event?> completer = Completer<Event?>();
     Timer(Duration(seconds: 15), () {
@@ -358,8 +358,7 @@ class Account {
   }
 
   static String encodeProfile(String pubkey, List<String> relays) {
-    String profile =
-        Nip19.encodeShareableEntity('nprofile', pubkey, relays, null, null);
+    String profile = Nip19.encodeShareableEntity('nprofile', pubkey, relays, null, null);
     return Nip21.encode(profile);
   }
 
@@ -384,8 +383,8 @@ class Account {
       var tags = (json['tags'] as List<dynamic>)
           .map((e) => (e as List<dynamic>).map((e) => e.toString()).toList())
           .toList();
-      json['id'] = Event.processEventId(json['pubkey'], json['created_at'],
-          json['kind'], tags, json['content']);
+      json['id'] = Event.processEventId(
+          json['pubkey'], json['created_at'], json['kind'], tags, json['content']);
     }
     Event event = await Event.fromJson(json, verify: false);
     if (SignerHelper.needSigner(currentPrivkey)) {
@@ -400,25 +399,21 @@ class Account {
   }
 
   Future<String> encryptNip04(String content, String peer) async {
-    return await Nip4.encryptContent(
-        content, peer, currentPubkey, currentPrivkey);
+    return await Nip4.encryptContent(content, peer, currentPubkey, currentPrivkey);
   }
 
   Future<String> decryptNip04(String content, String peer) async {
-    return await Nip4.decryptContent(
-        content, peer, currentPubkey, currentPrivkey);
+    return await Nip4.decryptContent(content, peer, currentPubkey, currentPrivkey);
   }
 
-  static Future<String> getSignatureWithSecret(String secret,
-      [String? privkey]) async {
+  static Future<String> getSignatureWithSecret(String secret, [String? privkey]) async {
     privkey ??= Account.sharedInstance.currentPrivkey;
     if (SignerHelper.needSigner(privkey)) {
       final pubkey = Account.sharedInstance.currentPubkey;
       final privkey = Account.sharedInstance.currentPrivkey;
       return await SignerHelper.signMessage(secret, pubkey, privkey) ?? '';
     }
-    final hexMessage = hex.encode(
-        SHA256Digest().process(Uint8List.fromList(utf8.encode(secret))));
+    final hexMessage = hex.encode(SHA256Digest().process(Uint8List.fromList(utf8.encode(secret))));
     return Keychain(privkey).sign(hexMessage);
   }
 }
