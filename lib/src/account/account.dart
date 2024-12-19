@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:chatcore/src/account/account+nip46.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:isar/isar.dart';
@@ -156,7 +157,9 @@ class Account {
       me = userDB;
       currentPubkey = userDB.pubKey;
       currentPrivkey = SignerHelper.getSignerApplicationKey(signerApplication, '');
+      userDB.privkey = currentPrivkey;
       userCache[currentPubkey] = ValueNotifier<UserDBISAR>(userDB);
+      await saveUserToDB(userDB);
       loginSuccess();
     }
     return userDB;
