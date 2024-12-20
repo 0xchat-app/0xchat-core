@@ -31,7 +31,31 @@ extension AccountNIP46 on Account {
     return userDBISAR;
   }
 
+  void _initCallback(){
+    SignerHelper.sharedInstance.signEventHandle = (String eventString) async {
+      return await sendSignEvent(eventString);
+    };
+    SignerHelper.sharedInstance.nip04encryptEventHandle =
+        (String plainText, String peerPubkey) async {
+      return await sendNip04Encrypt(peerPubkey, plainText);
+    };
+    SignerHelper.sharedInstance.nip04decryptEventHandle =
+        (String encryptedText, String peerPubkey) async {
+      return await sendNip04Decrypt(peerPubkey, encryptedText);
+    };
+    SignerHelper.sharedInstance.nip44encryptEventHandle =
+        (String plainText, String peerPubkey) async {
+      return await sendNip44Encrypt(peerPubkey, plainText);
+    };
+    SignerHelper.sharedInstance.nip44encryptEventHandle =
+        (String encryptedText, String peerPubkey) async {
+      return await sendNip44Decrypt(peerPubkey, encryptedText);
+    };
+  }
+
   Future<OKEvent> connectToRemoteSigner(String uri, bool autoLogin) async {
+    _initCallback();
+
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     RemoteSignerConnection remoteSignerConnection = Nip46.parseBunkerUri(uri);
@@ -41,11 +65,14 @@ extension AccountNIP46 on Account {
       Keychain newKeychain = Keychain.generate();
       currentRemoteConnection!.clientPrivkey = newKeychain.private;
       currentRemoteConnection!.clientPubkey = newKeychain.public;
+    } else {
+      currentRemoteConnection!.clientPubkey =
+          Keychain(currentRemoteConnection!.clientPrivkey!).public;
     }
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 && remoteSignerConnection.relays.contains(relay)) {
         updateNIP46Subscription(relay: relay);
-        if(!autoLogin) await sendConnect();
+        if (!autoLogin) await sendConnect();
         if (!completer.isCompleted) completer.complete(OKEvent(uri, true, ''));
       }
     });
@@ -75,15 +102,17 @@ extension AccountNIP46 on Account {
       for (String relayURL in currentRemoteConnection!.relays) {
         Filter f = Filter(
             kinds: [24133],
-            // authors: [currentRemoteConnection!.pubkey],
-            p: [currentRemoteConnection!.clientPubkey!]);
+            authors: [currentRemoteConnection!.pubkey],
+            p: [currentRemoteConnection!.clientPubkey!],
+            since: currentUnixTimestampSeconds());
         subscriptions[relayURL] = [f];
       }
     } else {
       Filter f = Filter(
           kinds: [24133],
-          // authors: [currentRemoteConnection!.pubkey],
-          p: [currentRemoteConnection!.clientPubkey!]);
+          authors: [currentRemoteConnection!.pubkey],
+          p: [currentRemoteConnection!.clientPubkey!],
+          since: currentUnixTimestampSeconds());
       subscriptions[relay] = [f];
     }
 
@@ -93,7 +122,7 @@ extension AccountNIP46 on Account {
         case 24133:
           NIP46CommandResult result = await Nip46.decode(event,
               currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
-          if(result.result == 'auth_url'){
+          if (result.result == 'auth_url') {
             LogUtils.v(() => 'connect waiting for auth... ${result.toString()}');
             nip46commandResultCallback?.call(result);
             return;
@@ -124,32 +153,11 @@ extension AccountNIP46 on Account {
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
 
-    if(result.result != 'ack'){
+    if (result.result != 'ack') {
       print('sendConnect connected false');
       return false;
     }
     print('sendConnect connected success');
-
-    SignerHelper.sharedInstance.signEventHandle = (String eventString) async {
-      return await sendSignEvent(eventString);
-    };
-    SignerHelper.sharedInstance.nip04encryptEventHandle =
-        (String plainText, String peerPubkey) async {
-      return await sendNip04Encrypt(peerPubkey, plainText);
-    };
-    SignerHelper.sharedInstance.nip04decryptEventHandle =
-        (String encryptedText, String peerPubkey) async {
-      return await sendNip04Decrypt(peerPubkey, encryptedText);
-    };
-    SignerHelper.sharedInstance.nip44encryptEventHandle =
-        (String plainText, String peerPubkey) async {
-      return await sendNip44Encrypt(peerPubkey, plainText);
-    };
-    SignerHelper.sharedInstance.nip44encryptEventHandle =
-        (String encryptedText, String peerPubkey) async {
-      return await sendNip44Decrypt(peerPubkey, encryptedText);
-    };
-
     return true;
   }
 
@@ -159,7 +167,7 @@ extension AccountNIP46 on Account {
     Event event = await Nip46.encode(currentRemoteConnection!.pubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
-    if(result.error == null && result.result != null){
+    if (result.error == null && result.result != null) {
       return await Event.fromJson(jsonDecode(result.result));
     }
     return result.result;
