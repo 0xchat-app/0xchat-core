@@ -4,6 +4,16 @@ import 'dart:math';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
+class NostrConnectURI {
+  /// singleton
+  NostrConnectURI._internal();
+
+  factory NostrConnectURI() => sharedInstance;
+  static final NostrConnectURI sharedInstance = NostrConnectURI._internal();
+
+  late String clientPrivkey;
+}
+
 extension AccountNIP46 on Account {
   Future<bool> _checkNIP46Pubkey(String pubkey) async {
     if (me == null || me?.remoteSignerURI == null) return false;
@@ -52,22 +62,17 @@ extension AccountNIP46 on Account {
     return userDBISAR;
   }
 
-  Future<String> createNostrConnectUrl() async {
+  static Future<String> createNostrConnectURI() async {
     Keychain newKeychain = Keychain.generate();
+    NostrConnectURI.sharedInstance.clientPrivkey = newKeychain.private;
     String secret = generate64RandomHexChars();
     List<String> relays = ['wss://relay.nsec.app'];
-    currentRemoteConnection = RemoteSignerConnection('', relays, secret);
-    currentRemoteConnection!.clientPrivkey = newKeychain.private;
-    currentRemoteConnection!.clientPubkey = newKeychain.public;
-    currentRemoteConnection!.secret = secret;
     String perms = SignerPermissionModel.defaultPermissionsForNIP46();
     String name = '0xchat';
     String url = 'www.0xchat.com';
     String image = 'https://www.0xchat.com/favicon1.png';
-    await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.remoteSigner);
-    updateNIP46Subscription();
-    return _createNostrConnectUrl(
-        clientPubKey: currentRemoteConnection!.clientPubkey!,
+    return Nip46.createNostrConnectUrl(
+        clientPubKey: newKeychain.public,
         secret: secret,
         relays: relays,
         perms: null,
@@ -76,7 +81,12 @@ extension AccountNIP46 on Account {
         image: image);
   }
 
-  Future<String> getPublicKeyWithNostrConnectURI() async {
+  Future<String> getPublicKeyWithNostrConnectURI(String uri) async {
+    currentRemoteConnection = Nip46.parseNostrConnectUri(uri);
+    currentRemoteConnection!.clientPrivkey = NostrConnectURI.sharedInstance.clientPrivkey;
+    await Connect.sharedInstance
+        .connectRelays(currentRemoteConnection!.relays, relayKind: RelayKind.remoteSigner);
+    updateNIP46Subscription();
     Completer<NIP46CommandResult> completer = Completer<NIP46CommandResult>();
     String secret = currentRemoteConnection!.secret!;
     resultCompleters[secret] = completer;
@@ -85,44 +95,6 @@ extension AccountNIP46 on Account {
     String? pubkey = await sendGetPubicKey();
     if (pubkey != null) currentRemoteConnection!.pubkey = pubkey;
     return pubkey ?? '';
-  }
-
-  String _createNostrConnectUrl({
-    required String clientPubKey,
-    required String secret,
-    required List<String> relays,
-    String? perms,
-    String? name,
-    String? url,
-    String? image,
-  }) {
-    // Create the base URL with the provided client public key
-    Uri uri = Uri.parse('nostrconnect://$clientPubKey');
-
-    // Create the query parameters map
-    Map<String, String> queryParams = {
-      'relay': relays.map((e) => Uri.encodeComponent(e)).join('&relay='),
-      'secret': secret,
-    };
-
-    // Optional parameters
-    if (perms != null && perms.isNotEmpty) {
-      queryParams['perms'] = perms;
-    }
-    if (name != null) {
-      queryParams['name'] = name;
-    }
-    if (url != null) {
-      queryParams['url'] = url;
-    }
-    if (image != null) {
-      queryParams['image'] = image;
-    }
-
-    // Rebuild the URI with the query parameters
-    uri = uri.replace(queryParameters: queryParams);
-    print('_createNostrConnectUrl: ${uri.toString()}');
-    return uri.toString();
   }
 
   void _initCallback() {

@@ -246,13 +246,13 @@ class Account {
   }
 
   static Future<String> getPublicKeyWithNIP46URI(String uri) async {
-    if(uri.startsWith('bunker://')){
+    if (uri.startsWith('bunker://')) {
       RemoteSignerConnection remoteSignerConnection = Nip46.parseBunkerUri(uri);
       return remoteSignerConnection.pubkey;
+    } else if (uri.startsWith('nostrconnect://')) {
+      return await Account.sharedInstance.getPublicKeyWithNostrConnectURI(uri);
     }
-    else{
-      return await Account.sharedInstance.getPublicKeyWithNostrConnectURI();
-    }
+    return '';
   }
 
   static Future<UserDBISAR> newAccount({Keychain? user}) async {
