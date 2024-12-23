@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
@@ -31,7 +32,72 @@ extension AccountNIP46 on Account {
     return userDBISAR;
   }
 
-  void _initCallback(){
+  String _generateRandomString(int length) {
+    const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    Random random = Random();
+    return List.generate(length, (index) => characters[random.nextInt(characters.length)]).join();
+  }
+
+  Future<String> createNostrConnectUrl() async {
+    Keychain newKeychain = Keychain.generate();
+    currentRemoteConnection!.clientPrivkey = newKeychain.private;
+    currentRemoteConnection!.clientPubkey = newKeychain.public;
+    String secret = _generateRandomString(16);
+    List<String> relays = Relays.sharedInstance.recommendGeneralRelays;
+    String perms = SignerPermissionModel.defaultPermissionsForNIP46();
+    String name = '0xchat';
+    String url = 'www.0xchat.com';
+    String image = 'https://www.0xchat.com/favicon1.png';
+    await Connect.sharedInstance.connectRelays(relays);
+    return _createNostrConnectUrl(
+        clientPubKey: currentRemoteConnection!.clientPubkey!,
+        secret: secret,
+        relays: relays,
+        perms: perms,
+        name: name,
+        url: url,
+        image: image);
+  }
+
+  String _createNostrConnectUrl({
+    required String clientPubKey,
+    required String secret,
+    required List<String> relays,
+    String? perms,
+    String? name,
+    String? url,
+    String? image,
+  }) {
+    // Create the base URL with the provided client public key
+    Uri uri = Uri.parse('nostrconnect://$clientPubKey');
+
+    // Create the query parameters map
+    Map<String, String> queryParams = {
+      'relay': relays.map((e) => Uri.encodeComponent(e)).join('&relay='),
+      'secret': secret,
+    };
+
+    // Optional parameters
+    if (perms != null && perms.isNotEmpty) {
+      queryParams['perms'] = perms;
+    }
+    if (name != null) {
+      queryParams['name'] = name;
+    }
+    if (url != null) {
+      queryParams['url'] = url;
+    }
+    if (image != null) {
+      queryParams['image'] = image;
+    }
+
+    // Rebuild the URI with the query parameters
+    uri = uri.replace(queryParameters: queryParams);
+
+    return uri.toString();
+  }
+
+  void _initCallback() {
     SignerHelper.sharedInstance.signEventHandle = (String eventString) async {
       return await sendSignEvent(eventString);
     };
@@ -122,9 +188,9 @@ extension AccountNIP46 on Account {
         case 24133:
           NIP46CommandResult result = await Nip46.decode(event,
               currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
+          nip46commandResultCallback?.call(result);
           if (result.result == 'auth_url') {
             LogUtils.v(() => 'connect waiting for auth... ${result.toString()}');
-            nip46commandResultCallback?.call(result);
             return;
           }
           Completer? completer = resultCompleters[result.id];
@@ -146,8 +212,8 @@ extension AccountNIP46 on Account {
   }
 
   Future<bool> sendConnect() async {
-    NIP46Command command =
-        NIP46Command.connect(currentRemoteConnection!.pubkey, currentRemoteConnection!.secret);
+    NIP46Command command = NIP46Command.connect(currentRemoteConnection!.pubkey,
+        currentRemoteConnection!.secret, SignerPermissionModel.defaultPermissionsForNIP46());
     var id = generate64RandomHexChars();
     Event event = await Nip46.encode(currentRemoteConnection!.pubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
