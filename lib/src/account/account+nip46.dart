@@ -20,6 +20,15 @@ extension AccountNIP46 on Account {
   }
 
   Future<UserDBISAR?> loginWithNip46URI(String uri) async {
+    if (uri.startsWith('bunker://')) {
+      return _loginWithBunkerURI(uri);
+    } else if (uri.startsWith('nostrconnect://')) {
+      return _loginWithNostrConnectURI(uri);
+    }
+    return null;
+  }
+
+  Future<UserDBISAR?> _loginWithBunkerURI(String uri) async {
     await connectToRemoteSigner(uri, false);
     String? getPubkey = await sendGetPubicKey();
     if (getPubkey == null) return null;
@@ -32,31 +41,50 @@ extension AccountNIP46 on Account {
     return userDBISAR;
   }
 
-  String _generateRandomString(int length) {
-    const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    Random random = Random();
-    return List.generate(length, (index) => characters[random.nextInt(characters.length)]).join();
+  Future<UserDBISAR?> _loginWithNostrConnectURI(String uri) async {
+    UserDBISAR? userDBISAR =
+        await loginWithPubKey(currentRemoteConnection!.pubkey, SignerApplication.remoteSigner);
+    if (userDBISAR != null) {
+      userDBISAR.remoteSignerURI = uri;
+      userDBISAR.clientPrivateKey ??= currentRemoteConnection!.clientPrivkey;
+      await Account.saveUserToDB(userDBISAR);
+    }
+    return userDBISAR;
   }
 
   Future<String> createNostrConnectUrl() async {
     Keychain newKeychain = Keychain.generate();
+    String secret = generate64RandomHexChars();
+    List<String> relays = ['wss://relay.nsec.app'];
+    currentRemoteConnection = RemoteSignerConnection('', relays, secret);
     currentRemoteConnection!.clientPrivkey = newKeychain.private;
     currentRemoteConnection!.clientPubkey = newKeychain.public;
-    String secret = _generateRandomString(16);
-    List<String> relays = Relays.sharedInstance.recommendGeneralRelays;
+    currentRemoteConnection!.secret = secret;
     String perms = SignerPermissionModel.defaultPermissionsForNIP46();
     String name = '0xchat';
     String url = 'www.0xchat.com';
     String image = 'https://www.0xchat.com/favicon1.png';
-    await Connect.sharedInstance.connectRelays(relays);
+    await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.remoteSigner);
+    updateNIP46Subscription();
     return _createNostrConnectUrl(
         clientPubKey: currentRemoteConnection!.clientPubkey!,
         secret: secret,
         relays: relays,
-        perms: perms,
+        perms: null,
         name: name,
         url: url,
         image: image);
+  }
+
+  Future<String> getPublicKeyWithNostrConnectURI() async {
+    Completer<NIP46CommandResult> completer = Completer<NIP46CommandResult>();
+    String secret = currentRemoteConnection!.secret!;
+    resultCompleters[secret] = completer;
+    await completer.future;
+    _initCallback();
+    String? pubkey = await sendGetPubicKey();
+    if (pubkey != null) currentRemoteConnection!.pubkey = pubkey;
+    return pubkey ?? '';
   }
 
   String _createNostrConnectUrl({
@@ -93,7 +121,7 @@ extension AccountNIP46 on Account {
 
     // Rebuild the URI with the query parameters
     uri = uri.replace(queryParameters: queryParams);
-
+    print('_createNostrConnectUrl: ${uri.toString()}');
     return uri.toString();
   }
 
@@ -168,7 +196,6 @@ extension AccountNIP46 on Account {
       for (String relayURL in currentRemoteConnection!.relays) {
         Filter f = Filter(
             kinds: [24133],
-            authors: [currentRemoteConnection!.pubkey],
             p: [currentRemoteConnection!.clientPubkey!],
             since: currentUnixTimestampSeconds());
         subscriptions[relayURL] = [f];
@@ -176,7 +203,6 @@ extension AccountNIP46 on Account {
     } else {
       Filter f = Filter(
           kinds: [24133],
-          authors: [currentRemoteConnection!.pubkey],
           p: [currentRemoteConnection!.clientPubkey!],
           since: currentUnixTimestampSeconds());
       subscriptions[relay] = [f];
@@ -193,9 +219,15 @@ extension AccountNIP46 on Account {
             LogUtils.v(() => 'connect waiting for auth... ${result.toString()}');
             return;
           }
-          Completer? completer = resultCompleters[result.id];
+          String resultId = result.id;
+          if (result.result == currentRemoteConnection!.secret) {
+            LogUtils.v(() => 'nostr connect success... ${result.toString()}');
+            resultId = result.result;
+            currentRemoteConnection!.pubkey = event.pubkey;
+          }
+          Completer? completer = resultCompleters[resultId];
           if (completer != null && !completer.isCompleted) completer.complete(result);
-          resultCompleters.remove(result.id);
+          resultCompleters.remove(resultId);
           break;
         default:
           LogUtils.v(() => 'moment unhandled message ${event.toJson()}');
