@@ -33,7 +33,8 @@ extension Load on Moment {
       {int limit = 50, int? until, bool? private = false}) async {
     Set<String> authors = Set.from(Contacts.sharedInstance.allContacts.keys.toList());
     authors.add(pubkey);
-    return await loadUserNotesFromDB(authors.toList(), limit: limit, until: until, private: private);
+    return await loadUserNotesFromDB(authors.toList(),
+        limit: limit, until: until, private: private);
   }
 
   Future<List<NoteDBISAR>?> loadFollowsNotesFromDB(
@@ -582,20 +583,20 @@ extension Load on Moment {
     return result;
   }
 
-  Future<List<NoteDBISAR>> searchNotesFromDB({
-    String? noteId,
-    String? groupId,
-    List<String>? authors,
-    String? root,
-    String? reply,
-    String? repostId,
-    String? quoteRepostId,
-    String? reactedId,
-    bool? isReacted,
-    bool? private,
-    int? until,
-    int? limit,
-  }) async {
+  Future<List<NoteDBISAR>> searchNotesFromDB(
+      {String? noteId,
+      String? groupId,
+      List<String>? authors,
+      String? root,
+      String? reply,
+      String? repostId,
+      String? quoteRepostId,
+      String? reactedId,
+      bool? isReacted,
+      bool? private,
+      int? until,
+      int? limit,
+      String? keyword}) async {
     final isar = DBISAR.sharedInstance.isar;
     var queryBuilder = isar.noteDBISARs.filter();
     if (noteId != null) {
@@ -633,6 +634,9 @@ extension Load on Moment {
     }
     if (private != null) {
       queryBuilder = queryBuilder.privateEqualTo(private);
+    }
+    if (keyword != null) {
+      queryBuilder = queryBuilder.contentContains(keyword);
     }
     List<NoteDBISAR> result = searchNotesFromCache(noteId, groupId, authors, root, reply, repostId,
         quoteRepostId, reactedId, isReacted, private, until, limit);
@@ -713,5 +717,9 @@ extension Load on Moment {
         handleNewNotes(reactionsNoteDB);
       }
     }
+  }
+
+  Future<List<NoteDBISAR>> searchNotes(String keyword) async {
+    return searchNotesFromDB(keyword: keyword);
   }
 }
