@@ -719,7 +719,7 @@ extension Load on Moment {
     }
   }
 
-  Future<List<NoteDBISAR>> searchNotes(String keyword) async {
+  Future<List<NoteDBISAR>> searchNotesWithKeyword(String keyword) async {
     return searchNotesFromDB(keyword: keyword);
   }
 }
