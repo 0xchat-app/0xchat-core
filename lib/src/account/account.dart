@@ -14,10 +14,7 @@ typedef NIP46CommandResultCallback = void Function(NIP46CommandResult result);
 
 class Account {
   /// singleton
-  Account._internal() {
-    startHeartBeat();
-    _loadAllUsers();
-  }
+  Account._internal();
   factory Account() => sharedInstance;
   static final Account sharedInstance = Account._internal();
 
@@ -42,6 +39,11 @@ class Account {
   AccountUpdateCallback? channelListUpdateCallback;
   AccountUpdateCallback? groupListUpdateCallback;
   AccountUpdateCallback? relayGroupListUpdateCallback;
+
+  void init(){
+    startHeartBeat();
+    _loadAllUsers();
+  }
 
   void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
