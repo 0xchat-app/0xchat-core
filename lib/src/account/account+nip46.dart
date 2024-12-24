@@ -7,7 +7,7 @@ import 'package:chatcore/chat-core.dart';
 extension AccountNIP46 on Account {
   Future<bool> _checkNIP46Pubkey(String pubkey) async {
     if (me == null || me?.remoteSignerURI == null) return false;
-    await connectToRemoteSigner(me!.remoteSignerURI!, false, pubkey);
+    await connectToRemoteSigner(me!.remoteSignerURI!, true, pubkey);
     String? getPubkey = await sendGetPubicKey();
     if (getPubkey == null || getPubkey != pubkey) return false;
     return true;
