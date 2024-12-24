@@ -4,16 +4,6 @@ import 'dart:math';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
-class NostrConnectURI {
-  /// singleton
-  NostrConnectURI._internal();
-
-  factory NostrConnectURI() => sharedInstance;
-  static final NostrConnectURI sharedInstance = NostrConnectURI._internal();
-
-  late String clientPrivkey;
-}
-
 extension AccountNIP46 on Account {
   Future<bool> _checkNIP46Pubkey(String pubkey) async {
     if (me == null || me?.remoteSignerURI == null) return false;
@@ -64,9 +54,11 @@ extension AccountNIP46 on Account {
 
   static Future<String> createNostrConnectURI() async {
     Keychain newKeychain = Keychain.generate();
-    NostrConnectURI.sharedInstance.clientPrivkey = newKeychain.private;
     String secret = generate64RandomHexChars();
     List<String> relays = ['wss://relay.nsec.app'];
+    Account.sharedInstance.currentRemoteConnection = RemoteSignerConnection('', relays, secret);
+    Account.sharedInstance.currentRemoteConnection!.clientPrivkey = newKeychain.private;
+    Account.sharedInstance.currentRemoteConnection!.clientPubkey = newKeychain.public;
     String perms = SignerPermissionModel.defaultPermissionsForNIP46();
     String name = '0xchat';
     String url = 'www.0xchat.com';
@@ -82,8 +74,6 @@ extension AccountNIP46 on Account {
   }
 
   Future<String> getPublicKeyWithNostrConnectURI(String uri) async {
-    currentRemoteConnection = Nip46.parseNostrConnectUri(uri);
-    currentRemoteConnection!.clientPrivkey = NostrConnectURI.sharedInstance.clientPrivkey;
     await Connect.sharedInstance
         .connectRelays(currentRemoteConnection!.relays, relayKind: RelayKind.remoteSigner);
     updateNIP46Subscription();
