@@ -250,7 +250,7 @@ class Account {
   static Future<String> getPublicKeyWithNIP46URI(String uri) async {
     if (uri.startsWith('bunker://')) {
       RemoteSignerConnection remoteSignerConnection = Nip46.parseBunkerUri(uri);
-      return remoteSignerConnection.pubkey;
+      return remoteSignerConnection.remotePubkey;
     } else if (uri.startsWith('nostrconnect://')) {
       return await Account.sharedInstance.getPublicKeyWithNostrConnectURI(uri);
     }

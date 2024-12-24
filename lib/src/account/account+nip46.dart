@@ -7,7 +7,7 @@ import 'package:chatcore/chat-core.dart';
 extension AccountNIP46 on Account {
   Future<bool> _checkNIP46Pubkey(String pubkey) async {
     if (me == null || me?.remoteSignerURI == null) return false;
-    await connectToRemoteSigner(me!.remoteSignerURI!, false);
+    await connectToRemoteSigner(me!.remoteSignerURI!, false, pubkey);
     String? getPubkey = await sendGetPubicKey();
     if (getPubkey == null || getPubkey != pubkey) return false;
     return true;
@@ -29,7 +29,7 @@ extension AccountNIP46 on Account {
   }
 
   Future<UserDBISAR?> _loginWithBunkerURI(String uri) async {
-    await connectToRemoteSigner(uri, false);
+    await connectToRemoteSigner(uri, false, '');
     String? getPubkey = await sendGetPubicKey();
     if (getPubkey == null) return null;
     UserDBISAR? userDBISAR = await loginWithPubKey(getPubkey, SignerApplication.remoteSigner);
@@ -42,14 +42,14 @@ extension AccountNIP46 on Account {
   }
 
   Future<UserDBISAR?> _loginWithNostrConnectURI(String uri) async {
-    UserDBISAR? userDBISAR =
-        await loginWithPubKey(currentRemoteConnection!.pubkey, SignerApplication.remoteSigner);
-    if (userDBISAR != null) {
-      userDBISAR.remoteSignerURI = uri;
-      userDBISAR.clientPrivateKey ??= currentRemoteConnection!.clientPrivkey;
-      await Account.saveUserToDB(userDBISAR);
+    await loginWithPubKey(currentRemoteConnection!.remotePubkey, SignerApplication.remoteSigner);
+    if (me != null) {
+      me!.remoteSignerURI = uri;
+      me!.clientPrivateKey ??= currentRemoteConnection!.clientPrivkey;
+      me!.remotePubkey = currentRemoteConnection!.remotePubkey;
+      await syncMe();
     }
-    return userDBISAR;
+    return me;
   }
 
   static Future<String> createNostrConnectURI() async {
@@ -74,16 +74,20 @@ extension AccountNIP46 on Account {
   }
 
   Future<String> getPublicKeyWithNostrConnectURI(String uri) async {
-    await Connect.sharedInstance
+    Connect.sharedInstance
         .connectRelays(currentRemoteConnection!.relays, relayKind: RelayKind.remoteSigner);
-    updateNIP46Subscription();
+    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
+      if (status == 1 && currentRemoteConnection!.relays.contains(relay)) {
+        updateNIP46Subscription(relay: relay);
+      }
+    });
     Completer<NIP46CommandResult> completer = Completer<NIP46CommandResult>();
     String secret = currentRemoteConnection!.secret!;
     resultCompleters[secret] = completer;
     await completer.future;
     _initCallback();
     String? pubkey = await sendGetPubicKey();
-    if (pubkey != null) currentRemoteConnection!.pubkey = pubkey;
+    if (pubkey != null) currentRemoteConnection!.remotePubkey = pubkey;
     return pubkey ?? '';
   }
 
@@ -109,14 +113,21 @@ extension AccountNIP46 on Account {
     };
   }
 
-  Future<OKEvent> connectToRemoteSigner(String uri, bool autoLogin) async {
+  Future<OKEvent> connectToRemoteSigner(String uri, bool autoLogin, String remotePubkey) async {
     _initCallback();
 
     Completer<OKEvent> completer = Completer<OKEvent>();
-
-    RemoteSignerConnection remoteSignerConnection = Nip46.parseBunkerUri(uri);
+    late RemoteSignerConnection remoteSignerConnection;
+    if (uri.startsWith('bunker://')) {
+      remoteSignerConnection = Nip46.parseBunkerUri(uri);
+    } else if (uri.startsWith('nostrconnect://')) {
+      remoteSignerConnection = Nip46.parseNostrConnectUri(uri);
+    }
     currentRemoteConnection = remoteSignerConnection;
     currentRemoteConnection!.clientPrivkey = me?.clientPrivateKey;
+    if (currentRemoteConnection!.remotePubkey.isEmpty) {
+      currentRemoteConnection!.remotePubkey = me?.remotePubkey ?? remotePubkey;
+    }
     if (currentRemoteConnection!.clientPrivkey == null) {
       Keychain newKeychain = Keychain.generate();
       currentRemoteConnection!.clientPrivkey = newKeychain.private;
@@ -142,7 +153,7 @@ extension AccountNIP46 on Account {
     if (currentRemoteConnection == null) return null;
     NIP46Command command = NIP46Command.getPublicKey();
     var id = generate64RandomHexChars();
-    Event event = await Nip46.encode(currentRemoteConnection!.pubkey, id, command,
+    Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
     return result.result;
@@ -176,16 +187,17 @@ extension AccountNIP46 on Account {
         case 24133:
           NIP46CommandResult result = await Nip46.decode(event,
               currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
+
           nip46commandResultCallback?.call(result);
           if (result.result == 'auth_url') {
             LogUtils.v(() => 'connect waiting for auth... ${result.toString()}');
             return;
           }
           String resultId = result.id;
-          if (result.result == currentRemoteConnection!.secret) {
+          if (result.result == currentRemoteConnection?.secret) {
             LogUtils.v(() => 'nostr connect success... ${result.toString()}');
             resultId = result.result;
-            currentRemoteConnection!.pubkey = event.pubkey;
+            currentRemoteConnection!.remotePubkey = event.pubkey;
           }
           Completer? completer = resultCompleters[resultId];
           if (completer != null && !completer.isCompleted) completer.complete(result);
@@ -206,10 +218,10 @@ extension AccountNIP46 on Account {
   }
 
   Future<bool> sendConnect() async {
-    NIP46Command command = NIP46Command.connect(currentRemoteConnection!.pubkey,
+    NIP46Command command = NIP46Command.connect(currentRemoteConnection!.remotePubkey,
         currentRemoteConnection!.secret, SignerPermissionModel.defaultPermissionsForNIP46());
     var id = generate64RandomHexChars();
-    Event event = await Nip46.encode(currentRemoteConnection!.pubkey, id, command,
+    Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
 
@@ -224,7 +236,7 @@ extension AccountNIP46 on Account {
   Future<Event> sendSignEvent(String eventString) async {
     NIP46Command command = NIP46Command.signEvent(eventString);
     var id = generate64RandomHexChars();
-    Event event = await Nip46.encode(currentRemoteConnection!.pubkey, id, command,
+    Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
     if (result.error == null && result.result != null) {
@@ -236,7 +248,7 @@ extension AccountNIP46 on Account {
   Future<void> sendGetRelays() async {
     NIP46Command command = NIP46Command.getRelays();
     var id = generate64RandomHexChars();
-    Event event = await Nip46.encode(currentRemoteConnection!.pubkey, id, command,
+    Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
     print('sendGetRelays result: ${result.toString()}');
@@ -246,7 +258,7 @@ extension AccountNIP46 on Account {
   Future<String> sendGetPublicKey() async {
     NIP46Command command = NIP46Command.getPublicKey();
     var id = generate64RandomHexChars();
-    Event event = await Nip46.encode(currentRemoteConnection!.pubkey, id, command,
+    Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
     print('sendGetPublicKey result: ${result.toString()}');
@@ -256,7 +268,7 @@ extension AccountNIP46 on Account {
   Future<String> sendNip04Encrypt(String thirdPartyPubkey, String plaintext) async {
     NIP46Command command = NIP46Command.nip04Encrypt(thirdPartyPubkey, plaintext);
     var id = generate64RandomHexChars();
-    Event event = await Nip46.encode(currentRemoteConnection!.pubkey, id, command,
+    Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
     print('sendNip04Encrypt result: ${result.toString()}');
@@ -266,7 +278,7 @@ extension AccountNIP46 on Account {
   Future<String> sendNip04Decrypt(String thirdPartyPubkey, String ciphertext) async {
     NIP46Command command = NIP46Command.nip04Decrypt(thirdPartyPubkey, ciphertext);
     var id = generate64RandomHexChars();
-    Event event = await Nip46.encode(currentRemoteConnection!.pubkey, id, command,
+    Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
     print('sendNip04Decrypt result: ${result.toString()}');
@@ -276,7 +288,7 @@ extension AccountNIP46 on Account {
   Future<String> sendNip44Encrypt(String thirdPartyPubkey, String plaintext) async {
     NIP46Command command = NIP46Command.nip44Encrypt(thirdPartyPubkey, plaintext);
     var id = generate64RandomHexChars();
-    Event event = await Nip46.encode(currentRemoteConnection!.pubkey, id, command,
+    Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
     print('sendNip044Encrypt result: ${result.toString()}');
@@ -286,7 +298,7 @@ extension AccountNIP46 on Account {
   Future<String> sendNip44Decrypt(String thirdPartyPubkey, String ciphertext) async {
     NIP46Command command = NIP46Command.nip44Decrypt(thirdPartyPubkey, ciphertext);
     var id = generate64RandomHexChars();
-    Event event = await Nip46.encode(currentRemoteConnection!.pubkey, id, command,
+    Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
     print('sendNip044Decrypt result: ${result.toString()}');

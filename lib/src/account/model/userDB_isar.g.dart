@@ -242,23 +242,28 @@ const UserDBISARSchema = CollectionSchema(
       name: r'relayList',
       type: IsarType.stringList,
     ),
-    r'remoteSignerURI': PropertySchema(
+    r'remotePubkey': PropertySchema(
       id: 45,
+      name: r'remotePubkey',
+      type: IsarType.string,
+    ),
+    r'remoteSignerURI': PropertySchema(
+      id: 46,
       name: r'remoteSignerURI',
       type: IsarType.string,
     ),
     r'settings': PropertySchema(
-      id: 46,
+      id: 47,
       name: r'settings',
       type: IsarType.string,
     ),
     r'toAliasPrivkey': PropertySchema(
-      id: 47,
+      id: 48,
       name: r'toAliasPrivkey',
       type: IsarType.string,
     ),
     r'toAliasPubkey': PropertySchema(
-      id: 48,
+      id: 49,
       name: r'toAliasPubkey',
       type: IsarType.string,
     )
@@ -581,6 +586,12 @@ int _userDBISAREstimateSize(
     }
   }
   {
+    final value = object.remotePubkey;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
     final value = object.remoteSignerURI;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -658,10 +669,11 @@ void _userDBISARSerialize(
   writer.writeString(offsets[42], object.pubKey);
   writer.writeStringList(offsets[43], object.relayGroupsList);
   writer.writeStringList(offsets[44], object.relayList);
-  writer.writeString(offsets[45], object.remoteSignerURI);
-  writer.writeString(offsets[46], object.settings);
-  writer.writeString(offsets[47], object.toAliasPrivkey);
-  writer.writeString(offsets[48], object.toAliasPubkey);
+  writer.writeString(offsets[45], object.remotePubkey);
+  writer.writeString(offsets[46], object.remoteSignerURI);
+  writer.writeString(offsets[47], object.settings);
+  writer.writeString(offsets[48], object.toAliasPrivkey);
+  writer.writeString(offsets[49], object.toAliasPubkey);
 }
 
 UserDBISAR _userDBISARDeserialize(
@@ -716,10 +728,11 @@ UserDBISAR _userDBISARDeserialize(
     pubKey: reader.readStringOrNull(offsets[42]) ?? '',
     relayGroupsList: reader.readStringList(offsets[43]),
     relayList: reader.readStringList(offsets[44]),
-    remoteSignerURI: reader.readStringOrNull(offsets[45]),
-    settings: reader.readStringOrNull(offsets[46]),
-    toAliasPrivkey: reader.readStringOrNull(offsets[47]),
-    toAliasPubkey: reader.readStringOrNull(offsets[48]),
+    remotePubkey: reader.readStringOrNull(offsets[45]),
+    remoteSignerURI: reader.readStringOrNull(offsets[46]),
+    settings: reader.readStringOrNull(offsets[47]),
+    toAliasPrivkey: reader.readStringOrNull(offsets[48]),
+    toAliasPubkey: reader.readStringOrNull(offsets[49]),
   );
   object.id = id;
   return object;
@@ -829,6 +842,8 @@ P _userDBISARDeserializeProp<P>(
     case 47:
       return (reader.readStringOrNull(offset)) as P;
     case 48:
+      return (reader.readStringOrNull(offset)) as P;
+    case 49:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -8055,6 +8070,160 @@ extension UserDBISARQueryFilter
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      remotePubkeyIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'remotePubkey',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      remotePubkeyIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'remotePubkey',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      remotePubkeyEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'remotePubkey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      remotePubkeyGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'remotePubkey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      remotePubkeyLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'remotePubkey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      remotePubkeyBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'remotePubkey',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      remotePubkeyStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'remotePubkey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      remotePubkeyEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'remotePubkey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      remotePubkeyContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'remotePubkey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      remotePubkeyMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'remotePubkey',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      remotePubkeyIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'remotePubkey',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      remotePubkeyIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'remotePubkey',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
       remoteSignerURIIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -9070,6 +9239,18 @@ extension UserDBISARQuerySortBy
     });
   }
 
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy> sortByRemotePubkey() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remotePubkey', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy> sortByRemotePubkeyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remotePubkey', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy> sortByRemoteSignerURI() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'remoteSignerURI', Sort.asc);
@@ -9529,6 +9710,18 @@ extension UserDBISARQuerySortThenBy
     });
   }
 
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy> thenByRemotePubkey() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remotePubkey', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy> thenByRemotePubkeyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'remotePubkey', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy> thenByRemoteSignerURI() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'remoteSignerURI', Sort.asc);
@@ -9884,6 +10077,13 @@ extension UserDBISARQueryWhereDistinct
     });
   }
 
+  QueryBuilder<UserDBISAR, UserDBISAR, QDistinct> distinctByRemotePubkey(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'remotePubkey', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<UserDBISAR, UserDBISAR, QDistinct> distinctByRemoteSignerURI(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -10217,6 +10417,12 @@ extension UserDBISARQueryProperty
       relayListProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'relayList');
+    });
+  }
+
+  QueryBuilder<UserDBISAR, String?, QQueryOperations> remotePubkeyProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'remotePubkey');
     });
   }
 

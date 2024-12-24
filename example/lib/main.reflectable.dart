@@ -11399,7 +11399,7 @@ final _data = <r.Reflectable, r.ReflectorData>{
         r'getZapRecordSince': (dynamic instance) => instance.getZapRecordSince,
         r'getZapRecordUntil': (dynamic instance) => instance.getZapRecordUntil,
         r'url': (dynamic instance) => instance.url,
-        r'pubkey': (dynamic instance) => instance.pubkey,
+        r'pubkey': (dynamic instance) => instance.remotePubkey,
         r'description': (dynamic instance) => instance.description,
         r'contact': (dynamic instance) => instance.contact,
         r'supportedNips': (dynamic instance) => instance.supportedNips,
@@ -11637,7 +11637,7 @@ final _data = <r.Reflectable, r.ReflectorData>{
         r'nwcURI=': (dynamic instance, value) => instance.nwcURI = value,
         r'settings=': (dynamic instance, value) => instance.settings = value,
         r'url=': (dynamic instance, value) => instance.url = value,
-        r'pubkey=': (dynamic instance, value) => instance.pubkey = value,
+        r'pubkey=': (dynamic instance, value) => instance.remotePubkey = value,
         r'description=': (dynamic instance, value) =>
             instance.description = value,
         r'contact=': (dynamic instance, value) => instance.contact = value,

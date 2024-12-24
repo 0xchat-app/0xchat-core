@@ -99,6 +99,7 @@ class UserDBISAR {
   // nip46
   String? remoteSignerURI;
   String? clientPrivateKey;
+  String? remotePubkey;
 
   String? settings;
 
@@ -151,7 +152,8 @@ class UserDBISAR {
     this.nwcURI,
     this.settings,
     this.clientPrivateKey,
-    this.remoteSignerURI
+    this.remoteSignerURI,
+    this.remotePubkey
   });
 
   static UserDBISAR fromMap(Map<String, Object?> map) {
