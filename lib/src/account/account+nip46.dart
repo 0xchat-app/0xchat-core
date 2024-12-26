@@ -52,7 +52,7 @@ extension AccountNIP46 on Account {
     return me;
   }
 
-  static Future<String> createNostrConnectURI() async {
+  static String createNostrConnectURI() {
     Keychain newKeychain = Keychain.generate();
     String secret = generate64RandomHexChars();
     List<String> relays = ['wss://relay.nsec.app', 'wss://relay.0xchat.com'];
