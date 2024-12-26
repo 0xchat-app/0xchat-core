@@ -76,6 +76,7 @@ extension AccountNIP46 on Account {
   Future<String> getPublicKeyWithNostrConnectURI(String uri) async {
     Connect.sharedInstance
         .connectRelays(currentRemoteConnection!.relays, relayKind: RelayKind.remoteSigner);
+    updateNIP46Subscription();
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 && currentRemoteConnection!.relays.contains(relay)) {
         updateNIP46Subscription(relay: relay);
