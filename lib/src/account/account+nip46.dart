@@ -55,7 +55,7 @@ extension AccountNIP46 on Account {
   static Future<String> createNostrConnectURI() async {
     Keychain newKeychain = Keychain.generate();
     String secret = generate64RandomHexChars();
-    List<String> relays = ['wss://relay.nsec.app'];
+    List<String> relays = ['wss://relay.nsec.app', 'wss://relay.0xchat.com'];
     Account.sharedInstance.currentRemoteConnection = RemoteSignerConnection('', relays, secret);
     Account.sharedInstance.currentRemoteConnection!.clientPrivkey = newKeychain.private;
     Account.sharedInstance.currentRemoteConnection!.clientPubkey = newKeychain.public;
@@ -67,7 +67,7 @@ extension AccountNIP46 on Account {
         clientPubKey: newKeychain.public,
         secret: secret,
         relays: relays,
-        perms: null,
+        perms: perms,
         name: name,
         url: url,
         image: image);
@@ -107,7 +107,7 @@ extension AccountNIP46 on Account {
         (String plainText, String peerPubkey) async {
       return await sendNip44Encrypt(peerPubkey, plainText);
     };
-    SignerHelper.sharedInstance.nip44encryptEventHandle =
+    SignerHelper.sharedInstance.nip44decryptEventHandle =
         (String encryptedText, String peerPubkey) async {
       return await sendNip44Decrypt(peerPubkey, encryptedText);
     };
@@ -251,7 +251,6 @@ extension AccountNIP46 on Account {
     Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
-    print('sendGetRelays result: ${result.toString()}');
     return result.result;
   }
 
@@ -261,7 +260,6 @@ extension AccountNIP46 on Account {
     Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
-    print('sendGetPublicKey result: ${result.toString()}');
     return result.result;
   }
 
@@ -271,7 +269,6 @@ extension AccountNIP46 on Account {
     Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
-    print('sendNip04Encrypt result: ${result.toString()}');
     return result.result;
   }
 
@@ -281,7 +278,6 @@ extension AccountNIP46 on Account {
     Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
-    print('sendNip04Decrypt result: ${result.toString()}');
     return result.result;
   }
 
@@ -291,7 +287,6 @@ extension AccountNIP46 on Account {
     Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
-    print('sendNip044Encrypt result: ${result.toString()}');
     return result.result;
   }
 
@@ -301,7 +296,6 @@ extension AccountNIP46 on Account {
     Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
-    print('sendNip044Decrypt result: ${result.toString()}');
     return result.result;
   }
 }
