@@ -311,7 +311,7 @@ class Account {
       me?.clientPrivateKey = null;
       await saveUserToDB(me!);
     }
-    await NotificationHelper.sharedInstance.logout();
+    NotificationHelper.sharedInstance.logout();
     await Connect.sharedInstance.closeAllConnects();
     Contacts.sharedInstance.allContacts.clear();
     Contacts.sharedInstance.secretSessionMap.clear();
