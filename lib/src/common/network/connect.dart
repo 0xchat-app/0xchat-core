@@ -87,7 +87,7 @@ class Connect {
   static final Connect sharedInstance = Connect._internal();
 
   static final int timeout = 10;
-  static final int MAX_SUBSCRIPTIONS_COUNT = 10;
+  static final int MAX_SUBSCRIPTIONS_COUNT = 15;
 
   NoticeCallBack? noticeCallBack;
   StreamSubscription? _connectivitySubscription;
