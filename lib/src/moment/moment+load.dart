@@ -720,6 +720,15 @@ extension Load on Moment {
   }
 
   Future<List<NoteDBISAR>> searchNotesWithKeyword(String keyword) async {
-    return searchNotesFromDB(keyword: keyword);
+    var notesFromDB = await searchNotesFromDB(keyword: keyword);
+    var notesFromRelay = await _searchNotesFromRelay(keyword);
+    var result = [...notesFromDB, ...notesFromRelay];
+    result.sort((a, b) => a.createAt.compareTo(b.createAt));
+    return result;
+  }
+
+  Future<List<NoteDBISAR>> _searchNotesFromRelay(String keyword) async {
+
+    return [];
   }
 }
