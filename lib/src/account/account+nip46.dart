@@ -54,7 +54,7 @@ extension AccountNIP46 on Account {
   }
 
   static String createNostrConnectURI(
-      {List<String> relays = const ['wss://relay.nsec.app', 'wss://relay.0xchat.com']}) {
+      {List<String> relays = const ['wss://relay.nsec.app']}) {
     Keychain newKeychain = Keychain.generate();
     String secret = generate64RandomHexChars();
     Account.sharedInstance.currentRemoteConnection = RemoteSignerConnection('', relays, secret);
