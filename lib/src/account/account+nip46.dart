@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
@@ -45,22 +46,22 @@ extension AccountNIP46 on Account {
     await loginWithPubKey(currentRemoteConnection!.remotePubkey, SignerApplication.remoteSigner);
     if (me != null) {
       me!.remoteSignerURI = uri;
-      me!.clientPrivateKey ??= currentRemoteConnection!.clientPrivkey;
+      me!.clientPrivateKey = currentRemoteConnection!.clientPrivkey;
       me!.remotePubkey = currentRemoteConnection!.remotePubkey;
       await syncMe();
     }
     return me;
   }
 
-  static String createNostrConnectURI() {
+  static String createNostrConnectURI(
+      {List<String> relays = const ['wss://relay.nsec.app', 'wss://relay.0xchat.com']}) {
     Keychain newKeychain = Keychain.generate();
     String secret = generate64RandomHexChars();
-    List<String> relays = ['wss://relay.nsec.app', 'wss://relay.0xchat.com'];
     Account.sharedInstance.currentRemoteConnection = RemoteSignerConnection('', relays, secret);
     Account.sharedInstance.currentRemoteConnection!.clientPrivkey = newKeychain.private;
     Account.sharedInstance.currentRemoteConnection!.clientPubkey = newKeychain.public;
     String perms = SignerPermissionModel.defaultPermissionsForNIP46();
-    String name = '0xchat';
+    String name = '0xchat-${Platform.operatingSystem}';
     String url = 'www.0xchat.com';
     String image = 'https://www.0xchat.com/favicon1.png';
     return Nip46.createNostrConnectUrl(
