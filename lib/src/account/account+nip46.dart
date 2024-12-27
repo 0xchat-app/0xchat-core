@@ -60,6 +60,7 @@ extension AccountNIP46 on Account {
     Account.sharedInstance.currentRemoteConnection = RemoteSignerConnection('', relays, secret);
     Account.sharedInstance.currentRemoteConnection!.clientPrivkey = newKeychain.private;
     Account.sharedInstance.currentRemoteConnection!.clientPubkey = newKeychain.public;
+    Account.sharedInstance.currentRemoteConnection!.relays = relays;
     String perms = SignerPermissionModel.defaultPermissionsForNIP46();
     String name = '0xchat-${Platform.operatingSystem}';
     String url = 'www.0xchat.com';
@@ -68,7 +69,7 @@ extension AccountNIP46 on Account {
         clientPubKey: newKeychain.public,
         secret: secret,
         relays: relays,
-        perms: perms,
+        perms: null,
         name: name,
         url: url,
         image: image);
