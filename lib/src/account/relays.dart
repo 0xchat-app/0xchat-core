@@ -65,10 +65,10 @@ class Relays {
     if (updatedTime > 0 && generalRelays.isNotEmpty) {
       Connect.sharedInstance.connectRelays(generalRelays, relayKind: RelayKind.general);
     }
-    // else {
-    //   // startup relays
-    //   Connect.sharedInstance.connectRelays(recommendGeneralRelays, relayKind: RelayKind.general);
-    // }
+    else {
+      // startup relays
+      Connect.sharedInstance.connectRelays(recommendGeneralRelays, relayKind: RelayKind.general);
+    }
   }
 
   Future<void> connectDMRelays() async {
