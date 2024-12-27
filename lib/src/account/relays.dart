@@ -67,7 +67,6 @@ class Relays {
     }
     else {
       // startup relays
-      Account.sharedInstance.me?.relayList = recommendGeneralRelays;
       Connect.sharedInstance.connectRelays(recommendGeneralRelays, relayKind: RelayKind.general);
     }
   }
