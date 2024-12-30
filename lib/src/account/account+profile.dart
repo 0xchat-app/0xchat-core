@@ -357,9 +357,7 @@ extension AccountProfile on Account {
     if (result.identifier == Contacts.identifier) {
       // contact list
       db.lastFriendsListUpdatedTime = event.createdAt;
-      Event e = await Nip51.createCategorizedPeople(
-          Contacts.identifier, [], result.people, currentPrivkey, currentPubkey);
-      db.friendsList = e.content;
+      db.friendsList = await Nip51.peoplesToContent(result.people, currentPrivkey, currentPubkey);
       contactListUpdateCallback?.call();
     }
     return db;
