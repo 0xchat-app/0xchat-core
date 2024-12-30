@@ -32,6 +32,7 @@ class Account {
   Map<String, ValueNotifier<UserDBISAR>> userCache = {};
 
   List<String> pQueue = [];
+  List<Event> unsentNIP46EventQueue = [];
 
   AccountUpdateCallback? relayListUpdateCallback;
   AccountUpdateCallback? dmRelayListUpdateCallback;
@@ -43,6 +44,7 @@ class Account {
   void init(){
     startHeartBeat();
     _loadAllUsers();
+    initNIP46Callback();
   }
 
   void startHeartBeat() {

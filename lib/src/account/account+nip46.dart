@@ -53,8 +53,7 @@ extension AccountNIP46 on Account {
     return me;
   }
 
-  static String createNostrConnectURI(
-      {List<String> relays = const ['wss://relay.nsec.app']}) {
+  static String createNostrConnectURI({List<String> relays = const ['wss://relay.nsec.app']}) {
     Keychain newKeychain = Keychain.generate();
     String secret = generate64RandomHexChars();
     Account.sharedInstance.currentRemoteConnection = RemoteSignerConnection('', relays, secret);
@@ -76,25 +75,28 @@ extension AccountNIP46 on Account {
   }
 
   Future<String> getPublicKeyWithNostrConnectURI(String uri) async {
-    Connect.sharedInstance
-        .connectRelays(currentRemoteConnection!.relays, relayKind: RelayKind.remoteSigner);
-    updateNIP46Subscription();
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 && currentRemoteConnection!.relays.contains(relay)) {
         updateNIP46Subscription(relay: relay);
+        for (var event in unsentNIP46EventQueue) {
+          Connect.sharedInstance.sendEvent(event, toRelays: currentRemoteConnection!.relays);
+        }
+        unsentNIP46EventQueue.clear();
       }
     });
+    Connect.sharedInstance
+        .connectRelays(currentRemoteConnection!.relays, relayKind: RelayKind.remoteSigner);
+    updateNIP46Subscription();
     Completer<NIP46CommandResult> completer = Completer<NIP46CommandResult>();
     String secret = currentRemoteConnection!.secret!;
     resultCompleters[secret] = completer;
     await completer.future;
-    _initCallback();
     String? pubkey = await sendGetPubicKey();
     if (pubkey != null) currentRemoteConnection!.remotePubkey = pubkey;
     return pubkey ?? '';
   }
 
-  void _initCallback() {
+  void initNIP46Callback() {
     SignerHelper.sharedInstance.signEventHandle = (String eventString) async {
       return await sendSignEvent(eventString);
     };
@@ -104,6 +106,7 @@ extension AccountNIP46 on Account {
     };
     SignerHelper.sharedInstance.nip04decryptEventHandle =
         (String encryptedText, String peerPubkey) async {
+      print('nip04decryptEventHandle ====');
       return await sendNip04Decrypt(peerPubkey, encryptedText);
     };
     SignerHelper.sharedInstance.nip44encryptEventHandle =
@@ -117,8 +120,6 @@ extension AccountNIP46 on Account {
   }
 
   Future<OKEvent> connectToRemoteSigner(String uri, bool autoLogin, String remotePubkey) async {
-    _initCallback();
-
     Completer<OKEvent> completer = Completer<OKEvent>();
     late RemoteSignerConnection remoteSignerConnection;
     if (uri.startsWith('bunker://')) {
@@ -142,7 +143,14 @@ extension AccountNIP46 on Account {
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 && remoteSignerConnection.relays.contains(relay)) {
         updateNIP46Subscription(relay: relay);
-        if (!autoLogin) await sendConnect();
+        if (!autoLogin) {
+          await sendConnect();
+        } else{
+          for (var event in unsentNIP46EventQueue) {
+            Connect.sharedInstance.sendEvent(event, toRelays: currentRemoteConnection!.relays);
+          }
+          unsentNIP46EventQueue.clear();
+        }
         if (!completer.isCompleted) completer.complete(OKEvent(uri, true, ''));
       }
     });
@@ -216,7 +224,18 @@ extension AccountNIP46 on Account {
   Future<NIP46CommandResult> sendToRemoteSigner(Event event, String id) {
     Completer<NIP46CommandResult> completer = Completer<NIP46CommandResult>();
     resultCompleters[id] = completer;
-    Connect.sharedInstance.sendEvent(event, toRelays: currentRemoteConnection!.relays);
+    bool hasConnected = false;
+    for (var relay in currentRemoteConnection!.relays) {
+      if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
+        hasConnected = true;
+        break;
+      }
+    }
+    if (!hasConnected) {
+      unsentNIP46EventQueue.add(event);
+    } else {
+      Connect.sharedInstance.sendEvent(event, toRelays: currentRemoteConnection!.relays);
+    }
     return completer.future;
   }
 
