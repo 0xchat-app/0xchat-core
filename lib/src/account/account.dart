@@ -25,6 +25,8 @@ class Account {
 
   String NIP46Subscription = '';
   RemoteSignerConnection? currentRemoteConnection;
+  RemoteSignerConnection? tempRemoteConnection;
+
   Map<String, Completer<NIP46CommandResult>> resultCompleters = {};
   NIP46CommandResultCallback? nip46commandResultCallback;
 

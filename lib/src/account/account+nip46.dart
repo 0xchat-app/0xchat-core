@@ -55,10 +55,10 @@ extension AccountNIP46 on Account {
   static String createNostrConnectURI({List<String> relays = const ['wss://relay.nsec.app']}) {
     Keychain newKeychain = Keychain.generate();
     String secret = generate64RandomHexChars();
-    Account.sharedInstance.currentRemoteConnection = RemoteSignerConnection('', relays, secret);
-    Account.sharedInstance.currentRemoteConnection!.clientPrivkey = newKeychain.private;
-    Account.sharedInstance.currentRemoteConnection!.clientPubkey = newKeychain.public;
-    Account.sharedInstance.currentRemoteConnection!.relays = relays;
+    Account.sharedInstance.tempRemoteConnection = RemoteSignerConnection('', relays, secret);
+    Account.sharedInstance.tempRemoteConnection!.clientPrivkey = newKeychain.private;
+    Account.sharedInstance.tempRemoteConnection!.clientPubkey = newKeychain.public;
+    Account.sharedInstance.tempRemoteConnection!.relays = relays;
     String perms = SignerPermissionModel.defaultPermissionsForNIP46();
     String name = '0xchat-${Platform.operatingSystem}';
     String url = 'www.0xchat.com';
@@ -75,23 +75,26 @@ extension AccountNIP46 on Account {
 
   Future<String> getPublicKeyWithNostrConnectURI(String uri) async {
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
-      if (status == 1 && currentRemoteConnection!.relays.contains(relay)) {
+      if (status == 1 && tempRemoteConnection!.relays.contains(relay)) {
         updateNIP46Subscription(relay: relay);
         for (var event in unsentNIP46EventQueue) {
-          Connect.sharedInstance.sendEvent(event, toRelays: currentRemoteConnection!.relays);
+          Connect.sharedInstance.sendEvent(event, toRelays: tempRemoteConnection!.relays);
         }
         unsentNIP46EventQueue.clear();
       }
     });
     Connect.sharedInstance
-        .connectRelays(currentRemoteConnection!.relays, relayKind: RelayKind.remoteSigner);
+        .connectRelays(tempRemoteConnection!.relays, relayKind: RelayKind.remoteSigner);
     updateNIP46Subscription();
     Completer<NIP46CommandResult> completer = Completer<NIP46CommandResult>();
-    String secret = currentRemoteConnection!.secret!;
+    String secret = tempRemoteConnection!.secret!;
     resultCompleters[secret] = completer;
     await completer.future;
     String? pubkey = await sendGetPubicKey();
-    if (pubkey != null) currentRemoteConnection!.remotePubkey = pubkey;
+    if (pubkey != null) {
+      currentRemoteConnection = tempRemoteConnection;
+      currentRemoteConnection!.remotePubkey = pubkey;
+    }
     return pubkey ?? '';
   }
 
@@ -105,7 +108,6 @@ extension AccountNIP46 on Account {
     };
     SignerHelper.sharedInstance.nip04decryptEventHandle =
         (String encryptedText, String peerPubkey) async {
-      print('nip04decryptEventHandle ====');
       return await sendNip04Decrypt(peerPubkey, encryptedText);
     };
     SignerHelper.sharedInstance.nip44encryptEventHandle =
@@ -144,7 +146,7 @@ extension AccountNIP46 on Account {
         updateNIP46Subscription(relay: relay);
         if (!autoLogin) {
           await sendConnect();
-        } else{
+        } else {
           for (var event in unsentNIP46EventQueue) {
             Connect.sharedInstance.sendEvent(event, toRelays: currentRemoteConnection!.relays);
           }
@@ -287,6 +289,8 @@ extension AccountNIP46 on Account {
   Future<String> sendNip04Encrypt(String thirdPartyPubkey, String plaintext) async {
     NIP46Command command = NIP46Command.nip04Encrypt(thirdPartyPubkey, plaintext);
     var id = generate64RandomHexChars();
+    print(
+        'sendNip04Encrypt: ${currentRemoteConnection!.remotePubkey}, ${currentRemoteConnection!.clientPubkey!}, ${currentRemoteConnection!.clientPrivkey!}');
     Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
     NIP46CommandResult result = await sendToRemoteSigner(event, id);
