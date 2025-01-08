@@ -215,9 +215,9 @@ class Messages {
       NoteDBISAR noteDB = NoteDBISAR.noteDBFromReactions(Nip25.decode(event));
       Moment.sharedInstance.saveNoteToDB(noteDB, null);
 
-      // messageDB.reactionEventIds ??= [];
-      // messageDB.reactionEventIds!.add(event.id);
-      // saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
+      messageDB.reactionEventIds ??= [];
+      messageDB.reactionEventIds!.add(event.id);
+      saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
       switch (messageDB.chatType) {
         case 0:
         case 3:
