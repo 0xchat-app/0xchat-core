@@ -159,12 +159,23 @@ class Messages {
   }
 
   Future<MessageDBISAR?> loadMessageDBFromDB(String messageId) async {
-    List<MessageDBISAR> result = loadMessagesFromCache(messageId: messageId);
+    List<MessageDBISAR> result = loadMessagesFromCache(messageIds: [messageId]);
     if (result.isNotEmpty) return result.first.withGrowableLevels();
     final isar = DBISAR.sharedInstance.isar;
     var queryBuilder = isar.messageDBISARs.where().filter().messageIdEqualTo(messageId);
     final message = await queryBuilder.findFirst();
     return message?.withGrowableLevels();
+  }
+
+  Future<List<MessageDBISAR>> loadMessageDBFromDBWithMsgIds(List<String> messageIds) async {
+    List<MessageDBISAR> cacheMsg = loadMessagesFromCache(messageIds: messageIds);
+    List<MessageDBISAR> dbMsg = [];
+    if (cacheMsg.length != messageIds.length) {
+      final isar = DBISAR.sharedInstance.isar;
+      var queryBuilder = isar.messageDBISARs.where().anyOf(messageIds, (q, messageId) => q.messageIdEqualTo(messageId));
+      dbMsg = await queryBuilder.findAll();
+    }
+    return [...cacheMsg, ...dbMsg].map((e) => e.withGrowableLevels()).toList();
   }
 
   Future<void> handleReactionEvent(Event event) async {
@@ -375,14 +386,14 @@ class Messages {
     String? sessionId,
     List<MessageType> messageTypes = const [],
     int? until,
-    String? messageId,
+    List<String>? messageIds,
     bool? hasPreviewData,
   }) {
     final Map<Type, List<dynamic>> buffers = DBISAR.sharedInstance.getBuffers();
     List<MessageDBISAR> result = [];
     for (MessageDBISAR message in buffers[MessageDBISAR]?.toList() ?? []) {
       bool query = true;
-      if (messageId != null && message.messageId != messageId) {
+      if (messageIds != null && messageIds.isNotEmpty && !messageIds.contains(message.messageId)) {
         query = false;
       }
       if (query && receiver != null) {
