@@ -166,7 +166,7 @@ extension Send on Moment {
   }
 
   Future<OKEvent> sendReaction(String reactedNoteId,
-      {bool like = true, String? emojiShotCode, String? emojiURL}) async {
+      {bool like = true, String? content, String? emojiShotCode, String? emojiURL}) async {
     NoteDBISAR? note = await loadNoteWithNoteId(reactedNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
@@ -174,7 +174,7 @@ extension Send on Moment {
         note.pTags!.add(note.author);
       }
       Event event = await Nip25.encode(reactedNoteId, note.pTags ?? [], '1', like, pubkey, privkey,
-          emojiShotCode: emojiShotCode, emojiURL: emojiURL);
+          content: content, emojiShotCode: emojiShotCode, emojiURL: emojiURL);
 
       NoteDBISAR noteDB = NoteDBISAR.noteDBFromReactions(Nip25.decode(event));
       saveNoteToDB(noteDB, null);
