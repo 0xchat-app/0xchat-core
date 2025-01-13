@@ -551,6 +551,7 @@ extension SecretChat on Contacts {
           updateFriendRequestTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
             case 14:
+            case 15:
               _handleSecretMessage(session.sessionId, innerEvent, event.id);
               break;
             default:
