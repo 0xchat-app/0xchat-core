@@ -433,7 +433,6 @@ extension SecretChat on Contacts {
           await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(type, content) ?? content);
       messageDB.decryptContent = map['content'];
       messageDB.type = map['contentType'];
-      messageDB.decryptSecret = map['decryptSecret'];
       if (encryptedFile?.mimeType != null &&
           (messageDB.type == 'image' ||
               messageDB.type == 'video' ||
