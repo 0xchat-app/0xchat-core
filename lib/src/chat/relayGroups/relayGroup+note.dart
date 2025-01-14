@@ -20,8 +20,7 @@ extension ENote on RelayGroup {
     Moment.sharedInstance.handleNewNotes(noteDB);
   }
 
-  Future<OKEvent> sendGroupNotes(
-      String groupId, String content, List<String> previous,
+  Future<OKEvent> sendGroupNotes(String groupId, String content, List<String> previous,
       {String? rootEvent,
       String? replyEvent,
       List<String>? mentions,
@@ -32,15 +31,10 @@ extension ENote on RelayGroup {
     Event event;
     List<String> previous = await getPrevious(groupId);
     if (rootEvent == null) {
-      event = await Nip29.encodeGroupNote(
-          groupId, content, pubkey, privkey, previous);
+      event = await Nip29.encodeGroupNote(groupId, content, pubkey, privkey, previous);
     } else {
-      event = await Nip29.encodeGroupNoteReply(
-          groupId, content, pubkey, privkey, previous,
-          rootEvent: rootEvent,
-          replyEvent: replyEvent,
-          replyUsers: mentions,
-          hashTags: hashTags);
+      event = await Nip29.encodeGroupNoteReply(groupId, content, pubkey, privkey, previous,
+          rootEvent: rootEvent, replyEvent: replyEvent, replyUsers: mentions, hashTags: hashTags);
     }
     handleGroupNotes(event, groupDB.relay);
     Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
@@ -50,11 +44,9 @@ extension ENote on RelayGroup {
     return completer.future;
   }
 
-  Future<OKEvent> sendGroupNoteReply(
-      String replyNoteId, String content, List<String> previous,
+  Future<OKEvent> sendGroupNoteReply(String replyNoteId, String content, List<String> previous,
       {List<String>? hashTags, List<String>? mentions}) async {
-    NoteDBISAR? note =
-        await Moment.sharedInstance.loadNoteWithNoteId(replyNoteId);
+    NoteDBISAR? note = await Moment.sharedInstance.loadNoteWithNoteId(replyNoteId);
     if (note == null) {
       return OKEvent(replyNoteId, false, 'reacted note DB == null');
     }
@@ -82,10 +74,8 @@ extension ENote on RelayGroup {
       okEvent = await sendGroupNotes(note.groupId, content, previous,
           rootEvent: replyNoteId, mentions: note.pTags, hashTags: hashTags);
     } else {
-      NoteDBISAR? rootNote =
-          await Moment.sharedInstance.loadNoteWithNoteId(rootEventId);
-      if (rootNote?.author.isNotEmpty == true &&
-          !note.pTags!.contains(rootNote?.author)) {
+      NoteDBISAR? rootNote = await Moment.sharedInstance.loadNoteWithNoteId(rootEventId);
+      if (rootNote?.author.isNotEmpty == true && !note.pTags!.contains(rootNote?.author)) {
         note.pTags!.add(rootNote!.author);
       }
       if (!note.pTags!.contains(note.author)) {
@@ -101,9 +91,8 @@ extension ENote on RelayGroup {
   }
 
   Future<OKEvent> sendGroupNoteReaction(String reactedNoteId,
-      {bool like = true, String? emojiShotCode, String? emojiURL}) async {
-    NoteDBISAR? note =
-        await Moment.sharedInstance.loadNoteWithNoteId(reactedNoteId);
+      {bool like = true, String? content, String? emojiShotCode, String? emojiURL}) async {
+    NoteDBISAR? note = await Moment.sharedInstance.loadNoteWithNoteId(reactedNoteId);
     if (note == null) {
       return OKEvent(reactedNoteId, false, 'reacted note DB == null');
     }
@@ -120,11 +109,8 @@ extension ENote on RelayGroup {
     if (!note.pTags!.contains(note.author)) {
       note.pTags!.add(note.author);
     }
-    Event event = await Nip25.encode(
-        reactedNoteId, note.pTags ?? [], '1', like, pubkey, privkey,
-        emojiShotCode: emojiShotCode,
-        emojiURL: emojiURL,
-        relayGroupId: groupId);
+    Event event = await Nip25.encode(reactedNoteId, note.pTags ?? [], '1', like, pubkey, privkey,
+        content: content, emojiShotCode: emojiShotCode, emojiURL: emojiURL, relayGroupId: groupId);
 
     Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
         sendCallBack: (ok, relay) async {
@@ -146,10 +132,8 @@ extension ENote on RelayGroup {
     return completer.future;
   }
 
-  Future<OKEvent> sendRepost(
-      String repostNoteId, String? repostNoteRelay) async {
-    NoteDBISAR? note =
-        await Moment.sharedInstance.loadNoteWithNoteId(repostNoteId);
+  Future<OKEvent> sendRepost(String repostNoteId, String? repostNoteRelay) async {
+    NoteDBISAR? note = await Moment.sharedInstance.loadNoteWithNoteId(repostNoteId);
     if (note == null) {
       return OKEvent(repostNoteId, false, 'reacted note DB == null');
     }
@@ -166,8 +150,8 @@ extension ENote on RelayGroup {
     if (!note.pTags!.contains(note.author)) {
       note.pTags!.add(note.author);
     }
-    Event event = await Nip18.encodeReposts(repostNoteId, repostNoteRelay,
-        note.pTags ?? [], note.rawEvent, pubkey, privkey,
+    Event event = await Nip18.encodeReposts(
+        repostNoteId, repostNoteRelay, note.pTags ?? [], note.rawEvent, pubkey, privkey,
         relayGroupId: groupId);
 
     Reposts r = await Nip18.decodeReposts(event);
@@ -191,8 +175,7 @@ extension ENote on RelayGroup {
 
   Future<OKEvent> sendQuoteRepost(String quoteRepostNoteId, String content,
       {List<String>? hashTags, List<String>? mentions}) async {
-    NoteDBISAR? note =
-        await Moment.sharedInstance.loadNoteWithNoteId(quoteRepostNoteId);
+    NoteDBISAR? note = await Moment.sharedInstance.loadNoteWithNoteId(quoteRepostNoteId);
     if (note == null) {
       return OKEvent(quoteRepostNoteId, false, 'reacted note DB == null');
     }
@@ -219,8 +202,7 @@ extension ENote on RelayGroup {
         note.pTags!.add(mention);
       }
     }
-    NoteDBISAR noteDB =
-        NoteDBISAR.noteDBFromQuoteReposts(Nip18.decodeQuoteReposts(event));
+    NoteDBISAR noteDB = NoteDBISAR.noteDBFromQuoteReposts(Nip18.decodeQuoteReposts(event));
     noteDB.groupId = groupId;
     await Moment.sharedInstance.saveNoteToDB(noteDB, null);
 
@@ -238,11 +220,10 @@ extension ENote on RelayGroup {
     return completer.future;
   }
 
-  Future<List<NoteDBISAR>?> loadGroupNotesFromDB(String id,
-      {int limit = 50, int? until}) async {
+  Future<List<NoteDBISAR>?> loadGroupNotesFromDB(String id, {int limit = 50, int? until}) async {
     until ??= currentUnixTimestampSeconds() + 1;
-    List<NoteDBISAR>? notes = await Moment.sharedInstance
-        .searchNotesFromDB(groupId: id, until: until, limit: limit);
+    List<NoteDBISAR>? notes =
+        await Moment.sharedInstance.searchNotesFromDB(groupId: id, until: until, limit: limit);
     for (var note in notes) {
       Moment.sharedInstance.notesCache[note.noteId] = note;
     }
