@@ -40,6 +40,7 @@ export 'src/chat/privateGroups/groups.dart';
 export 'src/chat/privateGroups/groups+admin.dart';
 export 'src/chat/privateGroups/groups+member.dart';
 export 'src/chat/privateGroups/groups+private.dart';
+export 'src/chat/privateGroups/groups+private+mls.dart';
 export 'src/chat/relayGroups/relayGroup.dart';
 export 'src/chat/relayGroups/relayGroup+admin.dart';
 export 'src/chat/relayGroups/relayGroup+info.dart';

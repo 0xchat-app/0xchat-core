@@ -43,6 +43,8 @@ class Groups {
       myGroups = _myGroups();
       myGroupsUpdatedCallBack?.call();
     };
+
+    await initMLS();
     await _loadAllGroupsFromDB();
   }
 
