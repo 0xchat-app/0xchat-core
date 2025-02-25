@@ -26,17 +26,25 @@ class GroupDBISAR {
   String? picture;
   String? relay;
 
+  /// MLS GROUP
+  List<int>? mlsGroupId;
+  int epoch;
+  List<String>? adminPubkeys;
+
   GroupDBISAR(
       {this.groupId = '',
-        this.owner = '',
-        this.updateTime = 0,
-        this.mute = false,
-        this.name = '',
-        this.members,
-        this.pinned,
-        this.about,
-        this.picture,
-        this.relay});
+      this.owner = '',
+      this.updateTime = 0,
+      this.mute = false,
+      this.name = '',
+      this.members,
+      this.pinned,
+      this.about,
+      this.picture,
+      this.relay,
+      this.mlsGroupId,
+      this.epoch = 0,
+      this.adminPubkeys});
 
   static GroupDBISAR fromMap(Map<String, Object?> map) {
     return _groupInfoFromMap(map);
@@ -45,7 +53,7 @@ class GroupDBISAR {
   @ignore
   String get shortGroupId {
     String k = groupId;
-    if(k.length < 12) return k;
+    if (k.length < 12) return k;
     final String start = k.substring(0, 6);
     final String end = k.substring(k.length - 6);
 

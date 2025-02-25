@@ -27,8 +27,13 @@ const GroupKeysDBISARSchema = CollectionSchema(
       name: r'groupId',
       type: IsarType.string,
     ),
-    r'secretKey': PropertySchema(
+    r'mlsGroupId': PropertySchema(
       id: 2,
+      name: r'mlsGroupId',
+      type: IsarType.longList,
+    ),
+    r'secretKey': PropertySchema(
+      id: 3,
       name: r'secretKey',
       type: IsarType.string,
     )
@@ -68,6 +73,12 @@ int _groupKeysDBISAREstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.groupId.length * 3;
+  {
+    final value = object.mlsGroupId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 8;
+    }
+  }
   bytesCount += 3 + object.secretKey.length * 3;
   return bytesCount;
 }
@@ -80,7 +91,8 @@ void _groupKeysDBISARSerialize(
 ) {
   writer.writeLong(offsets[0], object.epoch);
   writer.writeString(offsets[1], object.groupId);
-  writer.writeString(offsets[2], object.secretKey);
+  writer.writeLongList(offsets[2], object.mlsGroupId);
+  writer.writeString(offsets[3], object.secretKey);
 }
 
 GroupKeysDBISAR _groupKeysDBISARDeserialize(
@@ -92,7 +104,8 @@ GroupKeysDBISAR _groupKeysDBISARDeserialize(
   final object = GroupKeysDBISAR(
     epoch: reader.readLongOrNull(offsets[0]) ?? 0,
     groupId: reader.readStringOrNull(offsets[1]) ?? '',
-    secretKey: reader.readStringOrNull(offsets[2]) ?? '',
+    mlsGroupId: reader.readLongList(offsets[2]),
+    secretKey: reader.readStringOrNull(offsets[3]) ?? '',
   );
   object.id = id;
   return object;
@@ -110,6 +123,8 @@ P _groupKeysDBISARDeserializeProp<P>(
     case 1:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 2:
+      return (reader.readLongList(offset)) as P;
+    case 3:
       return (reader.readStringOrNull(offset) ?? '') as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -560,6 +575,169 @@ extension GroupKeysDBISARQueryFilter
   }
 
   QueryBuilder<GroupKeysDBISAR, GroupKeysDBISAR, QAfterFilterCondition>
+      mlsGroupIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'mlsGroupId',
+      ));
+    });
+  }
+
+  QueryBuilder<GroupKeysDBISAR, GroupKeysDBISAR, QAfterFilterCondition>
+      mlsGroupIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'mlsGroupId',
+      ));
+    });
+  }
+
+  QueryBuilder<GroupKeysDBISAR, GroupKeysDBISAR, QAfterFilterCondition>
+      mlsGroupIdElementEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'mlsGroupId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupKeysDBISAR, GroupKeysDBISAR, QAfterFilterCondition>
+      mlsGroupIdElementGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'mlsGroupId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupKeysDBISAR, GroupKeysDBISAR, QAfterFilterCondition>
+      mlsGroupIdElementLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'mlsGroupId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupKeysDBISAR, GroupKeysDBISAR, QAfterFilterCondition>
+      mlsGroupIdElementBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'mlsGroupId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupKeysDBISAR, GroupKeysDBISAR, QAfterFilterCondition>
+      mlsGroupIdLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'mlsGroupId',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<GroupKeysDBISAR, GroupKeysDBISAR, QAfterFilterCondition>
+      mlsGroupIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'mlsGroupId',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<GroupKeysDBISAR, GroupKeysDBISAR, QAfterFilterCondition>
+      mlsGroupIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'mlsGroupId',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<GroupKeysDBISAR, GroupKeysDBISAR, QAfterFilterCondition>
+      mlsGroupIdLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'mlsGroupId',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<GroupKeysDBISAR, GroupKeysDBISAR, QAfterFilterCondition>
+      mlsGroupIdLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'mlsGroupId',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<GroupKeysDBISAR, GroupKeysDBISAR, QAfterFilterCondition>
+      mlsGroupIdLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'mlsGroupId',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
+  QueryBuilder<GroupKeysDBISAR, GroupKeysDBISAR, QAfterFilterCondition>
       secretKeyEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -815,6 +993,13 @@ extension GroupKeysDBISARQueryWhereDistinct
     });
   }
 
+  QueryBuilder<GroupKeysDBISAR, GroupKeysDBISAR, QDistinct>
+      distinctByMlsGroupId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'mlsGroupId');
+    });
+  }
+
   QueryBuilder<GroupKeysDBISAR, GroupKeysDBISAR, QDistinct> distinctBySecretKey(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -840,6 +1025,13 @@ extension GroupKeysDBISARQueryProperty
   QueryBuilder<GroupKeysDBISAR, String, QQueryOperations> groupIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'groupId');
+    });
+  }
+
+  QueryBuilder<GroupKeysDBISAR, List<int>?, QQueryOperations>
+      mlsGroupIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'mlsGroupId');
     });
   }
 

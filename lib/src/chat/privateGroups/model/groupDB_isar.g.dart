@@ -22,48 +22,63 @@ const GroupDBISARSchema = CollectionSchema(
       name: r'about',
       type: IsarType.string,
     ),
-    r'groupId': PropertySchema(
+    r'adminPubkeys': PropertySchema(
       id: 1,
+      name: r'adminPubkeys',
+      type: IsarType.stringList,
+    ),
+    r'epoch': PropertySchema(
+      id: 2,
+      name: r'epoch',
+      type: IsarType.long,
+    ),
+    r'groupId': PropertySchema(
+      id: 3,
       name: r'groupId',
       type: IsarType.string,
     ),
     r'members': PropertySchema(
-      id: 2,
+      id: 4,
       name: r'members',
       type: IsarType.stringList,
     ),
+    r'mlsGroupId': PropertySchema(
+      id: 5,
+      name: r'mlsGroupId',
+      type: IsarType.longList,
+    ),
     r'mute': PropertySchema(
-      id: 3,
+      id: 6,
       name: r'mute',
       type: IsarType.bool,
     ),
     r'name': PropertySchema(
-      id: 4,
+      id: 7,
       name: r'name',
       type: IsarType.string,
     ),
     r'owner': PropertySchema(
-      id: 5,
+      id: 8,
       name: r'owner',
       type: IsarType.string,
     ),
     r'picture': PropertySchema(
-      id: 6,
+      id: 9,
       name: r'picture',
       type: IsarType.string,
     ),
     r'pinned': PropertySchema(
-      id: 7,
+      id: 10,
       name: r'pinned',
       type: IsarType.stringList,
     ),
     r'relay': PropertySchema(
-      id: 8,
+      id: 11,
       name: r'relay',
       type: IsarType.string,
     ),
     r'updateTime': PropertySchema(
-      id: 9,
+      id: 12,
       name: r'updateTime',
       type: IsarType.long,
     )
@@ -108,6 +123,18 @@ int _groupDBISAREstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  {
+    final list = object.adminPubkeys;
+    if (list != null) {
+      bytesCount += 3 + list.length * 3;
+      {
+        for (var i = 0; i < list.length; i++) {
+          final value = list[i];
+          bytesCount += value.length * 3;
+        }
+      }
+    }
+  }
   bytesCount += 3 + object.groupId.length * 3;
   {
     final list = object.members;
@@ -119,6 +146,12 @@ int _groupDBISAREstimateSize(
           bytesCount += value.length * 3;
         }
       }
+    }
+  }
+  {
+    final value = object.mlsGroupId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 8;
     }
   }
   bytesCount += 3 + object.name.length * 3;
@@ -157,15 +190,18 @@ void _groupDBISARSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeString(offsets[0], object.about);
-  writer.writeString(offsets[1], object.groupId);
-  writer.writeStringList(offsets[2], object.members);
-  writer.writeBool(offsets[3], object.mute);
-  writer.writeString(offsets[4], object.name);
-  writer.writeString(offsets[5], object.owner);
-  writer.writeString(offsets[6], object.picture);
-  writer.writeStringList(offsets[7], object.pinned);
-  writer.writeString(offsets[8], object.relay);
-  writer.writeLong(offsets[9], object.updateTime);
+  writer.writeStringList(offsets[1], object.adminPubkeys);
+  writer.writeLong(offsets[2], object.epoch);
+  writer.writeString(offsets[3], object.groupId);
+  writer.writeStringList(offsets[4], object.members);
+  writer.writeLongList(offsets[5], object.mlsGroupId);
+  writer.writeBool(offsets[6], object.mute);
+  writer.writeString(offsets[7], object.name);
+  writer.writeString(offsets[8], object.owner);
+  writer.writeString(offsets[9], object.picture);
+  writer.writeStringList(offsets[10], object.pinned);
+  writer.writeString(offsets[11], object.relay);
+  writer.writeLong(offsets[12], object.updateTime);
 }
 
 GroupDBISAR _groupDBISARDeserialize(
@@ -176,15 +212,18 @@ GroupDBISAR _groupDBISARDeserialize(
 ) {
   final object = GroupDBISAR(
     about: reader.readStringOrNull(offsets[0]),
-    groupId: reader.readStringOrNull(offsets[1]) ?? '',
-    members: reader.readStringList(offsets[2]),
-    mute: reader.readBoolOrNull(offsets[3]) ?? false,
-    name: reader.readStringOrNull(offsets[4]) ?? '',
-    owner: reader.readStringOrNull(offsets[5]) ?? '',
-    picture: reader.readStringOrNull(offsets[6]),
-    pinned: reader.readStringList(offsets[7]),
-    relay: reader.readStringOrNull(offsets[8]),
-    updateTime: reader.readLongOrNull(offsets[9]) ?? 0,
+    adminPubkeys: reader.readStringList(offsets[1]),
+    epoch: reader.readLongOrNull(offsets[2]) ?? 0,
+    groupId: reader.readStringOrNull(offsets[3]) ?? '',
+    members: reader.readStringList(offsets[4]),
+    mlsGroupId: reader.readLongList(offsets[5]),
+    mute: reader.readBoolOrNull(offsets[6]) ?? false,
+    name: reader.readStringOrNull(offsets[7]) ?? '',
+    owner: reader.readStringOrNull(offsets[8]) ?? '',
+    picture: reader.readStringOrNull(offsets[9]),
+    pinned: reader.readStringList(offsets[10]),
+    relay: reader.readStringOrNull(offsets[11]),
+    updateTime: reader.readLongOrNull(offsets[12]) ?? 0,
   );
   object.id = id;
   return object;
@@ -200,22 +239,28 @@ P _groupDBISARDeserializeProp<P>(
     case 0:
       return (reader.readStringOrNull(offset)) as P;
     case 1:
-      return (reader.readStringOrNull(offset) ?? '') as P;
+      return (reader.readStringList(offset)) as P;
     case 2:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 3:
-      return (reader.readBoolOrNull(offset) ?? false) as P;
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 4:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    case 5:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    case 6:
-      return (reader.readStringOrNull(offset)) as P;
-    case 7:
       return (reader.readStringList(offset)) as P;
+    case 5:
+      return (reader.readLongList(offset)) as P;
+    case 6:
+      return (reader.readBoolOrNull(offset) ?? false) as P;
+    case 7:
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 8:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 9:
+      return (reader.readStringOrNull(offset)) as P;
+    case 10:
+      return (reader.readStringList(offset)) as P;
+    case 11:
+      return (reader.readStringOrNull(offset)) as P;
+    case 12:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -560,6 +605,303 @@ extension GroupDBISARQueryFilter
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'about',
         value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'adminPubkeys',
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'adminPubkeys',
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'adminPubkeys',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'adminPubkeys',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'adminPubkeys',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'adminPubkeys',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'adminPubkeys',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'adminPubkeys',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'adminPubkeys',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysElementMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'adminPubkeys',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'adminPubkeys',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'adminPubkeys',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'adminPubkeys',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'adminPubkeys',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'adminPubkeys',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'adminPubkeys',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'adminPubkeys',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      adminPubkeysLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'adminPubkeys',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition> epochEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'epoch',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      epochGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'epoch',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition> epochLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'epoch',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition> epochBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'epoch',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -986,6 +1328,169 @@ extension GroupDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.listLength(
         r'members',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      mlsGroupIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'mlsGroupId',
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      mlsGroupIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'mlsGroupId',
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      mlsGroupIdElementEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'mlsGroupId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      mlsGroupIdElementGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'mlsGroupId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      mlsGroupIdElementLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'mlsGroupId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      mlsGroupIdElementBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'mlsGroupId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      mlsGroupIdLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'mlsGroupId',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      mlsGroupIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'mlsGroupId',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      mlsGroupIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'mlsGroupId',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      mlsGroupIdLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'mlsGroupId',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      mlsGroupIdLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'mlsGroupId',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      mlsGroupIdLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'mlsGroupId',
         lower,
         includeLower,
         upper,
@@ -1887,6 +2392,18 @@ extension GroupDBISARQuerySortBy
     });
   }
 
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterSortBy> sortByEpoch() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'epoch', Sort.asc);
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterSortBy> sortByEpochDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'epoch', Sort.desc);
+    });
+  }
+
   QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterSortBy> sortByGroupId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'groupId', Sort.asc);
@@ -1983,6 +2500,18 @@ extension GroupDBISARQuerySortThenBy
   QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterSortBy> thenByAboutDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'about', Sort.desc);
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterSortBy> thenByEpoch() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'epoch', Sort.asc);
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterSortBy> thenByEpochDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'epoch', Sort.desc);
     });
   }
 
@@ -2092,6 +2621,18 @@ extension GroupDBISARQueryWhereDistinct
     });
   }
 
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QDistinct> distinctByAdminPubkeys() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'adminPubkeys');
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QDistinct> distinctByEpoch() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'epoch');
+    });
+  }
+
   QueryBuilder<GroupDBISAR, GroupDBISAR, QDistinct> distinctByGroupId(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -2102,6 +2643,12 @@ extension GroupDBISARQueryWhereDistinct
   QueryBuilder<GroupDBISAR, GroupDBISAR, QDistinct> distinctByMembers() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'members');
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QDistinct> distinctByMlsGroupId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'mlsGroupId');
     });
   }
 
@@ -2166,6 +2713,19 @@ extension GroupDBISARQueryProperty
     });
   }
 
+  QueryBuilder<GroupDBISAR, List<String>?, QQueryOperations>
+      adminPubkeysProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'adminPubkeys');
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, int, QQueryOperations> epochProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'epoch');
+    });
+  }
+
   QueryBuilder<GroupDBISAR, String, QQueryOperations> groupIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'groupId');
@@ -2175,6 +2735,12 @@ extension GroupDBISARQueryProperty
   QueryBuilder<GroupDBISAR, List<String>?, QQueryOperations> membersProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'members');
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, List<int>?, QQueryOperations> mlsGroupIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'mlsGroupId');
     });
   }
 

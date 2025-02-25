@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:nostr_mls_package/nostr_mls_package.dart';
@@ -98,17 +99,47 @@ extension MLSPrivateGroups on Groups {
     Directory directory =
         isIOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
     await initNostrMls(path: directory.path, identity: pubkey);
+    _initKeypackages();
   }
 
-  Future<Map<String, List<KeyPackageEvent>>> getKeyPackageFromRelay(List<String> pubkeys) async {
-    Completer<Map<String, List<KeyPackageEvent>>> completer =
-        Completer<Map<String, List<KeyPackageEvent>>>();
-    Map<String, List<KeyPackageEvent>> result = {};
+  void _initKeypackages() {
+    // TODO: use keypackage relays
+    List<String> keypackageRelays =
+        Account.sharedInstance.me!.outboxRelayList ?? Relays.sharedInstance.recommendDMRelays;
+    Map<String, bool> keypackageUpdated = {};
+    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
+      if (status == 1 && Account.sharedInstance.me != null) {
+        if (keypackageRelays.contains(relay) && !keypackageUpdated[relay]!) {
+          keypackageUpdated[relay] = true;
+          // create different key packages for different relays
+          await _createNewKeyPackage([relay]);
+        }
+      }
+    });
+  }
+
+  Future<Future<OKEvent>> _createNewKeyPackage(List<String> relays) async {
+    String encodedKeyPackage = await createKeyPackageForEvent(publicKey: pubkey);
+    Event event = await Nip104.encodeKeyPackageEvent(
+        encodedKeyPackage, getCiphersuite(), getExtensions(), relays, pubkey, privkey);
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    Connect.sharedInstance.sendEvent(event, toRelays: relays, sendCallBack: (ok, relay) {
+      if (!completer.isCompleted) {
+        completer.complete(ok);
+      }
+    });
+    return completer.future;
+  }
+
+  Future<Map<String, String>> _getKeyPackageFromRelay(List<String> pubkeys) async {
+    Completer<Map<String, String>> completer = Completer<Map<String, String>>();
+    Map<String, String> result = {};
     Filter f = Filter(kinds: [443], authors: pubkeys);
     Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
       KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
-      result[keyPackageEvent.pubkey] ??= [];
-      result[keyPackageEvent.pubkey]!.add(keyPackageEvent);
+      if (result[keyPackageEvent.pubkey] == null && _checkValidKeypackage(keyPackageEvent)) {
+        result[keyPackageEvent.pubkey] = keyPackageEvent.encoded_key_package;
+      }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       if (unRelays.isEmpty) {
         if (!completer.isCompleted) completer.complete(result);
@@ -117,25 +148,18 @@ extension MLSPrivateGroups on Groups {
     return completer.future;
   }
 
-  Future<Future<OKEvent>> createNewKeyPackage(List<String> relays) async {
-    String encodedKeyPackage = await createKeyPackageForEvent(publicKey: pubkey);
-    Event event = await Nip104.encodeKeyPackageEvent(
-        encodedKeyPackage, getCiphersuite(), getExtensions(), relays, pubkey, privkey);
-    Completer<OKEvent> completer = Completer<OKEvent>();
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
-      if (!completer.isCompleted) {
-        completer.complete(ok);
-      }
-    });
-    return completer.future;
+  bool _checkValidKeypackage(KeyPackageEvent keyPackageEvent) {
+    /// TODO: check valid key package
+    return true;
   }
 
-  Future<MlsGroup> createMLSGroup(String groupName, String groupDescription,
-      List<String> membersKeyPackages, List<String> admins, List<String> relays) async {
+  Future<MlsGroup> createMLSGroup(String groupName, String groupDescription, List<String> members,
+      List<String> admins, List<String> relays) async {
+    Map<String, String> membersKeyPackages = await _getKeyPackageFromRelay(members);
     String createGroupResult = await createGroup(
         groupName: groupName,
         groupDescription: groupDescription,
-        groupMembersKeyPackages: membersKeyPackages,
+        groupMembersKeyPackages: membersKeyPackages.values.toList(),
         groupCreatorPublicKey: pubkey,
         groupAdminPublicKeys: admins,
         relays: relays);
@@ -149,16 +173,23 @@ extension MLSPrivateGroups on Groups {
       List<int> serializedWelcomeMessage, List<String> members, List<String> relays) async {
     Event welcomeEvent = await Nip104.encodeWelcomeEvent(
         serializedWelcomeMessage.toString(), relays, pubkey, privkey);
+    // gift-wrapped welcome message and send to each members.
     for (var member in members) {
       Event giftWrappedEvent = await Nip59.encode(welcomeEvent, member);
+      UserDBISAR? memberDB = await Account.sharedInstance.getUserInfo(member);
+      List<String>? dmRelays = memberDB?.dmRelayList;
+      List<String>? inboxRelays = memberDB?.inboxRelayList;
+      List<String> userRelays = [...(dmRelays ?? []), ...(inboxRelays ?? []), ...relays];
       Connect.sharedInstance
-          .sendEvent(giftWrappedEvent, toRelays: relays, sendCallBack: (ok, relay) {});
+          .sendEvent(giftWrappedEvent, toRelays: userRelays, sendCallBack: (ok, relay) {});
     }
   }
 
   Future<MlsGroup> joinMLSGroup(WelcomeEvent welcomeEvent) async {
     String joinGroupResult =
-        await joinGroupFromWelcome(serializedWelcomeMessage: welcomeEvent.welcome);
+        await joinGroupFromWelcome(serializedWelcomeMessage: welcomeEvent.serializedWelcomeMessage);
+
+    /// TODO: handle exception
     MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(joinGroupResult));
     return mlsGroup;
   }
@@ -178,14 +209,38 @@ extension MLSPrivateGroups on Groups {
     return completer.future;
   }
 
-  Future<void> receiveMLSGroupEvent(Event event, String groupPubkey, String groupPrivkey) async {
+  Future<void> receiveMLSGroupMessage(Event event) async {
     GroupEvent groupEvent = Nip104.decodeGroupEvent(event);
-    String messageString =
-        await Nip44.decryptContent(groupEvent.message, groupEvent.pubkey, groupPubkey, groupPrivkey);
-    List<int> messageJsonString =
-        await processMessageForGroup(groupId: hexToBytes(groupEvent.groupId), serializedMessage: hexToBytes(messageString));
+    ValueNotifier<GroupDBISAR>? groupValueNotifier = groups[groupEvent.groupId];
+    if (groupValueNotifier == null) return;
+    late Keychain secretKey;
+    GroupKeysDBISAR? groupKeysDBISAR = await GroupKeysDBISAR.getGroupKeysFromDB(
+        groupValueNotifier.value.groupId, groupValueNotifier.value.epoch);
+    if (groupKeysDBISAR == null && groupValueNotifier.value.mlsGroupId != null) {
+      //try get epoch from open_nostrmls
+      var (key, epoch) =
+          await exportSecretAsHexSecretKeyAndEpoch(groupId: groupValueNotifier.value.mlsGroupId!);
+      groupKeysDBISAR = GroupKeysDBISAR(
+          groupId: groupEvent.groupId,
+          epoch: epoch.toInt(),
+          secretKey: key,
+          mlsGroupId: groupValueNotifier.value.mlsGroupId);
+      GroupKeysDBISAR.saveGroupKeysToDB(groupKeysDBISAR);
+      // TODO: delete outdated group keys
+      // GroupKeysDBISAR.deleteGroupKeysBeforeEpoch(groupEvent.groupId, epoch.toInt() - 3);
+      secretKey = Keychain(key);
+    } else {
+      secretKey = Keychain(groupKeysDBISAR!.secretKey);
+    }
+    String messageString = await Nip44.decryptContent(
+        groupEvent.message, groupEvent.pubkey, secretKey.public, secretKey.private);
+    List<int> messageJsonString = await processMessageForGroup(
+        groupId: groupValueNotifier.value.mlsGroupId!,
+        serializedMessage: hexToBytes(messageString));
     Event innerEvent = await Event.fromJson(jsonDecode(utf8.decode(messageJsonString)));
     GroupMessage groupMessage = Nip29.decodeGroupMessage(innerEvent);
     // TODO: handle group message
   }
+
+  /// TODO: proposal & commit
 }
