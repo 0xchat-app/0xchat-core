@@ -30,6 +30,7 @@ class GroupDBISAR {
   List<int>? mlsGroupId;
   int epoch;
   List<String>? adminPubkeys;
+  List<int>? serializedWelcomeMessage;
 
   GroupDBISAR(
       {this.groupId = '',
@@ -44,7 +45,8 @@ class GroupDBISAR {
       this.relay,
       this.mlsGroupId,
       this.epoch = 0,
-      this.adminPubkeys});
+      this.adminPubkeys,
+      this.serializedWelcomeMessage});
 
   static GroupDBISAR fromMap(Map<String, Object?> map) {
     return _groupInfoFromMap(map);

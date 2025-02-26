@@ -1,5 +1,6 @@
 import 'package:isar/isar.dart';
 import 'package:chatcore/chat-core.dart';
+import 'package:nostr_core_dart/nostr.dart';
 
 part 'groupKeysDB_isar.g.dart';
 

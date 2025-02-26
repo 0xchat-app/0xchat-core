@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:chatcore/chat-core.dart';
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
-import 'package:flutter/foundation.dart';
 
 extension EAdmin on RelayGroup {
   bool hasPermissions(
