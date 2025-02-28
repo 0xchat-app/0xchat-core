@@ -92,178 +92,183 @@ const UserDBISARSchema = CollectionSchema(
       name: r'dns',
       type: IsarType.string,
     ),
-    r'encryptedPrivKey': PropertySchema(
+    r'encodedKeyPackage': PropertySchema(
       id: 15,
+      name: r'encodedKeyPackage',
+      type: IsarType.string,
+    ),
+    r'encryptedPrivKey': PropertySchema(
+      id: 16,
       name: r'encryptedPrivKey',
       type: IsarType.string,
     ),
     r'followersList': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'followersList',
       type: IsarType.stringList,
     ),
     r'followingList': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'followingList',
       type: IsarType.stringList,
     ),
     r'friendsList': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'friendsList',
       type: IsarType.string,
     ),
     r'gender': PropertySchema(
-      id: 19,
+      id: 20,
       name: r'gender',
       type: IsarType.string,
     ),
     r'groupsList': PropertySchema(
-      id: 20,
+      id: 21,
       name: r'groupsList',
       type: IsarType.stringList,
     ),
     r'inboxRelayList': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'inboxRelayList',
       type: IsarType.stringList,
     ),
     r'lastBadgesListUpdatedTime': PropertySchema(
-      id: 22,
+      id: 23,
       name: r'lastBadgesListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastBlockListUpdatedTime': PropertySchema(
-      id: 23,
+      id: 24,
       name: r'lastBlockListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastChannelsListUpdatedTime': PropertySchema(
-      id: 24,
+      id: 25,
       name: r'lastChannelsListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastDMRelayListUpdatedTime': PropertySchema(
-      id: 25,
+      id: 26,
       name: r'lastDMRelayListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastFollowingListUpdatedTime': PropertySchema(
-      id: 26,
+      id: 27,
       name: r'lastFollowingListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastFriendsListUpdatedTime': PropertySchema(
-      id: 27,
+      id: 28,
       name: r'lastFriendsListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastGroupsListUpdatedTime': PropertySchema(
-      id: 28,
+      id: 29,
       name: r'lastGroupsListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastRelayGroupsListUpdatedTime': PropertySchema(
-      id: 29,
+      id: 30,
       name: r'lastRelayGroupsListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastRelayListUpdatedTime': PropertySchema(
-      id: 30,
+      id: 31,
       name: r'lastRelayListUpdatedTime',
       type: IsarType.long,
     ),
     r'lastUpdatedTime': PropertySchema(
-      id: 31,
+      id: 32,
       name: r'lastUpdatedTime',
       type: IsarType.long,
     ),
     r'lnurl': PropertySchema(
-      id: 32,
+      id: 33,
       name: r'lnurl',
       type: IsarType.string,
     ),
     r'mainRelay': PropertySchema(
-      id: 33,
+      id: 34,
       name: r'mainRelay',
       type: IsarType.string,
     ),
     r'mute': PropertySchema(
-      id: 34,
+      id: 35,
       name: r'mute',
       type: IsarType.bool,
     ),
     r'name': PropertySchema(
-      id: 35,
+      id: 36,
       name: r'name',
       type: IsarType.string,
     ),
     r'nickName': PropertySchema(
-      id: 36,
+      id: 37,
       name: r'nickName',
       type: IsarType.string,
     ),
     r'nwcURI': PropertySchema(
-      id: 37,
+      id: 38,
       name: r'nwcURI',
       type: IsarType.string,
     ),
     r'otherField': PropertySchema(
-      id: 38,
+      id: 39,
       name: r'otherField',
       type: IsarType.string,
     ),
     r'outboxRelayList': PropertySchema(
-      id: 39,
+      id: 40,
       name: r'outboxRelayList',
       type: IsarType.stringList,
     ),
     r'picture': PropertySchema(
-      id: 40,
+      id: 41,
       name: r'picture',
       type: IsarType.string,
     ),
     r'privkey': PropertySchema(
-      id: 41,
+      id: 42,
       name: r'privkey',
       type: IsarType.string,
     ),
     r'pubKey': PropertySchema(
-      id: 42,
+      id: 43,
       name: r'pubKey',
       type: IsarType.string,
     ),
     r'relayGroupsList': PropertySchema(
-      id: 43,
+      id: 44,
       name: r'relayGroupsList',
       type: IsarType.stringList,
     ),
     r'relayList': PropertySchema(
-      id: 44,
+      id: 45,
       name: r'relayList',
       type: IsarType.stringList,
     ),
     r'remotePubkey': PropertySchema(
-      id: 45,
+      id: 46,
       name: r'remotePubkey',
       type: IsarType.string,
     ),
     r'remoteSignerURI': PropertySchema(
-      id: 46,
+      id: 47,
       name: r'remoteSignerURI',
       type: IsarType.string,
     ),
     r'settings': PropertySchema(
-      id: 47,
+      id: 48,
       name: r'settings',
       type: IsarType.string,
     ),
     r'toAliasPrivkey': PropertySchema(
-      id: 48,
+      id: 49,
       name: r'toAliasPrivkey',
       type: IsarType.string,
     ),
     r'toAliasPubkey': PropertySchema(
-      id: 49,
+      id: 50,
       name: r'toAliasPubkey',
       type: IsarType.string,
     )
@@ -430,6 +435,12 @@ int _userDBISAREstimateSize(
   }
   {
     final value = object.dns;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.encodedKeyPackage;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
     }
@@ -639,41 +650,42 @@ void _userDBISARSerialize(
   writer.writeString(offsets[12], object.defaultPassword);
   writer.writeStringList(offsets[13], object.dmRelayList);
   writer.writeString(offsets[14], object.dns);
-  writer.writeString(offsets[15], object.encryptedPrivKey);
-  writer.writeStringList(offsets[16], object.followersList);
-  writer.writeStringList(offsets[17], object.followingList);
-  writer.writeString(offsets[18], object.friendsList);
-  writer.writeString(offsets[19], object.gender);
-  writer.writeStringList(offsets[20], object.groupsList);
-  writer.writeStringList(offsets[21], object.inboxRelayList);
-  writer.writeLong(offsets[22], object.lastBadgesListUpdatedTime);
-  writer.writeLong(offsets[23], object.lastBlockListUpdatedTime);
-  writer.writeLong(offsets[24], object.lastChannelsListUpdatedTime);
-  writer.writeLong(offsets[25], object.lastDMRelayListUpdatedTime);
-  writer.writeLong(offsets[26], object.lastFollowingListUpdatedTime);
-  writer.writeLong(offsets[27], object.lastFriendsListUpdatedTime);
-  writer.writeLong(offsets[28], object.lastGroupsListUpdatedTime);
-  writer.writeLong(offsets[29], object.lastRelayGroupsListUpdatedTime);
-  writer.writeLong(offsets[30], object.lastRelayListUpdatedTime);
-  writer.writeLong(offsets[31], object.lastUpdatedTime);
-  writer.writeString(offsets[32], object.lnurl);
-  writer.writeString(offsets[33], object.mainRelay);
-  writer.writeBool(offsets[34], object.mute);
-  writer.writeString(offsets[35], object.name);
-  writer.writeString(offsets[36], object.nickName);
-  writer.writeString(offsets[37], object.nwcURI);
-  writer.writeString(offsets[38], object.otherField);
-  writer.writeStringList(offsets[39], object.outboxRelayList);
-  writer.writeString(offsets[40], object.picture);
-  writer.writeString(offsets[41], object.privkey);
-  writer.writeString(offsets[42], object.pubKey);
-  writer.writeStringList(offsets[43], object.relayGroupsList);
-  writer.writeStringList(offsets[44], object.relayList);
-  writer.writeString(offsets[45], object.remotePubkey);
-  writer.writeString(offsets[46], object.remoteSignerURI);
-  writer.writeString(offsets[47], object.settings);
-  writer.writeString(offsets[48], object.toAliasPrivkey);
-  writer.writeString(offsets[49], object.toAliasPubkey);
+  writer.writeString(offsets[15], object.encodedKeyPackage);
+  writer.writeString(offsets[16], object.encryptedPrivKey);
+  writer.writeStringList(offsets[17], object.followersList);
+  writer.writeStringList(offsets[18], object.followingList);
+  writer.writeString(offsets[19], object.friendsList);
+  writer.writeString(offsets[20], object.gender);
+  writer.writeStringList(offsets[21], object.groupsList);
+  writer.writeStringList(offsets[22], object.inboxRelayList);
+  writer.writeLong(offsets[23], object.lastBadgesListUpdatedTime);
+  writer.writeLong(offsets[24], object.lastBlockListUpdatedTime);
+  writer.writeLong(offsets[25], object.lastChannelsListUpdatedTime);
+  writer.writeLong(offsets[26], object.lastDMRelayListUpdatedTime);
+  writer.writeLong(offsets[27], object.lastFollowingListUpdatedTime);
+  writer.writeLong(offsets[28], object.lastFriendsListUpdatedTime);
+  writer.writeLong(offsets[29], object.lastGroupsListUpdatedTime);
+  writer.writeLong(offsets[30], object.lastRelayGroupsListUpdatedTime);
+  writer.writeLong(offsets[31], object.lastRelayListUpdatedTime);
+  writer.writeLong(offsets[32], object.lastUpdatedTime);
+  writer.writeString(offsets[33], object.lnurl);
+  writer.writeString(offsets[34], object.mainRelay);
+  writer.writeBool(offsets[35], object.mute);
+  writer.writeString(offsets[36], object.name);
+  writer.writeString(offsets[37], object.nickName);
+  writer.writeString(offsets[38], object.nwcURI);
+  writer.writeString(offsets[39], object.otherField);
+  writer.writeStringList(offsets[40], object.outboxRelayList);
+  writer.writeString(offsets[41], object.picture);
+  writer.writeString(offsets[42], object.privkey);
+  writer.writeString(offsets[43], object.pubKey);
+  writer.writeStringList(offsets[44], object.relayGroupsList);
+  writer.writeStringList(offsets[45], object.relayList);
+  writer.writeString(offsets[46], object.remotePubkey);
+  writer.writeString(offsets[47], object.remoteSignerURI);
+  writer.writeString(offsets[48], object.settings);
+  writer.writeString(offsets[49], object.toAliasPrivkey);
+  writer.writeString(offsets[50], object.toAliasPubkey);
 }
 
 UserDBISAR _userDBISARDeserialize(
@@ -698,41 +710,42 @@ UserDBISAR _userDBISARDeserialize(
     defaultPassword: reader.readStringOrNull(offsets[12]),
     dmRelayList: reader.readStringList(offsets[13]),
     dns: reader.readStringOrNull(offsets[14]),
-    encryptedPrivKey: reader.readStringOrNull(offsets[15]),
-    followersList: reader.readStringList(offsets[16]),
-    followingList: reader.readStringList(offsets[17]),
-    friendsList: reader.readStringOrNull(offsets[18]),
-    gender: reader.readStringOrNull(offsets[19]),
-    groupsList: reader.readStringList(offsets[20]),
-    inboxRelayList: reader.readStringList(offsets[21]),
-    lastBadgesListUpdatedTime: reader.readLongOrNull(offsets[22]) ?? 0,
-    lastBlockListUpdatedTime: reader.readLongOrNull(offsets[23]) ?? 0,
-    lastChannelsListUpdatedTime: reader.readLongOrNull(offsets[24]) ?? 0,
-    lastDMRelayListUpdatedTime: reader.readLongOrNull(offsets[25]) ?? 0,
-    lastFollowingListUpdatedTime: reader.readLongOrNull(offsets[26]) ?? 0,
-    lastFriendsListUpdatedTime: reader.readLongOrNull(offsets[27]) ?? 0,
-    lastGroupsListUpdatedTime: reader.readLongOrNull(offsets[28]) ?? 0,
-    lastRelayGroupsListUpdatedTime: reader.readLongOrNull(offsets[29]) ?? 0,
-    lastRelayListUpdatedTime: reader.readLongOrNull(offsets[30]) ?? 0,
-    lastUpdatedTime: reader.readLongOrNull(offsets[31]) ?? 0,
-    lnurl: reader.readStringOrNull(offsets[32]),
-    mainRelay: reader.readStringOrNull(offsets[33]),
-    mute: reader.readBoolOrNull(offsets[34]),
-    name: reader.readStringOrNull(offsets[35]),
-    nickName: reader.readStringOrNull(offsets[36]),
-    nwcURI: reader.readStringOrNull(offsets[37]),
-    otherField: reader.readStringOrNull(offsets[38]),
-    outboxRelayList: reader.readStringList(offsets[39]),
-    picture: reader.readStringOrNull(offsets[40]),
-    privkey: reader.readStringOrNull(offsets[41]),
-    pubKey: reader.readStringOrNull(offsets[42]) ?? '',
-    relayGroupsList: reader.readStringList(offsets[43]),
-    relayList: reader.readStringList(offsets[44]),
-    remotePubkey: reader.readStringOrNull(offsets[45]),
-    remoteSignerURI: reader.readStringOrNull(offsets[46]),
-    settings: reader.readStringOrNull(offsets[47]),
-    toAliasPrivkey: reader.readStringOrNull(offsets[48]),
-    toAliasPubkey: reader.readStringOrNull(offsets[49]),
+    encodedKeyPackage: reader.readStringOrNull(offsets[15]),
+    encryptedPrivKey: reader.readStringOrNull(offsets[16]),
+    followersList: reader.readStringList(offsets[17]),
+    followingList: reader.readStringList(offsets[18]),
+    friendsList: reader.readStringOrNull(offsets[19]),
+    gender: reader.readStringOrNull(offsets[20]),
+    groupsList: reader.readStringList(offsets[21]),
+    inboxRelayList: reader.readStringList(offsets[22]),
+    lastBadgesListUpdatedTime: reader.readLongOrNull(offsets[23]) ?? 0,
+    lastBlockListUpdatedTime: reader.readLongOrNull(offsets[24]) ?? 0,
+    lastChannelsListUpdatedTime: reader.readLongOrNull(offsets[25]) ?? 0,
+    lastDMRelayListUpdatedTime: reader.readLongOrNull(offsets[26]) ?? 0,
+    lastFollowingListUpdatedTime: reader.readLongOrNull(offsets[27]) ?? 0,
+    lastFriendsListUpdatedTime: reader.readLongOrNull(offsets[28]) ?? 0,
+    lastGroupsListUpdatedTime: reader.readLongOrNull(offsets[29]) ?? 0,
+    lastRelayGroupsListUpdatedTime: reader.readLongOrNull(offsets[30]) ?? 0,
+    lastRelayListUpdatedTime: reader.readLongOrNull(offsets[31]) ?? 0,
+    lastUpdatedTime: reader.readLongOrNull(offsets[32]) ?? 0,
+    lnurl: reader.readStringOrNull(offsets[33]),
+    mainRelay: reader.readStringOrNull(offsets[34]),
+    mute: reader.readBoolOrNull(offsets[35]),
+    name: reader.readStringOrNull(offsets[36]),
+    nickName: reader.readStringOrNull(offsets[37]),
+    nwcURI: reader.readStringOrNull(offsets[38]),
+    otherField: reader.readStringOrNull(offsets[39]),
+    outboxRelayList: reader.readStringList(offsets[40]),
+    picture: reader.readStringOrNull(offsets[41]),
+    privkey: reader.readStringOrNull(offsets[42]),
+    pubKey: reader.readStringOrNull(offsets[43]) ?? '',
+    relayGroupsList: reader.readStringList(offsets[44]),
+    relayList: reader.readStringList(offsets[45]),
+    remotePubkey: reader.readStringOrNull(offsets[46]),
+    remoteSignerURI: reader.readStringOrNull(offsets[47]),
+    settings: reader.readStringOrNull(offsets[48]),
+    toAliasPrivkey: reader.readStringOrNull(offsets[49]),
+    toAliasPubkey: reader.readStringOrNull(offsets[50]),
   );
   object.id = id;
   return object;
@@ -778,19 +791,19 @@ P _userDBISARDeserializeProp<P>(
     case 15:
       return (reader.readStringOrNull(offset)) as P;
     case 16:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 17:
       return (reader.readStringList(offset)) as P;
     case 18:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringList(offset)) as P;
     case 19:
       return (reader.readStringOrNull(offset)) as P;
     case 20:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 21:
       return (reader.readStringList(offset)) as P;
     case 22:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
+      return (reader.readStringList(offset)) as P;
     case 23:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 24:
@@ -810,13 +823,13 @@ P _userDBISARDeserializeProp<P>(
     case 31:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 32:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 33:
       return (reader.readStringOrNull(offset)) as P;
     case 34:
-      return (reader.readBoolOrNull(offset)) as P;
-    case 35:
       return (reader.readStringOrNull(offset)) as P;
+    case 35:
+      return (reader.readBoolOrNull(offset)) as P;
     case 36:
       return (reader.readStringOrNull(offset)) as P;
     case 37:
@@ -824,19 +837,19 @@ P _userDBISARDeserializeProp<P>(
     case 38:
       return (reader.readStringOrNull(offset)) as P;
     case 39:
-      return (reader.readStringList(offset)) as P;
-    case 40:
       return (reader.readStringOrNull(offset)) as P;
+    case 40:
+      return (reader.readStringList(offset)) as P;
     case 41:
       return (reader.readStringOrNull(offset)) as P;
     case 42:
-      return (reader.readStringOrNull(offset) ?? '') as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 43:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 44:
       return (reader.readStringList(offset)) as P;
     case 45:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringList(offset)) as P;
     case 46:
       return (reader.readStringOrNull(offset)) as P;
     case 47:
@@ -844,6 +857,8 @@ P _userDBISARDeserializeProp<P>(
     case 48:
       return (reader.readStringOrNull(offset)) as P;
     case 49:
+      return (reader.readStringOrNull(offset)) as P;
+    case 50:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -3937,6 +3952,160 @@ extension UserDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'dns',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      encodedKeyPackageIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'encodedKeyPackage',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      encodedKeyPackageIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'encodedKeyPackage',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      encodedKeyPackageEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'encodedKeyPackage',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      encodedKeyPackageGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'encodedKeyPackage',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      encodedKeyPackageLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'encodedKeyPackage',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      encodedKeyPackageBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'encodedKeyPackage',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      encodedKeyPackageStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'encodedKeyPackage',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      encodedKeyPackageEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'encodedKeyPackage',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      encodedKeyPackageContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'encodedKeyPackage',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      encodedKeyPackageMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'encodedKeyPackage',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      encodedKeyPackageIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'encodedKeyPackage',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      encodedKeyPackageIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'encodedKeyPackage',
         value: '',
       ));
     });
@@ -8943,6 +9112,19 @@ extension UserDBISARQuerySortBy
     });
   }
 
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy> sortByEncodedKeyPackage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'encodedKeyPackage', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy>
+      sortByEncodedKeyPackageDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'encodedKeyPackage', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy> sortByEncryptedPrivKey() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'encryptedPrivKey', Sort.asc);
@@ -9399,6 +9581,19 @@ extension UserDBISARQuerySortThenBy
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy> thenByDnsDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'dns', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy> thenByEncodedKeyPackage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'encodedKeyPackage', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy>
+      thenByEncodedKeyPackageDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'encodedKeyPackage', Sort.desc);
     });
   }
 
@@ -9875,6 +10070,14 @@ extension UserDBISARQueryWhereDistinct
     });
   }
 
+  QueryBuilder<UserDBISAR, UserDBISAR, QDistinct> distinctByEncodedKeyPackage(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'encodedKeyPackage',
+          caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<UserDBISAR, UserDBISAR, QDistinct> distinctByEncryptedPrivKey(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -10220,6 +10423,13 @@ extension UserDBISARQueryProperty
   QueryBuilder<UserDBISAR, String?, QQueryOperations> dnsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'dns');
+    });
+  }
+
+  QueryBuilder<UserDBISAR, String?, QQueryOperations>
+      encodedKeyPackageProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'encodedKeyPackage');
     });
   }
 

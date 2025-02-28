@@ -101,6 +101,8 @@ class UserDBISAR {
   String? clientPrivateKey;
   String? remotePubkey;
 
+  String? encodedKeyPackage;
+
   String? settings;
 
   UserDBISAR({
@@ -153,7 +155,8 @@ class UserDBISAR {
     this.settings,
     this.clientPrivateKey,
     this.remoteSignerURI,
-    this.remotePubkey
+    this.remotePubkey,
+    this.encodedKeyPackage
   });
 
   static UserDBISAR fromMap(Map<String, Object?> map) {
