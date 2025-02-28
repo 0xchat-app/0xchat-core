@@ -217,9 +217,11 @@ extension MLSPrivateGroups on Groups {
 
   Future<void> handleWelcomeMessageEvent(Event event, String relay) async {
     WelcomeEvent welcomeEvent = Nip104.decodeWelcomeEvent(event);
-    String previewWelcomeData =
-        await previewWelcomeEvent(serializedWelcomeMessage: welcomeEvent.serializedWelcomeMessage);
-    NostrGroupData? groupData = NostrGroupData.fromPreviewWelcome(previewWelcomeData);
+    // String previewWelcomeData =
+    //     await previewWelcomeEvent(serializedWelcomeMessage: welcomeEvent.serializedWelcomeMessage);
+    // NostrGroupData? groupData = NostrGroupData.fromPreviewWelcome(previewWelcomeData);
+    GroupDBISAR groupDBISAR = await joinMLSGroup(welcomeEvent);
+    sendGroupMessage(groupDBISAR.groupId, MessageType.system, 'Joined MLS group', local: true);
   }
 
   Future<GroupDBISAR> joinMLSGroup(WelcomeEvent welcomeEvent) async {
@@ -243,12 +245,12 @@ extension MLSPrivateGroups on Groups {
     return groupDBISAR;
   }
 
-  Future<Future<OKEvent>> sendMessageToMLSGroup(
-      List<int> groupId, String nostrGroupId, String messageEvent) async {
-    List<int> serializedMessage =
-        await createMessageForGroup(groupId: groupId, messageEvent: messageEvent);
+  Future<OKEvent> sendMessageToMLSGroup(GroupDBISAR group, Event messageEvent) async {
+    if (group.mlsGroupId == null) return OKEvent('', false, 'invalid mls group');
+    List<int> serializedMessage = await createMessageForGroup(
+        groupId: group.mlsGroupId!, messageEvent: jsonEncode(messageEvent.toJson()));
     Event groupEvent =
-        await Nip104.encodeGroupEvent(serializedMessage, nostrGroupId, pubkey, privkey);
+        await Nip104.encodeGroupEvent(serializedMessage, group.groupId, pubkey, privkey);
     Completer<OKEvent> completer = Completer<OKEvent>();
     Connect.sharedInstance.sendEvent(groupEvent, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {

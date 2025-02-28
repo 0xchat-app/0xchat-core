@@ -366,7 +366,12 @@ class Groups {
   Future<OKEvent> sendToGroup(String groupId, Event event) async {
     GroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB != null) {
-      return await sendMessageEvent(groupDB.members, event);
+      if(groupDB.mlsGroupId != null){
+        return await sendMessageToMLSGroup(groupDB, event);
+      }
+      else{
+        return await sendMessageEvent(groupDB.members, event);
+      }
     } else {
       return OKEvent(event.id, false, 'group not found');
     }
