@@ -40,6 +40,9 @@ class RelayDBISAR {
   int groupMessageSince;
   int groupMessageUntil;
 
+  int mlsGroupMessageSince;
+  int mlsGroupMessageUntil;
+
   int momentSince;
   int momentUntil;
 
@@ -69,6 +72,8 @@ class RelayDBISAR {
       this.commonMessagesUntil = 0,
       this.groupMessageSince = 0,
       this.groupMessageUntil = 0,
+      this.mlsGroupMessageSince = 0,
+      this.mlsGroupMessageUntil = 0,
       this.momentSince = 0,
       this.momentUntil = 0,
       this.zapRecordSince = 0,
@@ -86,8 +91,7 @@ class RelayDBISAR {
   static Map<String, int> decodeMap(String map) {
     try {
       Map<String, dynamic> result = jsonDecode(map);
-      return result
-          .map((key, value) => MapEntry(key, int.parse(value.toString())));
+      return result.map((key, value) => MapEntry(key, int.parse(value.toString())));
     } catch (e) {
       return {};
     }
@@ -96,24 +100,17 @@ class RelayDBISAR {
   static RelayDBISAR relayDBInfoFromJSON(String json, RelayDBISAR relayDB) {
     Map map = jsonDecode(json);
     relayDB.pubkey = map.containsKey('pubkey') ? map['pubkey'].toString() : '';
-    relayDB.description =
-        map.containsKey('description') ? map['description'].toString() : '';
-    relayDB.contact =
-        map.containsKey('contact') ? map['contact'].toString() : '';
-    relayDB.supportedNips = map.containsKey('supported_nips')
-        ? map['supported_nips'].toString()
-        : '';
+    relayDB.description = map.containsKey('description') ? map['description'].toString() : '';
+    relayDB.contact = map.containsKey('contact') ? map['contact'].toString() : '';
+    relayDB.supportedNips =
+        map.containsKey('supported_nips') ? map['supported_nips'].toString() : '';
     relayDB.supportedNipExtensions = map.containsKey('supported_nip_extensions')
         ? map['supported_nip_extensions'].toString()
         : '';
-    relayDB.software =
-        map.containsKey('software') ? map['software'].toString() : '';
-    relayDB.version =
-        map.containsKey('version') ? map['version'].toString() : '';
-    relayDB.limitation =
-        map.containsKey('limitation') ? map['limitation'].toString() : '';
-    relayDB.paymentsUrl =
-        map.containsKey('payments_url') ? map['payments_url'].toString() : '';
+    relayDB.software = map.containsKey('software') ? map['software'].toString() : '';
+    relayDB.version = map.containsKey('version') ? map['version'].toString() : '';
+    relayDB.limitation = map.containsKey('limitation') ? map['limitation'].toString() : '';
+    relayDB.paymentsUrl = map.containsKey('payments_url') ? map['payments_url'].toString() : '';
     relayDB.fees = map.containsKey('fees') ? map['fees'].toString() : '';
     relayDB.icon = map.containsKey('icon') ? map['icon'].toString() : '';
 

@@ -92,63 +92,73 @@ const RelayDBISARSchema = CollectionSchema(
       name: r'limitation',
       type: IsarType.string,
     ),
-    r'momentSince': PropertySchema(
+    r'mlsGroupMessageSince': PropertySchema(
       id: 15,
+      name: r'mlsGroupMessageSince',
+      type: IsarType.long,
+    ),
+    r'mlsGroupMessageUntil': PropertySchema(
+      id: 16,
+      name: r'mlsGroupMessageUntil',
+      type: IsarType.long,
+    ),
+    r'momentSince': PropertySchema(
+      id: 17,
       name: r'momentSince',
       type: IsarType.long,
     ),
     r'momentUntil': PropertySchema(
-      id: 16,
+      id: 18,
       name: r'momentUntil',
       type: IsarType.long,
     ),
     r'name': PropertySchema(
-      id: 17,
+      id: 19,
       name: r'name',
       type: IsarType.string,
     ),
     r'paymentsUrl': PropertySchema(
-      id: 18,
+      id: 20,
       name: r'paymentsUrl',
       type: IsarType.string,
     ),
     r'pubkey': PropertySchema(
-      id: 19,
+      id: 21,
       name: r'pubkey',
       type: IsarType.string,
     ),
     r'software': PropertySchema(
-      id: 20,
+      id: 22,
       name: r'software',
       type: IsarType.string,
     ),
     r'supportedNipExtensions': PropertySchema(
-      id: 21,
+      id: 23,
       name: r'supportedNipExtensions',
       type: IsarType.string,
     ),
     r'supportedNips': PropertySchema(
-      id: 22,
+      id: 24,
       name: r'supportedNips',
       type: IsarType.string,
     ),
     r'url': PropertySchema(
-      id: 23,
+      id: 25,
       name: r'url',
       type: IsarType.string,
     ),
     r'version': PropertySchema(
-      id: 24,
+      id: 26,
       name: r'version',
       type: IsarType.string,
     ),
     r'zapRecordSince': PropertySchema(
-      id: 25,
+      id: 27,
       name: r'zapRecordSince',
       type: IsarType.long,
     ),
     r'zapRecordUntil': PropertySchema(
-      id: 26,
+      id: 28,
       name: r'zapRecordUntil',
       type: IsarType.long,
     )
@@ -284,18 +294,20 @@ void _relayDBISARSerialize(
   writer.writeLong(offsets[12], object.groupMessageUntil);
   writer.writeString(offsets[13], object.icon);
   writer.writeString(offsets[14], object.limitation);
-  writer.writeLong(offsets[15], object.momentSince);
-  writer.writeLong(offsets[16], object.momentUntil);
-  writer.writeString(offsets[17], object.name);
-  writer.writeString(offsets[18], object.paymentsUrl);
-  writer.writeString(offsets[19], object.pubkey);
-  writer.writeString(offsets[20], object.software);
-  writer.writeString(offsets[21], object.supportedNipExtensions);
-  writer.writeString(offsets[22], object.supportedNips);
-  writer.writeString(offsets[23], object.url);
-  writer.writeString(offsets[24], object.version);
-  writer.writeLong(offsets[25], object.zapRecordSince);
-  writer.writeLong(offsets[26], object.zapRecordUntil);
+  writer.writeLong(offsets[15], object.mlsGroupMessageSince);
+  writer.writeLong(offsets[16], object.mlsGroupMessageUntil);
+  writer.writeLong(offsets[17], object.momentSince);
+  writer.writeLong(offsets[18], object.momentUntil);
+  writer.writeString(offsets[19], object.name);
+  writer.writeString(offsets[20], object.paymentsUrl);
+  writer.writeString(offsets[21], object.pubkey);
+  writer.writeString(offsets[22], object.software);
+  writer.writeString(offsets[23], object.supportedNipExtensions);
+  writer.writeString(offsets[24], object.supportedNips);
+  writer.writeString(offsets[25], object.url);
+  writer.writeString(offsets[26], object.version);
+  writer.writeLong(offsets[27], object.zapRecordSince);
+  writer.writeLong(offsets[28], object.zapRecordUntil);
 }
 
 RelayDBISAR _relayDBISARDeserialize(
@@ -320,20 +332,22 @@ RelayDBISAR _relayDBISARDeserialize(
     groupMessageUntil: reader.readLongOrNull(offsets[12]) ?? 0,
     icon: reader.readStringOrNull(offsets[13]),
     limitation: reader.readStringOrNull(offsets[14]),
-    momentSince: reader.readLongOrNull(offsets[15]) ?? 0,
-    momentUntil: reader.readLongOrNull(offsets[16]) ?? 0,
-    paymentsUrl: reader.readStringOrNull(offsets[18]),
-    pubkey: reader.readStringOrNull(offsets[19]),
-    software: reader.readStringOrNull(offsets[20]),
-    supportedNipExtensions: reader.readStringOrNull(offsets[21]),
-    supportedNips: reader.readStringOrNull(offsets[22]),
-    url: reader.readStringOrNull(offsets[23]) ?? '',
-    version: reader.readStringOrNull(offsets[24]),
-    zapRecordSince: reader.readLongOrNull(offsets[25]) ?? 0,
-    zapRecordUntil: reader.readLongOrNull(offsets[26]) ?? 0,
+    mlsGroupMessageSince: reader.readLongOrNull(offsets[15]) ?? 0,
+    mlsGroupMessageUntil: reader.readLongOrNull(offsets[16]) ?? 0,
+    momentSince: reader.readLongOrNull(offsets[17]) ?? 0,
+    momentUntil: reader.readLongOrNull(offsets[18]) ?? 0,
+    paymentsUrl: reader.readStringOrNull(offsets[20]),
+    pubkey: reader.readStringOrNull(offsets[21]),
+    software: reader.readStringOrNull(offsets[22]),
+    supportedNipExtensions: reader.readStringOrNull(offsets[23]),
+    supportedNips: reader.readStringOrNull(offsets[24]),
+    url: reader.readStringOrNull(offsets[25]) ?? '',
+    version: reader.readStringOrNull(offsets[26]),
+    zapRecordSince: reader.readLongOrNull(offsets[27]) ?? 0,
+    zapRecordUntil: reader.readLongOrNull(offsets[28]) ?? 0,
   );
   object.id = id;
-  object.name = reader.readStringOrNull(offsets[17]);
+  object.name = reader.readStringOrNull(offsets[19]);
   return object;
 }
 
@@ -379,9 +393,9 @@ P _relayDBISARDeserializeProp<P>(
     case 16:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 17:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 18:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 19:
       return (reader.readStringOrNull(offset)) as P;
     case 20:
@@ -391,12 +405,16 @@ P _relayDBISARDeserializeProp<P>(
     case 22:
       return (reader.readStringOrNull(offset)) as P;
     case 23:
-      return (reader.readStringOrNull(offset) ?? '') as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 24:
       return (reader.readStringOrNull(offset)) as P;
     case 25:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 26:
+      return (reader.readStringOrNull(offset)) as P;
+    case 27:
+      return (reader.readLongOrNull(offset) ?? 0) as P;
+    case 28:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1960,6 +1978,118 @@ extension RelayDBISARQueryFilter
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'limitation',
         value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterFilterCondition>
+      mlsGroupMessageSinceEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'mlsGroupMessageSince',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterFilterCondition>
+      mlsGroupMessageSinceGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'mlsGroupMessageSince',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterFilterCondition>
+      mlsGroupMessageSinceLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'mlsGroupMessageSince',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterFilterCondition>
+      mlsGroupMessageSinceBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'mlsGroupMessageSince',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterFilterCondition>
+      mlsGroupMessageUntilEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'mlsGroupMessageUntil',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterFilterCondition>
+      mlsGroupMessageUntilGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'mlsGroupMessageUntil',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterFilterCondition>
+      mlsGroupMessageUntilLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'mlsGroupMessageUntil',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterFilterCondition>
+      mlsGroupMessageUntilBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'mlsGroupMessageUntil',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -3596,6 +3726,34 @@ extension RelayDBISARQuerySortBy
     });
   }
 
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterSortBy>
+      sortByMlsGroupMessageSince() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mlsGroupMessageSince', Sort.asc);
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterSortBy>
+      sortByMlsGroupMessageSinceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mlsGroupMessageSince', Sort.desc);
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterSortBy>
+      sortByMlsGroupMessageUntil() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mlsGroupMessageUntil', Sort.asc);
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterSortBy>
+      sortByMlsGroupMessageUntilDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mlsGroupMessageUntil', Sort.desc);
+    });
+  }
+
   QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterSortBy> sortByMomentSince() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'momentSince', Sort.asc);
@@ -3960,6 +4118,34 @@ extension RelayDBISARQuerySortThenBy
     });
   }
 
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterSortBy>
+      thenByMlsGroupMessageSince() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mlsGroupMessageSince', Sort.asc);
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterSortBy>
+      thenByMlsGroupMessageSinceDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mlsGroupMessageSince', Sort.desc);
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterSortBy>
+      thenByMlsGroupMessageUntil() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mlsGroupMessageUntil', Sort.asc);
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterSortBy>
+      thenByMlsGroupMessageUntilDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'mlsGroupMessageUntil', Sort.desc);
+    });
+  }
+
   QueryBuilder<RelayDBISAR, RelayDBISAR, QAfterSortBy> thenByMomentSince() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'momentSince', Sort.asc);
@@ -4217,6 +4403,20 @@ extension RelayDBISARQueryWhereDistinct
     });
   }
 
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QDistinct>
+      distinctByMlsGroupMessageSince() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'mlsGroupMessageSince');
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, RelayDBISAR, QDistinct>
+      distinctByMlsGroupMessageUntil() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'mlsGroupMessageUntil');
+    });
+  }
+
   QueryBuilder<RelayDBISAR, RelayDBISAR, QDistinct> distinctByMomentSince() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'momentSince');
@@ -4403,6 +4603,20 @@ extension RelayDBISARQueryProperty
   QueryBuilder<RelayDBISAR, String?, QQueryOperations> limitationProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'limitation');
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, int, QQueryOperations>
+      mlsGroupMessageSinceProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'mlsGroupMessageSince');
+    });
+  }
+
+  QueryBuilder<RelayDBISAR, int, QQueryOperations>
+      mlsGroupMessageUntilProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'mlsGroupMessageUntil');
     });
   }
 

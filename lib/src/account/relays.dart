@@ -146,6 +146,14 @@ class Relays {
     return relays.containsKey(relayURL) ? relays[relayURL]!.groupMessageUntil : 0;
   }
 
+  int getMLSGroupMessageSince(String relayURL) {
+    return relays.containsKey(relayURL) ? relays[relayURL]!.mlsGroupMessageSince : 0;
+  }
+
+  int getMLSGroupMessageUntil(String relayURL) {
+    return relays.containsKey(relayURL) ? relays[relayURL]!.mlsGroupMessageUntil : 0;
+  }
+
   int getMomentSince(String relayURL) {
     return relays.containsKey(relayURL) ? relays[relayURL]!.momentSince : 0;
   }
@@ -213,6 +221,12 @@ class Relays {
     relays[relay]!.groupMessageUntil = updateTime > until ? updateTime : until;
   }
 
+  void setMLSGroupMessageUntil(int updateTime, String relay) {
+    int until = Relays.sharedInstance.getMLSGroupMessageUntil(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
+    relays[relay]!.mlsGroupMessageUntil = updateTime > until ? updateTime : until;
+  }
+
   void setCommonMessageSince(int updateTime, String relay) {
     int since = Relays.sharedInstance.getCommonMessageSince(relay);
     if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
@@ -254,6 +268,12 @@ class Relays {
     int since = Relays.sharedInstance.getGroupMessageSince(relay);
     if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
     relays[relay]!.groupMessageSince = updateTime < since ? updateTime : since;
+  }
+
+  void setMLSGroupMessageSince(int updateTime, String relay) {
+    int since = Relays.sharedInstance.getMLSGroupMessageSince(relay);
+    if (!relays.containsKey(relay)) relays[relay] = RelayDBISAR(url: relay);
+    relays[relay]!.mlsGroupMessageSince = updateTime < since ? updateTime : since;
   }
 
   static Future<RelayDBISAR?> getRelayDetailsFromDB(String relayURL) async {

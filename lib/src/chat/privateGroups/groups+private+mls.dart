@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/cupertino.dart';
@@ -106,6 +107,12 @@ extension MLSPrivateGroups on Groups {
         isIOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
     await initNostrMls(path: directory.path, identity: pubkey);
     _initKeypackages();
+    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
+      if (status == 1 && Account.sharedInstance.me != null) {
+        updateMLSGroupSubscription(relay: relay);
+      }
+    });
+    updateMLSGroupSubscription();
   }
 
   void _initKeypackages() {
@@ -122,6 +129,64 @@ extension MLSPrivateGroups on Groups {
         }
       }
     });
+  }
+
+  void updateMLSGroupSubscription({String? relay}) {
+    if (groupMessageSubscription.isNotEmpty) {
+      Connect.sharedInstance.closeRequests(groupMessageSubscription, relay: relay);
+    }
+
+    Map<String, List<Filter>> subscriptions = {};
+    List<String> groupList = [];
+    List<String> groupRelays = [];
+    for (var g in myGroups.values) {
+      groupList.add(g.value.groupId);
+      if (g.value.relay != null && !groupRelays.contains(g.value.relay)) {
+        groupRelays.add(g.value.relay!);
+      }
+    }
+    if (groupList.isEmpty) return;
+    if (relay == null) {
+      for (String relayURL in groupRelays) {
+        int groupMessageUntil = Relays.sharedInstance.getMLSGroupMessageUntil(relayURL);
+        Filter f = Filter(h: groupList, kinds: [445], since: (groupMessageUntil + 1));
+        subscriptions[relayURL] = [f];
+      }
+    } else {
+      int groupMessageUntil = Relays.sharedInstance.getMLSGroupMessageUntil(relay);
+      Filter f = Filter(h: groupList, kinds: [445], since: (groupMessageUntil + 1));
+      subscriptions[relay] = [f];
+    }
+
+    groupMessageSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
+        closeSubscription: false, eventCallBack: (event, relay) async {
+      _updateGroupMessageTime(event.createdAt, relay);
+      receiveMLSGroupMessage(event, relay);
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
+      offlineGroupMessageFinish[relay] = true;
+      if (ok.status) {
+        _updateGroupMessageTime(currentUnixTimestampSeconds() - 1, relay);
+      }
+      if (unCompletedRelays.isEmpty) {
+        offlineGroupMessageFinishCallBack?.call();
+        if (!Messages.sharedInstance.groupMessageCompleter.isCompleted) {
+          Messages.sharedInstance.groupMessageCompleter.complete();
+        }
+      }
+    });
+  }
+
+  void _updateGroupMessageTime(int eventTime, String relay) {
+    if (Relays.sharedInstance.relays.containsKey(relay)) {
+      Relays.sharedInstance.setMLSGroupMessageUntil(eventTime, relay);
+      Relays.sharedInstance.setMLSGroupMessageSince(eventTime, relay);
+    } else {
+      Relays.sharedInstance.relays[relay] =
+          RelayDBISAR(url: relay, groupMessageUntil: eventTime, mlsGroupMessageSince: eventTime);
+    }
+    if (offlineGroupMessageFinish[relay] == true) {
+      Relays.sharedInstance.syncRelaysToDB(r: relay);
+    }
   }
 
   Future<Future<OKEvent>> _createNewKeyPackage(List<String> relays) async {
@@ -249,8 +314,11 @@ extension MLSPrivateGroups on Groups {
     if (group.mlsGroupId == null) return OKEvent('', false, 'invalid mls group');
     List<int> serializedMessage = await createMessageForGroup(
         groupId: group.mlsGroupId!, messageEvent: jsonEncode(messageEvent.toJson()));
-    Event groupEvent =
-        await Nip104.encodeGroupEvent(serializedMessage, group.groupId, pubkey, privkey);
+    var secretKey = await getGroupKeyChain(group.groupId);
+    if (secretKey == null) return OKEvent(group.groupId, false, 'can not fetch group key');
+    String content = await Nip44.encryptContent(
+        bytesToHex(Uint8List.fromList(serializedMessage)), secretKey.public, pubkey, privkey);
+    Event groupEvent = await Nip104.encodeGroupEvent(content, group.groupId, pubkey, privkey);
     Completer<OKEvent> completer = Completer<OKEvent>();
     Connect.sharedInstance.sendEvent(groupEvent, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
@@ -260,11 +328,45 @@ extension MLSPrivateGroups on Groups {
     return completer.future;
   }
 
-  Future<void> receiveMLSGroupMessage(Event event) async {
+  Future<void> receiveMLSGroupMessage(Event event, String relay) async {
     GroupEvent groupEvent = Nip104.decodeGroupEvent(event);
     ValueNotifier<GroupDBISAR>? groupValueNotifier = groups[groupEvent.groupId];
     if (groupValueNotifier == null) return;
-    late Keychain secretKey;
+    var secretKey = await getGroupKeyChain(groupEvent.groupId);
+    if (secretKey == null) return;
+    String messageString = await Nip44.decryptContent(
+        groupEvent.message, groupEvent.pubkey, secretKey.public, secretKey.private);
+    List<int> serializedMessageJsonString = await processMessageForGroup(
+        groupId: groupValueNotifier.value.mlsGroupId!,
+        serializedMessage: hexToBytes(messageString));
+    Event innerEvent = await Event.fromJson(
+        jsonDecode(bytesToHex(Uint8List.fromList(serializedMessageJsonString))),
+        verify: false);
+    GroupMessage groupMessage = Nip29.decodeGroupMessage(innerEvent);
+    MessageDBISAR messageDB = MessageDBISAR(
+        messageId: event.id,
+        sender: groupMessage.pubkey,
+        receiver: '',
+        groupId: groupMessage.groupId,
+        kind: event.kind,
+        tags: jsonEncode(event.tags),
+        content: groupMessage.content,
+        replyId: groupMessage.thread.root.eventId ?? '',
+        createTime: event.createdAt,
+        plaintEvent: jsonEncode(event),
+        chatType: 1);
+    var map = await MessageDBISAR.decodeContent(groupMessage.content);
+    messageDB.decryptContent = map['content'];
+    messageDB.type = map['contentType'];
+    messageDB.decryptSecret = map['decryptSecret'];
+    await Messages.saveMessageToDB(messageDB);
+    groupMessageCallBack?.call(messageDB);
+  }
+
+  Future<Keychain?> getGroupKeyChain(String groupId) async {
+    ValueNotifier<GroupDBISAR>? groupValueNotifier = groups[groupId];
+    if (groupValueNotifier == null) return null;
+    Keychain secretKey;
     GroupKeysDBISAR? groupKeysDBISAR = await GroupKeysDBISAR.getGroupKeysFromDB(
         groupValueNotifier.value.groupId, groupValueNotifier.value.epoch);
     if (groupKeysDBISAR == null && groupValueNotifier.value.mlsGroupId != null) {
@@ -272,7 +374,7 @@ extension MLSPrivateGroups on Groups {
       var (key, epoch) =
           await exportSecretAsHexSecretKeyAndEpoch(groupId: groupValueNotifier.value.mlsGroupId!);
       groupKeysDBISAR = GroupKeysDBISAR(
-          groupId: groupEvent.groupId,
+          groupId: groupId,
           epoch: epoch.toInt(),
           secretKey: key,
           mlsGroupId: groupValueNotifier.value.mlsGroupId);
@@ -283,15 +385,7 @@ extension MLSPrivateGroups on Groups {
     } else {
       secretKey = Keychain(groupKeysDBISAR!.secretKey);
     }
-    String messageString = await Nip44.decryptContent(
-        groupEvent.message, groupEvent.pubkey, secretKey.public, secretKey.private);
-    List<int> messageJsonString = await processMessageForGroup(
-        groupId: groupValueNotifier.value.mlsGroupId!,
-        serializedMessage: hexToBytes(messageString));
-    Event innerEvent =
-        await Event.fromJson(jsonDecode(utf8.decode(messageJsonString)), verify: false);
-    GroupMessage groupMessage = Nip29.decodeGroupMessage(innerEvent);
-    // TODO: handle group message
+    return secretKey;
   }
 
   /// TODO: proposal & commit

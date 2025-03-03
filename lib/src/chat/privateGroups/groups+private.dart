@@ -101,13 +101,25 @@ extension PrivateGroups on Groups {
     if (groupDB == null) return null;
     List<String>? members = groupDB.members;
     if (members == null) return null;
-    Event event = await Nip17.encodeInnerEvent(
-        '', MessageDBISAR.getContent(type, content, source), replyMessage ?? '', pubkey, privkey,
+    late Event event;
+    if (groupDB.mlsGroupId != null) {
+      event = await Nip29.encodeGroupMessageReply(
+          groupDB.groupId, MessageDBISAR.getContent(type, content, source), [], pubkey, privkey,
+          rootEvent: replyMessage, subContent: MessageDBISAR.getSubContent(type, content));
+    } else {
+      event = await Nip17.encodeInnerEvent(
+        '',
+        MessageDBISAR.getContent(type, content, source),
+        replyMessage ?? '',
+        pubkey,
+        privkey,
         subContent: MessageDBISAR.getSubContent(type, content),
         members: members,
         subject: groupDB.name,
         createAt: createAt,
-      encryptedFile: encryptedFile,);
+        encryptedFile: encryptedFile,
+      );
+    }
     return event;
   }
 
