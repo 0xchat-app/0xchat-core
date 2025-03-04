@@ -28,7 +28,7 @@ class MlsGroup {
 
   static MlsGroup fromJson(Map<String, dynamic> json) {
     if (json['group_id'] == null) {
-      throw Exception("error: group_id does not exit");
+      throw Exception("error: group_id does not exit, ${jsonEncode(json)}");
     }
 
     List<dynamic> groupIdVec = json['group_id']['value']['vec'];
@@ -124,7 +124,6 @@ extension MLSPrivateGroups on Groups {
       if (status == 1 && Account.sharedInstance.me != null) {
         if (keypackageRelays.contains(relay) && keypackageUpdated[relay] != true) {
           keypackageUpdated[relay] = true;
-          // create different key packages for different relays
           await _createNewKeyPackage([relay]);
         }
       }
@@ -190,7 +189,14 @@ extension MLSPrivateGroups on Groups {
   }
 
   Future<Future<OKEvent>> _createNewKeyPackage(List<String> relays) async {
-    String encodedKeyPackage = await createKeyPackageForEvent(publicKey: pubkey);
+    String encodedKeyPackage;
+    if (Account.sharedInstance.me!.encodedKeyPackage == null) {
+      encodedKeyPackage = await createKeyPackageForEvent(publicKey: pubkey);
+      Account.sharedInstance.me!.encodedKeyPackage = encodedKeyPackage;
+      Account.sharedInstance.syncMe();
+    } else {
+      encodedKeyPackage = Account.sharedInstance.me!.encodedKeyPackage!;
+    }
     Event event = await Nip104.encodeKeyPackageEvent(
         encodedKeyPackage, getCiphersuite(), getExtensions(), relays, pubkey, privkey);
     Completer<OKEvent> completer = Completer<OKEvent>();
@@ -246,7 +252,7 @@ extension MLSPrivateGroups on Groups {
         groupAdminPublicKeys: admins,
         relays: relays);
     MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(createGroupResult));
-    //send welcome & invite members
+    ///send welcome & invite members
     sendWelcomeMessages(mlsGroup.serializedWelcomeMessage, mlsGroup.groupMembers, relays);
     GroupDBISAR groupDBISAR = GroupDBISAR(
         groupId: mlsGroup.nostrGroupData.nostrGroupId,
@@ -261,6 +267,8 @@ extension MLSPrivateGroups on Groups {
     groups[groupDBISAR.groupId] = ValueNotifier(groupDBISAR);
     myGroups[groupDBISAR.groupId] = ValueNotifier(groupDBISAR);
     await syncGroupToDB(groupDBISAR);
+    await syncMyGroupListToDB();
+    updateMLSGroupSubscription();
     return groupDBISAR;
   }
 
@@ -268,8 +276,9 @@ extension MLSPrivateGroups on Groups {
       List<int> serializedWelcomeMessage, List<String> members, List<String> relays) async {
     Event welcomeEvent =
         await Nip104.encodeWelcomeEvent(serializedWelcomeMessage, relays, pubkey, privkey);
-    // gift-wrapped welcome message and send to each members.
+    /// gift-wrapped welcome message and send to each members.
     for (var member in members) {
+      if (member == pubkey) continue;
       Event giftWrappedEvent = await Nip59.encode(welcomeEvent, member);
       UserDBISAR? memberDB = await Account.sharedInstance.getUserInfo(member);
       List<String>? dmRelays = memberDB?.dmRelayList;
@@ -285,17 +294,23 @@ extension MLSPrivateGroups on Groups {
     // String previewWelcomeData =
     //     await previewWelcomeEvent(serializedWelcomeMessage: welcomeEvent.serializedWelcomeMessage);
     // NostrGroupData? groupData = NostrGroupData.fromPreviewWelcome(previewWelcomeData);
-    GroupDBISAR groupDBISAR = await joinMLSGroup(welcomeEvent);
-    sendGroupMessage(groupDBISAR.groupId, MessageType.system, 'Joined MLS group', local: true);
+
+    /// ignore non-contact user's welcome messages
+    if (!Contacts.sharedInstance.allContacts.containsKey(welcomeEvent.pubkey)) return;
+
+    GroupDBISAR groupDBISAR = await joinMLSGroup(welcomeEvent, relay);
+    UserDBISAR? userDBISAR = await Account.sharedInstance.getUserInfo(welcomeEvent.pubkey);
+    String inviteMessage = '${userDBISAR?.name} invite you to join the private group';
+    sendGroupMessage(groupDBISAR.groupId, MessageType.system, inviteMessage, local: true);
   }
 
-  Future<GroupDBISAR> joinMLSGroup(WelcomeEvent welcomeEvent) async {
-    /// TODO: handle exception
+  Future<GroupDBISAR> joinMLSGroup(WelcomeEvent welcomeEvent, String relay) async {
     String joinGroupResult =
         await joinGroupFromWelcome(serializedWelcomeMessage: welcomeEvent.serializedWelcomeMessage);
     MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(joinGroupResult));
     GroupDBISAR groupDBISAR = GroupDBISAR(
         groupId: mlsGroup.nostrGroupData.nostrGroupId,
+        relay: relay,
         owner: pubkey,
         updateTime: currentUnixTimestampSeconds(),
         name: mlsGroup.nostrGroupData.name,
@@ -307,6 +322,8 @@ extension MLSPrivateGroups on Groups {
     groups[groupDBISAR.groupId] = ValueNotifier(groupDBISAR);
     myGroups[groupDBISAR.groupId] = ValueNotifier(groupDBISAR);
     await syncGroupToDB(groupDBISAR);
+    await syncMyGroupListToDB();
+    updateMLSGroupSubscription();
     return groupDBISAR;
   }
 
@@ -333,15 +350,16 @@ extension MLSPrivateGroups on Groups {
     ValueNotifier<GroupDBISAR>? groupValueNotifier = groups[groupEvent.groupId];
     if (groupValueNotifier == null) return;
     var secretKey = await getGroupKeyChain(groupEvent.groupId);
-    if (secretKey == null) return;
+    if (secretKey == null) {
+      return;
+    }
     String messageString = await Nip44.decryptContent(
         groupEvent.message, groupEvent.pubkey, secretKey.public, secretKey.private);
     List<int> serializedMessageJsonString = await processMessageForGroup(
         groupId: groupValueNotifier.value.mlsGroupId!,
         serializedMessage: hexToBytes(messageString));
-    Event innerEvent = await Event.fromJson(
-        jsonDecode(bytesToHex(Uint8List.fromList(serializedMessageJsonString))),
-        verify: false);
+    Event innerEvent =
+        await Event.fromJson(jsonDecode(utf8.decode(serializedMessageJsonString)), verify: false);
     GroupMessage groupMessage = Nip29.decodeGroupMessage(innerEvent);
     MessageDBISAR messageDB = MessageDBISAR(
         messageId: event.id,
@@ -366,11 +384,11 @@ extension MLSPrivateGroups on Groups {
   Future<Keychain?> getGroupKeyChain(String groupId) async {
     ValueNotifier<GroupDBISAR>? groupValueNotifier = groups[groupId];
     if (groupValueNotifier == null) return null;
-    Keychain secretKey;
+    Keychain? secretKey;
     GroupKeysDBISAR? groupKeysDBISAR = await GroupKeysDBISAR.getGroupKeysFromDB(
         groupValueNotifier.value.groupId, groupValueNotifier.value.epoch);
     if (groupKeysDBISAR == null && groupValueNotifier.value.mlsGroupId != null) {
-      //try get epoch from open_nostrmls
+      ///try get epoch from open_nostrmls
       var (key, epoch) =
           await exportSecretAsHexSecretKeyAndEpoch(groupId: groupValueNotifier.value.mlsGroupId!);
       groupKeysDBISAR = GroupKeysDBISAR(
@@ -382,8 +400,8 @@ extension MLSPrivateGroups on Groups {
       // TODO: delete outdated group keys
       // GroupKeysDBISAR.deleteGroupKeysBeforeEpoch(groupEvent.groupId, epoch.toInt() - 3);
       secretKey = Keychain(key);
-    } else {
-      secretKey = Keychain(groupKeysDBISAR!.secretKey);
+    } else if (groupKeysDBISAR != null) {
+      secretKey = Keychain(groupKeysDBISAR.secretKey);
     }
     return secretKey;
   }
