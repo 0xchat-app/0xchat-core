@@ -322,7 +322,8 @@ class Contacts {
             case 15:
               _handlePrivateMessage(innerEvent, relay);
               break;
-              /// MLS Welcome Message
+
+            /// MLS Welcome Message
             case 444:
               Groups.sharedInstance.handleWelcomeMessageEvent(innerEvent, relay);
             case 10100:
@@ -379,12 +380,12 @@ class Contacts {
   }
 
   Future<Event?> getSendMessageEvent(
-      String friendPubkey, String replyId, MessageType type, String content,
+      String friendPubkey, String replyId, String replyUser, MessageType type, String content,
       {String? source, int? kind, int? expiration, EncryptedFile? encryptedFile}) async {
     Event? event;
     expiration = expiration != null ? (expiration + currentUnixTimestampSeconds()) : null;
-    event ??= await Nip17.encodeInnerEvent(
-        friendPubkey, MessageDBISAR.getContent(type, content, source), replyId, pubkey, privkey,
+    event ??= await Nip17.encodeInnerEvent(friendPubkey,
+        MessageDBISAR.getContent(type, content, source), replyId, replyUser, pubkey, privkey,
         subContent: MessageDBISAR.getSubContent(type, content),
         expiration: expiration,
         encryptedFile: encryptedFile);
@@ -392,7 +393,7 @@ class Contacts {
   }
 
   Future<OKEvent> sendPrivateMessage(
-      String toPubkey, String replyId, MessageType type, String content,
+      String toPubkey, String replyId, String replyUser, MessageType type, String content,
       {Event? event,
       int? kind,
       String? subContent,
@@ -402,7 +403,7 @@ class Contacts {
       EncryptedFile? encryptedFile,
       String? replaceMessageId}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    event ??= await getSendMessageEvent(toPubkey, replyId, type, content,
+    event ??= await getSendMessageEvent(toPubkey, replyId, replyUser, type, content,
         kind: kind, expiration: expiration, encryptedFile: encryptedFile, source: source);
     if (event == null) return OKEvent('', false, 'event == null');
     expiration = expiration != null ? (expiration + currentUnixTimestampSeconds()) : null;
@@ -471,10 +472,7 @@ class Contacts {
       List<String>? dmRelays = toUser?.dmRelayList;
       List<String>? inboxRelays = toUser?.inboxRelayList;
       List<String>? myGeneralRelays = Account.sharedInstance.me?.relayList;
-      List<String> userRelays = [
-        ...(dmRelays ?? []),
-        ...(inboxRelays ?? [])
-      ];
+      List<String> userRelays = [...(dmRelays ?? []), ...(inboxRelays ?? [])];
       bool hasConnected = false;
       for (var relay in userRelays) {
         if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {

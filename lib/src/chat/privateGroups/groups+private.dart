@@ -95,6 +95,7 @@ extension PrivateGroups on Groups {
   Future<Event?> getSendPrivateGroupMessageEvent(String groupId, MessageType type, String content,
       {String? source,
       String? replyMessage,
+      String? replyUser,
       EncryptedFile? encryptedFile,
       int createAt = 0}) async {
     GroupDBISAR? groupDB = myGroups[groupId]?.value;
@@ -105,12 +106,15 @@ extension PrivateGroups on Groups {
     if (groupDB.mlsGroupId != null) {
       event = await Nip29.encodeGroupMessageReply(
           groupDB.groupId, MessageDBISAR.getContent(type, content, source), [], pubkey, privkey,
-          rootEvent: replyMessage, subContent: MessageDBISAR.getSubContent(type, content));
+          replyEvent: replyMessage,
+          replyUser: replyUser,
+          subContent: MessageDBISAR.getSubContent(type, content));
     } else {
       event = await Nip17.encodeInnerEvent(
         '',
         MessageDBISAR.getContent(type, content, source),
         replyMessage ?? '',
+        replyUser ?? '',
         pubkey,
         privkey,
         subContent: MessageDBISAR.getSubContent(type, content),

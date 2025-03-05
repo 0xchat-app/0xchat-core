@@ -20,7 +20,7 @@ extension EMessage on RelayGroup {
         kind: event.kind,
         tags: jsonEncode(event.tags),
         content: groupMessage.content,
-        replyId: groupMessage.thread.root.eventId ?? '',
+        replyId: groupMessage.replyId ?? '',
         createTime: event.createdAt,
         plaintEvent: jsonEncode(event),
         chatType: 4);
@@ -43,7 +43,6 @@ extension EMessage on RelayGroup {
   Future<Event?> getSendGroupMessageEvent(
       String id, MessageType type, String content, List<String> previous,
       {String? source,
-      String? rootEvent,
       String? replyEvent,
       List<String>? replyUsers,
       Event? event,
@@ -51,9 +50,8 @@ extension EMessage on RelayGroup {
       String? decryptSecret}) async {
     Event event = await Nip29.encodeGroupMessageReply(
         id, MessageDBISAR.getContent(type, content, source), previous, pubkey, privkey,
-        rootEvent: rootEvent,
+        replyUser: replyUsers?.firstOrNull,
         replyEvent: replyEvent,
-        replyUsers: replyUsers,
         subContent: MessageDBISAR.getSubContent(type, content));
     return event;
   }
@@ -61,7 +59,6 @@ extension EMessage on RelayGroup {
   Future<OKEvent> sendGroupMessage(
       String groupId, MessageType type, String content, List<String> previous,
       {String? source,
-      String? rootEvent,
       String? replyEvent,
       List<String>? replyUsers,
       Event? event,
@@ -74,9 +71,8 @@ extension EMessage on RelayGroup {
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     event ??= await Nip29.encodeGroupMessageReply(
         groupId, MessageDBISAR.getContent(type, content, source), previous, pubkey, privkey,
-        rootEvent: rootEvent,
         replyEvent: replyEvent,
-        replyUsers: replyUsers,
+        replyUser: replyUsers?.firstOrNull,
         subContent: MessageDBISAR.getSubContent(type, content),
         createAt: createAt);
 
@@ -101,7 +97,7 @@ extension EMessage on RelayGroup {
           groupId: groupId,
           kind: event.kind,
           tags: jsonEncode(event.tags),
-          replyId: replyEvent ?? (rootEvent ?? ''),
+          replyId: replyEvent ?? '',
           content: event.content,
           decryptContent: content,
           type: MessageDBISAR.messageTypeToString(type),

@@ -354,7 +354,8 @@ extension SecretChat on Contacts {
   Future<Event?> getSendSecretMessageEvent(
     String sessionId,
     String toPubkey,
-    String replayId,
+    String replyId,
+    String replyUser,
     MessageType type,
     String content,
     int? expiration, {
@@ -367,15 +368,22 @@ extension SecretChat on Contacts {
         sessionDB.shareSecretKey != null &&
         sessionDB.shareSecretKey!.isNotEmpty) {
       return await Nip17.encodeInnerEvent(
-          toPubkey, MessageDBISAR.getContent(type, content, source), replayId, pubkey, privkey,
-          subContent: MessageDBISAR.getSubContent(type, content), expiration: expiration,
-        encryptedFile: encryptedFile,);
+        toPubkey,
+        MessageDBISAR.getContent(type, content, source),
+        replyId,
+        replyUser,
+        pubkey,
+        privkey,
+        subContent: MessageDBISAR.getSubContent(type, content),
+        expiration: expiration,
+        encryptedFile: encryptedFile,
+      );
     }
     return null;
   }
 
-  Future<OKEvent> sendSecretMessage(
-      String sessionId, String toPubkey, String replayId, MessageType type, String content,
+  Future<OKEvent> sendSecretMessage(String sessionId, String toPubkey, String replayId,
+      String replyUser, MessageType type, String content,
       {Event? event,
       bool local = false,
       int? expiration,
@@ -389,7 +397,7 @@ extension SecretChat on Contacts {
       /// check chat relay
       _connectToRelay(sessionDB.relay);
       event ??= await getSendSecretMessageEvent(
-          sessionId, toPubkey, replayId, type, content, expiration,
+          sessionId, toPubkey, replayId, replyUser, type, content, expiration,
           encryptedFile: encryptedFile, source: source);
       expiration = expiration != null ? (expiration + currentUnixTimestampSeconds()) : null;
 
