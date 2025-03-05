@@ -55,7 +55,7 @@ class NotificationHelper {
   Future<Event> _encode(String receiver, String content, String replyId) async {
     String enContent = await Nip4.encryptContent(content, receiver,
         Account.sharedInstance.currentPubkey, Account.sharedInstance.currentPrivkey);
-    List<List<String>> tags = Nip4.toTags(receiver, replyId, null);
+    List<List<String>> tags = Nip4.toTags(receiver, replyId, '', null);
     Event event = await Event.from(
         kind: 22456,
         tags: tags,
