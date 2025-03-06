@@ -101,7 +101,6 @@ class NostrGroupData {
 
 extension MLSPrivateGroups on Groups {
   Future<void> initMLS() async {
-    await RustLib.init();
     bool isIOS = Platform.isIOS || Platform.isMacOS;
     Directory directory =
         isIOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
@@ -383,6 +382,7 @@ extension MLSPrivateGroups on Groups {
     GroupEvent groupEvent = Nip104.decodeGroupEvent(event);
     ValueNotifier<GroupDBISAR>? groupValueNotifier = groups[groupEvent.groupId];
     if (groupValueNotifier == null) return;
+    if (groupEvent.pubkey == pubkey) return;
     var secretKey = await _getGroupKeyChain(groupEvent.groupId);
     if (secretKey == null) {
       return;
