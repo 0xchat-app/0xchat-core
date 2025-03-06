@@ -61,7 +61,12 @@ extension PrivateGroups on Groups {
     if (groupDB == null) return null;
     List<String> existingMembers = groupDB.members ?? [];
     Set<String> uniqueMembersSet = {...existingMembers, ...members};
-    return await createPrivateGroup(pubkey, '', groupDB.name, uniqueMembersSet.toList());
+    if (groupDB.mlsGroupId != null) {
+      return await createMLSGroup(groupDB.name, '', uniqueMembersSet.toList(),
+          groupDB.adminPubkeys ?? [], [groupDB.relay ?? '']);
+    } else {
+      return await createPrivateGroup(pubkey, '', groupDB.name, uniqueMembersSet.toList());
+    }
   }
 
   Future<GroupDBISAR?> removeMembersFromPrivateGroup(
@@ -73,7 +78,12 @@ extension PrivateGroups on Groups {
     for (String member in membersToRemove) {
       updatedMembersSet.remove(member);
     }
-    return await createPrivateGroup(pubkey, '', groupDB.name, updatedMembersSet.toList());
+    if (groupDB.mlsGroupId != null) {
+      return await createMLSGroup(groupDB.name, '', updatedMembersSet.toList(),
+          groupDB.adminPubkeys ?? [], [groupDB.relay ?? '']);
+    } else {
+      return await createPrivateGroup(pubkey, '', groupDB.name, updatedMembersSet.toList());
+    }
   }
 
   Future<OKEvent> updatePrivateGroupName(String sender, String groupId, String name,

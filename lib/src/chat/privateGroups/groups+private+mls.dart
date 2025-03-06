@@ -217,7 +217,7 @@ extension MLSPrivateGroups on Groups {
         result[pubkey] = user.encodedKeyPackage!;
       } else {
         String encodedKeyPackage = await _getKeyPackageFromRelay(pubkey);
-        result[pubkey] = encodedKeyPackage;
+        if (encodedKeyPackage.isNotEmpty) result[pubkey] = encodedKeyPackage;
       }
     }
     return result;
@@ -234,7 +234,11 @@ extension MLSPrivateGroups on Groups {
         Account.saveUserToDB(user);
         if (!completer.isCompleted) completer.complete(keyPackageEvent.encoded_key_package);
       }
-    }, eoseCallBack: (requestId, ok, relay, unRelays) async {});
+    }, eoseCallBack: (requestId, ok, relay, unRelays) async {
+      if (unRelays.isEmpty) {
+        if (!completer.isCompleted) completer.complete('');
+      }
+    });
     return completer.future;
   }
 
@@ -274,6 +278,7 @@ extension MLSPrivateGroups on Groups {
   Future<GroupDBISAR?> createMLSGroup(String groupName, String groupDescription,
       List<String> members, List<String> admins, List<String> relays) async {
     Map<String, String> membersKeyPackages = await _getMembersKeyPackages(members);
+    if (membersKeyPackages.keys.length < members.length) return null;
     String createGroupResult = await createGroup(
         groupName: groupName,
         groupDescription: groupDescription,
@@ -291,7 +296,7 @@ extension MLSPrivateGroups on Groups {
         updateTime: currentUnixTimestampSeconds(),
         name: mlsGroup.nostrGroupData.name,
         about: mlsGroup.nostrGroupData.description,
-        members: mlsGroup.groupMembers,
+        members: mlsGroup.groupMembers.toSet().toList(),
         mlsGroupId: mlsGroup.groupId,
         relay: relays.firstOrNull,
         adminPubkeys: mlsGroup.nostrGroupData.adminPubkeys,
@@ -301,6 +306,8 @@ extension MLSPrivateGroups on Groups {
     await syncGroupToDB(groupDBISAR);
     await syncMyGroupListToDB();
     updateMLSGroupSubscription();
+    String inviteMessage = 'Private group created!';
+    sendGroupMessage(groupDBISAR.groupId, MessageType.system, inviteMessage, local: true);
     return groupDBISAR;
   }
 
@@ -348,7 +355,7 @@ extension MLSPrivateGroups on Groups {
         updateTime: currentUnixTimestampSeconds(),
         name: mlsGroup.nostrGroupData.name,
         about: mlsGroup.nostrGroupData.description,
-        members: mlsGroup.groupMembers,
+        members: mlsGroup.groupMembers.toSet().toList(),
         mlsGroupId: mlsGroup.groupId,
         adminPubkeys: mlsGroup.nostrGroupData.adminPubkeys,
         serializedWelcomeMessage: mlsGroup.serializedWelcomeMessage);
