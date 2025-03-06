@@ -210,31 +210,32 @@ extension MLSPrivateGroups on Groups {
     return completer.future;
   }
 
-  Future<Map<String, String>> _getKeyPackageFromRelay(List<String> pubkeys) async {
-    Completer<Map<String, String>> completer = Completer<Map<String, String>>();
+  Future<Map<String, String>> _getMembersKeyPackages(List<String> pubkeys) async {
     Map<String, String> result = {};
     for (var pubkey in pubkeys) {
       UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
       if (user != null && user.encodedKeyPackage != null) {
         result[pubkey] = user.encodedKeyPackage!;
+      } else {
+        String encodedKeyPackage = await _getKeyPackageFromRelay(pubkey);
+        result[pubkey] = encodedKeyPackage;
       }
     }
-    Filter f = Filter(kinds: [443], limit: 1, authors: pubkeys);
+    return result;
+  }
+
+  Future<String> _getKeyPackageFromRelay(String pubkey) async {
+    Completer<String> completer = Completer<String>();
+    Filter f = Filter(kinds: [443], limit: 1, authors: [pubkey]);
     Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
       KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
-      if (result[keyPackageEvent.pubkey] == null && _checkValidKeypackage(keyPackageEvent)) {
-        result[keyPackageEvent.pubkey] = keyPackageEvent.encoded_key_package;
-        UserDBISAR? user = await Account.sharedInstance.getUserInfo(keyPackageEvent.pubkey);
-        if (user != null) {
-          user.encodedKeyPackage = keyPackageEvent.encoded_key_package;
-          Account.saveUserToDB(user);
-        }
+      if (_checkValidKeypackage(keyPackageEvent)) {
+        UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
+        user!.encodedKeyPackage = keyPackageEvent.encoded_key_package;
+        Account.saveUserToDB(user);
+        if (!completer.isCompleted) completer.complete(keyPackageEvent.encoded_key_package);
       }
-    }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      if (unRelays.isEmpty) {
-        if (!completer.isCompleted) completer.complete(result);
-      }
-    });
+    }, eoseCallBack: (requestId, ok, relay, unRelays) async {});
     return completer.future;
   }
 
@@ -273,7 +274,7 @@ extension MLSPrivateGroups on Groups {
 
   Future<GroupDBISAR?> createMLSGroup(String groupName, String groupDescription,
       List<String> members, List<String> admins, List<String> relays) async {
-    Map<String, String> membersKeyPackages = await _getKeyPackageFromRelay(members);
+    Map<String, String> membersKeyPackages = await _getMembersKeyPackages(members);
     String createGroupResult = await createGroup(
         groupName: groupName,
         groupDescription: groupDescription,
@@ -293,6 +294,7 @@ extension MLSPrivateGroups on Groups {
         about: mlsGroup.nostrGroupData.description,
         members: mlsGroup.groupMembers,
         mlsGroupId: mlsGroup.groupId,
+        relay: relays.firstOrNull,
         adminPubkeys: mlsGroup.nostrGroupData.adminPubkeys,
         serializedWelcomeMessage: mlsGroup.serializedWelcomeMessage);
     groups[groupDBISAR.groupId] = ValueNotifier(groupDBISAR);
