@@ -225,8 +225,18 @@ extension MLSPrivateGroups on Groups {
 
   Future<String> _getKeyPackageFromRelay(String pubkey) async {
     Completer<String> completer = Completer<String>();
+    Map<String, List<Filter>> subscriptions = {};
+    UserDBISAR? userDBISAR = await Account.sharedInstance.getUserInfo(pubkey);
+    List<String> relays = [];
+    relays.addAll(userDBISAR?.outboxRelayList ?? []);
+    relays.addAll(userDBISAR?.dmRelayList ?? []);
+    relays.addAll(Relays.sharedInstance.recommendGeneralRelays);
+    await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.temp);
     Filter f = Filter(kinds: [443], limit: 1, authors: [pubkey]);
-    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
+    for (var relay in relays) {
+      subscriptions[relay] = [f];
+    }
+    Connect.sharedInstance.addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
       KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
       if (_checkValidKeypackage(keyPackageEvent)) {
         UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
