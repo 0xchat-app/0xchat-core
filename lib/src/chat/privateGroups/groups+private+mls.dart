@@ -176,12 +176,10 @@ extension MLSPrivateGroups on Groups {
   /// init, create new, get, delete, rotate, check valid
   void _initKeypackages() {
     // TODO: use keypackage relays
-    List<String> keypackageRelays =
-        Account.sharedInstance.me!.outboxRelayList ?? Relays.sharedInstance.recommendDMRelays;
     Map<String, bool> keypackageUpdated = {};
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 && Account.sharedInstance.me != null) {
-        if (keypackageRelays.contains(relay) && keypackageUpdated[relay] != true) {
+        if (keypackageUpdated[relay] != true) {
           keypackageUpdated[relay] = true;
           await _createNewKeyPackage([relay]);
         }
@@ -225,18 +223,8 @@ extension MLSPrivateGroups on Groups {
 
   Future<String> _getKeyPackageFromRelay(String pubkey) async {
     Completer<String> completer = Completer<String>();
-    Map<String, List<Filter>> subscriptions = {};
-    UserDBISAR? userDBISAR = await Account.sharedInstance.getUserInfo(pubkey);
-    List<String> relays = [];
-    relays.addAll(userDBISAR?.outboxRelayList ?? []);
-    relays.addAll(userDBISAR?.dmRelayList ?? []);
-    relays.addAll(Relays.sharedInstance.recommendGeneralRelays);
-    await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.temp);
     Filter f = Filter(kinds: [443], limit: 1, authors: [pubkey]);
-    for (var relay in relays) {
-      subscriptions[relay] = [f];
-    }
-    Connect.sharedInstance.addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
+    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
       KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
       if (_checkValidKeypackage(keyPackageEvent)) {
         UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
