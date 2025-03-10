@@ -219,13 +219,22 @@ extension MLSPrivateGroups on Groups {
   Future<Map<String, String>> _getMembersKeyPackages(List<String> pubkeys) async {
     Map<String, String> result = {};
     for (var pubkey in pubkeys) {
-      UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
-      if (user != null && user.encodedKeyPackage != null) {
-        result[pubkey] = user.encodedKeyPackage!;
-      } else {
-        String encodedKeyPackage = await _getKeyPackageFromRelay(pubkey);
-        if (encodedKeyPackage.isNotEmpty) result[pubkey] = encodedKeyPackage;
+      String encodedKeyPackage = await _getKeyPackageFromRelay(pubkey);
+      if (encodedKeyPackage.isNotEmpty) {
+        result[pubkey] = encodedKeyPackage;
+      } else{
+        UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
+        if (user != null && user.encodedKeyPackage != null) {
+          result[pubkey] = user.encodedKeyPackage!;
+        }
       }
+      // UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
+      // if (user != null && user.encodedKeyPackage != null) {
+      //   result[pubkey] = user.encodedKeyPackage!;
+      // } else {
+      //   String encodedKeyPackage = await _getKeyPackageFromRelay(pubkey);
+      //   if (encodedKeyPackage.isNotEmpty) result[pubkey] = encodedKeyPackage;
+      // }
     }
     return result;
   }
