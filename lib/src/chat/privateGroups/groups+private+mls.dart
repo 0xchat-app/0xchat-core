@@ -181,21 +181,30 @@ extension MLSPrivateGroups on Groups {
       if (status == 1 && Account.sharedInstance.me != null) {
         if (keypackageUpdated[relay] != true) {
           keypackageUpdated[relay] = true;
-          await _createNewKeyPackage([relay]);
+          await _checkKeyPackage([relay]);
         }
       }
     });
   }
 
-  Future<Future<OKEvent>> _createNewKeyPackage(List<String> relays) async {
-    String encodedKeyPackage;
+  Future<void> _checkKeyPackage(List<String> relays) async {
     if (Account.sharedInstance.me!.encodedKeyPackage == null) {
-      encodedKeyPackage = await createKeyPackageForEvent(publicKey: pubkey);
-      Account.sharedInstance.me!.encodedKeyPackage = encodedKeyPackage;
-      Account.sharedInstance.syncMe();
+      _createNewKeyPackage(relays);
     } else {
-      encodedKeyPackage = Account.sharedInstance.me!.encodedKeyPackage!;
+      // try {
+      //   await loadKeyPackageFromStorage(
+      //       encodedKeyPackage: Account.sharedInstance.me!.encodedKeyPackage!);
+      // } catch (e) {
+      //   print(e);
+      //   _createNewKeyPackage(relays);
+      // }
     }
+  }
+
+  Future<OKEvent> _createNewKeyPackage(List<String> relays) async {
+    String encodedKeyPackage = await createKeyPackageForEvent(publicKey: pubkey);
+    Account.sharedInstance.me!.encodedKeyPackage = encodedKeyPackage;
+    Account.sharedInstance.syncMe();
     Event event = await Nip104.encodeKeyPackageEvent(
         encodedKeyPackage, getCiphersuite(), getExtensions(), relays, pubkey, privkey);
     Completer<OKEvent> completer = Completer<OKEvent>();
@@ -259,7 +268,7 @@ extension MLSPrivateGroups on Groups {
 
   Future<void> rotateKeyPackages(List<String> relays) async {
     await _deleteAllKeyPackagesFromRelay(relays);
-    await _createNewKeyPackage(relays);
+    await _checkKeyPackage(relays);
   }
 
   bool _areListsEqual(List<String> list1, List<String> list2) {
