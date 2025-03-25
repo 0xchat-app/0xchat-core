@@ -48,6 +48,7 @@ export 'src/chat/relayGroups/relayGroup+info.dart';
 export 'src/chat/relayGroups/relayGroup+member.dart';
 export 'src/chat/relayGroups/relayGroup+message.dart';
 export 'src/chat/relayGroups/relayGroup+note.dart';
+export 'src/chat/relayGroups/relayGroup+pay.dart';
 export 'src/chat/relayGroups/model/relayGroupDB.dart';
 export 'src/chat/relayGroups/model/relayGroupDB_isar.dart';
 export 'src/chat/relayGroups/model/joinRequestDB.dart';
