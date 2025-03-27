@@ -19,7 +19,7 @@ extension EInfo on RelayGroup {
     RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     groupDB ??= RelayGroupDBISAR(groupId: groupId, relay: relay, author: author ?? '');
     Completer<RelayGroupDBISAR?> completer = Completer<RelayGroupDBISAR?>();
-    Filter f = Filter(kinds: [39000, 39001, 39002], d: [groupId]);
+    Filter f = Filter(kinds: [39000, 39001, 39002, 39003], d: [groupId]);
     Map<String, List<Filter>> subscriptions = {};
     subscriptions[groupDB.relay] = [f];
     Connect.sharedInstance.addSubscriptions(subscriptions, eventCallBack: (event, relay) async {
@@ -51,6 +51,9 @@ extension EInfo on RelayGroup {
             groupDB!.members = members;
             groupDB.lastMembersUpdatedTime = event.createdAt;
           }
+          break;
+        case 39003:
+
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {

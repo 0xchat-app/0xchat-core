@@ -205,6 +205,9 @@ extension EMember on RelayGroup {
             groupDB.members!.add(pubkey);
             syncGroupToDB(groupDB);
           }
+          else{
+            return;
+          }
         }
         break;
       case GroupActionKind.removeUser:

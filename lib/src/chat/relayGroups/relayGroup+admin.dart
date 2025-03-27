@@ -4,12 +4,10 @@ import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 extension EAdmin on RelayGroup {
-  bool hasPermissions(
-      List<GroupAdmin> admins, String user, List<GroupActionKind> permissions) {
+  bool hasPermissions(List<GroupAdmin> admins, String user, List<GroupActionKind> permissions) {
     if (admins.isNotEmpty && admins.any((admin) => admin.pubkey == user)) {
       var admin = admins.firstWhere((admin) => admin.pubkey == user);
-      return permissions
-          .every((permission) => admin.permissions.contains(permission));
+      return permissions.every((permission) => admin.permissions.contains(permission));
     }
     return false;
   }
@@ -23,8 +21,7 @@ extension EAdmin on RelayGroup {
     RelayGroupDBISAR? groupDB = groups[joinRequest.groupId]?.value;
     if (groupDB == null || !groupDB.private) return;
     if (hasPermissions(groupDB.admins, pubkey, [GroupActionKind.addUser])) {
-      JoinRequestDBISAR joinRequestDB =
-          JoinRequestDBISAR.toJoinRequestDB(joinRequest);
+      JoinRequestDBISAR joinRequestDB = JoinRequestDBISAR.toJoinRequestDB(joinRequest);
       await saveJoinRequestDBToDB(joinRequestDB);
       joinRequestCallBack?.call(joinRequestDB);
     }
@@ -32,10 +29,7 @@ extension EAdmin on RelayGroup {
 
   Future<List<JoinRequestDBISAR>> getRequestList(String groupId) async {
     final isar = DBISAR.sharedInstance.isar;
-    return await isar.joinRequestDBISARs
-        .filter()
-        .groupIdEqualTo(groupId)
-        .findAll();
+    return await isar.joinRequestDBISARs.filter().groupIdEqualTo(groupId).findAll();
   }
 
   Future<OKEvent> acceptJoinRequest(JoinRequestDBISAR joinRequest) async {
@@ -68,50 +62,42 @@ extension EAdmin on RelayGroup {
     if (moderation.actionKind == GroupActionKind.removeUser &&
         moderation.users.singleOrNull == pubkey) {
       LogUtils.v(() => 'sendModeration: leave group');
-    } else if (!hasPermissions(
-        groupDB.admins, pubkey, [moderation.actionKind])) {
+    } else if (!hasPermissions(groupDB.admins, pubkey, [moderation.actionKind])) {
       return OKEvent(groupId, false, 'permission not met');
     }
 
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<String> previous = await getPrevious(moderation.groupId);
     moderation.previous = previous;
-    Event event =
-        await Nip29.encodeGroupModeration(moderation, pubkey, privkey);
+    Event event = await Nip29.encodeGroupModeration(moderation, pubkey, privkey);
     Connect.sharedInstance.sendEvent(event, toRelays: [groupDB.relay],
         sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) completer.complete(ok);
       if (ok.status == true) {
-        ModerationDBISAR moderationDB =
-            ModerationDBISAR.toModerationDB(moderation);
+        ModerationDBISAR moderationDB = ModerationDBISAR.toModerationDB(moderation);
         await saveModerationToDB(moderationDB);
       }
     });
     return completer.future;
   }
 
-  Future<OKEvent> addUser(
-      String groupId, List<String> addUsers, String reason) async {
+  Future<OKEvent> addUser(String groupId, List<String> addUsers, String reason) async {
     RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
-    GroupModeration moderation =
-        GroupModeration.addUser(groupId, addUsers, reason);
+    GroupModeration moderation = GroupModeration.addUser(groupId, addUsers, reason);
     OKEvent ok = await sendModeration(moderation);
     if (ok.status) {
       groupDB.members ??= [];
-      groupDB.members =
-          groupDB.members!.toSet().union(addUsers.toSet()).toList();
+      groupDB.members = groupDB.members!.toSet().union(addUsers.toSet()).toList();
       syncGroupToDB(groupDB);
     }
     return ok;
   }
 
-  Future<OKEvent> removeUser(
-      String groupId, List<String> removeUsers, String reason) async {
+  Future<OKEvent> removeUser(String groupId, List<String> removeUsers, String reason) async {
     RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
-    GroupModeration moderation =
-        GroupModeration.removeUser(groupId, removeUsers, reason);
+    GroupModeration moderation = GroupModeration.removeUser(groupId, removeUsers, reason);
     OKEvent ok = await sendModeration(moderation);
     if (ok.status) {
       groupDB.members?.removeWhere((e) => removeUsers.contains(e));
@@ -133,8 +119,8 @@ extension EAdmin on RelayGroup {
     return ok;
   }
 
-  Future<OKEvent> editMetadata(String groupId, String name, String about,
-      String picture, String reason) async {
+  Future<OKEvent> editMetadata(
+      String groupId, String name, String about, String picture, String reason) async {
     RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     GroupModeration moderation =
@@ -149,12 +135,25 @@ extension EAdmin on RelayGroup {
     return ok;
   }
 
-  Future<OKEvent> setPermissions(String groupId, String user,
-      List<GroupActionKind> permissions, String reason) async {
+  Future<OKEvent> addAdmin(String groupId, String user, String reason) async {
     RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
-    List<GroupAdmin>? admins =
-        groupDB.admins.where((admin) => admin.pubkey == user).toList();
+
+    return _addPermissions(groupId, user, GroupActionKind.bishop(), reason);
+  }
+
+  Future<OKEvent> removeAdmin(String groupId, String user, String reason) async {
+    RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
+    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
+
+    return _removePermissions(groupId, user, GroupActionKind.bishop(), reason);
+  }
+
+  Future<OKEvent> setPermissions(
+      String groupId, String user, List<GroupActionKind> permissions, String reason) async {
+    RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
+    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
+    List<GroupAdmin>? admins = groupDB.admins.where((admin) => admin.pubkey == user).toList();
     if (admins.isNotEmpty) {
       List<GroupActionKind> oldList = admins.first.permissions;
       List<GroupActionKind> addList = [];
@@ -184,8 +183,8 @@ extension EAdmin on RelayGroup {
     return _addPermissions(groupId, user, permissions, reason);
   }
 
-  Future<OKEvent> _addPermissions(String groupId, String user,
-      List<GroupActionKind> permissions, String reason) async {
+  Future<OKEvent> _addPermissions(
+      String groupId, String user, List<GroupActionKind> permissions, String reason) async {
     RelayGroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     GroupModeration moderation = GroupModeration.addPermission(
@@ -201,7 +200,7 @@ extension EAdmin on RelayGroup {
         }
       }
       if (!exit) {
-        GroupAdmin admin = GroupAdmin(user, 'admin', permissions);
+        GroupAdmin admin = GroupAdmin(user, 'bishop', permissions);
         List<GroupAdmin> admins = List.from(groupDB.admins);
         admins.add(admin);
         groupDB.admins = admins;
@@ -211,8 +210,8 @@ extension EAdmin on RelayGroup {
     return ok;
   }
 
-  Future<OKEvent> _removePermissions(String groupId, String user,
-      List<GroupActionKind> permissions, String reason) async {
+  Future<OKEvent> _removePermissions(
+      String groupId, String user, List<GroupActionKind> permissions, String reason) async {
     RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     GroupModeration moderation = GroupModeration.removePermission(
@@ -221,8 +220,8 @@ extension EAdmin on RelayGroup {
     if (ok.status) {
       for (GroupAdmin admin in groupDB.admins) {
         if (admin.pubkey == user) {
-          admin.permissions.removeWhere((permission) =>
-              permissions.any((element) => element.name == permission.name));
+          admin.permissions.removeWhere(
+              (permission) => permissions.any((element) => element.name == permission.name));
           if (admin.permissions.isEmpty) {
             List<GroupAdmin> admins = List.from(groupDB.admins);
             admins.removeWhere((admin) => admin.pubkey == user);
@@ -239,12 +238,10 @@ extension EAdmin on RelayGroup {
   bool hasDeletePermission(String groupId) {
     RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return false;
-    return hasPermissions(
-        groupDB.admins, pubkey, [GroupActionKind.deleteEvent]);
+    return hasPermissions(groupDB.admins, pubkey, [GroupActionKind.deleteEvent]);
   }
 
-  Future<OKEvent> deleteMessageFromRelay(
-      String groupId, String messageId, String reason) async {
+  Future<OKEvent> deleteMessageFromRelay(String groupId, String messageId, String reason) async {
     OKEvent ok = await deleteEvent(groupId, messageId, reason);
     if (ok.status) {
       ok = await deleteMessageFromLocal(messageId);
@@ -257,8 +254,7 @@ extension EAdmin on RelayGroup {
     return OKEvent(messageId, true, '');
   }
 
-  Future<OKEvent> deleteNoteFromRelay(
-      String groupId, String noteId, String reason) async {
+  Future<OKEvent> deleteNoteFromRelay(String groupId, String noteId, String reason) async {
     OKEvent ok = await deleteEvent(groupId, noteId, reason);
     if (ok.status) {
       ok = await deleteNoteFromLocal(noteId);
@@ -274,19 +270,15 @@ extension EAdmin on RelayGroup {
     return OKEvent(noteId, true, '');
   }
 
-  Future<OKEvent> deleteEvent(
-      String groupId, String eventId, String reason) async {
-    GroupModeration moderation =
-        GroupModeration.deleteEvent(groupId, eventId, reason);
+  Future<OKEvent> deleteEvent(String groupId, String eventId, String reason) async {
+    GroupModeration moderation = GroupModeration.deleteEvent(groupId, eventId, reason);
     return sendModeration(moderation);
   }
 
-  Future<OKEvent> editGroupStatus(
-      String groupId, bool closed, bool private, String reason) async {
+  Future<OKEvent> editGroupStatus(String groupId, bool closed, bool private, String reason) async {
     RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
-    GroupModeration moderation =
-        GroupModeration.editGroupStatus(groupId, closed, private, reason);
+    GroupModeration moderation = GroupModeration.editGroupStatus(groupId, closed, private, reason);
     OKEvent ok = await sendModeration(moderation);
     if (ok.status) {
       groupDB.private = private;
