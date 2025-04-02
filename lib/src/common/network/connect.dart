@@ -132,13 +132,12 @@ class Connect {
   }
 
   void listenConnectivity() {
-    // Listen for connectivity changes
     _connectivitySubscription ??=
-        Connectivity().onConnectivityChanged.listen((ConnectivityResult result) async {
-      if (result != ConnectivityResult.none) {
-        resetConnection(force: false);
-      }
-    });
+        Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) async {
+          if (results.any((result) => result != ConnectivityResult.none)) {
+            resetConnection(force: false);
+          }
+        });
   }
 
   // void _stopCheckTimeOut() {
