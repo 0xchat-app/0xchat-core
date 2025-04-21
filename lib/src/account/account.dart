@@ -9,8 +9,17 @@ import 'package:convert/convert.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
+enum NIP46ConnectionStatus {
+  connected,
+  disconnected,
+  connecting,
+  waitingForSigning,
+  approvedSigning
+}
+
 typedef AccountUpdateCallback = void Function();
 typedef NIP46CommandResultCallback = void Function(NIP46CommandResult result);
+typedef NIP46ConnectionStatusCallback = void Function(NIP46ConnectionStatus status);
 
 class Account {
   /// singleton
@@ -29,6 +38,7 @@ class Account {
 
   Map<String, Completer<NIP46CommandResult>> resultCompleters = {};
   NIP46CommandResultCallback? nip46commandResultCallback;
+  NIP46ConnectionStatusCallback? nip46connectionStatusCallback;
 
   // Map<String, UserDB> userCache = {};
   Map<String, ValueNotifier<UserDBISAR>> userCache = {};
