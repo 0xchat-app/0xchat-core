@@ -320,11 +320,6 @@ class Account {
   }
 
   Future<void> logout() async {
-    if (me?.remoteSignerURI != null) {
-      me?.remoteSignerURI = null;
-      me?.clientPrivateKey = null;
-      await saveUserToDB(me!);
-    }
     await NotificationHelper.sharedInstance.logout();
     await Connect.sharedInstance.closeAllConnects();
     Contacts.sharedInstance.allContacts.clear();
