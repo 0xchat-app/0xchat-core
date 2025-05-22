@@ -13,6 +13,23 @@ String toHexString(List<int> bytes) {
   return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join('');
 }
 
+List<int> hexStringToBytes(String hexString) {
+  hexString = hexString.replaceAll(' ', '').replaceAll('0x', '');
+
+  if (hexString.length % 2 != 0) {
+    hexString = '0' + hexString;
+  }
+
+  List<int> bytes = [];
+  for (int i = 0; i < hexString.length; i += 2) {
+    String byteString = hexString.substring(i, i + 2);
+    int byte = int.parse(byteString, radix: 16);
+    bytes.add(byte);
+  }
+
+  return bytes;
+}
+
 class MlsGroup {
   final List<int> groupId;
   final List<String> groupMembers;
@@ -27,11 +44,11 @@ class MlsGroup {
   });
 
   static MlsGroup fromJson(Map<String, dynamic> json) {
-    if (json['group_id'] == null) {
+    if (json['mls_group_id'] == null) {
       throw Exception("error: group_id does not exit, ${jsonEncode(json)}");
     }
 
-    List<dynamic> groupIdVec = json['group_id']['value']['vec'];
+    List<dynamic> groupIdVec = json['mls_group_id']['value']['vec'];
     List<int> groupId = groupIdVec.map((e) => e as int).toList();
 
     List<String> members = [];
@@ -39,7 +56,10 @@ class MlsGroup {
       members = List<String>.from(json['members']);
     }
 
-    List<int> serializedWelcomeMessage = List<int>.from(json['serialized_welcome_message']);
+    List<int> serializedWelcomeMessage = [];
+    if (json['serialized_welcome_message'] != null) {
+      serializedWelcomeMessage = List<int>.from(json['serialized_welcome_message']);
+    }
 
     NostrGroupData nostrGroupData = NostrGroupData.fromJson(json['nostr_group_data']);
 
@@ -77,26 +97,106 @@ class NostrGroupData {
     List<int> nostrGroupIdInts = List<int>.from(json['nostr_group_id']);
     String nostrGroupId = toHexString(nostrGroupIdInts);
 
-    List<int> nameInts = List<int>.from(json['name']);
-    String name = utf8.decode(nameInts);
+    String name = json['name'];
+    String description = json['description'];
 
-    List<int> descriptionInts = List<int>.from(json['description']);
-    String description = utf8.decode(descriptionInts);
-
-    List<String> adminPubkeys =
-        (json['admin_pubkeys'] as List).map((item) => utf8.decode(List<int>.from(item))).toList();
-
-    List<String> relays =
-        (json['relays'] as List).map((item) => utf8.decode(List<int>.from(item))).toList();
+    List<String> adminPubkeys = (json['admin_pubkeys'] as List).cast<String>();
 
     return NostrGroupData(
       nostrGroupId: nostrGroupId,
       name: name,
       description: description,
       adminPubkeys: adminPubkeys,
-      relays: relays,
+      relays: [],
     );
   }
+}
+
+class ParsedKeyPackage {
+  final String encodedKeyPackage;
+  final List<List<String>> tags;
+
+  ParsedKeyPackage({required this.encodedKeyPackage, required this.tags});
+
+  @override
+  String toString() {
+    return 'KeyPackage:\n  Encoded: $encodedKeyPackage\n  Tags: $tags';
+  }
+}
+
+ParsedKeyPackage parseKeyPackageString(String jsonstring) {
+  final result = jsonDecode(jsonstring);
+
+  final encodedKeyPackage = result['encoded_key_package'];
+  final tagsData = result['tags'];
+
+  final List<List<String>> tags = [];
+
+  if (tagsData is String) {
+    final tagPattern = RegExp(r'Tag\(\[(.+?)\]\)');
+    final matches = tagPattern.allMatches(tagsData);
+
+    for (final match in matches) {
+      if (match.group(1) != null) {
+        final tagContent = match.group(1)!;
+
+        final valuePattern = RegExp(r'"([^"]*)"');
+        final valueMatches = valuePattern.allMatches(tagContent);
+
+        final List<String> tagValues = [];
+        for (final valueMatch in valueMatches) {
+          if (valueMatch.group(1) != null) {
+            tagValues.add(valueMatch.group(1)!);
+          }
+        }
+
+        if (tagValues.isNotEmpty) {
+          tags.add(tagValues);
+        }
+      }
+    }
+  } else if (tagsData is List) {
+    for (final tag in tagsData) {
+      if (tag is String) {
+        final tagPattern = RegExp(r'Tag\(\[(.+?)\]\)');
+        final match = tagPattern.firstMatch(tag);
+
+        if (match != null && match.group(1) != null) {
+          final tagContent = match.group(1)!;
+
+          final valuePattern = RegExp(r'"([^"]*)"');
+          final valueMatches = valuePattern.allMatches(tagContent);
+
+          final List<String> tagValues = [];
+          for (final valueMatch in valueMatches) {
+            if (valueMatch.group(1) != null) {
+              tagValues.add(valueMatch.group(1)!);
+            }
+          }
+
+          if (tagValues.isNotEmpty) {
+            tags.add(tagValues);
+          }
+        }
+      } else if (tag is List) {
+        final List<String> tagValues = [];
+        for (final value in tag) {
+          if (value is String) {
+            tagValues.add(value);
+          }
+        }
+
+        if (tagValues.isNotEmpty) {
+          tags.add(tagValues);
+        }
+      }
+    }
+  }
+
+  return ParsedKeyPackage(
+    encodedKeyPackage: encodedKeyPackage,
+    tags: tags,
+  );
 }
 
 extension MLSPrivateGroups on Groups {
@@ -177,6 +277,7 @@ extension MLSPrivateGroups on Groups {
   void _initKeypackages() {
     // TODO: use keypackage relays
     Map<String, bool> keypackageUpdated = {};
+    _checkKeyPackage(['ws://127.0.0.1:8080']);
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 && Account.sharedInstance.me != null) {
         if (keypackageUpdated[relay] != true) {
@@ -188,6 +289,8 @@ extension MLSPrivateGroups on Groups {
   }
 
   Future<void> _checkKeyPackage(List<String> relays) async {
+    _createNewKeyPackage(relays);
+    return;
     if (Account.sharedInstance.me!.encodedKeyPackage == null) {
       _createNewKeyPackage(relays);
     } else {
@@ -202,11 +305,13 @@ extension MLSPrivateGroups on Groups {
   }
 
   Future<OKEvent> _createNewKeyPackage(List<String> relays) async {
-    String encodedKeyPackage = await createKeyPackageForEvent(publicKey: pubkey);
-    Account.sharedInstance.me!.encodedKeyPackage = encodedKeyPackage;
-    Account.sharedInstance.syncMe();
+    String result = await createKeyPackageForEvent(publicKey: pubkey);
+    ParsedKeyPackage parsedKeyPackage = parseKeyPackageString(result);
     Event event = await Nip104.encodeKeyPackageEvent(
-        encodedKeyPackage, getCiphersuite(), getExtensions(), relays, pubkey, privkey);
+        parsedKeyPackage.encodedKeyPackage, parsedKeyPackage.tags, pubkey, privkey);
+    Account.sharedInstance.me!.encodedKeyPackage = parsedKeyPackage.encodedKeyPackage;
+    Account.sharedInstance.syncMe();
+
     Completer<OKEvent> completer = Completer<OKEvent>();
     Connect.sharedInstance.sendEvent(event, toRelays: relays, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
@@ -222,7 +327,7 @@ extension MLSPrivateGroups on Groups {
       String encodedKeyPackage = await _getKeyPackageFromRelay(pubkey);
       if (encodedKeyPackage.isNotEmpty) {
         result[pubkey] = encodedKeyPackage;
-      } else{
+      } else {
         UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
         if (user != null && user.encodedKeyPackage != null) {
           result[pubkey] = user.encodedKeyPackage!;
@@ -244,7 +349,8 @@ extension MLSPrivateGroups on Groups {
     Filter f = Filter(kinds: [443], limit: 1, authors: [pubkey]);
     Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
       KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
-      if (_checkValidKeypackage(keyPackageEvent)) {
+      bool result = await _checkValidKeypackage(keyPackageEvent);
+      if (result) {
         UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
         user!.encodedKeyPackage = keyPackageEvent.encoded_key_package;
         Account.saveUserToDB(user);
@@ -284,24 +390,28 @@ extension MLSPrivateGroups on Groups {
     return Set.from(list1).containsAll(list2) && Set.from(list2).containsAll(list1);
   }
 
-  bool _checkValidKeypackage(KeyPackageEvent keyPackageEvent) {
-    List<String> extensions = getExtensions();
-    String ciphersuite = getCiphersuite();
-    return _areListsEqual(keyPackageEvent.extensions, extensions) &&
+  Future<bool> _checkValidKeypackage(KeyPackageEvent keyPackageEvent) async {
+    String extensions = jsonDecode(await getExtensions())['extensions'];
+    String ciphersuite = jsonDecode(await getCiphersuite())['ciphersuite'];
+
+    return _areListsEqual(keyPackageEvent.extensions, [extensions]) &&
         ciphersuite == keyPackageEvent.ciphersuite;
   }
 
   Future<GroupDBISAR?> createMLSGroup(String groupName, String groupDescription,
       List<String> members, List<String> admins, List<String> relays) async {
+    members.remove(pubkey);
     Map<String, String> membersKeyPackages = await _getMembersKeyPackages(members);
     if (membersKeyPackages.keys.length < members.length) return null;
     String createGroupResult = await createGroup(
         groupName: groupName,
         groupDescription: groupDescription,
-        groupMembersKeyPackages: membersKeyPackages.values.toList(),
+        groupMembersSerializedKeyPackages: membersKeyPackages.values.toList(),
+        groupMembersPubkeys: members,
         groupCreatorPublicKey: pubkey,
         groupAdminPublicKeys: admins,
         relays: relays);
+    print(createGroupResult);
     MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(createGroupResult));
 
     ///send welcome & invite members
@@ -345,25 +455,32 @@ extension MLSPrivateGroups on Groups {
     }
   }
 
-  Future<void> handleWelcomeMessageEvent(Event event, String relay) async {
+  Future<NostrGroupData?> previewWelcomeMessageEvent(Event event) async {
+    String previewWelcomeData = await previewGroupFromWelcome(
+        wrapperEventId: hexStringToBytes(event.id), rumorEventString: jsonEncode(event.toJson()));
+    NostrGroupData? groupData = NostrGroupData.fromPreviewWelcome(previewWelcomeData);
+    return groupData;
+  }
+
+  Future<void> handleWelcomeMessageEvent(String wrapperEventId, Event event, String relay) async {
     WelcomeEvent welcomeEvent = Nip104.decodeWelcomeEvent(event);
-    // String previewWelcomeData =
-    //     await previewWelcomeEvent(serializedWelcomeMessage: welcomeEvent.serializedWelcomeMessage);
-    // NostrGroupData? groupData = NostrGroupData.fromPreviewWelcome(previewWelcomeData);
 
     /// ignore non-contact user's welcome messages
     if (!Contacts.sharedInstance.allContacts.containsKey(welcomeEvent.pubkey)) return;
 
-    GroupDBISAR groupDBISAR = await joinMLSGroup(welcomeEvent, relay);
+    GroupDBISAR groupDBISAR = await joinMLSGroup(wrapperEventId, event, relay);
     UserDBISAR? userDBISAR = await Account.sharedInstance.getUserInfo(welcomeEvent.pubkey);
     String inviteMessage = '${userDBISAR?.name} invite you to join the private group';
     sendGroupMessage(groupDBISAR.groupId, MessageType.system, inviteMessage, local: true);
   }
 
-  Future<GroupDBISAR> joinMLSGroup(WelcomeEvent welcomeEvent, String relay) async {
-    String joinGroupResult =
-        await joinGroupFromWelcome(serializedWelcomeMessage: welcomeEvent.serializedWelcomeMessage);
+  Future<GroupDBISAR> joinMLSGroup(String wrapperEventId, Event welcomeEvent, String relay) async {
+    String joinGroupResult = await joinGroupFromWelcome(
+        wrapperEventId: hexStringToBytes(wrapperEventId),
+        rumorEventString: jsonEncode(welcomeEvent.toJson()));
     MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(joinGroupResult));
+    String membersString = await getMembers(groupId: mlsGroup.groupId);
+    List<String> members = (jsonDecode(membersString)['members'] as List).cast<String>();
     GroupDBISAR groupDBISAR = GroupDBISAR(
         groupId: mlsGroup.nostrGroupData.nostrGroupId,
         relay: relay,
@@ -371,7 +488,7 @@ extension MLSPrivateGroups on Groups {
         updateTime: currentUnixTimestampSeconds(),
         name: mlsGroup.nostrGroupData.name,
         about: mlsGroup.nostrGroupData.description,
-        members: mlsGroup.groupMembers.toSet().toList(),
+        members: members,
         mlsGroupId: mlsGroup.groupId,
         adminPubkeys: mlsGroup.nostrGroupData.adminPubkeys,
         serializedWelcomeMessage: mlsGroup.serializedWelcomeMessage);
@@ -385,13 +502,10 @@ extension MLSPrivateGroups on Groups {
 
   Future<OKEvent> sendMessageToMLSGroup(GroupDBISAR group, Event messageEvent) async {
     if (group.mlsGroupId == null) return OKEvent('', false, 'invalid mls group');
-    List<int> serializedMessage = await createMessageForGroup(
-        groupId: group.mlsGroupId!, messageEvent: jsonEncode(messageEvent.toJson()));
-    var secretKey = await _getGroupKeyChain(group.groupId);
-    if (secretKey == null) return OKEvent(group.groupId, false, 'can not fetch group key');
-    String content = await Nip44.encryptContent(
-        bytesToHex(Uint8List.fromList(serializedMessage)), secretKey.public, pubkey, privkey);
-    Event groupEvent = await Nip104.encodeGroupEvent(content, group.groupId, pubkey, privkey);
+    String eventString = await createMessageForGroup(
+        groupId: group.mlsGroupId!, rumorEventString: jsonEncode(messageEvent.toJson()));
+    print('sendMessageToMLSGroup: $eventString');
+    Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
     Completer<OKEvent> completer = Completer<OKEvent>();
     Connect.sharedInstance.sendEvent(groupEvent, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
@@ -406,17 +520,8 @@ extension MLSPrivateGroups on Groups {
     ValueNotifier<GroupDBISAR>? groupValueNotifier = groups[groupEvent.groupId];
     if (groupValueNotifier == null) return;
     if (groupEvent.pubkey == pubkey) return;
-    var secretKey = await _getGroupKeyChain(groupEvent.groupId);
-    if (secretKey == null) {
-      return;
-    }
-    String messageString = await Nip44.decryptContent(
-        groupEvent.message, groupEvent.pubkey, secretKey.public, secretKey.private);
-    List<int> serializedMessageJsonString = await processMessageForGroup(
-        groupId: groupValueNotifier.value.mlsGroupId!,
-        serializedMessage: hexToBytes(messageString));
-    Event innerEvent =
-        await Event.fromJson(jsonDecode(utf8.decode(serializedMessageJsonString)), verify: false);
+    String innerEventString = await processMessageForGroup(eventString: jsonEncode(event.toJson()));
+    Event innerEvent = await Event.fromJson(jsonDecode(innerEventString)['event'], verify: false);
     GroupMessage groupMessage = Nip29.decodeGroupMessage(innerEvent);
     MessageDBISAR messageDB = MessageDBISAR(
         messageId: event.id,
@@ -437,31 +542,4 @@ extension MLSPrivateGroups on Groups {
     await Messages.saveMessageToDB(messageDB);
     groupMessageCallBack?.call(messageDB);
   }
-
-  Future<Keychain?> _getGroupKeyChain(String groupId) async {
-    ValueNotifier<GroupDBISAR>? groupValueNotifier = groups[groupId];
-    if (groupValueNotifier == null) return null;
-    Keychain? secretKey;
-    GroupKeysDBISAR? groupKeysDBISAR = await GroupKeysDBISAR.getGroupKeysFromDB(
-        groupValueNotifier.value.groupId, groupValueNotifier.value.epoch);
-    if (groupKeysDBISAR == null && groupValueNotifier.value.mlsGroupId != null) {
-      ///try get epoch from open_nostrmls
-      var (key, epoch) =
-          await exportSecretAsHexSecretKeyAndEpoch(groupId: groupValueNotifier.value.mlsGroupId!);
-      groupKeysDBISAR = GroupKeysDBISAR(
-          groupId: groupId,
-          epoch: epoch.toInt(),
-          secretKey: key,
-          mlsGroupId: groupValueNotifier.value.mlsGroupId);
-      GroupKeysDBISAR.saveGroupKeysToDB(groupKeysDBISAR);
-      // TODO: delete outdated group keys
-      // GroupKeysDBISAR.deleteGroupKeysBeforeEpoch(groupEvent.groupId, epoch.toInt() - 3);
-      secretKey = Keychain(key);
-    } else if (groupKeysDBISAR != null) {
-      secretKey = Keychain(groupKeysDBISAR.secretKey);
-    }
-    return secretKey;
-  }
-
-  /// TODO: proposal & commit
 }

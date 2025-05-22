@@ -325,7 +325,7 @@ class Contacts {
 
             /// MLS Welcome Message
             case 444:
-              Groups.sharedInstance.handleWelcomeMessageEvent(innerEvent, relay);
+              Groups.sharedInstance.handleWelcomeMessageEvent(event.id, innerEvent, relay);
             case 10100:
             case 10101:
             case 10102:
