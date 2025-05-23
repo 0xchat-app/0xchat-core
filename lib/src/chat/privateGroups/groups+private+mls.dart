@@ -205,10 +205,11 @@ extension MLSPrivateGroups on Groups {
     Directory directory =
         isIOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
     await initNostrMls(path: directory.path, identity: pubkey);
-    _initKeypackages();
+    _checkKeyPackage();
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 && Account.sharedInstance.me != null) {
         updateMLSGroupSubscription(relay: relay);
+        _checkKeyPackage();
       }
     });
     updateMLSGroupSubscription();
@@ -272,35 +273,13 @@ extension MLSPrivateGroups on Groups {
     }
   }
 
-  /// handle key packages
-  /// init, create new, get, delete, rotate, check valid
-  void _initKeypackages() {
-    // TODO: use keypackage relays
-    Map<String, bool> keypackageUpdated = {};
-    _checkKeyPackage(['ws://127.0.0.1:8080']);
-    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
-      if (status == 1 && Account.sharedInstance.me != null) {
-        if (keypackageUpdated[relay] != true) {
-          keypackageUpdated[relay] = true;
-          await _checkKeyPackage([relay]);
-        }
-      }
-    });
-  }
-
-  Future<void> _checkKeyPackage(List<String> relays) async {
-    _createNewKeyPackage(relays);
-    return;
+  Future<void> _checkKeyPackage({List<String>? relays}) async {
     if (Account.sharedInstance.me!.encodedKeyPackage == null) {
+      if(relays == null || relays.isEmpty){
+        List<String> generalRelays = Account.sharedInstance.me?.relayList ?? [];
+        relays = generalRelays;
+      }
       _createNewKeyPackage(relays);
-    } else {
-      // try {
-      //   await loadKeyPackageFromStorage(
-      //       encodedKeyPackage: Account.sharedInstance.me!.encodedKeyPackage!);
-      // } catch (e) {
-      //   print(e);
-      //   _createNewKeyPackage(relays);
-      // }
     }
   }
 
@@ -383,7 +362,7 @@ extension MLSPrivateGroups on Groups {
 
   Future<void> rotateKeyPackages(List<String> relays) async {
     await _deleteAllKeyPackagesFromRelay(relays);
-    await _checkKeyPackage(relays);
+    await _checkKeyPackage(relays: relays);
   }
 
   bool _areListsEqual(List<String> list1, List<String> list2) {
