@@ -62,8 +62,7 @@ extension PrivateGroups on Groups {
     List<String> existingMembers = groupDB.members ?? [];
     Set<String> uniqueMembersSet = {...existingMembers, ...members};
     if (groupDB.mlsGroupId != null) {
-      return await createMLSGroup(groupDB.name, '', uniqueMembersSet.toList(),
-          groupDB.adminPubkeys ?? [], [groupDB.relay ?? '']);
+      return await addMembersToMLSGroup(groupDB, members);
     } else {
       return await createPrivateGroup(pubkey, '', groupDB.name, uniqueMembersSet.toList());
     }
@@ -79,8 +78,7 @@ extension PrivateGroups on Groups {
       updatedMembersSet.remove(member);
     }
     if (groupDB.mlsGroupId != null) {
-      return await createMLSGroup(groupDB.name, '', updatedMembersSet.toList(),
-          groupDB.adminPubkeys ?? [], [groupDB.relay ?? '']);
+      return await removeMembersFromMLSGroup(groupDB, membersToRemove);
     } else {
       return await createPrivateGroup(pubkey, '', groupDB.name, updatedMembersSet.toList());
     }

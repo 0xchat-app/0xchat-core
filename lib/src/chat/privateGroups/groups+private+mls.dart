@@ -199,13 +199,36 @@ ParsedKeyPackage parseKeyPackageString(String jsonstring) {
   );
 }
 
+class MemberChanges {
+  final List<String> addedMembers;
+  final List<String> removedMembers;
+
+  MemberChanges({
+    required this.addedMembers,
+    required this.removedMembers,
+  });
+
+  factory MemberChanges.fromMap(Map<String, dynamic> map) {
+    return MemberChanges(
+      addedMembers: List<String>.from(map['added_members'] ?? []),
+      removedMembers: List<String>.from(map['removed_members'] ?? []),
+    );
+  }
+
+  static MemberChanges fromString(String str) {
+    final jsonLike = str.replaceFirst(RegExp(r'^[^{]+{'), '{').replaceFirst(RegExp(r'}\s*$'), '}');
+    final parsed = jsonDecode(jsonLike);
+
+    return MemberChanges.fromMap(parsed);
+  }
+}
+
 extension MLSPrivateGroups on Groups {
   Future<void> initMLS() async {
     bool isIOS = Platform.isIOS || Platform.isMacOS;
     Directory directory =
         isIOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
     await initNostrMls(path: directory.path, identity: pubkey);
-    _checkKeyPackage();
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 && Account.sharedInstance.me != null) {
         updateMLSGroupSubscription(relay: relay);
@@ -275,7 +298,7 @@ extension MLSPrivateGroups on Groups {
 
   Future<void> _checkKeyPackage({List<String>? relays}) async {
     if (Account.sharedInstance.me!.encodedKeyPackage == null) {
-      if(relays == null || relays.isEmpty){
+      if (relays == null || relays.isEmpty) {
         List<String> generalRelays = Account.sharedInstance.me?.relayList ?? [];
         relays = generalRelays;
       }
@@ -483,8 +506,18 @@ extension MLSPrivateGroups on Groups {
     if (group.mlsGroupId == null) return OKEvent('', false, 'invalid mls group');
     String eventString = await createMessageForGroup(
         groupId: group.mlsGroupId!, rumorEventString: jsonEncode(messageEvent.toJson()));
-    print('sendMessageToMLSGroup: $eventString');
     Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    Connect.sharedInstance.sendEvent(groupEvent, sendCallBack: (ok, relay) {
+      if (!completer.isCompleted) {
+        completer.complete(ok);
+      }
+    });
+    return completer.future;
+  }
+
+  Future<OKEvent> sendGroupEventToMLSGroup(GroupDBISAR group, Event groupEvent) async {
+    if (group.mlsGroupId == null) return OKEvent('', false, 'invalid mls group');
     Completer<OKEvent> completer = Completer<OKEvent>();
     Connect.sharedInstance.sendEvent(groupEvent, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
@@ -499,9 +532,44 @@ extension MLSPrivateGroups on Groups {
     ValueNotifier<GroupDBISAR>? groupValueNotifier = groups[groupEvent.groupId];
     if (groupValueNotifier == null) return;
     if (groupEvent.pubkey == pubkey) return;
-    String innerEventString = await processMessageForGroup(eventString: jsonEncode(event.toJson()));
-    Event innerEvent = await Event.fromJson(jsonDecode(innerEventString)['event'], verify: false);
+    Event? innerEvent;
+    try {
+      String result = await processMessageForGroup(eventString: jsonEncode(event.toJson()));
+      final message = jsonDecode(result)['message'];
+      final added_members = jsonDecode(result)['added_members'];
+      final removed_members = jsonDecode(result)['removed_members'];
+
+      if (message != null) {
+        innerEvent = await Event.fromJson(message, verify: false);
+      }
+
+      String content = '';
+      if (added_members != null) {
+        for (var member in added_members) {
+          UserDBISAR? user = await Account.sharedInstance.getUserInfo(member);
+          content = '${user?.name} $content ';
+          content = '${content}joined the group';
+        }
+        sendGroupMessage(groupValueNotifier.value.groupId, MessageType.system, content,
+            local: true);
+        updateGroup(groupValueNotifier.value);
+      }
+      if (removed_members != null) {
+        for (var member in removed_members) {
+          UserDBISAR? user = await Account.sharedInstance.getUserInfo(member);
+          content = '${user?.name} $content ';
+          content = '${content}left the group';
+        }
+        sendGroupMessage(groupValueNotifier.value.groupId, MessageType.system, content,
+            local: true);
+        updateGroup(groupValueNotifier.value);
+      }
+    } catch (e) {
+      print('receiveMLSGroupMessage error: $e');
+    }
+    if (innerEvent == null) return;
     GroupMessage groupMessage = Nip29.decodeGroupMessage(innerEvent);
+    if (groupMessage.pubkey == pubkey) return;
     MessageDBISAR messageDB = MessageDBISAR(
         messageId: event.id,
         sender: groupMessage.pubkey,
@@ -520,5 +588,72 @@ extension MLSPrivateGroups on Groups {
     messageDB.decryptSecret = map['decryptSecret'];
     await Messages.saveMessageToDB(messageDB);
     groupMessageCallBack?.call(messageDB);
+  }
+
+  Future<GroupDBISAR> addMembersToMLSGroup(GroupDBISAR group, List<String> members) async {
+    if (group.mlsGroupId == null) return group;
+    Map<String, String> membersKeyPackages = await _getMembersKeyPackages(members);
+    if (membersKeyPackages.isEmpty) return group;
+    String exportSecretResult = await exportSecret(groupId: group.mlsGroupId!);
+    U8Array32 preSecret =
+        U8Array32(Uint8List.fromList((jsonDecode(exportSecretResult)['secret']).cast<int>()));
+    String result = await addMembers(
+        groupId: group.mlsGroupId!, serializedKeyPackages: membersKeyPackages.values.toList());
+    List<int> commit_message = List<int>.from(jsonDecode(result)['commit_message']);
+    List<int> welcome_message = List<int>.from(jsonDecode(result)['welcome_message']);
+    String eventString = await createCommitMessageForGroup(
+        groupId: group.mlsGroupId!, serializedCommit: commit_message, secretKey: preSecret);
+    Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
+    OKEvent okEvent = await sendGroupEventToMLSGroup(group, groupEvent);
+    if (okEvent.status) {
+      await sendWelcomeMessages(
+          welcome_message, members, Account.sharedInstance.me?.relayList ?? []);
+      group.members?.addAll(members);
+      syncGroupToDB(group);
+    }
+    return group;
+  }
+
+  Future<GroupDBISAR> removeMembersFromMLSGroup(GroupDBISAR group, List<String> members) async {
+    if (group.mlsGroupId == null) return group;
+    String exportSecretResult = await exportSecret(groupId: group.mlsGroupId!);
+    U8Array32 preSecret =
+        U8Array32(Uint8List.fromList((jsonDecode(exportSecretResult)['secret']).cast<int>()));
+    String result = await removeMembers(groupId: group.mlsGroupId!, memberPubkeys: members);
+    List<int> commit_message = List<int>.from(jsonDecode(result)['serialized_commit']);
+    String eventString = await createCommitMessageForGroup(
+        groupId: group.mlsGroupId!, serializedCommit: commit_message, secretKey: preSecret);
+    Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
+
+    OKEvent okEvent = await sendGroupEventToMLSGroup(group, groupEvent);
+    if (okEvent.status) {
+      group.members?.removeWhere((m) => members.contains(m));
+      syncGroupToDB(group);
+    }
+    return group;
+  }
+
+  Future<OKEvent> leaveMLSGroup(GroupDBISAR group) async {
+    if (group.mlsGroupId == null) return OKEvent('', false, 'invalid mls group');
+    String result = await leaveGroup(groupId: group.mlsGroupId!);
+    List<int> leave_message = jsonDecode(result)['serialized_leave'];
+    Event? messageEvent = await getSendPrivateGroupMessageEvent(
+        group.groupId, MessageType.text, toHexString(leave_message));
+    OKEvent okEvent = await sendMessageToMLSGroup(group, messageEvent!);
+    return okEvent;
+  }
+
+  Future<GroupDBISAR?> updateGroupInfo(GroupDBISAR group) async {
+    if (group.mlsGroupId == null) return null;
+    String result = await getGroup(groupId: group.mlsGroupId!);
+    MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(result));
+
+    group.members = mlsGroup.groupMembers;
+    group.name = mlsGroup.nostrGroupData.name;
+    group.about = mlsGroup.nostrGroupData.description;
+    group.adminPubkeys = mlsGroup.nostrGroupData.adminPubkeys;
+
+    await syncGroupToDB(group);
+    return group;
   }
 }
