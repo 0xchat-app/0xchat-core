@@ -28,6 +28,8 @@ class Groups {
   Map<String, ValueNotifier<GroupDBISAR>> groups = {};
   Map<String, ValueNotifier<GroupDBISAR>> myGroups = {};
 
+  List<Event> mlsGroupEventCache = [];
+
   Map<String, List<String>> currentGroupRelays = {};
   Map<String, bool> offlineGroupMessageFinish = {};
   OfflineGroupMessageFinishCallBack? offlineGroupMessageFinishCallBack;

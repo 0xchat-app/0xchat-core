@@ -26,6 +26,7 @@ class Messages {
 
   late Completer<void> channelMessageCompleter;
   late Completer<void> groupMessageCompleter;
+  late Completer<void> mlsGroupMessageCompleter;
   late Completer<void> contactMessageCompleter;
   late Completer<void> secretChatMessageCompleter;
 
@@ -35,6 +36,7 @@ class Messages {
 
     channelMessageCompleter = Completer<void>();
     groupMessageCompleter = Completer<void>();
+    mlsGroupMessageCompleter = Completer<void>();
     contactMessageCompleter = Completer<void>();
     secretChatMessageCompleter = Completer<void>();
 

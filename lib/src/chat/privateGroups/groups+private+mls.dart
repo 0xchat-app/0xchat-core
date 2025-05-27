@@ -267,17 +267,26 @@ extension MLSPrivateGroups on Groups {
 
     groupMessageSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
         closeSubscription: false, eventCallBack: (event, relay) async {
-      _updateGroupMessageTime(event.createdAt, relay);
-      receiveMLSGroupMessage(event, relay);
+      if (Messages.sharedInstance.mlsGroupMessageCompleter.isCompleted) {
+        _updateGroupMessageTime(event.createdAt, relay);
+        await receiveMLSGroupMessage(event, relay);
+      } else {
+        mlsGroupEventCache.add(event);
+      }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       offlineGroupMessageFinish[relay] = true;
       if (ok.status) {
         _updateGroupMessageTime(currentUnixTimestampSeconds() - 1, relay);
       }
       if (unCompletedRelays.isEmpty) {
+        mlsGroupEventCache.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        for (var event in mlsGroupEventCache) {
+          await receiveMLSGroupMessage(event, relay);
+        }
+        mlsGroupEventCache.clear();
         offlineGroupMessageFinishCallBack?.call();
-        if (!Messages.sharedInstance.groupMessageCompleter.isCompleted) {
-          Messages.sharedInstance.groupMessageCompleter.complete();
+        if (!Messages.sharedInstance.mlsGroupMessageCompleter.isCompleted) {
+          Messages.sharedInstance.mlsGroupMessageCompleter.complete();
         }
       }
     });
@@ -643,7 +652,7 @@ extension MLSPrivateGroups on Groups {
     return okEvent;
   }
 
-  Future<GroupDBISAR?> updateGroupInfo(GroupDBISAR group) async {
+  Future<GroupDBISAR?> updateMLSGroupInfo(GroupDBISAR group) async {
     if (group.mlsGroupId == null) return null;
     String result = await getGroup(groupId: group.mlsGroupId!);
     MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(result));
