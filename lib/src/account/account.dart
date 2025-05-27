@@ -53,7 +53,7 @@ class Account {
   AccountUpdateCallback? groupListUpdateCallback;
   AccountUpdateCallback? relayGroupListUpdateCallback;
 
-  void init(){
+  void init() {
     startHeartBeat();
     _loadAllUsers();
     initNIP46Callback();
@@ -210,10 +210,11 @@ class Account {
     /// insert a new account
     db ??= UserDBISAR();
     db.pubKey = pubkey;
-    String defaultPassword = generateStrongPassword(16);
-    Uint8List enPrivkey = encryptPrivateKey(hexToBytes(privkey), defaultPassword);
+    if (db.defaultPassword == null || db.defaultPassword!.isEmpty) {
+      db.defaultPassword = generateStrongPassword(16);
+    }
+    Uint8List enPrivkey = encryptPrivateKey(hexToBytes(privkey), db.defaultPassword!);
     db.encryptedPrivKey = bytesToHex(enPrivkey);
-    db.defaultPassword = defaultPassword;
     await saveUserToDB(db);
     me = db;
     currentPrivkey = privkey;

@@ -228,7 +228,13 @@ extension MLSPrivateGroups on Groups {
     bool isIOS = Platform.isIOS || Platform.isMacOS;
     Directory directory =
         isIOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
-    await initNostrMls(path: directory.path, identity: pubkey);
+    String? defaultPassword = Account.sharedInstance.me!.defaultPassword;
+    if(defaultPassword == null || defaultPassword.isEmpty){
+      defaultPassword = generateStrongPassword(16);
+      Account.sharedInstance.me!.defaultPassword = defaultPassword;
+      Account.sharedInstance.syncMe();
+    }
+    await initNostrMls(path: directory.path, identity: pubkey, password: defaultPassword);
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 && Account.sharedInstance.me != null) {
         updateMLSGroupSubscription(relay: relay);
