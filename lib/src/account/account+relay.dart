@@ -8,6 +8,7 @@ extension AccountRelay on Account {
     List<String> dmRelays = me?.dmRelayList ?? [];
     List<RelayDBISAR> result = [];
     for (var relay in dmRelays) {
+      relay = relay.endsWith('/') ? relay.substring(0, relay.length - 1) : relay;
       result.add(Relays.sharedInstance.relays[relay] ?? RelayDBISAR(url: relay));
     }
     return result;
@@ -17,6 +18,7 @@ extension AccountRelay on Account {
     List<String> inboxRelays = me?.inboxRelayList ?? [];
     List<RelayDBISAR> result = [];
     for (var relay in inboxRelays) {
+      relay = relay.endsWith('/') ? relay.substring(0, relay.length - 1) : relay;
       result.add(Relays.sharedInstance.relays[relay] ?? RelayDBISAR(url: relay));
     }
     return result;
@@ -26,6 +28,7 @@ extension AccountRelay on Account {
     List<String> outboxRelays = me?.outboxRelayList ?? [];
     List<RelayDBISAR> result = [];
     for (var relay in outboxRelays) {
+      relay = relay.endsWith('/') ? relay.substring(0, relay.length - 1) : relay;
       result.add(Relays.sharedInstance.relays[relay] ?? RelayDBISAR(url: relay));
     }
     return result;
@@ -35,6 +38,7 @@ extension AccountRelay on Account {
     List<String> generalRelays = me?.relayList ?? [];
     List<RelayDBISAR> result = [];
     for (var relay in generalRelays) {
+      relay = relay.endsWith('/') ? relay.substring(0, relay.length - 1) : relay;
       result.add(Relays.sharedInstance.relays[relay] ?? RelayDBISAR(url: relay));
     }
     return result;
@@ -44,6 +48,7 @@ extension AccountRelay on Account {
     List<String> dmRelays = Relays.sharedInstance.recommendGeneralRelays;
     List<RelayDBISAR> result = [];
     for (var relay in dmRelays) {
+      relay = relay.endsWith('/') ? relay.substring(0, relay.length - 1) : relay;
       result.add(Relays.sharedInstance.relays[relay] ?? RelayDBISAR(url: relay));
     }
     return result;
@@ -53,6 +58,7 @@ extension AccountRelay on Account {
     List<String> dmRelays = Relays.sharedInstance.recommendDMRelays;
     List<RelayDBISAR> result = [];
     for (var relay in dmRelays) {
+      relay = relay.endsWith('/') ? relay.substring(0, relay.length - 1) : relay;
       result.add(Relays.sharedInstance.relays[relay] ?? RelayDBISAR(url: relay));
     }
     return result;
