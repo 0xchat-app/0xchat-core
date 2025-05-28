@@ -666,11 +666,23 @@ extension MLSPrivateGroups on Groups {
 
   Future<OKEvent> leaveMLSGroup(GroupDBISAR group) async {
     if (group.mlsGroupId == null) return OKEvent('', false, 'invalid mls group');
+    String exportSecretResult = await exportSecret(groupId: group.mlsGroupId!);
+    U8Array32 preSecret =
+        U8Array32(Uint8List.fromList((jsonDecode(exportSecretResult)['secret']).cast<int>()));
     String result = await leaveGroup(groupId: group.mlsGroupId!);
-    List<int> leave_message = jsonDecode(result)['serialized_leave'];
-    Event? messageEvent = await getSendPrivateGroupMessageEvent(
-        group.groupId, MessageType.text, toHexString(leave_message));
-    OKEvent okEvent = await sendMessageToMLSGroup(group, messageEvent!);
+    List<int> leave_message = List<int>.from(jsonDecode(result)['serialized_leave']);
+
+    String eventString = await createCommitMessageForGroup(
+        groupId: group.mlsGroupId!, serializedCommit: leave_message, secretKey: preSecret);
+    Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
+
+    OKEvent okEvent = await sendGroupEventToMLSGroup(group, groupEvent);
+    if (okEvent.status) {
+      myGroups.remove(group);
+      groups.remove(group);
+      updateMLSGroupSubscription();
+      await syncMyGroupListToDB();
+    }
     return okEvent;
   }
 

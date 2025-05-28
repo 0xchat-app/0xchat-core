@@ -17,12 +17,11 @@ extension Member on Groups {
   //   return OKEvent(groupId, false, 'group not found');
   // }
 
-  Future<OKEvent> requestGroup(String groupId, String groupOwner,
-      String groupName, String content) async {
+  Future<OKEvent> requestGroup(
+      String groupId, String groupOwner, String groupName, String content) async {
     content = "${Account.sharedInstance.me?.name} request to join the group";
     GroupDBISAR? groupDB = groups[groupId]?.value;
-    groupDB ??=
-        GroupDBISAR(groupId: groupId, owner: groupOwner, name: groupName);
+    groupDB ??= GroupDBISAR(groupId: groupId, owner: groupOwner, name: groupName);
     if (groupDB.owner.isEmpty) groupDB.owner = groupOwner;
     if (groupDB.name.isEmpty) groupDB.name = groupName;
     await Groups.saveGroupToDB(groupDB);
@@ -30,8 +29,8 @@ extension Member on Groups {
     if (!checkInGroup(groupId)) {
       groups[groupId]?.value = groupDB;
       myGroups[groupId]?.value = groupDB;
-      okEvent = await sendGroupMessage(groupId, MessageType.system, content,
-          actionsType: 'request');
+      okEvent =
+          await sendGroupMessage(groupId, MessageType.system, content, actionsType: 'request');
       okEvent = await syncMyGroupListToRelay();
     } else {
       okEvent = OKEvent(groupId, false, 'already in group');
@@ -40,13 +39,11 @@ extension Member on Groups {
   }
 
   Future<OKEvent> joinGroup(String groupId, String content) async {
-    if (groups.containsKey(groupId) &&
-        groups[groupId]?.value.members?.contains(pubkey) == true) {
+    if (groups.containsKey(groupId) && groups[groupId]?.value.members?.contains(pubkey) == true) {
       myGroups[groupId] = groups[groupId]!;
       OKEvent ok = await syncMyGroupListToRelay();
       if (ok.status) {
-        sendGroupMessage(groupId, MessageType.system, content,
-            actionsType: 'join');
+        sendGroupMessage(groupId, MessageType.system, content, actionsType: 'join');
       }
       return ok;
     }
@@ -54,18 +51,26 @@ extension Member on Groups {
   }
 
   Future<OKEvent> leaveGroup(String groupId, String content) async {
+    GroupDBISAR? groupDB = myGroups[groupId]?.value;
+    if (groupDB?.mlsGroupId != null) {
+      OKEvent result = await leaveMLSGroup(groupDB!);
+      if (result.status) {
+        await deleteGroup(groupId);
+      }
+      return result;
+    }
+
     myGroups.remove(groupId);
     OKEvent ok = await syncMyGroupListToRelay();
     if (ok.status) {
-      sendGroupMessage(groupId, MessageType.system, content,
-          actionsType: 'leave');
+      sendGroupMessage(groupId, MessageType.system, content, actionsType: 'leave');
     }
     return ok;
   }
 
   Future<void> deleteGroup(String groupId) async {
     final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async{
+    await isar.writeTxn(() async {
       await isar.groupDBISARs.deleteByGroupId(groupId);
     });
   }
