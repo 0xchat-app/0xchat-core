@@ -565,10 +565,24 @@ extension MLSPrivateGroups on Groups {
     if (groupEvent.pubkey == pubkey) return;
     Event? innerEvent;
     try {
+      String exportSecretResult = await exportSecret(groupId: groupValueNotifier.value.mlsGroupId!);
+      U8Array32 preSecret =
+          U8Array32(Uint8List.fromList((jsonDecode(exportSecretResult)['secret']).cast<int>()));
       String result = await processMessageForGroup(eventString: jsonEncode(event.toJson()));
       final message = jsonDecode(result)['message'];
       final added_members = jsonDecode(result)['added_members'];
       final removed_members = jsonDecode(result)['removed_members'];
+      final commit = jsonDecode(result)['commit'];
+
+      if (commit != null) {
+        var commit_message = List<int>.from(commit);
+        String eventString = await createCommitMessageForGroup(
+            groupId: groupValueNotifier.value.mlsGroupId!,
+            serializedCommit: commit_message,
+            secretKey: preSecret);
+        Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
+        await sendGroupEventToMLSGroup(groupValueNotifier.value, groupEvent);
+      }
 
       if (message != null) {
         innerEvent = await Event.fromJson(message, verify: false);
