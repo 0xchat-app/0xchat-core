@@ -229,12 +229,13 @@ extension MLSPrivateGroups on Groups {
     Directory directory =
         isIOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
     String? defaultPassword = Account.sharedInstance.me!.defaultPassword;
-    if(defaultPassword == null || defaultPassword.isEmpty){
+    if (defaultPassword == null || defaultPassword.isEmpty) {
       defaultPassword = generateStrongPassword(16);
       Account.sharedInstance.me!.defaultPassword = defaultPassword;
       Account.sharedInstance.syncMe();
     }
     await initNostrMls(path: directory.path, identity: pubkey, password: defaultPassword);
+    _checkKeyPackage();
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 && Account.sharedInstance.me != null) {
         updateMLSGroupSubscription(relay: relay);
@@ -312,26 +313,38 @@ extension MLSPrivateGroups on Groups {
   }
 
   Future<void> _checkKeyPackage({List<String>? relays}) async {
-    if (Account.sharedInstance.me!.encodedKeyPackage == null) {
-      if (relays == null || relays.isEmpty) {
-        List<String> generalRelays = Account.sharedInstance.me?.relayList ?? [];
-        relays = generalRelays;
+    String encoded_key_package = await _getKeyPackageFromRelay(pubkey);
+    if (encoded_key_package.isNotEmpty) {
+      String result = await getKeyPackageFromStorage(serializedKeyPackage: encoded_key_package);
+      bool found = jsonDecode(result)['found'];
+      if (found) {
+        Account.sharedInstance.me!.encodedKeyPackage = encoded_key_package;
+        Account.sharedInstance.syncMe();
+      } else {
+        _createNewKeyPackage([]);
       }
-      _createNewKeyPackage(relays);
+    } else {
+      _createNewKeyPackage([]);
     }
   }
 
   Future<OKEvent> _createNewKeyPackage(List<String> relays) async {
+    if (relays.isEmpty) {
+      List<String> generalRelays = Account.sharedInstance.me?.relayList ?? [];
+      relays = generalRelays;
+    }
     String result = await createKeyPackageForEvent(publicKey: pubkey);
     ParsedKeyPackage parsedKeyPackage = parseKeyPackageString(result);
     Event event = await Nip104.encodeKeyPackageEvent(
         parsedKeyPackage.encodedKeyPackage, parsedKeyPackage.tags, pubkey, privkey);
-    Account.sharedInstance.me!.encodedKeyPackage = parsedKeyPackage.encodedKeyPackage;
-    Account.sharedInstance.syncMe();
 
     Completer<OKEvent> completer = Completer<OKEvent>();
     Connect.sharedInstance.sendEvent(event, toRelays: relays, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
+        if (ok.status) {
+          Account.sharedInstance.me!.encodedKeyPackage = parsedKeyPackage.encodedKeyPackage;
+          Account.sharedInstance.syncMe();
+        }
         completer.complete(ok);
       }
     });
@@ -364,17 +377,20 @@ extension MLSPrivateGroups on Groups {
   Future<String> _getKeyPackageFromRelay(String pubkey) async {
     Completer<String> completer = Completer<String>();
     Filter f = Filter(kinds: [443], limit: 1, authors: [pubkey]);
+    Event? cachedEvent;
     Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
-      KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
-      bool result = await _checkValidKeypackage(keyPackageEvent);
-      if (result) {
-        UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
-        user!.encodedKeyPackage = keyPackageEvent.encoded_key_package;
-        Account.saveUserToDB(user);
-        if (!completer.isCompleted) completer.complete(keyPackageEvent.encoded_key_package);
-      }
+      cachedEvent = event;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      if (unRelays.isEmpty) {
+      if (cachedEvent != null) {
+        KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(cachedEvent!);
+        bool result = await _checkValidKeypackage(keyPackageEvent);
+        if (result) {
+          UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
+          user!.encodedKeyPackage = keyPackageEvent.encoded_key_package;
+          Account.saveUserToDB(user);
+          if (!completer.isCompleted) completer.complete(keyPackageEvent.encoded_key_package);
+        }
+      } else if (unRelays.isEmpty) {
         if (!completer.isCompleted) completer.complete('');
       }
     });
