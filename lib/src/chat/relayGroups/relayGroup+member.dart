@@ -34,8 +34,7 @@ extension EMember on RelayGroup {
             lastUpdatedTime: event.createdAt);
         myGroups[groupId] = ValueNotifier(relayGroupDB) ;
         await syncGroupToDB(relayGroupDB);
-        await editGroupStatus(groupId, closed, closed, '');
-        await editMetadata(groupId, name, about, picture, '');
+        await editMetadata(groupId, name, about, picture, closed, closed, '');
         syncMyGroupListToRelay();
         if (!completer.isCompleted) completer.complete(relayGroupDB);
       } else {
@@ -80,8 +79,7 @@ extension EMember on RelayGroup {
               lastUpdatedTime: currentUnixTimestampSeconds());
           myGroups[groupId] = ValueNotifier(relayGroupDB);
           await syncGroupToDB(relayGroupDB);
-          await editGroupStatus(groupId, closed, closed, '');
-          await editMetadata(groupId, name, about, picture, '');
+          await editMetadata(groupId, name, about, picture, closed, closed, '');
           syncMyGroupListToRelay();
           if (!completer.isCompleted) completer.complete(relayGroupDB);
         } else {

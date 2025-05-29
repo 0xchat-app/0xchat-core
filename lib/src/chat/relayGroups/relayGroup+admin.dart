@@ -120,16 +120,18 @@ extension EAdmin on RelayGroup {
   }
 
   Future<OKEvent> editMetadata(
-      String groupId, String name, String about, String picture, String reason) async {
+      String groupId, String name, String about, String picture, bool closed, bool private, String reason) async {
     RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
     GroupModeration moderation =
-        GroupModeration.editMetadata(groupId, name, about, picture, reason);
+        GroupModeration.editMetadata(groupId, name, about, picture, closed, private, reason);
     OKEvent ok = await sendModeration(moderation);
     if (ok.status) {
       groupDB.name = name;
       groupDB.about = about;
       groupDB.picture = picture;
+      groupDB.closed = closed;
+      groupDB.private = private;
       syncGroupToDB(groupDB);
     }
     return ok;
@@ -275,16 +277,16 @@ extension EAdmin on RelayGroup {
     return sendModeration(moderation);
   }
 
-  Future<OKEvent> editGroupStatus(String groupId, bool closed, bool private, String reason) async {
-    RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
-    if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
-    GroupModeration moderation = GroupModeration.editGroupStatus(groupId, closed, private, reason);
-    OKEvent ok = await sendModeration(moderation);
-    if (ok.status) {
-      groupDB.private = private;
-      groupDB.closed = closed;
-      syncGroupToDB(groupDB);
-    }
-    return ok;
-  }
+  // Future<OKEvent> editGroupStatus(String groupId, bool closed, bool private, String reason) async {
+  //   RelayGroupDBISAR? groupDB = myGroups[groupId]?.value;
+  //   if (groupDB == null) return OKEvent(groupId, false, 'group not exit');
+  //   GroupModeration moderation = GroupModeration.editGroupStatus(groupId, closed, private, reason);
+  //   OKEvent ok = await sendModeration(moderation);
+  //   if (ok.status) {
+  //     groupDB.private = private;
+  //     groupDB.closed = closed;
+  //     syncGroupToDB(groupDB);
+  //   }
+  //   return ok;
+  // }
 }
