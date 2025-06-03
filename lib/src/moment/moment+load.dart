@@ -30,7 +30,7 @@ extension Load on Moment {
   }
 
   Future<List<NoteDBISAR>?> loadContactsNotesFromDB(
-      {int limit = 50, int? until, bool? private = false}) async {
+      {int limit = 50, int? until, bool? private}) async {
     Set<String> authors = Set.from(Contacts.sharedInstance.allContacts.keys.toList());
     authors.add(pubkey);
     return await loadUserNotesFromDB(authors.toList(),
@@ -38,13 +38,13 @@ extension Load on Moment {
   }
 
   Future<List<NoteDBISAR>?> loadFollowsNotesFromDB(
-      {int limit = 50, int? until, bool? private = false}) async {
+      {int limit = 50, int? until, bool? private}) async {
     List<String> authors = Account.sharedInstance.me?.followingList ?? [];
     return await loadUserNotesFromDB(authors, limit: limit, until: until, private: private);
   }
 
   Future<List<NoteDBISAR>?> loadMyReactedNotesFromDB(
-      {int limit = 50, int? until, bool? private = false}) async {
+      {int limit = 50, int? until, bool? private}) async {
     List<String> authors = [pubkey];
     List<NoteDBISAR>? reactedNotes = await loadUserNotesFromDB(authors,
         limit: limit, until: until, private: private, isReacted: true);
