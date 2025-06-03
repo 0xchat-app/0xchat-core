@@ -156,6 +156,17 @@ extension EMember on RelayGroup {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = await Nip29.encodeJoinRequest(groupId, content, pubkey, privkey);
     Connect.sharedInstance.sendEvent(event, toRelays: [relay], sendCallBack: (ok, relay) async {
+      if(!ok.status && ok.message == "duplicate: already a member"){
+        groupDB!.members ??= [];
+        if (!groupDB.members!.contains(pubkey)) {
+          groupDB.members!.add(pubkey);
+        }
+        syncGroupToDB(groupDB);
+        if (!myGroups.containsKey(groupId)) {
+          myGroups[groupId] = ValueNotifier(groupDB);
+          syncMyGroupListToRelay();
+        }
+      }
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
