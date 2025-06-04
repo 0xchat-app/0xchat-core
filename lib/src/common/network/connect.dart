@@ -75,6 +75,7 @@ enum RelayKind {
   secretChat,
   nwc,
   remoteSigner,
+  circleRelay,
   temp,
 }
 

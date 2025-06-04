@@ -74,7 +74,7 @@ class Contacts {
   void Function(String friend, SignalingState state, String data, String? offerId)?
       onCallStateChange;
 
-  Future<void> initContacts(ContactUpdatedCallBack? callBack) async {
+  Future<void> init({ContactUpdatedCallBack? callBack}) async {
     privkey = Account.sharedInstance.currentPrivkey;
     pubkey = Account.sharedInstance.currentPubkey;
     contactUpdatedCallBack = callBack;
@@ -306,6 +306,7 @@ class Contacts {
     }
     friendMessageSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
         closeSubscription: false, eventCallBack: (event, relay) async {
+      if (!ChatCoreManager().isAcceptedEventKind(event.kind)) return;
       if (event.kind == 4) {
         updateFriendMessageTime(event.createdAt, relay);
         if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
@@ -315,17 +316,18 @@ class Contacts {
           return;
         }
         EventCache.sharedInstance.receiveEvent(innerEvent, relay);
-        if (!inBlockList(innerEvent.pubkey)) {
+        if (!inBlockList(innerEvent.pubkey) &&
+            ChatCoreManager().isAcceptedEventKind(innerEvent.kind)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
+            /// MLS Welcome Message
+            case 444:
+              Groups.sharedInstance.handleWelcomeMessageEvent(event.id, innerEvent, relay);
+              break;
             case 14:
             case 15:
               _handlePrivateMessage(innerEvent, relay);
               break;
-
-            /// MLS Welcome Message
-            case 444:
-              Groups.sharedInstance.handleWelcomeMessageEvent(event.id, innerEvent, relay);
             case 10100:
             case 10101:
             case 10102:

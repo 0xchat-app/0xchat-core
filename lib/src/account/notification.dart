@@ -20,6 +20,7 @@ class NotificationHelper {
   // serverkey: server pubkey
   Future<void> init(String serverKey) async {
     serverPubkey = serverKey;
+    if(serverPubkey.isEmpty) return;
 
     startHeartBeat();
     _heartBeat(serverPubkey);

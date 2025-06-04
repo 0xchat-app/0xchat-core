@@ -19,9 +19,7 @@ extension AccountProfile on Account {
 
   Future<UserDBISAR> reloadMyProfileFromRelay({String? relay}) async {
     Completer<UserDBISAR> completer = Completer<UserDBISAR>();
-    Filter f = Filter(
-        kinds: [0, 3, 10000, 10002, 10005, 10009, 10050, 30000, 30001, 30003, 30008],
-        authors: [currentPubkey]);
+    Filter f = Filter(kinds: ChatCoreManager().myProfileKinds(), authors: [currentPubkey]);
     List<Event> events = [];
     Connect.sharedInstance.addSubscription([f], relays: relay == null ? null : [relay],
         eventCallBack: (event, relay) async {
@@ -76,7 +74,7 @@ extension AccountProfile on Account {
   Future<UserDBISAR> reloadProfileFromRelay(String pubkey) async {
     Completer<UserDBISAR> completer = Completer<UserDBISAR>();
     UserDBISAR? db = await getUserInfo(pubkey);
-    Filter f = Filter(kinds: [0, 10002, 10050, 30008], authors: [pubkey]);
+    Filter f = Filter(kinds: ChatCoreManager().userProfileKinds(), authors: [pubkey]);
     Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
       switch (event.kind) {
         case 0:
@@ -129,7 +127,7 @@ extension AccountProfile on Account {
     }
 
     Filter f = Filter(
-      kinds: [0, 10002, 10050, 30008],
+      kinds: ChatCoreManager().userProfileKinds(),
       authors: users.keys.toList(),
     );
 

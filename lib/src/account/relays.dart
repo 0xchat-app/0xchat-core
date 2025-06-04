@@ -42,11 +42,15 @@ class Relays {
     'wss://relay.0xchat.com'
   ];
 
-  Future<void> init() async {
+  Future<void> init({String? circleRelay}) async {
     await Config.sharedInstance.initConfig();
     List<RelayDBISAR> result = await _loadRelaysFromDB() ?? [];
     if (result.isNotEmpty) {
       relays = {for (var item in result) item.url: item};
+    }
+    if (circleRelay != null) {
+      Connect.sharedInstance.connectRelays([circleRelay], relayKind: RelayKind.circleRelay);
+      return;
     }
     connectGeneralRelays();
     connectDMRelays();
@@ -64,8 +68,7 @@ class Relays {
     int updatedTime = Account.sharedInstance.me?.lastRelayListUpdatedTime ?? 0;
     if (updatedTime > 0 && generalRelays.isNotEmpty) {
       Connect.sharedInstance.connectRelays(generalRelays, relayKind: RelayKind.general);
-    }
-    else {
+    } else {
       // startup relays
       Connect.sharedInstance.connectRelays(recommendGeneralRelays, relayKind: RelayKind.general);
     }
