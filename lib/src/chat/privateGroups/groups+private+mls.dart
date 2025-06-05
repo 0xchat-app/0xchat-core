@@ -78,6 +78,7 @@ class NostrGroupData {
   final String description;
   final List<String> adminPubkeys;
   final List<String> relays;
+  List<String>? members;
 
   NostrGroupData({
     required this.nostrGroupId,
@@ -85,11 +86,18 @@ class NostrGroupData {
     required this.description,
     required this.adminPubkeys,
     required this.relays,
+    this.members,
   });
 
   static NostrGroupData? fromPreviewWelcome(String previewWelcomeData) {
-    NostrGroupData nostrGroupData =
-        NostrGroupData.fromJson(jsonDecode(previewWelcomeData)['nostr_group_data']);
+    var json = jsonDecode(previewWelcomeData);
+    NostrGroupData nostrGroupData = NostrGroupData.fromJson(json['nostr_group_data']);
+
+    if (json['members'] != null) {
+      List<String>? members = List<String>.from(json['members']);
+      nostrGroupData.members = members;
+    }
+
     return nostrGroupData;
   }
 
@@ -438,7 +446,6 @@ extension MLSPrivateGroups on Groups {
   Future<GroupDBISAR?> createMLSGroup(String groupName, String groupDescription,
       List<String> members, List<String> admins, List<String> relays) async {
     members.remove(pubkey);
-    members = [Nip19.decodePubkey('npub1utkdz7hqwd4mwn0763sfjr65l35z2tq3c8u988nfpf58aa8stdrq6nurgd')];
     Map<String, String> membersKeyPackages = await _getMembersKeyPackages(members);
     if (membersKeyPackages.keys.length < members.length) return null;
     String createGroupResult = await createGroup(
@@ -501,8 +508,8 @@ extension MLSPrivateGroups on Groups {
   }
 
   Future<void> handleWelcomeMessageEvent(String wrapperEventId, Event event, String relay) async {
-    /// ignore non-contact user's welcome messages
     WelcomeEvent welcomeEvent = Nip104.decodeWelcomeEvent(event);
+    /// ignore non-contact user's welcome messages
     // if (!Contacts.sharedInstance.allContacts.containsKey(welcomeEvent.pubkey)) return;
     NostrGroupData? nostrGroupData = await previewWelcomeMessageEvent(wrapperEventId, event);
     if (nostrGroupData == null) return;
@@ -515,7 +522,7 @@ extension MLSPrivateGroups on Groups {
           updateTime: currentUnixTimestampSeconds(),
           name: nostrGroupData.name,
           about: nostrGroupData.description,
-          members: [pubkey],
+          members: nostrGroupData.members,
           welcomeWrapperEventId: wrapperEventId,
           welcomeEventString: jsonEncode(event.toJson()));
     } else {
@@ -526,12 +533,10 @@ extension MLSPrivateGroups on Groups {
       groupDBISAR.updateTime = currentUnixTimestampSeconds();
       groupDBISAR.welcomeEventString = jsonEncode(event.toJson());
       groupDBISAR.welcomeWrapperEventId = wrapperEventId;
-      groupDBISAR.members ??= [];
-      if (!groupDBISAR.members!.contains(pubkey)) groupDBISAR.members!.add(pubkey);
+      groupDBISAR.members = nostrGroupData.members;
     }
     groups[nostrGroupData.nostrGroupId] = ValueNotifier(groupDBISAR);
     syncGroupToDB(groupDBISAR);
-    // GroupDBISAR groupDBISAR = await joinMLSGroup(wrapperEventId, event, relay);
     UserDBISAR? userDBISAR = await Account.sharedInstance.getUserInfo(welcomeEvent.pubkey);
     String inviteMessage = '${userDBISAR?.name} invite you to join the private group';
     sendGroupMessage(groupDBISAR.groupId, MessageType.system, inviteMessage, local: true);
