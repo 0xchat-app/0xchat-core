@@ -313,8 +313,8 @@ extension MLSPrivateGroups on Groups {
   }
 
   Future<void> _checkKeyPackage({List<String>? relays}) async {
-    String encoded_key_package = await _getKeyPackageFromRelay(pubkey);
-    if (encoded_key_package.isNotEmpty) {
+    String? encoded_key_package = await _getKeyPackageFromRelay(pubkey);
+    if (encoded_key_package != null && encoded_key_package.isNotEmpty) {
       String result = await getKeyPackageFromStorage(serializedKeyPackage: encoded_key_package);
       bool found = jsonDecode(result)['found'];
       if (found) {
@@ -323,7 +323,7 @@ extension MLSPrivateGroups on Groups {
       } else {
         _createNewKeyPackage([]);
       }
-    } else {
+    } else if (encoded_key_package != null && encoded_key_package.isEmpty) {
       _createNewKeyPackage([]);
     }
   }
@@ -354,8 +354,8 @@ extension MLSPrivateGroups on Groups {
   Future<Map<String, String>> _getMembersKeyPackages(List<String> pubkeys) async {
     Map<String, String> result = {};
     for (var pubkey in pubkeys) {
-      String encodedKeyPackage = await _getKeyPackageFromRelay(pubkey);
-      if (encodedKeyPackage.isNotEmpty) {
+      String? encodedKeyPackage = await _getKeyPackageFromRelay(pubkey);
+      if (encodedKeyPackage != null && encodedKeyPackage.isNotEmpty) {
         result[pubkey] = encodedKeyPackage;
       } else {
         UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
@@ -374,11 +374,13 @@ extension MLSPrivateGroups on Groups {
     return result;
   }
 
-  Future<String> _getKeyPackageFromRelay(String pubkey) async {
-    Completer<String> completer = Completer<String>();
+  Future<String?> _getKeyPackageFromRelay(String pubkey) async {
+    Completer<String?> completer = Completer<String?>();
     Filter f = Filter(kinds: [443], limit: 1, authors: [pubkey]);
     Event? cachedEvent;
-    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
+    final relayKind = ChatCoreManager().isLite ? RelayKind.circleRelay : RelayKind.general;
+    Connect.sharedInstance.addSubscription([f], relayKind: relayKind,
+        eventCallBack: (event, relay) async {
       cachedEvent = event;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       if (cachedEvent != null) {
@@ -390,6 +392,8 @@ extension MLSPrivateGroups on Groups {
           Account.saveUserToDB(user);
           if (!completer.isCompleted) completer.complete(keyPackageEvent.encoded_key_package);
         }
+      } else if (!ok.status) {
+        if (!completer.isCompleted) completer.complete(null);
       } else if (unRelays.isEmpty) {
         if (!completer.isCompleted) completer.complete('');
       }

@@ -67,12 +67,16 @@ class NotificationHelper {
   }
 
   Future<void> _heartBeat(String serverPubkey, {List<String>? relay}) async {
+    if(serverPubkey.isEmpty) return;
+
     Map map = {'online': 1};
     Event event = await _encode(serverPubkey, jsonEncode(map), '');
     Connect.sharedInstance.sendEvent(event, toRelays: relay ?? toRelays);
   }
 
   Future<void> setOffline() async {
+    if(serverPubkey.isEmpty) return;
+
     Map map = {'online': 0};
     Event event = await _encode(serverPubkey, jsonEncode(map), '');
     Connect.sharedInstance.sendEvent(event, toRelays: toRelays);
@@ -81,6 +85,8 @@ class NotificationHelper {
   }
 
   void setOnline() {
+    if(serverPubkey.isEmpty) return;
+
     _heartBeat(serverPubkey);
     startHeartBeat();
   }

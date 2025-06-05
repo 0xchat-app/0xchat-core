@@ -49,13 +49,13 @@ class ChatCoreManager {
       await _initCoreComponents(
         contactUpdatedCallBack: contactUpdatedCallBack,
         groupsUpdatedCallBack: groupsUpdatedCallBack,
-        relayGroupsUpdatedCallBack: relayGroupsUpdatedCallBack,
       );
 
       // Initialize extended features if not in lite mode
       if (!_isLite) {
         await _initExtendedFeatures(
           channelsUpdatedCallBack: channelsUpdatedCallBack,
+          relayGroupsUpdatedCallBack: relayGroupsUpdatedCallBack,
         );
       }
     } catch (e) {
@@ -69,20 +69,19 @@ class ChatCoreManager {
   Future<void> _initCoreComponents({
     ContactUpdatedCallBack? contactUpdatedCallBack,
     GroupsUpdatedCallBack? groupsUpdatedCallBack,
-    GroupsUpdatedCallBack? relayGroupsUpdatedCallBack,
   }) async {
     // Initialize core components in parallel for better performance
     await Future.wait([
       Future(() => Messages.sharedInstance.init()),
       Future(() => Contacts.sharedInstance.init(callBack: contactUpdatedCallBack)),
       Future(() => Groups.sharedInstance.init(callBack: groupsUpdatedCallBack)),
-      Future(() => RelayGroup.sharedInstance.init(callBack: relayGroupsUpdatedCallBack)),
     ]);
   }
 
   /// Initialize extended features
   Future<void> _initExtendedFeatures({
     ChannelsUpdatedCallBack? channelsUpdatedCallBack,
+    GroupsUpdatedCallBack? relayGroupsUpdatedCallBack,
   }) async {
     // Initialize extended features in parallel
     await Future.wait([
@@ -90,6 +89,7 @@ class ChatCoreManager {
       Future(() => Moment.sharedInstance.init()),
       Future(() => BadgesHelper.sharedInstance.init()),
       Future(() => Zaps.sharedInstance.init()),
+      Future(() => RelayGroup.sharedInstance.init(callBack: relayGroupsUpdatedCallBack)),
     ]);
   }
 
