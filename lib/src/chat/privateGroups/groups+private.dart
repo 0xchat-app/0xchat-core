@@ -61,7 +61,7 @@ extension PrivateGroups on Groups {
     if (groupDB == null) return null;
     List<String> existingMembers = groupDB.members ?? [];
     Set<String> uniqueMembersSet = {...existingMembers, ...members};
-    if (groupDB.mlsGroupId != null) {
+    if (groupDB.isMLSGroup) {
       return await addMembersToMLSGroup(groupDB, members);
     } else {
       return await createPrivateGroup(pubkey, '', groupDB.name, uniqueMembersSet.toList());
@@ -77,7 +77,7 @@ extension PrivateGroups on Groups {
     for (String member in membersToRemove) {
       updatedMembersSet.remove(member);
     }
-    if (groupDB.mlsGroupId != null) {
+    if (groupDB.isMLSGroup) {
       return await removeMembersFromMLSGroup(groupDB, membersToRemove);
     } else {
       return await createPrivateGroup(pubkey, '', groupDB.name, updatedMembersSet.toList());
@@ -111,7 +111,7 @@ extension PrivateGroups on Groups {
     List<String>? members = groupDB.members;
     if (members == null) return null;
     late Event event;
-    if (groupDB.mlsGroupId != null) {
+    if (groupDB.isMLSGroup) {
       event = await Nip29.encodeGroupMessageReply(
           groupDB.groupId, MessageDBISAR.getContent(type, content, source), [], pubkey, privkey,
           replyEvent: replyMessage,

@@ -438,6 +438,7 @@ extension MLSPrivateGroups on Groups {
   Future<GroupDBISAR?> createMLSGroup(String groupName, String groupDescription,
       List<String> members, List<String> admins, List<String> relays) async {
     members.remove(pubkey);
+    members = [Nip19.decodePubkey('npub1utkdz7hqwd4mwn0763sfjr65l35z2tq3c8u988nfpf58aa8stdrq6nurgd')];
     Map<String, String> membersKeyPackages = await _getMembersKeyPackages(members);
     if (membersKeyPackages.keys.length < members.length) return null;
     String createGroupResult = await createGroup(
@@ -448,7 +449,6 @@ extension MLSPrivateGroups on Groups {
         groupCreatorPublicKey: pubkey,
         groupAdminPublicKeys: admins,
         relays: relays);
-    print(createGroupResult);
     MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(createGroupResult));
 
     ///send welcome & invite members
@@ -456,14 +456,14 @@ extension MLSPrivateGroups on Groups {
     GroupDBISAR groupDBISAR = GroupDBISAR(
         groupId: mlsGroup.nostrGroupData.nostrGroupId,
         owner: pubkey,
+        isMLSGroup: true,
         updateTime: currentUnixTimestampSeconds(),
         name: mlsGroup.nostrGroupData.name,
         about: mlsGroup.nostrGroupData.description,
         members: mlsGroup.groupMembers.toSet().toList(),
         mlsGroupId: mlsGroup.groupId,
         relay: relays.firstOrNull,
-        adminPubkeys: mlsGroup.nostrGroupData.adminPubkeys,
-        serializedWelcomeMessage: mlsGroup.serializedWelcomeMessage);
+        adminPubkeys: mlsGroup.nostrGroupData.adminPubkeys);
     groups[groupDBISAR.groupId] = ValueNotifier(groupDBISAR);
     myGroups[groupDBISAR.groupId] = ValueNotifier(groupDBISAR);
     await syncGroupToDB(groupDBISAR);
@@ -492,49 +492,71 @@ extension MLSPrivateGroups on Groups {
     }
   }
 
-  Future<NostrGroupData?> previewWelcomeMessageEvent(Event event) async {
+  Future<NostrGroupData?> previewWelcomeMessageEvent(String wrapperEventId, Event event) async {
     String previewWelcomeData = await previewGroupFromWelcome(
-        wrapperEventId: hexStringToBytes(event.id), rumorEventString: jsonEncode(event.toJson()));
+        wrapperEventId: hexStringToBytes(wrapperEventId),
+        rumorEventString: jsonEncode(event.toJson()));
     NostrGroupData? groupData = NostrGroupData.fromPreviewWelcome(previewWelcomeData);
     return groupData;
   }
 
   Future<void> handleWelcomeMessageEvent(String wrapperEventId, Event event, String relay) async {
-    WelcomeEvent welcomeEvent = Nip104.decodeWelcomeEvent(event);
-
     /// ignore non-contact user's welcome messages
-    if (!Contacts.sharedInstance.allContacts.containsKey(welcomeEvent.pubkey)) return;
-
-    GroupDBISAR groupDBISAR = await joinMLSGroup(wrapperEventId, event, relay);
+    WelcomeEvent welcomeEvent = Nip104.decodeWelcomeEvent(event);
+    // if (!Contacts.sharedInstance.allContacts.containsKey(welcomeEvent.pubkey)) return;
+    NostrGroupData? nostrGroupData = await previewWelcomeMessageEvent(wrapperEventId, event);
+    if (nostrGroupData == null) return;
+    GroupDBISAR? groupDBISAR = groups[nostrGroupData.nostrGroupId]?.value;
+    if (groupDBISAR == null) {
+      groupDBISAR = GroupDBISAR(
+          groupId: nostrGroupData.nostrGroupId,
+          isMLSGroup: true,
+          relay: relay,
+          updateTime: currentUnixTimestampSeconds(),
+          name: nostrGroupData.name,
+          about: nostrGroupData.description,
+          members: [pubkey],
+          welcomeWrapperEventId: wrapperEventId,
+          welcomeEventString: jsonEncode(event.toJson()));
+    } else {
+      groupDBISAR.name = nostrGroupData.name;
+      groupDBISAR.about = nostrGroupData.description;
+      groupDBISAR.isMLSGroup = true;
+      groupDBISAR.relay = relay;
+      groupDBISAR.updateTime = currentUnixTimestampSeconds();
+      groupDBISAR.welcomeEventString = jsonEncode(event.toJson());
+      groupDBISAR.welcomeWrapperEventId = wrapperEventId;
+      groupDBISAR.members ??= [];
+      if (!groupDBISAR.members!.contains(pubkey)) groupDBISAR.members!.add(pubkey);
+    }
+    groups[nostrGroupData.nostrGroupId] = ValueNotifier(groupDBISAR);
+    syncGroupToDB(groupDBISAR);
+    // GroupDBISAR groupDBISAR = await joinMLSGroup(wrapperEventId, event, relay);
     UserDBISAR? userDBISAR = await Account.sharedInstance.getUserInfo(welcomeEvent.pubkey);
     String inviteMessage = '${userDBISAR?.name} invite you to join the private group';
     sendGroupMessage(groupDBISAR.groupId, MessageType.system, inviteMessage, local: true);
   }
 
-  Future<GroupDBISAR> joinMLSGroup(String wrapperEventId, Event welcomeEvent, String relay) async {
+  Future<OKEvent> joinMLSGroup(GroupDBISAR group) async {
+    if (group.welcomeEventString == null || group.welcomeWrapperEventId == null) {
+      return OKEvent(group.groupId, false, 'no welcome messages');
+    }
     String joinGroupResult = await joinGroupFromWelcome(
-        wrapperEventId: hexStringToBytes(wrapperEventId),
-        rumorEventString: jsonEncode(welcomeEvent.toJson()));
+        wrapperEventId: hexStringToBytes(group.welcomeWrapperEventId!),
+        rumorEventString: group.welcomeEventString!);
     MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(joinGroupResult));
     String membersString = await getMembers(groupId: mlsGroup.groupId);
     List<String> members = (jsonDecode(membersString)['members'] as List).cast<String>();
-    GroupDBISAR groupDBISAR = GroupDBISAR(
-        groupId: mlsGroup.nostrGroupData.nostrGroupId,
-        relay: relay,
-        owner: pubkey,
-        updateTime: currentUnixTimestampSeconds(),
-        name: mlsGroup.nostrGroupData.name,
-        about: mlsGroup.nostrGroupData.description,
-        members: members,
-        mlsGroupId: mlsGroup.groupId,
-        adminPubkeys: mlsGroup.nostrGroupData.adminPubkeys,
-        serializedWelcomeMessage: mlsGroup.serializedWelcomeMessage);
-    groups[groupDBISAR.groupId] = ValueNotifier(groupDBISAR);
-    myGroups[groupDBISAR.groupId] = ValueNotifier(groupDBISAR);
-    await syncGroupToDB(groupDBISAR);
+    group.updateTime = currentUnixTimestampSeconds();
+    group.members = members;
+    group.mlsGroupId = mlsGroup.groupId;
+    group.adminPubkeys = mlsGroup.nostrGroupData.adminPubkeys;
+    groups[group.groupId] = ValueNotifier(group);
+    myGroups[group.groupId] = ValueNotifier(group);
+    await syncGroupToDB(group);
     await syncMyGroupListToDB();
     updateMLSGroupSubscription();
-    return groupDBISAR;
+    return OKEvent(group.groupId, true, '');
   }
 
   Future<OKEvent> sendMessageToMLSGroup(GroupDBISAR group, Event messageEvent) async {

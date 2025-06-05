@@ -88,7 +88,8 @@ class Contacts {
           Account.sharedInstance.me != null &&
           (relayKinds.contains(RelayKind.general) ||
               relayKinds.contains(RelayKind.inbox) ||
-              relayKinds.contains(RelayKind.dm))) {
+              relayKinds.contains(RelayKind.dm) ||
+              relayKinds.contains(RelayKind.circleRelay))) {
         _subscriptMessages(relay: relay);
         _updateSubscriptions(relay: relay);
       }
@@ -278,6 +279,7 @@ class Contacts {
       List<String> relays = Connect.sharedInstance.relays(relayKinds: [RelayKind.inbox]);
       relays.addAll(Connect.sharedInstance.relays(relayKinds: [RelayKind.dm]));
       relays.addAll(Connect.sharedInstance.relays(relayKinds: [RelayKind.general]));
+      relays.addAll(Connect.sharedInstance.relays(relayKinds: [RelayKind.circleRelay]));
       for (String relayURL in relays) {
         int friendMessageUntil = Relays.sharedInstance.getFriendMessageUntil(relayURL);
 

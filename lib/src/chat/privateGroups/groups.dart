@@ -370,7 +370,7 @@ class Groups {
   Future<OKEvent> sendToGroup(String groupId, Event event) async {
     GroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB != null) {
-      if(groupDB.mlsGroupId != null){
+      if(groupDB.isMLSGroup){
         return await sendMessageToMLSGroup(groupDB, event);
       }
       else{

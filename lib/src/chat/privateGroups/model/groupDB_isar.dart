@@ -27,26 +27,31 @@ class GroupDBISAR {
   String? relay;
 
   /// MLS GROUP
+  bool isMLSGroup;
   List<int>? mlsGroupId;
   int epoch;
   List<String>? adminPubkeys;
-  List<int>? serializedWelcomeMessage;
+  String? welcomeWrapperEventId;
+  String? welcomeEventString;
 
-  GroupDBISAR(
-      {this.groupId = '',
-      this.owner = '',
-      this.updateTime = 0,
-      this.mute = false,
-      this.name = '',
-      this.members,
-      this.pinned,
-      this.about,
-      this.picture,
-      this.relay,
-      this.mlsGroupId,
-      this.epoch = 0,
-      this.adminPubkeys,
-      this.serializedWelcomeMessage});
+  GroupDBISAR({
+    this.groupId = '',
+    this.owner = '',
+    this.updateTime = 0,
+    this.mute = false,
+    this.name = '',
+    this.members,
+    this.pinned,
+    this.about,
+    this.picture,
+    this.relay,
+    this.isMLSGroup = false,
+    this.mlsGroupId,
+    this.epoch = 0,
+    this.adminPubkeys,
+    this.welcomeWrapperEventId,
+    this.welcomeEventString,
+  });
 
   static GroupDBISAR fromMap(Map<String, Object?> map) {
     return _groupInfoFromMap(map);

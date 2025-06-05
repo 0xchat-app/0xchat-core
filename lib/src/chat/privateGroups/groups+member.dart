@@ -40,6 +40,8 @@ extension Member on Groups {
 
   Future<OKEvent> joinGroup(String groupId, String content) async {
     if (groups.containsKey(groupId) && groups[groupId]?.value.members?.contains(pubkey) == true) {
+      var group = groups[groupId]!.value;
+      if (group.isMLSGroup) return await joinMLSGroup(group);
       myGroups[groupId] = groups[groupId]!;
       OKEvent ok = await syncMyGroupListToRelay();
       if (ok.status) {
@@ -52,7 +54,7 @@ extension Member on Groups {
 
   Future<OKEvent> leaveGroup(String groupId, String content) async {
     GroupDBISAR? groupDB = myGroups[groupId]?.value;
-    if (groupDB?.mlsGroupId != null) {
+    if (groupDB?.isMLSGroup == true) {
       OKEvent result = await leaveMLSGroup(groupDB!);
       if (result.status) {
         await deleteGroup(groupId);

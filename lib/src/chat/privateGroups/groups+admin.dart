@@ -173,7 +173,7 @@ extension Admin on Groups {
 
   Future<OKEvent> deleteAndLeave(String groupId, String content) async {
     GroupDBISAR? groupDB = myGroups[groupId]?.value;
-    if (groupDB?.mlsGroupId != null) {
+    if (groupDB?.isMLSGroup == true) {
       OKEvent result = await leaveMLSGroup(groupDB!);
       if (result.status) {
         await deleteGroup(groupId);
