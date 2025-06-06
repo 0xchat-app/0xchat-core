@@ -477,7 +477,8 @@ extension MLSPrivateGroups on Groups {
     await syncGroupToDB(groupDBISAR);
     await syncMyGroupListToDB();
     updateMLSGroupSubscription();
-    String inviteMessage = 'Private group created!';
+    String inviteMessage =
+        groupDBISAR.isDirectMessage ? 'Private chat created!' : 'Private group created!';
     sendGroupMessage(groupDBISAR.groupId, MessageType.system, inviteMessage, local: true);
     return groupDBISAR;
   }
@@ -525,7 +526,8 @@ extension MLSPrivateGroups on Groups {
           about: nostrGroupData.description,
           members: nostrGroupData.members,
           welcomeWrapperEventId: wrapperEventId,
-          welcomeEventString: jsonEncode(event.toJson()));
+          welcomeEventString: jsonEncode(event.toJson()),
+          isDirectMessage: nostrGroupData.members == null || nostrGroupData.members!.length <= 2);
     } else {
       groupDBISAR.name = nostrGroupData.name;
       groupDBISAR.about = nostrGroupData.description;
@@ -535,11 +537,15 @@ extension MLSPrivateGroups on Groups {
       groupDBISAR.welcomeEventString = jsonEncode(event.toJson());
       groupDBISAR.welcomeWrapperEventId = wrapperEventId;
       groupDBISAR.members = nostrGroupData.members;
+      groupDBISAR.isDirectMessage =
+          nostrGroupData.members == null || nostrGroupData.members!.length <= 2;
     }
     groups[nostrGroupData.nostrGroupId] = ValueNotifier(groupDBISAR);
     syncGroupToDB(groupDBISAR);
     UserDBISAR? userDBISAR = await Account.sharedInstance.getUserInfo(welcomeEvent.pubkey);
-    String inviteMessage = '${userDBISAR?.name} invite you to join the private group';
+    String inviteMessage = groupDBISAR.isDirectMessage
+        ? '${userDBISAR?.name} invite you to join the private chat'
+        : '${userDBISAR?.name} invite you to join the private group';
     sendGroupMessage(groupDBISAR.groupId, MessageType.system, inviteMessage, local: true);
   }
 
@@ -555,7 +561,6 @@ extension MLSPrivateGroups on Groups {
     List<String> members = (jsonDecode(membersString)['members'] as List).cast<String>();
     group.updateTime = currentUnixTimestampSeconds();
     group.members = members;
-    group.isDirectMessage = members.length <= 2;
     group.mlsGroupId = mlsGroup.groupId;
     group.adminPubkeys = mlsGroup.nostrGroupData.adminPubkeys;
     groups[group.groupId] = ValueNotifier(group);
