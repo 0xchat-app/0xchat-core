@@ -464,6 +464,7 @@ extension MLSPrivateGroups on Groups {
         groupId: mlsGroup.nostrGroupData.nostrGroupId,
         owner: pubkey,
         isMLSGroup: true,
+        isDirectMessage: members.length <= 1,
         updateTime: currentUnixTimestampSeconds(),
         name: mlsGroup.nostrGroupData.name,
         about: mlsGroup.nostrGroupData.description,
@@ -554,6 +555,7 @@ extension MLSPrivateGroups on Groups {
     List<String> members = (jsonDecode(membersString)['members'] as List).cast<String>();
     group.updateTime = currentUnixTimestampSeconds();
     group.members = members;
+    group.isDirectMessage = members.length <= 2;
     group.mlsGroupId = mlsGroup.groupId;
     group.adminPubkeys = mlsGroup.nostrGroupData.adminPubkeys;
     groups[group.groupId] = ValueNotifier(group);

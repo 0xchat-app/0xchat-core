@@ -37,63 +37,68 @@ const GroupDBISARSchema = CollectionSchema(
       name: r'groupId',
       type: IsarType.string,
     ),
-    r'isMLSGroup': PropertySchema(
+    r'isDirectMessage': PropertySchema(
       id: 4,
+      name: r'isDirectMessage',
+      type: IsarType.bool,
+    ),
+    r'isMLSGroup': PropertySchema(
+      id: 5,
       name: r'isMLSGroup',
       type: IsarType.bool,
     ),
     r'members': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'members',
       type: IsarType.stringList,
     ),
     r'mlsGroupId': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'mlsGroupId',
       type: IsarType.longList,
     ),
     r'mute': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'mute',
       type: IsarType.bool,
     ),
     r'name': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'name',
       type: IsarType.string,
     ),
     r'owner': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'owner',
       type: IsarType.string,
     ),
     r'picture': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'picture',
       type: IsarType.string,
     ),
     r'pinned': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'pinned',
       type: IsarType.stringList,
     ),
     r'relay': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'relay',
       type: IsarType.string,
     ),
     r'updateTime': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'updateTime',
       type: IsarType.long,
     ),
     r'welcomeEventString': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'welcomeEventString',
       type: IsarType.string,
     ),
     r'welcomeWrapperEventId': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'welcomeWrapperEventId',
       type: IsarType.string,
     )
@@ -220,18 +225,19 @@ void _groupDBISARSerialize(
   writer.writeStringList(offsets[1], object.adminPubkeys);
   writer.writeLong(offsets[2], object.epoch);
   writer.writeString(offsets[3], object.groupId);
-  writer.writeBool(offsets[4], object.isMLSGroup);
-  writer.writeStringList(offsets[5], object.members);
-  writer.writeLongList(offsets[6], object.mlsGroupId);
-  writer.writeBool(offsets[7], object.mute);
-  writer.writeString(offsets[8], object.name);
-  writer.writeString(offsets[9], object.owner);
-  writer.writeString(offsets[10], object.picture);
-  writer.writeStringList(offsets[11], object.pinned);
-  writer.writeString(offsets[12], object.relay);
-  writer.writeLong(offsets[13], object.updateTime);
-  writer.writeString(offsets[14], object.welcomeEventString);
-  writer.writeString(offsets[15], object.welcomeWrapperEventId);
+  writer.writeBool(offsets[4], object.isDirectMessage);
+  writer.writeBool(offsets[5], object.isMLSGroup);
+  writer.writeStringList(offsets[6], object.members);
+  writer.writeLongList(offsets[7], object.mlsGroupId);
+  writer.writeBool(offsets[8], object.mute);
+  writer.writeString(offsets[9], object.name);
+  writer.writeString(offsets[10], object.owner);
+  writer.writeString(offsets[11], object.picture);
+  writer.writeStringList(offsets[12], object.pinned);
+  writer.writeString(offsets[13], object.relay);
+  writer.writeLong(offsets[14], object.updateTime);
+  writer.writeString(offsets[15], object.welcomeEventString);
+  writer.writeString(offsets[16], object.welcomeWrapperEventId);
 }
 
 GroupDBISAR _groupDBISARDeserialize(
@@ -245,18 +251,19 @@ GroupDBISAR _groupDBISARDeserialize(
     adminPubkeys: reader.readStringList(offsets[1]),
     epoch: reader.readLongOrNull(offsets[2]) ?? 0,
     groupId: reader.readStringOrNull(offsets[3]) ?? '',
-    isMLSGroup: reader.readBoolOrNull(offsets[4]) ?? false,
-    members: reader.readStringList(offsets[5]),
-    mlsGroupId: reader.readLongList(offsets[6]),
-    mute: reader.readBoolOrNull(offsets[7]) ?? false,
-    name: reader.readStringOrNull(offsets[8]) ?? '',
-    owner: reader.readStringOrNull(offsets[9]) ?? '',
-    picture: reader.readStringOrNull(offsets[10]),
-    pinned: reader.readStringList(offsets[11]),
-    relay: reader.readStringOrNull(offsets[12]),
-    updateTime: reader.readLongOrNull(offsets[13]) ?? 0,
-    welcomeEventString: reader.readStringOrNull(offsets[14]),
-    welcomeWrapperEventId: reader.readStringOrNull(offsets[15]),
+    isDirectMessage: reader.readBoolOrNull(offsets[4]) ?? false,
+    isMLSGroup: reader.readBoolOrNull(offsets[5]) ?? false,
+    members: reader.readStringList(offsets[6]),
+    mlsGroupId: reader.readLongList(offsets[7]),
+    mute: reader.readBoolOrNull(offsets[8]) ?? false,
+    name: reader.readStringOrNull(offsets[9]) ?? '',
+    owner: reader.readStringOrNull(offsets[10]) ?? '',
+    picture: reader.readStringOrNull(offsets[11]),
+    pinned: reader.readStringList(offsets[12]),
+    relay: reader.readStringOrNull(offsets[13]),
+    updateTime: reader.readLongOrNull(offsets[14]) ?? 0,
+    welcomeEventString: reader.readStringOrNull(offsets[15]),
+    welcomeWrapperEventId: reader.readStringOrNull(offsets[16]),
   );
   object.id = id;
   return object;
@@ -280,26 +287,28 @@ P _groupDBISARDeserializeProp<P>(
     case 4:
       return (reader.readBoolOrNull(offset) ?? false) as P;
     case 5:
-      return (reader.readStringList(offset)) as P;
-    case 6:
-      return (reader.readLongList(offset)) as P;
-    case 7:
       return (reader.readBoolOrNull(offset) ?? false) as P;
+    case 6:
+      return (reader.readStringList(offset)) as P;
+    case 7:
+      return (reader.readLongList(offset)) as P;
     case 8:
-      return (reader.readStringOrNull(offset) ?? '') as P;
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     case 9:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 10:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 11:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 12:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringList(offset)) as P;
     case 13:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
-    case 14:
       return (reader.readStringOrNull(offset)) as P;
+    case 14:
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 15:
+      return (reader.readStringOrNull(offset)) as P;
+    case 16:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1128,6 +1137,16 @@ extension GroupDBISARQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterFilterCondition>
+      isDirectMessageEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isDirectMessage',
+        value: value,
       ));
     });
   }
@@ -2774,6 +2793,19 @@ extension GroupDBISARQuerySortBy
     });
   }
 
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterSortBy> sortByIsDirectMessage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isDirectMessage', Sort.asc);
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterSortBy>
+      sortByIsDirectMessageDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isDirectMessage', Sort.desc);
+    });
+  }
+
   QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterSortBy> sortByIsMLSGroup() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isMLSGroup', Sort.asc);
@@ -2937,6 +2969,19 @@ extension GroupDBISARQuerySortThenBy
     });
   }
 
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterSortBy> thenByIsDirectMessage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isDirectMessage', Sort.asc);
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterSortBy>
+      thenByIsDirectMessageDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isDirectMessage', Sort.desc);
+    });
+  }
+
   QueryBuilder<GroupDBISAR, GroupDBISAR, QAfterSortBy> thenByIsMLSGroup() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isMLSGroup', Sort.asc);
@@ -3078,6 +3123,13 @@ extension GroupDBISARQueryWhereDistinct
     });
   }
 
+  QueryBuilder<GroupDBISAR, GroupDBISAR, QDistinct>
+      distinctByIsDirectMessage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isDirectMessage');
+    });
+  }
+
   QueryBuilder<GroupDBISAR, GroupDBISAR, QDistinct> distinctByIsMLSGroup() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isMLSGroup');
@@ -3189,6 +3241,12 @@ extension GroupDBISARQueryProperty
   QueryBuilder<GroupDBISAR, String, QQueryOperations> groupIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'groupId');
+    });
+  }
+
+  QueryBuilder<GroupDBISAR, bool, QQueryOperations> isDirectMessageProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isDirectMessage');
     });
   }
 

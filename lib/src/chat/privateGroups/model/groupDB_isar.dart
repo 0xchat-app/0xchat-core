@@ -28,6 +28,7 @@ class GroupDBISAR {
 
   /// MLS GROUP
   bool isMLSGroup;
+  bool isDirectMessage;
   List<int>? mlsGroupId;
   int epoch;
   List<String>? adminPubkeys;
@@ -46,6 +47,7 @@ class GroupDBISAR {
     this.picture,
     this.relay,
     this.isMLSGroup = false,
+    this.isDirectMessage = false,
     this.mlsGroupId,
     this.epoch = 0,
     this.adminPubkeys,
@@ -65,6 +67,15 @@ class GroupDBISAR {
     final String end = k.substring(k.length - 6);
 
     return '$start:$end';
+  }
+
+  @ignore
+  String get otherPubkey {
+    if (members != null && members!.isNotEmpty) {
+      return members!.firstWhere((m) => m != Account.sharedInstance.currentPubkey,
+          orElse: () => Account.sharedInstance.currentPubkey);
+    }
+    return '';
   }
 }
 
