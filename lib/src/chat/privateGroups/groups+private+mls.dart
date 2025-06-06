@@ -386,9 +386,7 @@ extension MLSPrivateGroups on Groups {
     Completer<String?> completer = Completer<String?>();
     Filter f = Filter(kinds: [443], limit: 1, authors: [pubkey]);
     Event? cachedEvent;
-    final relayKind = ChatCoreManager().isLite ? RelayKind.circleRelay : RelayKind.general;
-    Connect.sharedInstance.addSubscription([f], relayKind: relayKind,
-        eventCallBack: (event, relay) async {
+    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
       cachedEvent = event;
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       if (cachedEvent != null) {
@@ -493,9 +491,13 @@ extension MLSPrivateGroups on Groups {
       if (member == pubkey) continue;
       Event giftWrappedEvent = await Nip59.encode(welcomeEvent, member);
       UserDBISAR? memberDB = await Account.sharedInstance.getUserInfo(member);
-      List<String>? dmRelays = memberDB?.dmRelayList;
-      List<String>? inboxRelays = memberDB?.inboxRelayList;
-      List<String> userRelays = [...(dmRelays ?? []), ...(inboxRelays ?? []), ...relays];
+      List<String> userRelays = [...relays];
+      if (!ChatCoreManager().isLite) {
+        List<String>? dmRelays = memberDB?.dmRelayList;
+        List<String>? inboxRelays = memberDB?.inboxRelayList;
+        userRelays.addAll([...(dmRelays ?? []), ...(inboxRelays ?? [])]);
+        await Connect.sharedInstance.connectRelays(userRelays, relayKind: RelayKind.temp);
+      }
       Connect.sharedInstance
           .sendEvent(giftWrappedEvent, toRelays: userRelays, sendCallBack: (ok, relay) {});
     }
@@ -511,6 +513,7 @@ extension MLSPrivateGroups on Groups {
 
   Future<void> handleWelcomeMessageEvent(String wrapperEventId, Event event, String relay) async {
     WelcomeEvent welcomeEvent = Nip104.decodeWelcomeEvent(event);
+
     /// ignore non-contact user's welcome messages
     // if (!Contacts.sharedInstance.allContacts.containsKey(welcomeEvent.pubkey)) return;
     NostrGroupData? nostrGroupData = await previewWelcomeMessageEvent(wrapperEventId, event);
@@ -747,6 +750,7 @@ extension MLSPrivateGroups on Groups {
     group.name = mlsGroup.nostrGroupData.name;
     group.about = mlsGroup.nostrGroupData.description;
     group.adminPubkeys = mlsGroup.nostrGroupData.adminPubkeys;
+    group.isDirectMessage = mlsGroup.groupMembers.length <= 2;
 
     await syncGroupToDB(group);
     return group;

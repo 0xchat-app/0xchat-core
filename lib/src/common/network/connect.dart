@@ -135,10 +135,10 @@ class Connect {
   void listenConnectivity() {
     _connectivitySubscription ??=
         Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) async {
-          if (results.any((result) => result != ConnectivityResult.none)) {
-            resetConnection(force: false);
-          }
-        });
+      if (results.any((result) => result != ConnectivityResult.none)) {
+        resetConnection(force: false);
+      }
+    });
   }
 
   // void _stopCheckTimeOut() {
@@ -290,7 +290,7 @@ class Connect {
       {EventCallBack? eventCallBack,
       EOSECallBack? eoseCallBack,
       List<String>? relays,
-      RelayKind relayKind = RelayKind.general,
+      List<RelayKind> relayKinds = const [RelayKind.general, RelayKind.circleRelay],
       bool closeSubscription = true}) {
     Map<String, List<Filter>> result = {};
     List<String> rs = [];
@@ -301,7 +301,7 @@ class Connect {
           .toList());
     }
     List<String> subscriptionRelays =
-        rs.isNotEmpty == true ? rs : Connect.sharedInstance.relays(relayKinds: [relayKind]);
+        rs.isNotEmpty == true ? rs : Connect.sharedInstance.relays(relayKinds: relayKinds);
     if (subscriptionRelays.isEmpty) {
       eoseCallBack?.call('', OKEvent('', false, 'no relays connected'), '', []);
       return '';
@@ -405,11 +405,16 @@ class Connect {
   void sendEvent(Event event,
       {OKCallBack? sendCallBack,
       List<String>? toRelays,
-      List<RelayKind> relayKinds = const [RelayKind.general, RelayKind.outbox]}) {
+      List<RelayKind> relayKinds = const [
+        RelayKind.general,
+        RelayKind.outbox,
+        RelayKind.circleRelay
+      ]}) {
     String eventString = event.serialize();
     List<String> rs = (toRelays == null || toRelays.isEmpty)
         ? relays(relayKinds: relayKinds)
         : List.from(toRelays);
+    rs.addAll(relays(relayKinds: [RelayKind.circleRelay]));
     LogUtils.v(() => 'send event toRelays: ${jsonEncode(rs)}, eventString: $eventString');
     Sends sends = Sends(generate64RandomHexChars(), rs, DateTime.now().millisecondsSinceEpoch,
         event.id, sendCallBack, eventString);
@@ -683,7 +688,7 @@ class Connect {
 
       List<RelayKind>? relayKinds = webSockets[relay]?.relayKinds;
       bool hasNonTempKind = relayKinds?.any((kind) => kind != RelayKind.temp) ?? false;
-      if(hasNonTempKind){
+      if (hasNonTempKind) {
         await Future.delayed(Duration(milliseconds: 3000));
         if (webSockets.containsKey(relay)) {
           return await _connectWs(relay);
