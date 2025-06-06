@@ -307,6 +307,28 @@ extension MLSPrivateGroups on Groups {
     });
   }
 
+  void loadGroupHistoryMessagesFromRelay(GroupDBISAR group) {
+    Map<String, List<Filter>> subscriptions = {};
+    String relayURL =
+        group.relay ?? Connect.sharedInstance.relays(relayKinds: [RelayKind.circleRelay]).first;
+
+    Filter f = Filter(h: [group.groupId], kinds: [445], until: currentUnixTimestampSeconds());
+    subscriptions[relayURL] = [f];
+
+    groupMessageSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
+        closeSubscription: true, eventCallBack: (event, relay) async {
+      mlsGroupEventCache.add(event);
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
+      if (unCompletedRelays.isEmpty) {
+        mlsGroupEventCache.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        for (var event in mlsGroupEventCache) {
+          await receiveMLSGroupMessage(event, relay);
+        }
+        mlsGroupEventCache.clear();
+      }
+    });
+  }
+
   void _updateGroupMessageTime(int eventTime, String relay) {
     if (Relays.sharedInstance.relays.containsKey(relay)) {
       Relays.sharedInstance.setMLSGroupMessageUntil(eventTime, relay);
@@ -571,6 +593,7 @@ extension MLSPrivateGroups on Groups {
     await syncGroupToDB(group);
     await syncMyGroupListToDB();
     updateMLSGroupSubscription();
+    loadGroupHistoryMessagesFromRelay(group);
     return OKEvent(group.groupId, true, '');
   }
 
