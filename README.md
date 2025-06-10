@@ -1,3 +1,5 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/0xchat-app/0xchat-core)
+
 # 0xChat-Core
 
 Welcome to 0xChat⚡️
