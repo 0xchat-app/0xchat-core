@@ -321,7 +321,7 @@ class Account {
   }
 
   Future<void> logout() async {
-    await NotificationHelper.sharedInstance.logout();
+    NotificationHelper.sharedInstance.logout();
     await Connect.sharedInstance.closeAllConnects();
     Contacts.sharedInstance.allContacts.clear();
     Contacts.sharedInstance.secretSessionMap.clear();
@@ -336,6 +336,7 @@ class Account {
     currentPubkey = '';
     currentPrivkey = '';
     userCache.remove(currentPubkey);
+    await DBISAR.sharedInstance.closeDatabase();
   }
 
   static Future<Event?> loadAddress(String d, String pubkey) async {

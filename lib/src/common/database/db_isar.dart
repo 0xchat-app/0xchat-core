@@ -34,20 +34,78 @@ class DBISAR {
     NotificationDBISARSchema,
     ConfigDBISARSchema,
     EventDBISARSchema,
-    GroupKeysDBISARSchema
+    GroupKeysDBISARSchema,
+    CircleDBISARSchema
   ];
 
-  Future open(String pubkey) async {
+  Future open(String pubkey, {String? circleId}) async {
     bool isOS = Platform.isIOS || Platform.isMacOS;
     Directory directory = isOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
     var dbPath = directory.path;
     LogUtils.v(() => 'DBISAR open: $dbPath, pubkey: $pubkey');
+    String dbName = pubkey;
+    if (circleId != null) {
+      dbName = '$pubkey-$circleId';
+    }
     isar = Isar.getInstance(pubkey) ??
         await Isar.open(
           schemas,
           directory: dbPath,
-          name: pubkey,
+          name: dbName,
         );
+  }
+
+  /// Delete an entire database instance by pubkey and circleId
+  /// [pubkey] The user's public key
+  /// [circleId] Optional circle ID, if null deletes the main database
+  /// Returns true if deletion was successful
+  Future<bool> delete(String pubkey, {String? circleId}) async {
+    try {
+      // Build database name using the same logic as open method
+      String dbName = pubkey;
+      if (circleId != null) {
+        dbName = '$pubkey-$circleId';
+      }
+      
+      // Check if the database instance exists and close it
+      final instanceToDelete = Isar.getInstance(dbName);
+      if (instanceToDelete != null) {
+        await instanceToDelete.close();
+        LogUtils.v(() => 'Closed database instance: $dbName');
+      }
+      
+      // Get the directory path
+      bool isOS = Platform.isIOS || Platform.isMacOS;
+      Directory directory = isOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
+      
+      // Delete the database file
+      final dbPath = '${directory.path}/$dbName.isar';
+      final dbFile = File(dbPath);
+      
+      if (await dbFile.exists()) {
+        await dbFile.delete();
+        LogUtils.v(() => 'Successfully deleted database file: $dbPath');
+      }
+      
+      // Also delete associated files (like .lock files)
+      final lockFile = File('$dbPath.lock');
+      if (await lockFile.exists()) {
+        await lockFile.delete();
+        LogUtils.v(() => 'Successfully deleted lock file: $dbPath.lock');
+      }
+      
+      // Delete any other associated files (.tmp, etc.)
+      final tmpFile = File('$dbPath.tmp');
+      if (await tmpFile.exists()) {
+        await tmpFile.delete();
+        LogUtils.v(() => 'Successfully deleted tmp file: $dbPath.tmp');
+      }
+      
+      return true;
+    } catch (e) {
+      LogUtils.e(() => 'Failed to delete database: $e');
+      return false;
+    }
   }
 
   Map<Type, List<dynamic>> getBuffers() {
