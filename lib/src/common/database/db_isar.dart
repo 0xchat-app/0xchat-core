@@ -38,21 +38,53 @@ class DBISAR {
     CircleDBISARSchema
   ];
 
-  Future open(String pubkey, {String? circleId}) async {
+  /// Generate database name for given pubkey and optional circleId
+  String _getDatabaseName(String pubkey, {String? circleId}) {
+    if (circleId != null) {
+      return '$pubkey-$circleId';
+    }
+    return pubkey;
+  }
+
+  /// Get database directory path
+  Future<String> _getDatabaseDirectory() async {
     bool isOS = Platform.isIOS || Platform.isMacOS;
     Directory directory = isOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
-    var dbPath = directory.path;
+    return directory.path;
+  }
+
+  /// Get full database file path
+  Future<String> _getDatabaseFilePath(String pubkey, {String? circleId}) async {
+    final dbName = _getDatabaseName(pubkey, circleId: circleId);
+    final dbDir = await _getDatabaseDirectory();
+    return '$dbDir/$dbName.isar';
+  }
+
+  Future open(String pubkey, {String? circleId, String? dbPath}) async {
+    final dbName = _getDatabaseName(pubkey, circleId: circleId);
+    dbPath ??= await _getDatabaseDirectory();
     LogUtils.v(() => 'DBISAR open: $dbPath, pubkey: $pubkey');
-    String dbName = pubkey;
-    if (circleId != null) {
-      dbName = '$pubkey-$circleId';
-    }
-    isar = Isar.getInstance(pubkey) ??
+    isar = Isar.getInstance(dbName) ??
         await Isar.open(
           schemas,
           directory: dbPath,
           name: dbName,
         );
+  }
+
+  /// Check if database exists
+  /// [pubkey] The user's public key
+  /// [circleId] Optional circle ID, if null checks the main database
+  /// Returns true if database file exists
+  Future<bool> exists(String pubkey, {String? circleId}) async {
+    try {
+      final dbPath = await _getDatabaseFilePath(pubkey, circleId: circleId);
+      final dbFile = File(dbPath);
+      return await dbFile.exists();
+    } catch (e) {
+      LogUtils.e(() => 'Failed to check database existence: $e');
+      return false;
+    }
   }
 
   /// Delete an entire database instance by pubkey and circleId
@@ -61,11 +93,7 @@ class DBISAR {
   /// Returns true if deletion was successful
   Future<bool> delete(String pubkey, {String? circleId}) async {
     try {
-      // Build database name using the same logic as open method
-      String dbName = pubkey;
-      if (circleId != null) {
-        dbName = '$pubkey-$circleId';
-      }
+      final dbName = _getDatabaseName(pubkey, circleId: circleId);
       
       // Check if the database instance exists and close it
       final instanceToDelete = Isar.getInstance(dbName);
@@ -74,12 +102,8 @@ class DBISAR {
         LogUtils.v(() => 'Closed database instance: $dbName');
       }
       
-      // Get the directory path
-      bool isOS = Platform.isIOS || Platform.isMacOS;
-      Directory directory = isOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
-      
       // Delete the database file
-      final dbPath = '${directory.path}/$dbName.isar';
+      final dbPath = await _getDatabaseFilePath(pubkey, circleId: circleId);
       final dbFile = File(dbPath);
       
       if (await dbFile.exists()) {
