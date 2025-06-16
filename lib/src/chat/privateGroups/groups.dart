@@ -219,8 +219,6 @@ class Groups {
     }
     if (myGroups.containsKey(groupDB.groupId)) {
       myGroups[groupDB.groupId]?.value = groupDB;
-    } else {
-      myGroups[groupDB.groupId] = ValueNotifier(groupDB);
     }
     await saveGroupToDB(groupDB);
   }
