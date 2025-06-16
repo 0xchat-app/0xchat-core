@@ -51,13 +51,18 @@ extension AccountCircle on Account {
     List<String> iceserverList = const [],
     List<String> pushserverList = const [],
     String? groupId,
+    String? dbPath,
   }) async {
     try {
       // Logout from current circle first
       await _logoutCircle();
 
       // Open database with the target circle ID
-      await DBISAR.sharedInstance.open(currentPubkey, circleId: circleId);
+      await DBISAR.sharedInstance.open(
+        currentPubkey,
+        circleId: circleId,
+        dbPath: dbPath,
+      );
 
       // Sync user profile
       await syncMe();
@@ -156,20 +161,32 @@ extension AccountCircle on Account {
   /// [deleteId] Circle ID to delete
   /// [switchId] Circle ID to switch to after deletion
   /// Returns whether deletion was successful
-  Future<bool> deletecircle(String deleteId, String switchId) async {
+  Future<bool> deletecircle(String deleteId, [String? switchId]) async {
     try {
-      // Switch to the target circle first
-      await switchToCircle(switchId);
-      
-      // Use DBISAR to delete the database
-      final success = await DBISAR.sharedInstance.delete(currentPubkey, circleId: deleteId);
-      
+      if (deleteId.isEmpty) return false;
+
+      // If a switchId is provided and not the same as deleteId, attempt to switch first
+      if (switchId != null && switchId.isNotEmpty && switchId != deleteId) {
+        final switchSuccess = await switchToCircle(switchId);
+        if (switchSuccess != null) {
+          LogUtils.w(() => 'Switch to circle $switchId failed, will continue deleting $deleteId');
+        }
+      } else {
+        await _logoutCircle();
+      }
+
+      // Delete DB files of the circle
+      final success = await DBISAR.sharedInstance.delete(
+        currentPubkey,
+        circleId: deleteId,
+      );
+
       if (success) {
         LogUtils.v(() => 'Successfully deleted circle: $deleteId');
       } else {
         LogUtils.w(() => 'Failed to delete circle: $deleteId');
       }
-      
+
       return success;
     } catch (e) {
       LogUtils.e(() => 'Failed to delete circle: $e');
