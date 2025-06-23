@@ -311,7 +311,7 @@ class Contacts {
       if (!ChatCoreManager().isAcceptedEventKind(event.kind)) return;
       if (event.kind == 4) {
         updateFriendMessageTime(event.createdAt, relay);
-        if (!inBlockList(event.pubkey)) _handlePrivateMessage(event, relay);
+        if (!inBlockList(event.pubkey)) handlePrivateMessage(event, relay);
       } else if (event.kind == 1059) {
         Event? innerEvent = await decodeNip17Event(event);
         if (innerEvent == null || EventCache.sharedInstance.cacheIds.contains(innerEvent.id)) {
@@ -328,7 +328,7 @@ class Contacts {
               break;
             case 14:
             case 15:
-              _handlePrivateMessage(innerEvent, relay);
+              handlePrivateMessage(innerEvent, relay);
               break;
             case 10100:
             case 10101:
@@ -369,7 +369,7 @@ class Contacts {
     });
   }
 
-  Future<void> _handlePrivateMessage(Event event, String relay) async {
+  Future<void> handlePrivateMessage(Event event, String relay) async {
     MessageDBISAR? messageDB = await MessageDBISAR.fromPrivateMessage(event, pubkey, privkey);
     if (messageDB != null) {
       await Messages.saveMessageToDB(messageDB);

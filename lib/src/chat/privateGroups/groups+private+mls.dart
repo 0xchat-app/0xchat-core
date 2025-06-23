@@ -679,19 +679,31 @@ extension MLSPrivateGroups on Groups {
       print('receiveMLSGroupMessage error: $e');
     }
     if (innerEvent == null) return;
+    _handleMLSGroupMessage(innerEvent, relay);
+  }
+
+  Future<void> _handleMLSGroupMessage(Event innerEvent, String relay) async {
+    if (innerEvent.kind == 9) {
+      _handleKind9MLSGroupMessage(innerEvent);
+    } else if (innerEvent.kind == 15) {
+      Contacts.sharedInstance.handlePrivateMessage(innerEvent, relay);
+    }
+  }
+
+  Future<void> _handleKind9MLSGroupMessage(Event innerEvent) async {
     GroupMessage groupMessage = Nip29.decodeGroupMessage(innerEvent);
     if (groupMessage.pubkey == pubkey) return;
     MessageDBISAR messageDB = MessageDBISAR(
-        messageId: event.id,
+        messageId: innerEvent.id,
         sender: groupMessage.pubkey,
         receiver: '',
         groupId: groupMessage.groupId,
-        kind: event.kind,
-        tags: jsonEncode(event.tags),
+        kind: innerEvent.kind,
+        tags: jsonEncode(innerEvent.tags),
         content: groupMessage.content,
         replyId: groupMessage.replyId ?? '',
-        createTime: event.createdAt,
-        plaintEvent: jsonEncode(event),
+        createTime: innerEvent.createdAt,
+        plaintEvent: jsonEncode(innerEvent),
         chatType: 1);
     var map = await MessageDBISAR.decodeContent(groupMessage.content);
     messageDB.decryptContent = map['content'];
@@ -779,7 +791,7 @@ extension MLSPrivateGroups on Groups {
     group.groupId = mlsGroup.nostrGroupData.nostrGroupId;
 
     await syncGroupToDB(group, oldGroupId: oldGroupId);
-    if (group.groupId != oldGroupId){
+    if (group.groupId != oldGroupId) {
       loadGroupHistoryMessagesFromRelay(group);
       updateMLSGroupSubscription();
     }
