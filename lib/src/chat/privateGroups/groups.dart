@@ -211,15 +211,28 @@ class Groups {
     return groupDB;
   }
 
-  Future<void> syncGroupToDB(GroupDBISAR groupDB) async {
-    if (groups.containsKey(groupDB.groupId)) {
-      groups[groupDB.groupId]?.value = groupDB;
+  Future<void> syncGroupToDB(GroupDBISAR groupDB, {String? oldGroupId}) async {
+    String groupId = groupDB.groupId;
+
+    if (groupId != oldGroupId && oldGroupId != null) {
+      var notifier = groups.remove(oldGroupId) ?? ValueNotifier(groupDB);
+      notifier.value = groupDB;
+      groups[groupId] = notifier;
+
+      if (myGroups.containsKey(oldGroupId)) {
+        var myNotifier = myGroups.remove(oldGroupId) ?? ValueNotifier(groupDB);
+        myNotifier.value = groupDB;
+        myGroups[groupId] = myNotifier;
+      }
     } else {
-      groups[groupDB.groupId] = ValueNotifier(groupDB);
+      groups[groupId]?.value = groupDB;
+      groups.putIfAbsent(groupId, () => ValueNotifier(groupDB));
+
+      if (myGroups.containsKey(groupId)) {
+        myGroups[groupId]?.value = groupDB;
+      }
     }
-    if (myGroups.containsKey(groupDB.groupId)) {
-      myGroups[groupDB.groupId]?.value = groupDB;
-    }
+
     await saveGroupToDB(groupDB);
   }
 
@@ -368,10 +381,9 @@ class Groups {
   Future<OKEvent> sendToGroup(String groupId, Event event) async {
     GroupDBISAR? groupDB = groups[groupId]?.value;
     if (groupDB != null) {
-      if(groupDB.isMLSGroup){
+      if (groupDB.isMLSGroup) {
         return await sendMessageToMLSGroup(groupDB, event);
-      }
-      else{
+      } else {
         return await sendMessageEvent(groupDB.members, event);
       }
     } else {

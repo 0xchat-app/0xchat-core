@@ -31,13 +31,13 @@ List<int> hexStringToBytes(String hexString) {
 }
 
 class MlsGroup {
-  final List<int> groupId;
+  final List<int> mlsGroupId;
   final List<String> groupMembers;
   final List<int> serializedWelcomeMessage;
   final NostrGroupData nostrGroupData;
 
   MlsGroup({
-    required this.groupId,
+    required this.mlsGroupId,
     required this.groupMembers,
     required this.serializedWelcomeMessage,
     required this.nostrGroupData,
@@ -49,7 +49,7 @@ class MlsGroup {
     }
 
     List<dynamic> groupIdVec = json['mls_group_id']['value']['vec'];
-    List<int> groupId = groupIdVec.map((e) => e as int).toList();
+    List<int> mlsGroupId = groupIdVec.map((e) => e as int).toList();
 
     List<String> members = [];
     if (json['members'] != null) {
@@ -64,7 +64,7 @@ class MlsGroup {
     NostrGroupData nostrGroupData = NostrGroupData.fromJson(json['nostr_group_data']);
 
     return MlsGroup(
-      groupId: groupId,
+      mlsGroupId: mlsGroupId,
       groupMembers: members,
       serializedWelcomeMessage: serializedWelcomeMessage,
       nostrGroupData: nostrGroupData,
@@ -94,8 +94,7 @@ class NostrGroupData {
     NostrGroupData nostrGroupData = NostrGroupData.fromJson(json['nostr_group_data']);
 
     if (json['members'] != null) {
-      List<String>? members = List<String>.from(json['members']);
-      nostrGroupData.members = members;
+      nostrGroupData.members = List<String>.from(json['members']);
     }
 
     return nostrGroupData;
@@ -419,8 +418,7 @@ extension MLSPrivateGroups on Groups {
           user!.encodedKeyPackage = keyPackageEvent.encoded_key_package;
           Account.saveUserToDB(user);
           if (!completer.isCompleted) completer.complete(keyPackageEvent.encoded_key_package);
-        }
-        else{
+        } else {
           if (!completer.isCompleted) completer.complete(null);
         }
       } else if (!ok.status) {
@@ -492,7 +490,7 @@ extension MLSPrivateGroups on Groups {
         name: mlsGroup.nostrGroupData.name,
         about: mlsGroup.nostrGroupData.description,
         members: mlsGroup.groupMembers.toSet().toList(),
-        mlsGroupId: mlsGroup.groupId,
+        mlsGroupId: mlsGroup.mlsGroupId,
         relay: relays.firstOrNull,
         adminPubkeys: mlsGroup.nostrGroupData.adminPubkeys);
     groups[groupDBISAR.groupId] = ValueNotifier(groupDBISAR);
@@ -585,11 +583,11 @@ extension MLSPrivateGroups on Groups {
         wrapperEventId: hexStringToBytes(group.welcomeWrapperEventId!),
         rumorEventString: group.welcomeEventString!);
     MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(joinGroupResult));
-    String membersString = await getMembers(groupId: mlsGroup.groupId);
+    String membersString = await getMembers(groupId: mlsGroup.mlsGroupId);
     List<String> members = (jsonDecode(membersString)['members'] as List).cast<String>();
     group.updateTime = currentUnixTimestampSeconds();
     group.members = members;
-    group.mlsGroupId = mlsGroup.groupId;
+    group.mlsGroupId = mlsGroup.mlsGroupId;
     group.adminPubkeys = mlsGroup.nostrGroupData.adminPubkeys;
     groups[group.groupId] = ValueNotifier(group);
     myGroups[group.groupId] = ValueNotifier(group);
@@ -626,6 +624,7 @@ extension MLSPrivateGroups on Groups {
   }
 
   Future<void> receiveMLSGroupMessage(Event event, String relay) async {
+    EventCache.sharedInstance.receiveEvent(event, relay);
     GroupEvent groupEvent = Nip104.decodeGroupEvent(event);
     ValueNotifier<GroupDBISAR>? groupValueNotifier = groups[groupEvent.groupId];
     if (groupValueNotifier == null) return;
@@ -664,7 +663,7 @@ extension MLSPrivateGroups on Groups {
         }
         sendGroupMessage(groupValueNotifier.value.groupId, MessageType.system, content,
             local: true);
-        updateGroup(groupValueNotifier.value);
+        updateMLSGroupInfo(groupValueNotifier.value);
       }
       if (removed_members != null) {
         for (var member in removed_members) {
@@ -674,7 +673,7 @@ extension MLSPrivateGroups on Groups {
         }
         sendGroupMessage(groupValueNotifier.value.groupId, MessageType.system, content,
             local: true);
-        updateGroup(groupValueNotifier.value);
+        updateMLSGroupInfo(groupValueNotifier.value);
       }
     } catch (e) {
       print('receiveMLSGroupMessage error: $e');
@@ -720,8 +719,7 @@ extension MLSPrivateGroups on Groups {
     if (okEvent.status) {
       await sendWelcomeMessages(
           welcome_message, members, Account.sharedInstance.me?.relayList ?? []);
-      group.members?.addAll(members);
-      syncGroupToDB(group);
+      updateMLSGroupInfo(group);
     }
     return group;
   }
@@ -739,8 +737,7 @@ extension MLSPrivateGroups on Groups {
 
     OKEvent okEvent = await sendGroupEventToMLSGroup(group, groupEvent);
     if (okEvent.status) {
-      group.members?.removeWhere((m) => members.contains(m));
-      syncGroupToDB(group);
+      updateMLSGroupInfo(group);
     }
     return group;
   }
@@ -769,6 +766,8 @@ extension MLSPrivateGroups on Groups {
 
   Future<GroupDBISAR?> updateMLSGroupInfo(GroupDBISAR group) async {
     if (group.mlsGroupId == null) return null;
+    String oldGroupId = group.groupId;
+
     String result = await getGroup(groupId: group.mlsGroupId!);
     MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(result));
 
@@ -777,8 +776,13 @@ extension MLSPrivateGroups on Groups {
     group.about = mlsGroup.nostrGroupData.description;
     group.adminPubkeys = mlsGroup.nostrGroupData.adminPubkeys;
     group.isDirectMessage = mlsGroup.groupMembers.length <= 2;
+    group.groupId = mlsGroup.nostrGroupData.nostrGroupId;
 
-    await syncGroupToDB(group);
+    await syncGroupToDB(group, oldGroupId: oldGroupId);
+    if (group.groupId != oldGroupId){
+      loadGroupHistoryMessagesFromRelay(group);
+      updateMLSGroupSubscription();
+    }
     return group;
   }
 }
