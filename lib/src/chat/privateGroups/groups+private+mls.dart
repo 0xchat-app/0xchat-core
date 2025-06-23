@@ -420,6 +420,9 @@ extension MLSPrivateGroups on Groups {
           Account.saveUserToDB(user);
           if (!completer.isCompleted) completer.complete(keyPackageEvent.encoded_key_package);
         }
+        else{
+          if (!completer.isCompleted) completer.complete(null);
+        }
       } else if (!ok.status) {
         if (!completer.isCompleted) completer.complete(null);
       } else if (unRelays.isEmpty) {
