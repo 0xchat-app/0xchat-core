@@ -670,6 +670,10 @@ extension MLSPrivateGroups on Groups {
       }
       if (removed_members != null) {
         for (var member in removed_members) {
+          if(member == pubkey){
+            content = 'You have been removed from the group';
+            break;
+          }
           UserDBISAR? user = await Account.sharedInstance.getUserInfo(member);
           content = '${user?.name} $content ';
           content = '${content}left the group';
