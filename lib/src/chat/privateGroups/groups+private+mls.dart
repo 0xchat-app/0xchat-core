@@ -308,7 +308,8 @@ extension MLSPrivateGroups on Groups {
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       if (unCompletedRelays.isEmpty) {
         mlsGroupEventCache.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-        for (var event in mlsGroupEventCache) {
+        var eventCache = List.from(mlsGroupEventCache);
+        for (var event in eventCache) {
           await receiveMLSGroupMessage(event, relay);
         }
         mlsGroupEventCache.clear();
@@ -546,6 +547,7 @@ extension MLSPrivateGroups on Groups {
           welcomeEventString: jsonEncode(event.toJson()),
           isDirectMessage: mlsGroup.groupMembers.length <= 2);
     } else {
+      groupDBISAR.groupId = mlsGroup.nostrGroupData.nostrGroupId;
       groupDBISAR.name = mlsGroup.nostrGroupData.name;
       groupDBISAR.about = mlsGroup.nostrGroupData.description;
       groupDBISAR.isMLSGroup = true;
@@ -564,6 +566,10 @@ extension MLSPrivateGroups on Groups {
         ? '${userDBISAR?.name} invite you to join the private chat'
         : '${userDBISAR?.name} invite you to join the private group';
     sendGroupMessage(groupDBISAR.privateGroupId, MessageType.system, inviteMessage, local: true);
+
+    if(checkInMyGroupList(groupDBISAR.privateGroupId)){
+      await joinMLSGroup(groupDBISAR);
+    }
   }
 
   Future<OKEvent> joinMLSGroup(GroupDBISAR group) async {
@@ -730,6 +736,14 @@ extension MLSPrivateGroups on Groups {
       await sendWelcomeMessages(
           welcome_message, members, Account.sharedInstance.me?.relayList ?? []);
       updateMLSGroupInfo(group);
+      String content = '';
+      for (var member in members) {
+        UserDBISAR? user = await Account.sharedInstance.getUserInfo(member);
+        content = '${user?.name} $content ';
+        content = '${content}joined the group';
+      }
+      sendGroupMessage(group.privateGroupId, MessageType.system, content,
+          local: true);
     }
     return group;
   }
@@ -748,6 +762,14 @@ extension MLSPrivateGroups on Groups {
     OKEvent okEvent = await sendGroupEventToMLSGroup(group, groupEvent);
     if (okEvent.status) {
       updateMLSGroupInfo(group);
+      String content = '';
+      for (var member in members) {
+        UserDBISAR? user = await Account.sharedInstance.getUserInfo(member);
+        content = '${user?.name} $content ';
+        content = '${content}left the group';
+      }
+      sendGroupMessage(group.privateGroupId, MessageType.system, content,
+          local: true);
     }
     return group;
   }
