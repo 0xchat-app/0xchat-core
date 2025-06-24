@@ -640,7 +640,7 @@ extension MLSPrivateGroups on Groups {
       if (commit != null) {
         var commit_message = List<int>.from(commit);
         String eventString = await createCommitMessageForGroup(
-            groupId: groupValueNotifier.value.mlsGroupId!,
+            nostrGroupId: groupValueNotifier.value.groupId,
             serializedCommit: commit_message,
             secretKey: preSecret);
         Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
@@ -723,7 +723,7 @@ extension MLSPrivateGroups on Groups {
     List<int> commit_message = List<int>.from(jsonDecode(result)['commit_message']);
     List<int> welcome_message = List<int>.from(jsonDecode(result)['welcome_message']);
     String eventString = await createCommitMessageForGroup(
-        groupId: group.mlsGroupId!, serializedCommit: commit_message, secretKey: preSecret);
+        nostrGroupId: group.groupId, serializedCommit: commit_message, secretKey: preSecret);
     Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
     OKEvent okEvent = await sendGroupEventToMLSGroup(group, groupEvent);
     if (okEvent.status) {
@@ -742,7 +742,7 @@ extension MLSPrivateGroups on Groups {
     String result = await removeMembers(groupId: group.mlsGroupId!, memberPubkeys: members);
     List<int> commit_message = List<int>.from(jsonDecode(result)['serialized_commit']);
     String eventString = await createCommitMessageForGroup(
-        groupId: group.mlsGroupId!, serializedCommit: commit_message, secretKey: preSecret);
+        nostrGroupId: group.groupId, serializedCommit: commit_message, secretKey: preSecret);
     Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
 
     OKEvent okEvent = await sendGroupEventToMLSGroup(group, groupEvent);
@@ -761,7 +761,7 @@ extension MLSPrivateGroups on Groups {
     List<int> leave_message = List<int>.from(jsonDecode(result)['serialized_leave']);
 
     String eventString = await createCommitMessageForGroup(
-        groupId: group.mlsGroupId!, serializedCommit: leave_message, secretKey: preSecret);
+        nostrGroupId: group.groupId, serializedCommit: leave_message, secretKey: preSecret);
     Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
 
     OKEvent okEvent = await sendGroupEventToMLSGroup(group, groupEvent);
@@ -785,7 +785,6 @@ extension MLSPrivateGroups on Groups {
     group.name = mlsGroup.nostrGroupData.name;
     group.about = mlsGroup.nostrGroupData.description;
     group.adminPubkeys = mlsGroup.nostrGroupData.adminPubkeys;
-    group.isDirectMessage = mlsGroup.groupMembers.length <= 2;
     group.groupId = mlsGroup.nostrGroupData.nostrGroupId;
 
     await syncGroupToDB(group);
