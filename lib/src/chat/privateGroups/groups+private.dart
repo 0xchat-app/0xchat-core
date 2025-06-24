@@ -100,13 +100,13 @@ extension PrivateGroups on Groups {
     }
   }
 
-  Future<Event?> getSendPrivateGroupMessageEvent(String groupId, MessageType type, String content,
+  Future<Event?> getSendPrivateGroupMessageEvent(String privateGroupId, MessageType type, String content,
       {String? source,
       String? replyMessage,
       String? replyUser,
       EncryptedFile? encryptedFile,
       int createAt = 0}) async {
-    GroupDBISAR? groupDB = myGroups[groupId]?.value;
+    GroupDBISAR? groupDB = myGroups[privateGroupId]?.value;
     if (groupDB == null) return null;
     List<String>? members = groupDB.members;
     if (members == null) return null;
@@ -135,7 +135,7 @@ extension PrivateGroups on Groups {
     return event;
   }
 
-  Future<OKEvent> sendPrivateGroupMessage(String groupId, MessageType type, String content,
+  Future<OKEvent> sendPrivateGroupMessage(String privateGroupId, MessageType type, String content,
       {String? source,
       String? replyMessage,
       Event? event,
@@ -144,7 +144,7 @@ extension PrivateGroups on Groups {
       int createAt = 0,
       String? replaceMessageId}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    event ??= await getSendPrivateGroupMessageEvent(groupId, type, content,
+    event ??= await getSendPrivateGroupMessageEvent(privateGroupId, type, content,
         source: source,
         replyMessage: replyMessage,
         encryptedFile: encryptedFile,
@@ -169,7 +169,7 @@ extension PrivateGroups on Groups {
         messageId: event!.id,
         sender: event.pubkey,
         receiver: '',
-        groupId: groupId,
+        groupId: privateGroupId,
         kind: event.kind,
         tags: jsonEncode(event.tags),
         replyId: replyMessage ?? '',
@@ -212,7 +212,7 @@ extension PrivateGroups on Groups {
         completer.complete(OKEvent(event.id, true, ''));
       }
     } else {
-      OKEvent ok = await sendToGroup(groupId, event);
+      OKEvent ok = await sendToGroup(privateGroupId, event);
       messageDB.status = ok.status ? 1 : 2;
       groupMessageUpdateCallBack?.call(messageDB, messageDB.messageId);
       await Messages.saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);

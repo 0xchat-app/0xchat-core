@@ -78,7 +78,6 @@ class NostrGroupData {
   final String description;
   final List<String> adminPubkeys;
   final List<String> relays;
-  List<String>? members;
 
   NostrGroupData({
     required this.nostrGroupId,
@@ -86,19 +85,7 @@ class NostrGroupData {
     required this.description,
     required this.adminPubkeys,
     required this.relays,
-    this.members,
   });
-
-  static NostrGroupData? fromPreviewWelcome(String previewWelcomeData) {
-    var json = jsonDecode(previewWelcomeData);
-    NostrGroupData nostrGroupData = NostrGroupData.fromJson(json['nostr_group_data']);
-
-    if (json['members'] != null) {
-      nostrGroupData.members = List<String>.from(json['members']);
-    }
-
-    return nostrGroupData;
-  }
 
   static NostrGroupData fromJson(Map<String, dynamic> json) {
     List<int> nostrGroupIdInts = List<int>.from(json['nostr_group_id']);
@@ -294,7 +281,8 @@ extension MLSPrivateGroups on Groups {
       }
       if (unCompletedRelays.isEmpty) {
         mlsGroupEventCache.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-        for (var event in mlsGroupEventCache) {
+        var cacheList = List.from(mlsGroupEventCache);
+        for (var event in cacheList) {
           await receiveMLSGroupMessage(event, relay);
         }
         mlsGroupEventCache.clear();
@@ -493,14 +481,15 @@ extension MLSPrivateGroups on Groups {
         mlsGroupId: mlsGroup.mlsGroupId,
         relay: relays.firstOrNull,
         adminPubkeys: mlsGroup.nostrGroupData.adminPubkeys);
-    groups[groupDBISAR.groupId] = ValueNotifier(groupDBISAR);
-    myGroups[groupDBISAR.groupId] = ValueNotifier(groupDBISAR);
+    groups[groupDBISAR.privateGroupId] = ValueNotifier(groupDBISAR);
+    myGroups[groupDBISAR.privateGroupId] = ValueNotifier(groupDBISAR);
     await syncGroupToDB(groupDBISAR);
     await syncMyGroupListToDB();
     updateMLSGroupSubscription();
     String inviteMessage =
         groupDBISAR.isDirectMessage ? 'Private chat created!' : 'Private group created!';
-    sendGroupMessage(groupDBISAR.groupId, MessageType.system, inviteMessage, local: true);
+    sendGroupMessage(groupDBISAR.privateGroupId, MessageType.system, inviteMessage, local: true);
+
     return groupDBISAR;
   }
 
@@ -526,12 +515,12 @@ extension MLSPrivateGroups on Groups {
     }
   }
 
-  Future<NostrGroupData?> previewWelcomeMessageEvent(String wrapperEventId, Event event) async {
+  Future<MlsGroup?> previewWelcomeMessageEvent(String wrapperEventId, Event event) async {
     String previewWelcomeData = await previewGroupFromWelcome(
         wrapperEventId: hexStringToBytes(wrapperEventId),
         rumorEventString: jsonEncode(event.toJson()));
-    NostrGroupData? groupData = NostrGroupData.fromPreviewWelcome(previewWelcomeData);
-    return groupData;
+    MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(previewWelcomeData));
+    return mlsGroup;
   }
 
   Future<void> handleWelcomeMessageEvent(String wrapperEventId, Event event, String relay) async {
@@ -539,45 +528,47 @@ extension MLSPrivateGroups on Groups {
 
     /// ignore non-contact user's welcome messages
     // if (!Contacts.sharedInstance.allContacts.containsKey(welcomeEvent.pubkey)) return;
-    NostrGroupData? nostrGroupData = await previewWelcomeMessageEvent(wrapperEventId, event);
-    if (nostrGroupData == null) return;
-    GroupDBISAR? groupDBISAR = groups[nostrGroupData.nostrGroupId]?.value;
+    MlsGroup? mlsGroup = await previewWelcomeMessageEvent(wrapperEventId, event);
+    if (mlsGroup == null) return;
+    String privateGroupId = toHexString(mlsGroup.mlsGroupId);
+    GroupDBISAR? groupDBISAR = groups[privateGroupId]?.value;
     if (groupDBISAR == null) {
       groupDBISAR = GroupDBISAR(
-          groupId: nostrGroupData.nostrGroupId,
+          groupId: mlsGroup.nostrGroupData.nostrGroupId,
           isMLSGroup: true,
           relay: relay,
+          mlsGroupId: mlsGroup.mlsGroupId,
           updateTime: currentUnixTimestampSeconds(),
-          name: nostrGroupData.name,
-          about: nostrGroupData.description,
-          members: nostrGroupData.members,
+          name: mlsGroup.nostrGroupData.name,
+          about: mlsGroup.nostrGroupData.description,
+          members: mlsGroup.groupMembers,
           welcomeWrapperEventId: wrapperEventId,
           welcomeEventString: jsonEncode(event.toJson()),
-          isDirectMessage: nostrGroupData.members == null || nostrGroupData.members!.length <= 2);
+          isDirectMessage: mlsGroup.groupMembers.length <= 2);
     } else {
-      groupDBISAR.name = nostrGroupData.name;
-      groupDBISAR.about = nostrGroupData.description;
+      groupDBISAR.name = mlsGroup.nostrGroupData.name;
+      groupDBISAR.about = mlsGroup.nostrGroupData.description;
       groupDBISAR.isMLSGroup = true;
+      groupDBISAR.mlsGroupId = mlsGroup.mlsGroupId;
       groupDBISAR.relay = relay;
       groupDBISAR.updateTime = currentUnixTimestampSeconds();
       groupDBISAR.welcomeEventString = jsonEncode(event.toJson());
       groupDBISAR.welcomeWrapperEventId = wrapperEventId;
-      groupDBISAR.members = nostrGroupData.members;
-      groupDBISAR.isDirectMessage =
-          nostrGroupData.members == null || nostrGroupData.members!.length <= 2;
+      groupDBISAR.members = mlsGroup.groupMembers;
+      groupDBISAR.isDirectMessage = mlsGroup.groupMembers.length <= 2;
     }
-    groups[nostrGroupData.nostrGroupId] = ValueNotifier(groupDBISAR);
+    groups[groupDBISAR.privateGroupId] = ValueNotifier(groupDBISAR);
     syncGroupToDB(groupDBISAR);
     UserDBISAR? userDBISAR = await Account.sharedInstance.getUserInfo(welcomeEvent.pubkey);
     String inviteMessage = groupDBISAR.isDirectMessage
         ? '${userDBISAR?.name} invite you to join the private chat'
         : '${userDBISAR?.name} invite you to join the private group';
-    sendGroupMessage(groupDBISAR.groupId, MessageType.system, inviteMessage, local: true);
+    sendGroupMessage(groupDBISAR.privateGroupId, MessageType.system, inviteMessage, local: true);
   }
 
   Future<OKEvent> joinMLSGroup(GroupDBISAR group) async {
     if (group.welcomeEventString == null || group.welcomeWrapperEventId == null) {
-      return OKEvent(group.groupId, false, 'no welcome messages');
+      return OKEvent(group.privateGroupId, false, 'no welcome messages');
     }
     String joinGroupResult = await joinGroupFromWelcome(
         wrapperEventId: hexStringToBytes(group.welcomeWrapperEventId!),
@@ -589,13 +580,13 @@ extension MLSPrivateGroups on Groups {
     group.members = members;
     group.mlsGroupId = mlsGroup.mlsGroupId;
     group.adminPubkeys = mlsGroup.nostrGroupData.adminPubkeys;
-    groups[group.groupId] = ValueNotifier(group);
-    myGroups[group.groupId] = ValueNotifier(group);
+    groups[group.privateGroupId] = ValueNotifier(group);
+    myGroups[group.privateGroupId] = ValueNotifier(group);
     await syncGroupToDB(group);
     await syncMyGroupListToDB();
     updateMLSGroupSubscription();
     loadGroupHistoryMessagesFromRelay(group);
-    return OKEvent(group.groupId, true, '');
+    return OKEvent(group.privateGroupId, true, '');
   }
 
   Future<OKEvent> sendMessageToMLSGroup(GroupDBISAR group, Event messageEvent) async {
@@ -626,7 +617,13 @@ extension MLSPrivateGroups on Groups {
   Future<void> receiveMLSGroupMessage(Event event, String relay) async {
     EventCache.sharedInstance.receiveEvent(event, relay);
     GroupEvent groupEvent = Nip104.decodeGroupEvent(event);
-    ValueNotifier<GroupDBISAR>? groupValueNotifier = groups[groupEvent.groupId];
+    ValueNotifier<GroupDBISAR>? groupValueNotifier;
+    for (var group in groups.values) {
+      if (group.value.groupId == groupEvent.groupId) {
+        groupValueNotifier = group;
+        break;
+      }
+    }
     if (groupValueNotifier == null) return;
     if (groupEvent.pubkey == pubkey) return;
     Event? innerEvent;
@@ -661,7 +658,7 @@ extension MLSPrivateGroups on Groups {
           content = '${user?.name} $content ';
           content = '${content}joined the group';
         }
-        sendGroupMessage(groupValueNotifier.value.groupId, MessageType.system, content,
+        sendGroupMessage(groupValueNotifier.value.privateGroupId, MessageType.system, content,
             local: true);
         updateMLSGroupInfo(groupValueNotifier.value);
       }
@@ -671,7 +668,7 @@ extension MLSPrivateGroups on Groups {
           content = '${user?.name} $content ';
           content = '${content}left the group';
         }
-        sendGroupMessage(groupValueNotifier.value.groupId, MessageType.system, content,
+        sendGroupMessage(groupValueNotifier.value.privateGroupId, MessageType.system, content,
             local: true);
         updateMLSGroupInfo(groupValueNotifier.value);
       }
@@ -679,25 +676,26 @@ extension MLSPrivateGroups on Groups {
       print('receiveMLSGroupMessage error: $e');
     }
     if (innerEvent == null) return;
-    _handleMLSGroupMessage(innerEvent, relay);
+    _handleMLSGroupMessage(innerEvent, groupValueNotifier.value.privateGroupId, relay);
   }
 
-  Future<void> _handleMLSGroupMessage(Event innerEvent, String relay) async {
+  Future<void> _handleMLSGroupMessage(Event innerEvent, String privateGroupId, String relay) async {
     if (innerEvent.kind == 9) {
-      _handleKind9MLSGroupMessage(innerEvent);
+      _handleKind9MLSGroupMessage(innerEvent, privateGroupId);
     } else if (innerEvent.kind == 15) {
-      Contacts.sharedInstance.handlePrivateMessage(innerEvent, relay);
+      Contacts.sharedInstance
+          .handlePrivateMessage(innerEvent, relay, privateGroupId: privateGroupId);
     }
   }
 
-  Future<void> _handleKind9MLSGroupMessage(Event innerEvent) async {
+  Future<void> _handleKind9MLSGroupMessage(Event innerEvent, String privateGroupId) async {
     GroupMessage groupMessage = Nip29.decodeGroupMessage(innerEvent);
     if (groupMessage.pubkey == pubkey) return;
     MessageDBISAR messageDB = MessageDBISAR(
         messageId: innerEvent.id,
         sender: groupMessage.pubkey,
         receiver: '',
-        groupId: groupMessage.groupId,
+        groupId: privateGroupId,
         kind: innerEvent.kind,
         tags: jsonEncode(innerEvent.tags),
         content: groupMessage.content,
@@ -790,7 +788,7 @@ extension MLSPrivateGroups on Groups {
     group.isDirectMessage = mlsGroup.groupMembers.length <= 2;
     group.groupId = mlsGroup.nostrGroupData.nostrGroupId;
 
-    await syncGroupToDB(group, oldGroupId: oldGroupId);
+    await syncGroupToDB(group);
     if (group.groupId != oldGroupId) {
       loadGroupHistoryMessagesFromRelay(group);
       updateMLSGroupSubscription();

@@ -384,7 +384,7 @@ class MessageDBISAR {
   }
 
   static Future<MessageDBISAR?> fromPrivateMessage(Event event, String receiver, String privkey,
-      {int chatType = 0}) async {
+      {int chatType = 0, String? privateGroupId}) async {
     EDMessage? message;
     if (event.kind == 4) {
       message = await Contacts.sharedInstance.decodeNip4Event(event, receiver, privkey);
@@ -404,7 +404,7 @@ class MessageDBISAR {
         messageId: event.id,
         sender: message.sender,
         receiver: message.receiver,
-        groupId: message.groupId ?? '',
+        groupId: privateGroupId ?? message.groupId ?? '',
         kind: event.kind,
         tags: jsonEncode(event.tags),
         content: message.content,

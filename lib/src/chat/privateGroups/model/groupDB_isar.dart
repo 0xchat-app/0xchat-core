@@ -14,7 +14,7 @@ class GroupDBISAR {
   Id id = Isar.autoIncrement;
 
   @Index(unique: true, replace: true)
-  String groupId; //group pubkey
+  String groupId; //group nostr pubkey
 
   String owner; // pubkey
   int updateTime;
@@ -60,8 +60,13 @@ class GroupDBISAR {
   }
 
   @ignore
+  String get privateGroupId {
+    return mlsGroupId == null ? groupId : toHexString(mlsGroupId!);
+  }
+
+  @ignore
   String get shortGroupId {
-    String k = groupId;
+    String k = privateGroupId;
     if (k.length < 12) return k;
     final String start = k.substring(0, 6);
     final String end = k.substring(k.length - 6);
