@@ -215,6 +215,7 @@ class Groups {
     String groupId = groupDB.privateGroupId;
 
     groups[groupId]?.value = groupDB;
+    groups[groupId]?.notifyListeners();
     groups.putIfAbsent(groupId, () => ValueNotifier(groupDB));
 
     if (myGroups.containsKey(groupId)) {
