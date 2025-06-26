@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 
 class Relays {
   /// singleton
@@ -100,7 +100,7 @@ class Relays {
 
   Future<List<RelayDBISAR>?> _loadRelaysFromDB() async {
     final isar = DBISAR.sharedInstance.isar;
-    return await isar.relayDBISARs.where().findAll();
+    return isar.relayDBISARs.where().findAll();
   }
 
   Future<void> syncRelaysToDB({String? r}) async {
@@ -281,7 +281,7 @@ class Relays {
 
   static Future<RelayDBISAR?> getRelayDetailsFromDB(String relayURL) async {
     final isar = DBISAR.sharedInstance.isar;
-    return await isar.relayDBISARs.filter().urlEqualTo(relayURL).findFirst();
+    return isar.relayDBISARs.where().urlEqualTo(relayURL).findFirst();
   }
 
   static Future<RelayDBISAR?> getRelayDetails(String relayURL, {bool? refresh}) async {

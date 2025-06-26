@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:chatcore/chat-core.dart';
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 
 extension AccountCircle on Account {
   /// Logout from current circle and clean up resources
@@ -220,8 +220,8 @@ extension AccountCircle on Account {
       final isar = DBISAR.sharedInstance.isar;
 
       // Find the circle to update
-      final circle = await isar.circleDBISARs
-          .filter()
+      final circle = isar.circleDBISARs
+          .where()
           .circleIdEqualTo(circleId)
           .findFirst();
       if (circle == null) {
@@ -266,7 +266,7 @@ extension AccountCircle on Account {
     try {
       final isar = DBISAR.sharedInstance.isar;
       final circles =
-          await isar.circleDBISARs.filter().nameEqualTo(name).findAll();
+          isar.circleDBISARs.where().nameEqualTo(name).findAll();
       return circles.isNotEmpty ? circles.first : null;
     } catch (e) {
       LogUtils.e(() => 'Failed to get circle by name: $e');
@@ -279,7 +279,7 @@ extension AccountCircle on Account {
   Future<List<CircleDBISAR>> getAllCircles() async {
     try {
       final isar = DBISAR.sharedInstance.isar;
-      return await isar.circleDBISARs.where().findAll();
+      return isar.circleDBISARs.where().findAll();
     } catch (e) {
       LogUtils.e(() => 'Failed to get all circles: $e');
       return [];
@@ -292,8 +292,8 @@ extension AccountCircle on Account {
   Future<CircleDBISAR?> getCircleById(String circleId) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
-      return await isar.circleDBISARs
-          .filter()
+      return isar.circleDBISARs
+          .where()
           .circleIdEqualTo(circleId)
           .findFirst();
     } catch (e) {

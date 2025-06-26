@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 
 typedef GroupsJoinRequestCallBack = void Function(JoinRequestDBISAR);
@@ -89,7 +89,7 @@ class RelayGroup {
 
   Future<void> _loadAllGroupsFromDB() async {
     final isar = DBISAR.sharedInstance.isar;
-    List<RelayGroupDBISAR> maps = await isar.relayGroupDBISARs.where().findAll();
+    List<RelayGroupDBISAR> maps = isar.relayGroupDBISARs.where().findAll();
     for (RelayGroupDBISAR e in maps) {
       RelayGroupDBISAR groupDB = e.withGrowableLevels();
       if (groupDB.groupId.isNotEmpty) {
@@ -328,8 +328,8 @@ class RelayGroup {
   }
 
   Future<void> deleteGroupFromDB(String groupId) async {
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
-      await DBISAR.sharedInstance.isar.relayGroupDBISARs
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.relayGroupDBISARs
           .where()
           .groupIdEqualTo(groupId)
           .deleteAll();
@@ -408,12 +408,14 @@ class RelayGroup {
   Future<List<String>> getPrevious(String groupId) async {
     List<String> previous = [];
     final isar = DBISAR.sharedInstance.isar;
-    List<MessageDBISAR> messages = await isar.messageDBISARs
-        .filter()
+    List<MessageDBISAR> messages = isar.messageDBISARs
+        .where()
         .groupIdEqualTo(groupId)
         .sortByCreateTimeDesc()
-        .limit(3)
         .findAll();
+    if (messages.length > 3) {
+      messages = messages.take(3).toList();
+    }
     for (var message in messages) {
       previous.add(message.messageId.substring(0, 8));
     }

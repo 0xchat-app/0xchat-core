@@ -211,8 +211,8 @@ class UserDB extends DBObject {
     for (var user in users) {
       usersISAR.add(UserDBISAR.fromMap(user.toMap()));
     }
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
-      await DBISAR.sharedInstance.isar.userDBISARs.putAll(usersISAR);
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.userDBISARs.putAll(usersISAR);
     });
   }
 }

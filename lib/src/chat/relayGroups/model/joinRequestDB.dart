@@ -51,8 +51,8 @@ class JoinRequestDB extends DBObject {
     for (var joinRequest in joinRequests) {
       joinRequestsISAR.add(JoinRequestDBISAR.fromMap(joinRequest.toMap()));
     }
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
-      await DBISAR.sharedInstance.isar.joinRequestDBISARs
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.joinRequestDBISARs
           .putAll(joinRequestsISAR);
     });
   }

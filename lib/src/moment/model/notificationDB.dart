@@ -86,8 +86,8 @@ class NotificationDB extends DBObject {
     for (var notification in notifications) {
       notificationsISAR.add(NotificationDBISAR.fromMap(notification.toMap()));
     }
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
-      await DBISAR.sharedInstance.isar.notificationDBISARs
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.notificationDBISARs
           .putAll(notificationsISAR);
     });
   }

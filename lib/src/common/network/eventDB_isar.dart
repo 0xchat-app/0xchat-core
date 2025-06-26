@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'dart:convert';
 
 part 'eventDB_isar.g.dart';

@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 
 part 'joinRequestDB_isar.g.dart';

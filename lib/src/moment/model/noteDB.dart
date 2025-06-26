@@ -252,8 +252,8 @@ class NoteDB extends DBObject {
     for (var note in notes) {
       notesISAR.add(NoteDBISAR.fromMap(note.toMap()));
     }
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
-      await DBISAR.sharedInstance.isar.noteDBISARs.putAll(notesISAR);
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.noteDBISARs.putAll(notesISAR);
     });
   }
 }

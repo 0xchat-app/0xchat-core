@@ -35,8 +35,8 @@ class ConfigDB extends DBObject {
     for (var config in configs) {
       configsISAR.add(ConfigDBISAR.fromMap(config.toMap()));
     }
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
-      await DBISAR.sharedInstance.isar.configDBISARs.putAll(configsISAR);
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.configDBISARs.putAll(configsISAR);
     });
   }
 }

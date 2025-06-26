@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 
 extension Admin on Groups {
@@ -139,15 +139,15 @@ extension Admin on Groups {
     List<MessageDBISAR> messages;
     final isar = DBISAR.sharedInstance.isar;
     if (groupId == null) {
-      messages = await isar.messageDBISARs
-          .filter()
+      messages = isar.messageDBISARs
+          .where()
           .chatTypeEqualTo(1)
           .typeEqualTo('system')
           .subTypeEqualTo('request')
           .findAll();
     } else {
-      messages = await isar.messageDBISARs
-          .filter()
+      messages = isar.messageDBISARs
+          .where()
           .groupIdEqualTo(groupId)
           .chatTypeEqualTo(1)
           .typeEqualTo('system')

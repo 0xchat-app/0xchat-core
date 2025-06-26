@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
@@ -15,7 +15,8 @@ class EventCache {
   final cacheTimeStamp = 24 * 60 * 60 * 7;
 
   Future<void> loadAllEventsFromDB() async {
-    List<EventDBISAR> eventDBs = await DBISAR.sharedInstance.isar.eventDBISARs.where().findAll();
+    final isar = DBISAR.sharedInstance.isar;
+    List<EventDBISAR> eventDBs = isar.eventDBISARs.where().findAll();
     List<int> expiredEvents = [];
     for (var eventDB in eventDBs) {
       if (eventDB.expiration != null &&
@@ -28,14 +29,15 @@ class EventCache {
     }
 
     if (expiredEvents.isEmpty) return;
-    DBISAR.sharedInstance.isar.writeTxn(() async {
-      int result = await DBISAR.sharedInstance.isar.eventDBISARs.deleteAll(expiredEvents);
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      int result = isar.eventDBISARs.deleteAll(expiredEvents);
       LogUtils.v(() => 'Deleted event caches: $result');
     });
   }
 
   Future<EventDBISAR?> loadEventFromDB(String eventId) async {
-    return await DBISAR.sharedInstance.isar.eventDBISARs
+    final isar = DBISAR.sharedInstance.isar;
+    return isar.eventDBISARs
         .where()
         .eventIdEqualTo(eventId)
         .findFirst();

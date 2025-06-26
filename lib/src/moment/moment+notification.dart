@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:sqflite_sqlcipher/sqlite_api.dart';
@@ -6,12 +6,14 @@ import 'package:sqflite_sqlcipher/sqlite_api.dart';
 extension Notification on Moment {
   Future<List<NotificationDBISAR>?> loadNotificationsFromDB(int until, {int limit = 50}) async {
     final isar = DBISAR.sharedInstance.isar;
-    List<NotificationDBISAR> notifications = await isar.notificationDBISARs
-        .filter()
+    List<NotificationDBISAR> notifications = isar.notificationDBISARs
+        .where()
         .createAtLessThan(until)
         .sortByCreateAtDesc()
-        .limit(limit)
         .findAll();
+    if (notifications.length > limit) {
+      notifications = notifications.take(limit).toList();
+    }
     latestNotificationTime = notifications.first.createAt;
     return notifications;
   }
@@ -43,8 +45,8 @@ extension Notification on Moment {
   Future<void> deleteAllNotifications() async {
     newNotifications.clear();
     final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.notificationDBISARs.clear();
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.notificationDBISARs.clear();
     });
   }
 }

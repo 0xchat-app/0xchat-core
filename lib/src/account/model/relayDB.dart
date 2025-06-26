@@ -246,8 +246,8 @@ class RelayDB extends DBObject {
     for (var relayDB in relayDBs) {
       relayDBsISAR.add(RelayDBISAR.fromMap(relayDB.toMap()));
     }
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
-      await DBISAR.sharedInstance.isar.relayDBISARs.putAll(relayDBsISAR);
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.relayDBISARs.putAll(relayDBsISAR);
     });
   }
 }

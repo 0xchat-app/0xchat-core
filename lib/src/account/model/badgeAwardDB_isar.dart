@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 
 part 'badgeAwardDB_isar.g.dart';
 

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:chatcore/chat-core.dart';
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqlite_api.dart';
 
@@ -437,8 +437,9 @@ extension Load on Moment {
   Future<List<NoteDBISAR>?> loadHashTagsFromRelay(List<String> hashTags,
       {int limit = 30, int? until}) async {
     List<NoteDBISAR> returnResult = [];
-    List<NoteDBISAR> searchResult = await DBISAR.sharedInstance.isar.noteDBISARs
-        .filter()
+    final isar = DBISAR.sharedInstance.isar;
+    List<NoteDBISAR> searchResult = isar.noteDBISARs
+        .where()
         .anyOf(hashTags, (q, hashTag) => q.hashTagsElementEqualTo(hashTag))
         .findAll();
     for (var note in searchResult) {
@@ -598,7 +599,7 @@ extension Load on Moment {
       int? limit,
       String? keyword}) async {
     final isar = DBISAR.sharedInstance.isar;
-    var queryBuilder = isar.noteDBISARs.filter();
+    dynamic queryBuilder = isar.noteDBISARs.where();
     if (noteId != null) {
       queryBuilder = queryBuilder.noteIdEqualTo(noteId);
     }
@@ -640,16 +641,15 @@ extension Load on Moment {
     }
     List<NoteDBISAR> result = searchNotesFromCache(noteId, groupId, authors, root, reply, repostId,
         quoteRepostId, reactedId, isReacted, private, until, limit);
-    if (limit != null) {
-      final searchResult =
-          await queryBuilder.idBetween(0, Isar.maxId).sortByCreateAtDesc().limit(limit).findAll();
-      for (NoteDBISAR note in searchResult) {
+    final searchResult = await queryBuilder.sortByCreateAtDesc().findAll();
+    if (limit != null && searchResult.length > limit) {
+      final limitedResult = searchResult.take(limit).toList();
+      for (NoteDBISAR note in limitedResult) {
         note = note.withGrowableLevels();
         result.add(note);
       }
       return result;
     }
-    final searchResult = await queryBuilder.idBetween(0, Isar.maxId).sortByCreateAtDesc().findAll();
     for (NoteDBISAR note in searchResult) {
       note = note.withGrowableLevels();
       result.add(note);

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqlite_api.dart';
 
@@ -65,13 +65,13 @@ extension SecretChat on Contacts {
 
   static Future<SecretSessionDBISAR?> searchSecretSessionFromDB(String sessionId) async {
     final isar = DBISAR.sharedInstance.isar;
-    return await isar.secretSessionDBISARs.filter().sessionIdEqualTo(sessionId).findFirst();
+    return isar.secretSessionDBISARs.where().sessionIdEqualTo(sessionId).findFirst();
   }
 
   static Future<bool> deleteSecretSessionFromDB(String sessionId) async {
     final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.secretSessionDBISARs.deleteBySessionId(sessionId);
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.secretSessionDBISARs.where().sessionIdEqualTo(sessionId).deleteAll();
     });
     return true;
   }
@@ -492,7 +492,7 @@ extension SecretChat on Contacts {
 
   Future<void> syncSecretSessionFromDB() async {
     final isar = DBISAR.sharedInstance.isar;
-    List<SecretSessionDBISAR> secretSessions = await isar.secretSessionDBISARs.where().findAll();
+    List<SecretSessionDBISAR> secretSessions = isar.secretSessionDBISARs.where().findAll();
     for (var session in secretSessions) {
       secretSessionMap[session.sessionId] = session;
 

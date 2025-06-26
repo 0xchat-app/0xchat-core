@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:http/http.dart' as http;
 
 part 'messageDB_isar.g.dart';
@@ -431,7 +431,7 @@ class MessageDBISAR {
   static Future<void> savePreviewData(String messageId, String previewData) async {
     final isar = DBISAR.sharedInstance.isar;
 
-    final message = await isar.messageDBISARs.filter().messageIdEqualTo(messageId).findFirst();
+    final message = isar.messageDBISARs.where().messageIdEqualTo(messageId).findFirst();
 
     if (message != null) {
       message.previewData = previewData;

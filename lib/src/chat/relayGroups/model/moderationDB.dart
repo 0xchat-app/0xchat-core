@@ -95,8 +95,8 @@ class ModerationDB extends DBObject {
     for (var moderation in moderations) {
       moderationsISAR.add(ModerationDBISAR.fromMap(moderation.toMap()));
     }
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
-      await DBISAR.sharedInstance.isar.moderationDBISARs
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.moderationDBISARs
           .putAll(moderationsISAR);
     });
   }

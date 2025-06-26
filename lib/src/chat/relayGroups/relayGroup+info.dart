@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:chatcore/chat-core.dart';
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 
 extension EInfo on RelayGroup {
@@ -143,8 +143,9 @@ extension EInfo on RelayGroup {
   }
 
   Future<List<RelayGroupDBISAR>> searchGroupsFromDB(List<String> relays) async {
-    return await DBISAR.sharedInstance.isar.relayGroupDBISARs
-        .filter()
+    final isar = DBISAR.sharedInstance.isar;
+    return isar.relayGroupDBISARs
+        .where()
         .anyOf(relays, (q, relay) => q.relayEqualTo(relay))
         .findAll();
   }

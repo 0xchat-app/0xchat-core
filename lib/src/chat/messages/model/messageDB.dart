@@ -118,8 +118,8 @@ class MessageDB extends DBObject {
     for (var message in messages) {
       messagesISAR.add(MessageDBISAR.fromMap(message.toMap()));
     }
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
-      await DBISAR.sharedInstance.isar.messageDBISARs.putAll(messagesISAR);
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.messageDBISARs.putAll(messagesISAR);
     });
   }
 }

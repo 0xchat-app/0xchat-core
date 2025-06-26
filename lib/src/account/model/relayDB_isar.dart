@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:chatcore/chat-core.dart';
 
 part 'relayDB_isar.g.dart';

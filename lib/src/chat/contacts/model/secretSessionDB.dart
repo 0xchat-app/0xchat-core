@@ -81,8 +81,8 @@ class SecretSessionDB extends DBObject {
       secretSessionsISAR
           .add(SecretSessionDBISAR.fromMap(secretSession.toMap()));
     }
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
-      await DBISAR.sharedInstance.isar.secretSessionDBISARs
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.secretSessionDBISARs
           .putAll(secretSessionsISAR);
     });
   }

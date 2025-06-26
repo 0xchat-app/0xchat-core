@@ -65,8 +65,8 @@ class ChannelDB extends DBObject {
     for (var channel in channels) {
       channelsISAR.add(ChannelDBISAR.fromMap(channel.toMap()));
     }
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
-      await DBISAR.sharedInstance.isar.channelDBISARs.putAll(channelsISAR);
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.channelDBISARs.putAll(channelsISAR);
     });
   }
 }

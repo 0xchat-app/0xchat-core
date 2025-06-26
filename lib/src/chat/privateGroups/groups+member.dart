@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:chatcore/chat-core.dart';
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 
@@ -72,8 +72,8 @@ extension Member on Groups {
 
   Future<void> deleteGroup(String groupId) async {
     final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.groupDBISARs.deleteByGroupId(groupId);
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.groupDBISARs.where().groupIdEqualTo(groupId).deleteAll();
     });
   }
 

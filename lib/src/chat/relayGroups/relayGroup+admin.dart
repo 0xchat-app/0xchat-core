@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:chatcore/chat-core.dart';
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 
 extension EAdmin on RelayGroup {
@@ -29,7 +29,7 @@ extension EAdmin on RelayGroup {
 
   Future<List<JoinRequestDBISAR>> getRequestList(String groupId) async {
     final isar = DBISAR.sharedInstance.isar;
-    return await isar.joinRequestDBISARs.filter().groupIdEqualTo(groupId).findAll();
+    return isar.joinRequestDBISARs.where().groupIdEqualTo(groupId).findAll();
   }
 
   Future<OKEvent> acceptJoinRequest(JoinRequestDBISAR joinRequest) async {
@@ -46,8 +46,8 @@ extension EAdmin on RelayGroup {
 
   Future<bool> ignoreJoinRequest(JoinRequestDBISAR joinRequest) async {
     final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.joinRequestDBISARs.deleteByRequestId(joinRequest.requestId);
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.joinRequestDBISARs.where().requestIdEqualTo(joinRequest.requestId).deleteAll();
     });
     return true;
   }
@@ -266,8 +266,8 @@ extension EAdmin on RelayGroup {
 
   Future<OKEvent> deleteNoteFromLocal(String noteId) async {
     final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.noteDBISARs.deleteByNoteId(noteId);
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.noteDBISARs.where().noteIdEqualTo(noteId).deleteAll();
     });
     return OKEvent(noteId, true, '');
   }

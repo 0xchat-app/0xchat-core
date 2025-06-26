@@ -59,8 +59,8 @@ class GroupDB extends DBObject {
     for (var group in groups) {
       groupsISAR.add(GroupDBISAR.fromMap(group.toMap()));
     }
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
-      await DBISAR.sharedInstance.isar.groupDBISARs.putAll(groupsISAR);
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.groupDBISARs.putAll(groupsISAR);
     });
   }
 }

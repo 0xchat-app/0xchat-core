@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:chatcore/chat-core.dart';
 
 part 'notificationDB_isar.g.dart';

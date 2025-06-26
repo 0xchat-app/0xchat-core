@@ -68,7 +68,7 @@ class Account {
   }
 
   Future<void> _loadAllUsers() async {
-    var queryBuilder = DBISAR.sharedInstance.isar.userDBISARS.where();
+    var queryBuilder = DBISAR.sharedInstance.isar.userDBISARs.where();
     List<UserDBISAR?> maps = await queryBuilder.findAll();
     for (UserDBISAR? user in maps) {
       if (user != null) {
@@ -139,7 +139,7 @@ class Account {
 
   Future<UserDBISAR?> _searchUserFromDB(String pubkey) async {
     UserDBISAR? user =
-        await DBISAR.sharedInstance.isar.userDBISARs.filter().pubKeyEqualTo(pubkey).findFirst();
+        await DBISAR.sharedInstance.isar.userDBISARs.where().pubKeyEqualTo(pubkey).findFirst();
     if (user != null) {
       user = user.withGrowableLevels();
       userCache[user.pubKey] = ValueNotifier<UserDBISAR>(user);

@@ -63,8 +63,8 @@ class ZapRecordsDB extends DBObject {
     for (var zapRecord in zapRecords) {
       zapRecordsISAR.add(ZapRecordsDBISAR.fromMap(zapRecord.toMap()));
     }
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
-      await DBISAR.sharedInstance.isar.zapRecordsDBISARs.putAll(zapRecordsISAR);
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.zapRecordsDBISARs.putAll(zapRecordsISAR);
     });
   }
 }

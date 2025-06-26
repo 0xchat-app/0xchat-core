@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:isar/isar.dart';
+
+import 'package:flutter/foundation.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 
@@ -196,8 +198,8 @@ class BadgesHelper {
         result.add(BadgesHelper.sharedInstance.badgeInfos[badgeId]);
       } else {
         final isar = DBISAR.sharedInstance.isar;
-        BadgeDBISAR? badgeDBISAR = await isar.badgeDBISARs
-            .filter()
+        BadgeDBISAR? badgeDBISAR = isar.badgeDBISARs
+            .where()
             .badgeIDEqualTo(badgeId)
             .findFirst();
         if (badgeDBISAR != null) {
@@ -225,8 +227,8 @@ class BadgesHelper {
     List<BadgeDBISAR> result = [];
     for (BadgeAward badgeAward in awards) {
       final isar = DBISAR.sharedInstance.isar;
-      BadgeDBISAR? badgeDBISAR = await isar.badgeDBISARs
-          .filter()
+      BadgeDBISAR? badgeDBISAR = isar.badgeDBISARs
+          .where()
           .creatorEqualTo(badgeAward.creator ?? '')
           .dEqualTo(badgeAward.identifies ?? '')
           .findFirst();
@@ -302,7 +304,7 @@ class BadgesHelper {
   static Future<List<BadgeAwardDBISAR>> getUserBadgesFromDB(
       String userPubkey) async {
     final isar = DBISAR.sharedInstance.isar;
-    var query = isar.badgeAwardDBISARs.filter().badgeOwnerEqualTo(userPubkey);
+    var query = isar.badgeAwardDBISARs.where().badgeOwnerEqualTo(userPubkey);
     return await query.findAll();
   }
 
@@ -471,11 +473,31 @@ class BadgesHelper {
       String? identifies,
       String? creator}) async {
     final isar = DBISAR.sharedInstance.isar;
-    var query = isar.badgeAwardDBISARs.filter().idBetween(0, Isar.maxId);
-    if (badgeOwner != null) query = query.badgeOwnerEqualTo(badgeOwner);
-    if (badgeId != null) query = query.badgeIdEqualTo(badgeId);
-    if (identifies != null) query = query.identifiesEqualTo(identifies);
-    if (creator != null) query = query.creatorEqualTo(creator);
-    return await query.findFirst();
+    
+    // 获取所有记录并在内存中过滤
+    final allAwards = isar.badgeAwardDBISARs.where().findAll();
+    
+    for (final award in allAwards) {
+      bool matches = true;
+      
+      if (badgeOwner != null && award.badgeOwner != badgeOwner) {
+        matches = false;
+      }
+      if (badgeId != null && award.badgeId != badgeId) {
+        matches = false;
+      }
+      if (identifies != null && award.identifies != identifies) {
+        matches = false;
+      }
+      if (creator != null && award.creator != creator) {
+        matches = false;
+      }
+      
+      if (matches) {
+        return award;
+      }
+    }
+    
+    return null;
   }
 }

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 
 part 'userDB_isar.g.dart';
 

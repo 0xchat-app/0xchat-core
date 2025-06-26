@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqlite_api.dart';
 
@@ -76,7 +76,8 @@ class Groups {
   }
 
   Future<void> _loadAllGroupsFromDB() async {
-    List<GroupDBISAR> maps = await DBISAR.sharedInstance.isar.groupDBISARs.where().findAll();
+    final isar = DBISAR.sharedInstance.isar;
+    List<GroupDBISAR> maps = isar.groupDBISARs.where().findAll();
     for (GroupDBISAR e in maps) {
       GroupDBISAR groupDB = e.withGrowableLevels();
       if (groupDB.name.isEmpty) groupDB.name = _shortGroupId(groupDB.privateGroupId);

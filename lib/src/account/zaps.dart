@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:bolt11_decoder/bolt11_decoder.dart';
@@ -172,7 +172,7 @@ class Zaps {
 
   static Future<ZapsDBISAR?> getZapsInfoFromDB(String lnurl) async {
     final isar = DBISAR.sharedInstance.isar;
-    return await isar.zapsDBISARs.filter().lnURLEqualTo(lnurl).findFirst();
+    return isar.zapsDBISARs.where().lnURLEqualTo(lnurl).findFirst();
   }
 
   static Future<ZapsDBISAR?> getZapsInfoFromLnurl(String lnurl) async {
@@ -372,17 +372,17 @@ class Zaps {
       int limit = 1000}) async {
     if (bolt11 == null && sender == null && recipient == null) return [];
     final isar = DBISAR.sharedInstance.isar;
-    var queryBuilder = isar.zapRecordsDBISARs.filter();
+    var queryBuilder = isar.zapRecordsDBISARs.where();
     List<ZapRecordsDBISAR?> maps = [];
     if (bolt11 != null) {
-      maps = await queryBuilder.bolt11EqualTo(bolt11).sortByPaidAtDesc().limit(limit).findAll();
+      maps = await queryBuilder.bolt11EqualTo(bolt11).sortByPaidAtDesc().findAll();
     }
     if (sender != null) {
-      maps = await queryBuilder.senderEqualTo(sender).sortByPaidAtDesc().limit(limit).findAll();
+      maps = await queryBuilder.senderEqualTo(sender).sortByPaidAtDesc().findAll();
     }
     if (recipient != null) {
       maps =
-          await queryBuilder.recipientEqualTo(recipient).sortByPaidAtDesc().limit(limit).findAll();
+          await queryBuilder.recipientEqualTo(recipient).sortByPaidAtDesc().findAll();
     }
 
     for (ZapRecordsDBISAR? records in maps) {

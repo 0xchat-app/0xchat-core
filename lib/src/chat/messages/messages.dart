@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqlite_api.dart';
 
@@ -55,11 +55,11 @@ class Messages {
   Future<void> refindActionsFromDB() async {
     final isar = DBISAR.sharedInstance.isar;
     List<NoteDBISAR> reactions =
-        await isar.noteDBISARs.filter().reactedIdIsNotEmpty().findEventEqualTo(false).findAll();
+        isar.noteDBISARs.where().reactedIdIsNotEmpty().findEventEqualTo(false).findAll();
     for (var reaction in reactions) {
       String eventId = reaction.reactedId!;
       MessageDBISAR? message =
-          await isar.messageDBISARs.filter().messageIdEqualTo(eventId).findFirst();
+          isar.messageDBISARs.where().messageIdEqualTo(eventId).findFirst();
       if (message != null) {
         message = message.withGrowableLevels();
         message.reactionEventIds ??= [];
@@ -73,11 +73,11 @@ class Messages {
       }
     }
     List<ZapRecordsDBISAR> zaps =
-        await isar.zapRecordsDBISARs.filter().findEventEqualTo(false).findAll();
+        isar.zapRecordsDBISARs.where().findEventEqualTo(false).findAll();
     for (var zap in zaps) {
       String eventId = zap.eventId;
       MessageDBISAR? message =
-          await isar.messageDBISARs.filter().messageIdEqualTo(eventId).findFirst();
+          isar.messageDBISARs.where().messageIdEqualTo(eventId).findFirst();
       if (message != null) {
         message = message.withGrowableLevels();
         message.reactionEventIds ??= [];
@@ -164,7 +164,7 @@ class Messages {
     List<MessageDBISAR> result = loadMessagesFromCache(messageIds: [messageId]);
     if (result.isNotEmpty) return result.first.withGrowableLevels();
     final isar = DBISAR.sharedInstance.isar;
-    var queryBuilder = isar.messageDBISARs.where().filter().messageIdEqualTo(messageId);
+    var queryBuilder = isar.messageDBISARs.where().messageIdEqualTo(messageId);
     final message = await queryBuilder.findFirst();
     return message?.withGrowableLevels();
   }
@@ -285,7 +285,7 @@ class Messages {
 
   Future<List<DeleteEvent>> _loadDeleteMessagesFromDB() async {
     final isar = DBISAR.sharedInstance.isar;
-    var queryBuilder = isar.messageDBISARs.where().filter().kindEqualTo(5);
+    var queryBuilder = isar.messageDBISARs.where().kindEqualTo(5);
     final messages = await queryBuilder.sortByCreateTimeDesc().findAll();
     List<DeleteEvent> deleteEvents = [];
     if (messages.isNotEmpty) {
@@ -339,7 +339,7 @@ class Messages {
 
   Future<List<ChannelMessageHidden>> _loadHideMessagesFromDB() async {
     final isar = DBISAR.sharedInstance.isar;
-    var queryBuilder = isar.messageDBISARs.where().filter().kindEqualTo(43);
+    var queryBuilder = isar.messageDBISARs.where().kindEqualTo(43);
     final messages = await queryBuilder.sortByCreateTimeDesc().findAll();
     List<ChannelMessageHidden> hiddenMessages = [];
     if (messages.isNotEmpty) {
@@ -438,21 +438,17 @@ class Messages {
     assert(until == null || since == null, 'unsupported filter');
 
     final isar = DBISAR.sharedInstance.isar;
-    var queryBuilder = isar.messageDBISARs.filter().idLessThan(Isar.maxId);
+    dynamic queryBuilder = isar.messageDBISARs.where();
     if (receiver != null) {
       queryBuilder = queryBuilder.group((q) => q
           .group((q) => q
               .senderEqualTo(receiver)
-              .and()
               .receiverEqualTo(Account.sharedInstance.currentPubkey)
-              .and()
               .sessionIdIsEmpty())
           .or()
           .group((q) => q
               .senderEqualTo(Account.sharedInstance.currentPubkey)
-              .and()
               .receiverEqualTo(receiver)
-              .and()
               .sessionIdIsEmpty()));
     }
     if (sessionId != null){
@@ -482,23 +478,21 @@ class Messages {
       });
     }
 
-    var queryBuilderAfterSort = queryBuilder.sortByCreateTimeDesc();
     if (until != null) {
-      queryBuilderAfterSort = queryBuilder
-          .and()
-          .createTimeLessThan(until, include: true)
-          .sortByCreateTimeDesc();
+      queryBuilder = queryBuilder.createTimeLessThan(until);
     }
     if (since != null) {
-      queryBuilderAfterSort = queryBuilder
-          .and()
-          .createTimeGreaterThan(since, include: true)
-          .sortByCreateTime();
+      queryBuilder = queryBuilder.createTimeGreaterThan(since);
     }
 
-    final messages = limit == null
-        ? await queryBuilderAfterSort.findAll()
-        : await queryBuilderAfterSort.limit(limit).findAll();
+    var queryBuilderAfterSort = since != null 
+        ? queryBuilder.sortByCreateTime()
+        : queryBuilder.sortByCreateTimeDesc();
+
+    var messages = await queryBuilderAfterSort.findAll();
+    if (limit != null && messages.length > limit) {
+      messages = messages.take(limit).toList();
+    }
 
     int theLastTime = 0;
     List<MessageDBISAR> result = loadMessagesFromCache(
@@ -528,15 +522,15 @@ class Messages {
     final isar = DBISAR.sharedInstance.isar;
     List<MessageDBISAR> messages;
     if (groupId != null) {
-      messages = await isar.messageDBISARs
-          .filter()
+      messages = isar.messageDBISARs
+          .where()
           .groupIdEqualTo(groupId)
           .decryptContentContains(decryptContentLike, caseSensitive: false)
           .sortByCreateTimeDesc()
           .findAll();
     } else {
-      messages = await isar.messageDBISARs
-          .filter()
+      messages = isar.messageDBISARs
+          .where()
           .groupIdIsNotEmpty()
           .decryptContentContains(decryptContentLike, caseSensitive: false)
           .sortByCreateTimeDesc()
@@ -560,15 +554,15 @@ class Messages {
     final isar = DBISAR.sharedInstance.isar;
     List<MessageDBISAR> messages;
     if (chatId == null) {
-      messages = await isar.messageDBISARs
-          .filter()
+      messages = isar.messageDBISARs
+          .where()
           .senderIsNotEmpty()
           .receiverIsNotEmpty()
           .decryptContentContains(orignalSearchTxt, caseSensitive: false)
           .findAll();
     } else {
-      messages = await isar.messageDBISARs
-          .filter()
+      messages = isar.messageDBISARs
+          .where()
           .group((q) => q
               .group((q) => q
                   .senderEqualTo(chatId)
@@ -609,9 +603,9 @@ class Messages {
       final messages = await queryBuilder
           .anyOf(messageIds, (q, messageId) => q.messageIdEqualTo(messageId))
           .findAll();
-      await isar.writeTxn(() async {
-        await isar.messageDBISARs
-            .filter()
+      await DBISAR.sharedInstance.isar.writeAsync((isar) {
+        isar.messageDBISARs
+            .where()
             .anyOf(messageIds, (q, messageId) => q.messageIdEqualTo(messageId))
             .deleteAll();
       });
@@ -622,17 +616,17 @@ class Messages {
   static deleteGroupMessagesFromDB(String? groupId) async {
     if (groupId != null) {
       final isar = DBISAR.sharedInstance.isar;
-      await isar.writeTxn(() async {
-        await isar.messageDBISARs.filter().groupIdEqualTo(groupId).deleteAll();
+      await DBISAR.sharedInstance.isar.writeAsync((isar) {
+        isar.messageDBISARs.where().groupIdEqualTo(groupId).deleteAll();
       });
     }
   }
 
   static deleteSingleChatMessagesFromDB(String sender, String receiver) async {
     final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.messageDBISARs
-          .filter()
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.messageDBISARs
+          .where()
           .senderEqualTo(sender)
           .receiverEqualTo(receiver)
           .chatTypeEqualTo(0)
@@ -642,8 +636,8 @@ class Messages {
 
   static deleteSecretChatMessagesFromDB(String sessionId) async {
     final isar = DBISAR.sharedInstance.isar;
-    await isar.writeTxn(() async {
-      await isar.messageDBISARs.filter().sessionIdEqualTo(sessionId).deleteAll();
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.messageDBISARs.where().sessionIdEqualTo(sessionId).deleteAll();
     });
   }
 

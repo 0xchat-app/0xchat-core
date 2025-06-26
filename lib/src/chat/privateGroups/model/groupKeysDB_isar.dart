@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
@@ -24,14 +24,14 @@ class GroupKeysDBISAR {
   static Future<GroupKeysDBISAR?> getGroupKeysFromDB(String groupId, int epoch) async {
     final isar = DBISAR.sharedInstance.isar;
     final groupKeyDB =
-        await isar.groupKeysDBISARs.filter().groupIdEqualTo(groupId).epochEqualTo(epoch).findAll();
+        isar.groupKeysDBISARs.where().groupIdEqualTo(groupId).epochEqualTo(epoch).findAll();
     return groupKeyDB.firstOrNull;
   }
 
   static Future<int> deleteGroupKeysBeforeEpoch(String groupId, int epoch) async {
     final isar = DBISAR.sharedInstance.isar;
-    return await isar.groupKeysDBISARs
-        .filter()
+    return isar.groupKeysDBISARs
+        .where()
         .groupIdEqualTo(groupId)
         .epochLessThan(epoch)
         .deleteAll();

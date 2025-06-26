@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:chatcore/chat-core.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -98,7 +98,7 @@ class DBISAR {
       
       // 如果当前 Isar 已打开且名称匹配，则先关闭
       if (isar.isOpen && isar.name == dbName) {
-        await isar.close();
+        isar.close();
         LogUtils.v(() => 'Closed database instance: $dbName');
       }
       
@@ -164,7 +164,7 @@ class DBISAR {
     final Map<Type, List<dynamic>> typeMap = Map.from(_buffers);
     _buffers.clear();
 
-    await isar.writeAsync((isar) {
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
       for (final type in typeMap.keys) {
         _saveTOISAR(typeMap[type]!, type);
       }
@@ -241,6 +241,6 @@ class DBISAR {
     _buffers.clear();
     _timer?.cancel();
     _timer = null;
-    if (isar.isOpen) await isar.close();
+    if (isar.isOpen) isar.close();
   }
 }

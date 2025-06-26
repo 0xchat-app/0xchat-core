@@ -94,8 +94,8 @@ class RelayGroupDB extends DBObject {
     for (var group in groups) {
       groupsISAR.add(RelayGroupDBISAR.fromMap(group.toMap()));
     }
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
-      await DBISAR.sharedInstance.isar.relayGroupDBISARs.putAll(groupsISAR);
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.relayGroupDBISARs.putAll(groupsISAR);
     });
   }
 }

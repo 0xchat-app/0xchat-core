@@ -5,7 +5,7 @@ import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 
 enum EOnionHostOption { no, whenAvailable, required }
@@ -101,7 +101,7 @@ class Config {
 
   Future<void> _loadConfigFromDB() async {
     final isar = DBISAR.sharedInstance.isar;
-    List<Object?> maps = await isar.configDBISARs.where().findAll();
+    List<Object?> maps = isar.configDBISARs.where().findAll();
     configs = {for (var configDB in maps) (configDB as ConfigDBISAR).d: configDB};
     _setConfig();
     _loadProxy();

@@ -42,8 +42,8 @@ class BadgeDB extends DBObject {
     for (var badgeDB in badgeDBs) {
       badgeDBsISAR.add(BadgeDBISAR.fromMap(badgeDB.toMap()));
     }
-    await DBISAR.sharedInstance.isar.writeTxn(() async {
-      await DBISAR.sharedInstance.isar.badgeDBISARs.putAll(badgeDBsISAR);
+    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+      isar.badgeDBISARs.putAll(badgeDBsISAR);
     });
   }
 }

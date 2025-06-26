@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqlite_api.dart';
 
@@ -61,7 +61,7 @@ class Channels {
 
   Future<void> _loadAllChannelsFromDB() async {
     final isar = DBISAR.sharedInstance.isar;
-    List<Object?> maps = await isar.channelDBISARs.where().findAll();
+    List<Object?> maps = isar.channelDBISARs.where().findAll();
     channels = {for (var channelDB in maps) (channelDB as ChannelDBISAR).channelId: ValueNotifier(channelDB)};
     myChannels = _myChannels();
     myChannelsUpdatedCallBack?.call();
