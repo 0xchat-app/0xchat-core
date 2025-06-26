@@ -1,0 +1,8 @@
+targets:
+  $default:
+    sources:
+      exclude:
+        - "linux/**/.plugin_symlinks/**/test/**"
+        - "windows/**/.plugin_symlinks/**/test/**"
+        - "macos/**/.plugin_symlinks/**/test/**"
+        - "example/**"

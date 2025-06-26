@@ -16,7 +16,7 @@ class DBISAR {
 
   Timer? _timer;
 
-  List<CollectionSchema<dynamic>> schemas = [
+  List<IsarGeneratedSchema> schemas = [
     MessageDBISARSchema,
     UserDBISARSchema,
     BadgeAwardDBISARSchema,
@@ -64,12 +64,13 @@ class DBISAR {
     final dbName = _getDatabaseName(pubkey, circleId: circleId);
     dbPath ??= await _getDatabaseDirectory();
     LogUtils.v(() => 'DBISAR open: $dbPath, pubkey: $pubkey');
-    isar = Isar.getInstance(dbName) ??
-        await Isar.open(
-          schemas,
-          directory: dbPath,
-          name: dbName,
-        );
+    isar = await Isar.openAsync(
+      schemas: schemas,
+      directory: dbPath,
+      name: dbName,
+      engine: IsarEngine.sqlite,
+      encryptionKey: pubkey,
+    );
   }
 
   /// Check if database exists
@@ -95,10 +96,9 @@ class DBISAR {
     try {
       final dbName = _getDatabaseName(pubkey, circleId: circleId);
       
-      // Check if the database instance exists and close it
-      final instanceToDelete = Isar.getInstance(dbName);
-      if (instanceToDelete != null) {
-        await instanceToDelete.close();
+      // 如果当前 Isar 已打开且名称匹配，则先关闭
+      if (isar.isOpen && isar.name == dbName) {
+        await isar.close();
         LogUtils.v(() => 'Closed database instance: $dbName');
       }
       
@@ -164,18 +164,76 @@ class DBISAR {
     final Map<Type, List<dynamic>> typeMap = Map.from(_buffers);
     _buffers.clear();
 
-    await isar.writeTxn(() async {
-      await Future.forEach(typeMap.keys, (type) async {
-        await _saveTOISAR(typeMap[type]!, type);
-      });
+    await isar.writeAsync((isar) {
+      for (final type in typeMap.keys) {
+        _saveTOISAR(typeMap[type]!, type);
+      }
     });
   }
 
-  Future<void> _saveTOISAR(List<dynamic> objects, Type type) async {
-    String typeName = type.toString().replaceAll('?', '');
-    IsarCollection? collection = isar.getCollectionByNameInternal(typeName);
-    if (collection != null) {
-      await collection.putAll(objects);
+  void _saveTOISAR(List<dynamic> objects, Type type) {
+    // 根据类型分发到具体集合，适配 Isar v4 API
+    switch (type) {
+      case MessageDBISAR:
+        isar.messageDBISARs.putAll(objects.cast<MessageDBISAR>());
+        break;
+      case UserDBISAR:
+        isar.userDBISARs.putAll(objects.cast<UserDBISAR>());
+        break;
+      case BadgeAwardDBISAR:
+        isar.badgeAwardDBISARs.putAll(objects.cast<BadgeAwardDBISAR>());
+        break;
+      case BadgeDBISAR:
+        isar.badgeDBISARs.putAll(objects.cast<BadgeDBISAR>());
+        break;
+      case RelayDBISAR:
+        isar.relayDBISARs.putAll(objects.cast<RelayDBISAR>());
+        break;
+      case ZapRecordsDBISAR:
+        isar.zapRecordsDBISARs.putAll(objects.cast<ZapRecordsDBISAR>());
+        break;
+      case ZapsDBISAR:
+        isar.zapsDBISARs.putAll(objects.cast<ZapsDBISAR>());
+        break;
+      case ChannelDBISAR:
+        isar.channelDBISARs.putAll(objects.cast<ChannelDBISAR>());
+        break;
+      case SecretSessionDBISAR:
+        isar.secretSessionDBISARs.putAll(objects.cast<SecretSessionDBISAR>());
+        break;
+      case GroupDBISAR:
+        isar.groupDBISARs.putAll(objects.cast<GroupDBISAR>());
+        break;
+      case JoinRequestDBISAR:
+        isar.joinRequestDBISARs.putAll(objects.cast<JoinRequestDBISAR>());
+        break;
+      case ModerationDBISAR:
+        isar.moderationDBISARs.putAll(objects.cast<ModerationDBISAR>());
+        break;
+      case RelayGroupDBISAR:
+        isar.relayGroupDBISARs.putAll(objects.cast<RelayGroupDBISAR>());
+        break;
+      case NoteDBISAR:
+        isar.noteDBISARs.putAll(objects.cast<NoteDBISAR>());
+        break;
+      case NotificationDBISAR:
+        isar.notificationDBISARs.putAll(objects.cast<NotificationDBISAR>());
+        break;
+      case ConfigDBISAR:
+        isar.configDBISARs.putAll(objects.cast<ConfigDBISAR>());
+        break;
+      case EventDBISAR:
+        isar.eventDBISARs.putAll(objects.cast<EventDBISAR>());
+        break;
+      case GroupKeysDBISAR:
+        isar.groupKeysDBISARs.putAll(objects.cast<GroupKeysDBISAR>());
+        break;
+      case CircleDBISAR:
+        isar.circleDBISARs.putAll(objects.cast<CircleDBISAR>());
+        break;
+      default:
+        // 未匹配到的类型，可在此扩展
+        break;
     }
   }
 

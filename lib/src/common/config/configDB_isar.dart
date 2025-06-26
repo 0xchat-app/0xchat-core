@@ -4,9 +4,9 @@ part 'configDB_isar.g.dart';
 
 @collection
 class ConfigDBISAR {
-  Id id = Isar.autoIncrement;
+  late int id;
 
-  @Index(unique: true, replace: true)
+  @Index(unique: true)
   String d;
 
   String eventId;

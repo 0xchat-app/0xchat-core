@@ -4,9 +4,9 @@ part 'channelDB_isar.g.dart';
 
 @collection
 class ChannelDBISAR {
-  Id id = Isar.autoIncrement;
+  late int id;
 
-  @Index(unique: true, replace: true)
+  @Index(unique: true)
   String channelId; //event id
 
   int createTime;

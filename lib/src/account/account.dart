@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:isar/isar.dart';
+import 'package:isar/isar.dart' hide Filter;
 import 'package:pointycastle/export.dart';
 import 'package:convert/convert.dart';
 
@@ -68,7 +68,7 @@ class Account {
   }
 
   Future<void> _loadAllUsers() async {
-    var queryBuilder = DBISAR.sharedInstance.isar.userDBISARs.where();
+    var queryBuilder = DBISAR.sharedInstance.isar.userDBISARS.where();
     List<UserDBISAR?> maps = await queryBuilder.findAll();
     for (UserDBISAR? user in maps) {
       if (user != null) {

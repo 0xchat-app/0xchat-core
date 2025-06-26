@@ -3,402 +3,478 @@
 part of 'eventDB_isar.dart';
 
 // **************************************************************************
-// IsarCollectionGenerator
+// _IsarCollectionGenerator
 // **************************************************************************
 
 // coverage:ignore-file
-// ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
+// ignore_for_file: duplicate_ignore, invalid_use_of_protected_member, lines_longer_than_80_chars, constant_identifier_names, avoid_js_rounded_ints, no_leading_underscores_for_local_identifiers, require_trailing_commas, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_in_if_null_operators, library_private_types_in_public_api, prefer_const_constructors
+// ignore_for_file: type=lint
 
 extension GetEventDBISARCollection on Isar {
-  IsarCollection<EventDBISAR> get eventDBISARs => this.collection();
+  IsarCollection<int, EventDBISAR> get eventDBISARs => this.collection();
 }
 
-const EventDBISARSchema = CollectionSchema(
-  name: r'EventDBISAR',
-  id: -229809567576281012,
-  properties: {
-    r'eventId': PropertySchema(
-      id: 0,
-      name: r'eventId',
-      type: IsarType.string,
-    ),
-    r'eventReceiveStatusJson': PropertySchema(
-      id: 1,
-      name: r'eventReceiveStatusJson',
-      type: IsarType.string,
-    ),
-    r'eventSendStatusJson': PropertySchema(
-      id: 2,
-      name: r'eventSendStatusJson',
-      type: IsarType.string,
-    ),
-    r'expiration': PropertySchema(
-      id: 3,
-      name: r'expiration',
-      type: IsarType.long,
-    ),
-    r'rawData': PropertySchema(
-      id: 4,
-      name: r'rawData',
-      type: IsarType.string,
-    )
-  },
-  estimateSize: _eventDBISAREstimateSize,
-  serialize: _eventDBISARSerialize,
-  deserialize: _eventDBISARDeserialize,
-  deserializeProp: _eventDBISARDeserializeProp,
-  idName: r'id',
-  indexes: {
-    r'eventId': IndexSchema(
-      id: -2707901133518603130,
-      name: r'eventId',
-      unique: true,
-      replace: true,
-      properties: [
-        IndexPropertySchema(
-          name: r'eventId',
-          type: IndexType.hash,
-          caseSensitive: true,
-        )
-      ],
-    )
-  },
-  links: {},
-  embeddedSchemas: {},
-  getId: _eventDBISARGetId,
-  getLinks: _eventDBISARGetLinks,
-  attach: _eventDBISARAttach,
-  version: '3.1.0+1',
+const EventDBISARSchema = IsarGeneratedSchema(
+  schema: IsarSchema(
+    name: 'EventDBISAR',
+    idName: 'id',
+    embedded: false,
+    properties: [
+      IsarPropertySchema(
+        name: 'eventId',
+        type: IsarType.string,
+      ),
+      IsarPropertySchema(
+        name: 'rawData',
+        type: IsarType.string,
+      ),
+      IsarPropertySchema(
+        name: 'expiration',
+        type: IsarType.long,
+      ),
+      IsarPropertySchema(
+        name: 'eventSendStatusJson',
+        type: IsarType.string,
+      ),
+      IsarPropertySchema(
+        name: 'eventReceiveStatusJson',
+        type: IsarType.string,
+      ),
+    ],
+    indexes: [
+      IsarIndexSchema(
+        name: 'eventId',
+        properties: [
+          "eventId",
+        ],
+        unique: true,
+        hash: false,
+      ),
+    ],
+  ),
+  converter: IsarObjectConverter<int, EventDBISAR>(
+    serialize: serializeEventDBISAR,
+    deserialize: deserializeEventDBISAR,
+    deserializeProperty: deserializeEventDBISARProp,
+  ),
+  embeddedSchemas: [],
 );
 
-int _eventDBISAREstimateSize(
-  EventDBISAR object,
-  List<int> offsets,
-  Map<Type, List<int>> allOffsets,
-) {
-  var bytesCount = offsets.last;
-  bytesCount += 3 + object.eventId.length * 3;
-  {
-    final value = object.eventReceiveStatusJson;
-    if (value != null) {
-      bytesCount += 3 + value.length * 3;
-    }
-  }
+@isarProtected
+int serializeEventDBISAR(IsarWriter writer, EventDBISAR object) {
+  IsarCore.writeString(writer, 1, object.eventId);
+  IsarCore.writeString(writer, 2, object.rawData);
+  IsarCore.writeLong(writer, 3, object.expiration ?? -9223372036854775808);
   {
     final value = object.eventSendStatusJson;
-    if (value != null) {
-      bytesCount += 3 + value.length * 3;
+    if (value == null) {
+      IsarCore.writeNull(writer, 4);
+    } else {
+      IsarCore.writeString(writer, 4, value);
     }
   }
-  bytesCount += 3 + object.rawData.length * 3;
-  return bytesCount;
-}
-
-void _eventDBISARSerialize(
-  EventDBISAR object,
-  IsarWriter writer,
-  List<int> offsets,
-  Map<Type, List<int>> allOffsets,
-) {
-  writer.writeString(offsets[0], object.eventId);
-  writer.writeString(offsets[1], object.eventReceiveStatusJson);
-  writer.writeString(offsets[2], object.eventSendStatusJson);
-  writer.writeLong(offsets[3], object.expiration);
-  writer.writeString(offsets[4], object.rawData);
-}
-
-EventDBISAR _eventDBISARDeserialize(
-  Id id,
-  IsarReader reader,
-  List<int> offsets,
-  Map<Type, List<int>> allOffsets,
-) {
-  final object = EventDBISAR(
-    eventId: reader.readStringOrNull(offsets[0]) ?? '',
-    expiration: reader.readLongOrNull(offsets[3]),
-    rawData: reader.readStringOrNull(offsets[4]) ?? '',
-  );
-  object.eventReceiveStatusJson = reader.readStringOrNull(offsets[1]);
-  object.eventSendStatusJson = reader.readStringOrNull(offsets[2]);
-  object.id = id;
-  return object;
-}
-
-P _eventDBISARDeserializeProp<P>(
-  IsarReader reader,
-  int propertyId,
-  int offset,
-  Map<Type, List<int>> allOffsets,
-) {
-  switch (propertyId) {
-    case 0:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    case 1:
-      return (reader.readStringOrNull(offset)) as P;
-    case 2:
-      return (reader.readStringOrNull(offset)) as P;
-    case 3:
-      return (reader.readLongOrNull(offset)) as P;
-    case 4:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    default:
-      throw IsarError('Unknown property with id $propertyId');
+  {
+    final value = object.eventReceiveStatusJson;
+    if (value == null) {
+      IsarCore.writeNull(writer, 5);
+    } else {
+      IsarCore.writeString(writer, 5, value);
+    }
   }
-}
-
-Id _eventDBISARGetId(EventDBISAR object) {
   return object.id;
 }
 
-List<IsarLinkBase<dynamic>> _eventDBISARGetLinks(EventDBISAR object) {
-  return [];
+@isarProtected
+EventDBISAR deserializeEventDBISAR(IsarReader reader) {
+  final String _eventId;
+  _eventId = IsarCore.readString(reader, 1) ?? '';
+  final String _rawData;
+  _rawData = IsarCore.readString(reader, 2) ?? '';
+  final int? _expiration;
+  {
+    final value = IsarCore.readLong(reader, 3);
+    if (value == -9223372036854775808) {
+      _expiration = null;
+    } else {
+      _expiration = value;
+    }
+  }
+  final object = EventDBISAR(
+    eventId: _eventId,
+    rawData: _rawData,
+    expiration: _expiration,
+  );
+  object.id = IsarCore.readId(reader);
+  object.eventSendStatusJson = IsarCore.readString(reader, 4);
+  object.eventReceiveStatusJson = IsarCore.readString(reader, 5);
+  return object;
 }
 
-void _eventDBISARAttach(
-    IsarCollection<dynamic> col, Id id, EventDBISAR object) {
-  object.id = id;
-}
-
-extension EventDBISARByIndex on IsarCollection<EventDBISAR> {
-  Future<EventDBISAR?> getByEventId(String eventId) {
-    return getByIndex(r'eventId', [eventId]);
-  }
-
-  EventDBISAR? getByEventIdSync(String eventId) {
-    return getByIndexSync(r'eventId', [eventId]);
-  }
-
-  Future<bool> deleteByEventId(String eventId) {
-    return deleteByIndex(r'eventId', [eventId]);
-  }
-
-  bool deleteByEventIdSync(String eventId) {
-    return deleteByIndexSync(r'eventId', [eventId]);
-  }
-
-  Future<List<EventDBISAR?>> getAllByEventId(List<String> eventIdValues) {
-    final values = eventIdValues.map((e) => [e]).toList();
-    return getAllByIndex(r'eventId', values);
-  }
-
-  List<EventDBISAR?> getAllByEventIdSync(List<String> eventIdValues) {
-    final values = eventIdValues.map((e) => [e]).toList();
-    return getAllByIndexSync(r'eventId', values);
-  }
-
-  Future<int> deleteAllByEventId(List<String> eventIdValues) {
-    final values = eventIdValues.map((e) => [e]).toList();
-    return deleteAllByIndex(r'eventId', values);
-  }
-
-  int deleteAllByEventIdSync(List<String> eventIdValues) {
-    final values = eventIdValues.map((e) => [e]).toList();
-    return deleteAllByIndexSync(r'eventId', values);
-  }
-
-  Future<Id> putByEventId(EventDBISAR object) {
-    return putByIndex(r'eventId', object);
-  }
-
-  Id putByEventIdSync(EventDBISAR object, {bool saveLinks = true}) {
-    return putByIndexSync(r'eventId', object, saveLinks: saveLinks);
-  }
-
-  Future<List<Id>> putAllByEventId(List<EventDBISAR> objects) {
-    return putAllByIndex(r'eventId', objects);
-  }
-
-  List<Id> putAllByEventIdSync(List<EventDBISAR> objects,
-      {bool saveLinks = true}) {
-    return putAllByIndexSync(r'eventId', objects, saveLinks: saveLinks);
-  }
-}
-
-extension EventDBISARQueryWhereSort
-    on QueryBuilder<EventDBISAR, EventDBISAR, QWhere> {
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterWhere> anyId() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(const IdWhereClause.any());
-    });
-  }
-}
-
-extension EventDBISARQueryWhere
-    on QueryBuilder<EventDBISAR, EventDBISAR, QWhereClause> {
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterWhereClause> idEqualTo(Id id) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: id,
-        upper: id,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterWhereClause> idNotEqualTo(
-      Id id) {
-    return QueryBuilder.apply(this, (query) {
-      if (query.whereSort == Sort.asc) {
-        return query
-            .addWhereClause(
-              IdWhereClause.lessThan(upper: id, includeUpper: false),
-            )
-            .addWhereClause(
-              IdWhereClause.greaterThan(lower: id, includeLower: false),
-            );
-      } else {
-        return query
-            .addWhereClause(
-              IdWhereClause.greaterThan(lower: id, includeLower: false),
-            )
-            .addWhereClause(
-              IdWhereClause.lessThan(upper: id, includeUpper: false),
-            );
+@isarProtected
+dynamic deserializeEventDBISARProp(IsarReader reader, int property) {
+  switch (property) {
+    case 0:
+      return IsarCore.readId(reader);
+    case 1:
+      return IsarCore.readString(reader, 1) ?? '';
+    case 2:
+      return IsarCore.readString(reader, 2) ?? '';
+    case 3:
+      {
+        final value = IsarCore.readLong(reader, 3);
+        if (value == -9223372036854775808) {
+          return null;
+        } else {
+          return value;
+        }
       }
-    });
+    case 4:
+      return IsarCore.readString(reader, 4);
+    case 5:
+      return IsarCore.readString(reader, 5);
+    default:
+      throw ArgumentError('Unknown property: $property');
   }
+}
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterWhereClause> idGreaterThan(Id id,
-      {bool include = false}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IdWhereClause.greaterThan(lower: id, includeLower: include),
-      );
-    });
-  }
+sealed class _EventDBISARUpdate {
+  bool call({
+    required int id,
+    String? eventId,
+    String? rawData,
+    int? expiration,
+    String? eventSendStatusJson,
+    String? eventReceiveStatusJson,
+  });
+}
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterWhereClause> idLessThan(Id id,
-      {bool include = false}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IdWhereClause.lessThan(upper: id, includeUpper: include),
-      );
-    });
-  }
+class _EventDBISARUpdateImpl implements _EventDBISARUpdate {
+  const _EventDBISARUpdateImpl(this.collection);
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterWhereClause> idBetween(
-    Id lowerId,
-    Id upperId, {
-    bool includeLower = true,
-    bool includeUpper = true,
+  final IsarCollection<int, EventDBISAR> collection;
+
+  @override
+  bool call({
+    required int id,
+    Object? eventId = ignore,
+    Object? rawData = ignore,
+    Object? expiration = ignore,
+    Object? eventSendStatusJson = ignore,
+    Object? eventReceiveStatusJson = ignore,
   }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: lowerId,
-        includeLower: includeLower,
-        upper: upperId,
-        includeUpper: includeUpper,
-      ));
-    });
+    return collection.updateProperties([
+          id
+        ], {
+          if (eventId != ignore) 1: eventId as String?,
+          if (rawData != ignore) 2: rawData as String?,
+          if (expiration != ignore) 3: expiration as int?,
+          if (eventSendStatusJson != ignore) 4: eventSendStatusJson as String?,
+          if (eventReceiveStatusJson != ignore)
+            5: eventReceiveStatusJson as String?,
+        }) >
+        0;
   }
+}
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterWhereClause> eventIdEqualTo(
-      String eventId) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'eventId',
-        value: [eventId],
-      ));
-    });
-  }
+sealed class _EventDBISARUpdateAll {
+  int call({
+    required List<int> id,
+    String? eventId,
+    String? rawData,
+    int? expiration,
+    String? eventSendStatusJson,
+    String? eventReceiveStatusJson,
+  });
+}
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterWhereClause> eventIdNotEqualTo(
-      String eventId) {
-    return QueryBuilder.apply(this, (query) {
-      if (query.whereSort == Sort.asc) {
-        return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'eventId',
-              lower: [],
-              upper: [eventId],
-              includeUpper: false,
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'eventId',
-              lower: [eventId],
-              includeLower: false,
-              upper: [],
-            ));
-      } else {
-        return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'eventId',
-              lower: [eventId],
-              includeLower: false,
-              upper: [],
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'eventId',
-              lower: [],
-              upper: [eventId],
-              includeUpper: false,
-            ));
-      }
+class _EventDBISARUpdateAllImpl implements _EventDBISARUpdateAll {
+  const _EventDBISARUpdateAllImpl(this.collection);
+
+  final IsarCollection<int, EventDBISAR> collection;
+
+  @override
+  int call({
+    required List<int> id,
+    Object? eventId = ignore,
+    Object? rawData = ignore,
+    Object? expiration = ignore,
+    Object? eventSendStatusJson = ignore,
+    Object? eventReceiveStatusJson = ignore,
+  }) {
+    return collection.updateProperties(id, {
+      if (eventId != ignore) 1: eventId as String?,
+      if (rawData != ignore) 2: rawData as String?,
+      if (expiration != ignore) 3: expiration as int?,
+      if (eventSendStatusJson != ignore) 4: eventSendStatusJson as String?,
+      if (eventReceiveStatusJson != ignore)
+        5: eventReceiveStatusJson as String?,
     });
   }
+}
+
+extension EventDBISARUpdate on IsarCollection<int, EventDBISAR> {
+  _EventDBISARUpdate get update => _EventDBISARUpdateImpl(this);
+
+  _EventDBISARUpdateAll get updateAll => _EventDBISARUpdateAllImpl(this);
+}
+
+sealed class _EventDBISARQueryUpdate {
+  int call({
+    String? eventId,
+    String? rawData,
+    int? expiration,
+    String? eventSendStatusJson,
+    String? eventReceiveStatusJson,
+  });
+}
+
+class _EventDBISARQueryUpdateImpl implements _EventDBISARQueryUpdate {
+  const _EventDBISARQueryUpdateImpl(this.query, {this.limit});
+
+  final IsarQuery<EventDBISAR> query;
+  final int? limit;
+
+  @override
+  int call({
+    Object? eventId = ignore,
+    Object? rawData = ignore,
+    Object? expiration = ignore,
+    Object? eventSendStatusJson = ignore,
+    Object? eventReceiveStatusJson = ignore,
+  }) {
+    return query.updateProperties(limit: limit, {
+      if (eventId != ignore) 1: eventId as String?,
+      if (rawData != ignore) 2: rawData as String?,
+      if (expiration != ignore) 3: expiration as int?,
+      if (eventSendStatusJson != ignore) 4: eventSendStatusJson as String?,
+      if (eventReceiveStatusJson != ignore)
+        5: eventReceiveStatusJson as String?,
+    });
+  }
+}
+
+extension EventDBISARQueryUpdate on IsarQuery<EventDBISAR> {
+  _EventDBISARQueryUpdate get updateFirst =>
+      _EventDBISARQueryUpdateImpl(this, limit: 1);
+
+  _EventDBISARQueryUpdate get updateAll => _EventDBISARQueryUpdateImpl(this);
+}
+
+class _EventDBISARQueryBuilderUpdateImpl implements _EventDBISARQueryUpdate {
+  const _EventDBISARQueryBuilderUpdateImpl(this.query, {this.limit});
+
+  final QueryBuilder<EventDBISAR, EventDBISAR, QOperations> query;
+  final int? limit;
+
+  @override
+  int call({
+    Object? eventId = ignore,
+    Object? rawData = ignore,
+    Object? expiration = ignore,
+    Object? eventSendStatusJson = ignore,
+    Object? eventReceiveStatusJson = ignore,
+  }) {
+    final q = query.build();
+    try {
+      return q.updateProperties(limit: limit, {
+        if (eventId != ignore) 1: eventId as String?,
+        if (rawData != ignore) 2: rawData as String?,
+        if (expiration != ignore) 3: expiration as int?,
+        if (eventSendStatusJson != ignore) 4: eventSendStatusJson as String?,
+        if (eventReceiveStatusJson != ignore)
+          5: eventReceiveStatusJson as String?,
+      });
+    } finally {
+      q.close();
+    }
+  }
+}
+
+extension EventDBISARQueryBuilderUpdate
+    on QueryBuilder<EventDBISAR, EventDBISAR, QOperations> {
+  _EventDBISARQueryUpdate get updateFirst =>
+      _EventDBISARQueryBuilderUpdateImpl(this, limit: 1);
+
+  _EventDBISARQueryUpdate get updateAll =>
+      _EventDBISARQueryBuilderUpdateImpl(this);
 }
 
 extension EventDBISARQueryFilter
     on QueryBuilder<EventDBISAR, EventDBISAR, QFilterCondition> {
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition> idEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 0,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition> idGreaterThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 0,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      idGreaterThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 0,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition> idLessThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 0,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      idLessThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 0,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition> idBetween(
+    int lower,
+    int upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 0,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
+
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition> eventIdEqualTo(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'eventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
       eventIdGreaterThan(
     String value, {
-    bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'eventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventIdGreaterThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition> eventIdLessThan(
     String value, {
-    bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'eventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        LessCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventIdLessThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition> eventIdBetween(
     String lower,
     String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'eventId',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 1,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -408,11 +484,13 @@ extension EventDBISARQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'eventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -421,11 +499,13 @@ extension EventDBISARQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'eventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -433,11 +513,13 @@ extension EventDBISARQueryFilter
       String value,
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'eventId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -445,468 +527,37 @@ extension EventDBISARQueryFilter
       String pattern,
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'eventId',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 1,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
       eventIdIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'eventId',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 1,
+          value: '',
+        ),
+      );
     });
   }
 
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
       eventIdIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'eventId',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventReceiveStatusJsonIsNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'eventReceiveStatusJson',
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventReceiveStatusJsonIsNotNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'eventReceiveStatusJson',
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventReceiveStatusJsonEqualTo(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'eventReceiveStatusJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventReceiveStatusJsonGreaterThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'eventReceiveStatusJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventReceiveStatusJsonLessThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'eventReceiveStatusJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventReceiveStatusJsonBetween(
-    String? lower,
-    String? upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'eventReceiveStatusJson',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventReceiveStatusJsonStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'eventReceiveStatusJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventReceiveStatusJsonEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'eventReceiveStatusJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventReceiveStatusJsonContains(String value,
-          {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'eventReceiveStatusJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventReceiveStatusJsonMatches(String pattern,
-          {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'eventReceiveStatusJson',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventReceiveStatusJsonIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'eventReceiveStatusJson',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventReceiveStatusJsonIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'eventReceiveStatusJson',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventSendStatusJsonIsNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'eventSendStatusJson',
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventSendStatusJsonIsNotNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'eventSendStatusJson',
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventSendStatusJsonEqualTo(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'eventSendStatusJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventSendStatusJsonGreaterThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'eventSendStatusJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventSendStatusJsonLessThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'eventSendStatusJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventSendStatusJsonBetween(
-    String? lower,
-    String? upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'eventSendStatusJson',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventSendStatusJsonStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'eventSendStatusJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventSendStatusJsonEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'eventSendStatusJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventSendStatusJsonContains(String value, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'eventSendStatusJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventSendStatusJsonMatches(String pattern, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'eventSendStatusJson',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventSendStatusJsonIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'eventSendStatusJson',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      eventSendStatusJsonIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'eventSendStatusJson',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      expirationIsNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'expiration',
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      expirationIsNotNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'expiration',
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      expirationEqualTo(int? value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'expiration',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      expirationGreaterThan(
-    int? value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'expiration',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      expirationLessThan(
-    int? value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'expiration',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
-      expirationBetween(
-    int? lower,
-    int? upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'expiration',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition> idEqualTo(
-      Id value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'id',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition> idGreaterThan(
-    Id value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition> idLessThan(
-    Id value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition> idBetween(
-    Id lower,
-    Id upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'id',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 1,
+          value: '',
+        ),
+      );
     });
   }
 
@@ -915,61 +566,93 @@ extension EventDBISARQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'rawData',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
       rawDataGreaterThan(
     String value, {
-    bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'rawData',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      rawDataGreaterThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition> rawDataLessThan(
     String value, {
-    bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'rawData',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        LessCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      rawDataLessThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition> rawDataBetween(
     String lower,
     String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'rawData',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 2,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -979,11 +662,13 @@ extension EventDBISARQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'rawData',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -992,11 +677,13 @@ extension EventDBISARQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'rawData',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -1004,11 +691,13 @@ extension EventDBISARQueryFilter
       String value,
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'rawData',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -1016,31 +705,527 @@ extension EventDBISARQueryFilter
       String pattern,
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'rawData',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 2,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
       rawDataIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'rawData',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 2,
+          value: '',
+        ),
+      );
     });
   }
 
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
       rawDataIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'rawData',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 2,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      expirationIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 3));
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      expirationIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 3));
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      expirationEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 3,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      expirationGreaterThan(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 3,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      expirationGreaterThanOrEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 3,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      expirationLessThan(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 3,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      expirationLessThanOrEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 3,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      expirationBetween(
+    int? lower,
+    int? upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 3,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventSendStatusJsonIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 4));
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventSendStatusJsonIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 4));
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventSendStatusJsonEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 4,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventSendStatusJsonGreaterThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 4,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventSendStatusJsonGreaterThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 4,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventSendStatusJsonLessThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 4,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventSendStatusJsonLessThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 4,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventSendStatusJsonBetween(
+    String? lower,
+    String? upper, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 4,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventSendStatusJsonStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 4,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventSendStatusJsonEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 4,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventSendStatusJsonContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 4,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventSendStatusJsonMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 4,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventSendStatusJsonIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 4,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventSendStatusJsonIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 4,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventReceiveStatusJsonIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 5));
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventReceiveStatusJsonIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 5));
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventReceiveStatusJsonEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventReceiveStatusJsonGreaterThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventReceiveStatusJsonGreaterThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventReceiveStatusJsonLessThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventReceiveStatusJsonLessThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventReceiveStatusJsonBetween(
+    String? lower,
+    String? upper, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 5,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventReceiveStatusJsonStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventReceiveStatusJsonEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventReceiveStatusJsonContains(String value,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventReceiveStatusJsonMatches(String pattern,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 5,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventReceiveStatusJsonIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 5,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterFilterCondition>
+      eventReceiveStatusJsonIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 5,
+          value: '',
+        ),
+      );
     });
   }
 }
@@ -1048,231 +1233,357 @@ extension EventDBISARQueryFilter
 extension EventDBISARQueryObject
     on QueryBuilder<EventDBISAR, EventDBISAR, QFilterCondition> {}
 
-extension EventDBISARQueryLinks
-    on QueryBuilder<EventDBISAR, EventDBISAR, QFilterCondition> {}
-
 extension EventDBISARQuerySortBy
     on QueryBuilder<EventDBISAR, EventDBISAR, QSortBy> {
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> sortByEventId() {
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> sortById() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'eventId', Sort.asc);
+      return query.addSortBy(0);
     });
   }
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> sortByEventIdDesc() {
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> sortByIdDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'eventId', Sort.desc);
+      return query.addSortBy(0, sort: Sort.desc);
     });
   }
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
-      sortByEventReceiveStatusJson() {
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> sortByEventId(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'eventReceiveStatusJson', Sort.asc);
+      return query.addSortBy(
+        1,
+        caseSensitive: caseSensitive,
+      );
     });
   }
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
-      sortByEventReceiveStatusJsonDesc() {
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> sortByEventIdDesc(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'eventReceiveStatusJson', Sort.desc);
+      return query.addSortBy(
+        1,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
     });
   }
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
-      sortByEventSendStatusJson() {
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> sortByRawData(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'eventSendStatusJson', Sort.asc);
+      return query.addSortBy(
+        2,
+        caseSensitive: caseSensitive,
+      );
     });
   }
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
-      sortByEventSendStatusJsonDesc() {
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> sortByRawDataDesc(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'eventSendStatusJson', Sort.desc);
+      return query.addSortBy(
+        2,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
     });
   }
 
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> sortByExpiration() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'expiration', Sort.asc);
+      return query.addSortBy(3);
     });
   }
 
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> sortByExpirationDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'expiration', Sort.desc);
+      return query.addSortBy(3, sort: Sort.desc);
     });
   }
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> sortByRawData() {
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
+      sortByEventSendStatusJson({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'rawData', Sort.asc);
+      return query.addSortBy(
+        4,
+        caseSensitive: caseSensitive,
+      );
     });
   }
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> sortByRawDataDesc() {
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
+      sortByEventSendStatusJsonDesc({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'rawData', Sort.desc);
+      return query.addSortBy(
+        4,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
+      sortByEventReceiveStatusJson({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        5,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
+      sortByEventReceiveStatusJsonDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        5,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
     });
   }
 }
 
 extension EventDBISARQuerySortThenBy
     on QueryBuilder<EventDBISAR, EventDBISAR, QSortThenBy> {
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenByEventId() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'eventId', Sort.asc);
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenByEventIdDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'eventId', Sort.desc);
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
-      thenByEventReceiveStatusJson() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'eventReceiveStatusJson', Sort.asc);
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
-      thenByEventReceiveStatusJsonDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'eventReceiveStatusJson', Sort.desc);
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
-      thenByEventSendStatusJson() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'eventSendStatusJson', Sort.asc);
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
-      thenByEventSendStatusJsonDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'eventSendStatusJson', Sort.desc);
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenByExpiration() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'expiration', Sort.asc);
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenByExpirationDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'expiration', Sort.desc);
-    });
-  }
-
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'id', Sort.asc);
+      return query.addSortBy(0);
     });
   }
 
   QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'id', Sort.desc);
+      return query.addSortBy(0, sort: Sort.desc);
     });
   }
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenByRawData() {
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenByEventId(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'rawData', Sort.asc);
+      return query.addSortBy(1, caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenByRawDataDesc() {
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenByEventIdDesc(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'rawData', Sort.desc);
+      return query.addSortBy(1, sort: Sort.desc, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenByRawData(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(2, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenByRawDataDesc(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(2, sort: Sort.desc, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenByExpiration() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(3);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy> thenByExpirationDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(3, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
+      thenByEventSendStatusJson({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(4, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
+      thenByEventSendStatusJsonDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(4, sort: Sort.desc, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
+      thenByEventReceiveStatusJson({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(5, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterSortBy>
+      thenByEventReceiveStatusJsonDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(5, sort: Sort.desc, caseSensitive: caseSensitive);
     });
   }
 }
 
 extension EventDBISARQueryWhereDistinct
     on QueryBuilder<EventDBISAR, EventDBISAR, QDistinct> {
-  QueryBuilder<EventDBISAR, EventDBISAR, QDistinct> distinctByEventId(
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterDistinct> distinctByEventId(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'eventId', caseSensitive: caseSensitive);
+      return query.addDistinctBy(1, caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QDistinct>
-      distinctByEventReceiveStatusJson({bool caseSensitive = true}) {
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterDistinct> distinctByRawData(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'eventReceiveStatusJson',
-          caseSensitive: caseSensitive);
+      return query.addDistinctBy(2, caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QDistinct>
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterDistinct>
+      distinctByExpiration() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(3);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterDistinct>
       distinctByEventSendStatusJson({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'eventSendStatusJson',
-          caseSensitive: caseSensitive);
+      return query.addDistinctBy(4, caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<EventDBISAR, EventDBISAR, QDistinct> distinctByExpiration() {
+  QueryBuilder<EventDBISAR, EventDBISAR, QAfterDistinct>
+      distinctByEventReceiveStatusJson({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'expiration');
-    });
-  }
-
-  QueryBuilder<EventDBISAR, EventDBISAR, QDistinct> distinctByRawData(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'rawData', caseSensitive: caseSensitive);
+      return query.addDistinctBy(5, caseSensitive: caseSensitive);
     });
   }
 }
 
-extension EventDBISARQueryProperty
-    on QueryBuilder<EventDBISAR, EventDBISAR, QQueryProperty> {
-  QueryBuilder<EventDBISAR, int, QQueryOperations> idProperty() {
+extension EventDBISARQueryProperty1
+    on QueryBuilder<EventDBISAR, EventDBISAR, QProperty> {
+  QueryBuilder<EventDBISAR, int, QAfterProperty> idProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'id');
+      return query.addProperty(0);
     });
   }
 
-  QueryBuilder<EventDBISAR, String, QQueryOperations> eventIdProperty() {
+  QueryBuilder<EventDBISAR, String, QAfterProperty> eventIdProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'eventId');
+      return query.addProperty(1);
     });
   }
 
-  QueryBuilder<EventDBISAR, String?, QQueryOperations>
-      eventReceiveStatusJsonProperty() {
+  QueryBuilder<EventDBISAR, String, QAfterProperty> rawDataProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'eventReceiveStatusJson');
+      return query.addProperty(2);
     });
   }
 
-  QueryBuilder<EventDBISAR, String?, QQueryOperations>
+  QueryBuilder<EventDBISAR, int?, QAfterProperty> expirationProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(3);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, String?, QAfterProperty>
       eventSendStatusJsonProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'eventSendStatusJson');
+      return query.addProperty(4);
     });
   }
 
-  QueryBuilder<EventDBISAR, int?, QQueryOperations> expirationProperty() {
+  QueryBuilder<EventDBISAR, String?, QAfterProperty>
+      eventReceiveStatusJsonProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'expiration');
+      return query.addProperty(5);
+    });
+  }
+}
+
+extension EventDBISARQueryProperty2<R>
+    on QueryBuilder<EventDBISAR, R, QAfterProperty> {
+  QueryBuilder<EventDBISAR, (R, int), QAfterProperty> idProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(0);
     });
   }
 
-  QueryBuilder<EventDBISAR, String, QQueryOperations> rawDataProperty() {
+  QueryBuilder<EventDBISAR, (R, String), QAfterProperty> eventIdProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'rawData');
+      return query.addProperty(1);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, (R, String), QAfterProperty> rawDataProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(2);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, (R, int?), QAfterProperty> expirationProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(3);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, (R, String?), QAfterProperty>
+      eventSendStatusJsonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(4);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, (R, String?), QAfterProperty>
+      eventReceiveStatusJsonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(5);
+    });
+  }
+}
+
+extension EventDBISARQueryProperty3<R1, R2>
+    on QueryBuilder<EventDBISAR, (R1, R2), QAfterProperty> {
+  QueryBuilder<EventDBISAR, (R1, R2, int), QOperations> idProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(0);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, (R1, R2, String), QOperations> eventIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(1);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, (R1, R2, String), QOperations> rawDataProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(2);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, (R1, R2, int?), QOperations> expirationProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(3);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, (R1, R2, String?), QOperations>
+      eventSendStatusJsonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(4);
+    });
+  }
+
+  QueryBuilder<EventDBISAR, (R1, R2, String?), QOperations>
+      eventReceiveStatusJsonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(5);
     });
   }
 }

@@ -6,9 +6,9 @@ part 'zapRecordsDB_isar.g.dart';
 
 @collection
 class ZapRecordsDBISAR {
-  Id id = Isar.autoIncrement;
+  late int id;
 
-  @Index(unique: true, replace: true)
+  @Index(unique: true)
   String bolt11;
 
   int paidAt;

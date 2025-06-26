@@ -4,19 +4,23 @@ version: 0.1.0
 homepage: https://github.com/0xchat-dev/0xchat-core
 
 environment:
-  sdk: '>=3.1.3 <4.0.0'
+  sdk: '>=3.4.0 <4.0.0'
 
 dev_dependencies:
-  build_runner: ^2.4.9
-  isar_generator: ^3.1.0+1
+  build_runner: ^2.4.10
   lints: ^2.0.0
   test: ^1.16.0
+  watcher: ^1.1.2
 
 dependencies:
   flutter:
     sdk: flutter
   sqflite_sqlcipher: ^3.1.0+1
-  isar: ^3.1.0+1
+  isar:
+    git:
+      url: https://github.com/isar-community/isar.git
+      path: packages/isar
+      ref: 4.0.3
   convert: ^3.1.1
   pointycastle: ^3.3.0
   decimal: ^2.3.3
@@ -30,7 +34,6 @@ dependencies:
     git:
       url: https://github.com/0xchat-app/nostr-dart.git
       ref: main
-  isar_flutter_libs: ^3.1.0+1
   path_provider: ^2.1.3
   nostr_mls_package:
     git:

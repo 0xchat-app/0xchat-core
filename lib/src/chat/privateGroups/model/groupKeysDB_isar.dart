@@ -6,9 +6,9 @@ part 'groupKeysDB_isar.g.dart';
 
 @collection
 class GroupKeysDBISAR {
-  Id id = Isar.autoIncrement;
+  late int id;
 
-  @Index(unique: true, replace: true)
+  @Index(unique: true)
   String groupId; //group nostr id
   List<int>? mlsGroupId;
   int epoch;

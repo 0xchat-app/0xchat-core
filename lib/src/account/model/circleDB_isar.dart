@@ -4,9 +4,9 @@ part 'circleDB_isar.g.dart';
 
 @collection
 class CircleDBISAR  {
-  Id id = Isar.autoIncrement;
+  late int id;
 
-  @Index(unique: true, replace: true)
+  @Index(unique: true)
   String circleId;
 
   String name;

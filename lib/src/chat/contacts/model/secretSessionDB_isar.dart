@@ -5,9 +5,9 @@ part 'secretSessionDB_isar.g.dart';
 
 @collection
 class SecretSessionDBISAR {
-  Id id = Isar.autoIncrement;
+  late int id;
 
-  @Index(unique: true, replace: true)
+  @Index(unique: true)
   String sessionId;
 
   /// my keys

@@ -19,9 +19,9 @@ extension NoteDBISARExtensions on NoteDBISAR {
 
 @collection
 class NoteDBISAR {
-  Id id = Isar.autoIncrement;
+  late int id;
 
-  @Index(unique: true, replace: true)
+  @Index(unique: true)
   String noteId; //event id
 
   String groupId; // group/community note

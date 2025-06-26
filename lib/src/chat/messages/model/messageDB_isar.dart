@@ -30,9 +30,9 @@ extension MessageDBISARExtensions on MessageDBISAR {
 
 @collection
 class MessageDBISAR {
-  Id id = Isar.autoIncrement;
+  late int id;
 
-  @Index(unique: true, replace: true)
+  @Index(unique: true)
   String messageId; //event id
 
   String sender; // pubkey

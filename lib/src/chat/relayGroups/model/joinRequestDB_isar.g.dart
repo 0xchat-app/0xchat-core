@@ -3,853 +3,378 @@
 part of 'joinRequestDB_isar.dart';
 
 // **************************************************************************
-// IsarCollectionGenerator
+// _IsarCollectionGenerator
 // **************************************************************************
 
 // coverage:ignore-file
-// ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
+// ignore_for_file: duplicate_ignore, invalid_use_of_protected_member, lines_longer_than_80_chars, constant_identifier_names, avoid_js_rounded_ints, no_leading_underscores_for_local_identifiers, require_trailing_commas, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_in_if_null_operators, library_private_types_in_public_api, prefer_const_constructors
+// ignore_for_file: type=lint
 
 extension GetJoinRequestDBISARCollection on Isar {
-  IsarCollection<JoinRequestDBISAR> get joinRequestDBISARs => this.collection();
+  IsarCollection<int, JoinRequestDBISAR> get joinRequestDBISARs =>
+      this.collection();
 }
 
-const JoinRequestDBISARSchema = CollectionSchema(
-  name: r'JoinRequestDBISAR',
-  id: -6400746117882553577,
-  properties: {
-    r'author': PropertySchema(
-      id: 0,
-      name: r'author',
-      type: IsarType.string,
-    ),
-    r'content': PropertySchema(
-      id: 1,
-      name: r'content',
-      type: IsarType.string,
-    ),
-    r'createdAt': PropertySchema(
-      id: 2,
-      name: r'createdAt',
-      type: IsarType.long,
-    ),
-    r'groupId': PropertySchema(
-      id: 3,
-      name: r'groupId',
-      type: IsarType.string,
-    ),
-    r'requestId': PropertySchema(
-      id: 4,
-      name: r'requestId',
-      type: IsarType.string,
-    )
-  },
-  estimateSize: _joinRequestDBISAREstimateSize,
-  serialize: _joinRequestDBISARSerialize,
-  deserialize: _joinRequestDBISARDeserialize,
-  deserializeProp: _joinRequestDBISARDeserializeProp,
-  idName: r'id',
-  indexes: {
-    r'requestId': IndexSchema(
-      id: 938047444593699237,
-      name: r'requestId',
-      unique: true,
-      replace: true,
-      properties: [
-        IndexPropertySchema(
-          name: r'requestId',
-          type: IndexType.hash,
-          caseSensitive: true,
-        )
-      ],
-    )
-  },
-  links: {},
-  embeddedSchemas: {},
-  getId: _joinRequestDBISARGetId,
-  getLinks: _joinRequestDBISARGetLinks,
-  attach: _joinRequestDBISARAttach,
-  version: '3.1.0+1',
+const JoinRequestDBISARSchema = IsarGeneratedSchema(
+  schema: IsarSchema(
+    name: 'JoinRequestDBISAR',
+    idName: 'id',
+    embedded: false,
+    properties: [
+      IsarPropertySchema(
+        name: 'requestId',
+        type: IsarType.string,
+      ),
+      IsarPropertySchema(
+        name: 'groupId',
+        type: IsarType.string,
+      ),
+      IsarPropertySchema(
+        name: 'author',
+        type: IsarType.string,
+      ),
+      IsarPropertySchema(
+        name: 'createdAt',
+        type: IsarType.long,
+      ),
+      IsarPropertySchema(
+        name: 'content',
+        type: IsarType.string,
+      ),
+    ],
+    indexes: [
+      IsarIndexSchema(
+        name: 'requestId',
+        properties: [
+          "requestId",
+        ],
+        unique: true,
+        hash: false,
+      ),
+    ],
+  ),
+  converter: IsarObjectConverter<int, JoinRequestDBISAR>(
+    serialize: serializeJoinRequestDBISAR,
+    deserialize: deserializeJoinRequestDBISAR,
+    deserializeProperty: deserializeJoinRequestDBISARProp,
+  ),
+  embeddedSchemas: [],
 );
 
-int _joinRequestDBISAREstimateSize(
-  JoinRequestDBISAR object,
-  List<int> offsets,
-  Map<Type, List<int>> allOffsets,
-) {
-  var bytesCount = offsets.last;
-  bytesCount += 3 + object.author.length * 3;
-  bytesCount += 3 + object.content.length * 3;
-  bytesCount += 3 + object.groupId.length * 3;
-  bytesCount += 3 + object.requestId.length * 3;
-  return bytesCount;
-}
-
-void _joinRequestDBISARSerialize(
-  JoinRequestDBISAR object,
-  IsarWriter writer,
-  List<int> offsets,
-  Map<Type, List<int>> allOffsets,
-) {
-  writer.writeString(offsets[0], object.author);
-  writer.writeString(offsets[1], object.content);
-  writer.writeLong(offsets[2], object.createdAt);
-  writer.writeString(offsets[3], object.groupId);
-  writer.writeString(offsets[4], object.requestId);
-}
-
-JoinRequestDBISAR _joinRequestDBISARDeserialize(
-  Id id,
-  IsarReader reader,
-  List<int> offsets,
-  Map<Type, List<int>> allOffsets,
-) {
-  final object = JoinRequestDBISAR(
-    author: reader.readStringOrNull(offsets[0]) ?? '',
-    content: reader.readStringOrNull(offsets[1]) ?? '',
-    createdAt: reader.readLongOrNull(offsets[2]) ?? 0,
-    groupId: reader.readStringOrNull(offsets[3]) ?? '',
-    requestId: reader.readStringOrNull(offsets[4]) ?? '',
-  );
-  object.id = id;
-  return object;
-}
-
-P _joinRequestDBISARDeserializeProp<P>(
-  IsarReader reader,
-  int propertyId,
-  int offset,
-  Map<Type, List<int>> allOffsets,
-) {
-  switch (propertyId) {
-    case 0:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    case 1:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    case 2:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
-    case 3:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    case 4:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    default:
-      throw IsarError('Unknown property with id $propertyId');
-  }
-}
-
-Id _joinRequestDBISARGetId(JoinRequestDBISAR object) {
+@isarProtected
+int serializeJoinRequestDBISAR(IsarWriter writer, JoinRequestDBISAR object) {
+  IsarCore.writeString(writer, 1, object.requestId);
+  IsarCore.writeString(writer, 2, object.groupId);
+  IsarCore.writeString(writer, 3, object.author);
+  IsarCore.writeLong(writer, 4, object.createdAt);
+  IsarCore.writeString(writer, 5, object.content);
   return object.id;
 }
 
-List<IsarLinkBase<dynamic>> _joinRequestDBISARGetLinks(
-    JoinRequestDBISAR object) {
-  return [];
+@isarProtected
+JoinRequestDBISAR deserializeJoinRequestDBISAR(IsarReader reader) {
+  final String _requestId;
+  _requestId = IsarCore.readString(reader, 1) ?? '';
+  final String _groupId;
+  _groupId = IsarCore.readString(reader, 2) ?? '';
+  final String _author;
+  _author = IsarCore.readString(reader, 3) ?? '';
+  final int _createdAt;
+  {
+    final value = IsarCore.readLong(reader, 4);
+    if (value == -9223372036854775808) {
+      _createdAt = 0;
+    } else {
+      _createdAt = value;
+    }
+  }
+  final String _content;
+  _content = IsarCore.readString(reader, 5) ?? '';
+  final object = JoinRequestDBISAR(
+    requestId: _requestId,
+    groupId: _groupId,
+    author: _author,
+    createdAt: _createdAt,
+    content: _content,
+  );
+  object.id = IsarCore.readId(reader);
+  return object;
 }
 
-void _joinRequestDBISARAttach(
-    IsarCollection<dynamic> col, Id id, JoinRequestDBISAR object) {
-  object.id = id;
-}
-
-extension JoinRequestDBISARByIndex on IsarCollection<JoinRequestDBISAR> {
-  Future<JoinRequestDBISAR?> getByRequestId(String requestId) {
-    return getByIndex(r'requestId', [requestId]);
-  }
-
-  JoinRequestDBISAR? getByRequestIdSync(String requestId) {
-    return getByIndexSync(r'requestId', [requestId]);
-  }
-
-  Future<bool> deleteByRequestId(String requestId) {
-    return deleteByIndex(r'requestId', [requestId]);
-  }
-
-  bool deleteByRequestIdSync(String requestId) {
-    return deleteByIndexSync(r'requestId', [requestId]);
-  }
-
-  Future<List<JoinRequestDBISAR?>> getAllByRequestId(
-      List<String> requestIdValues) {
-    final values = requestIdValues.map((e) => [e]).toList();
-    return getAllByIndex(r'requestId', values);
-  }
-
-  List<JoinRequestDBISAR?> getAllByRequestIdSync(List<String> requestIdValues) {
-    final values = requestIdValues.map((e) => [e]).toList();
-    return getAllByIndexSync(r'requestId', values);
-  }
-
-  Future<int> deleteAllByRequestId(List<String> requestIdValues) {
-    final values = requestIdValues.map((e) => [e]).toList();
-    return deleteAllByIndex(r'requestId', values);
-  }
-
-  int deleteAllByRequestIdSync(List<String> requestIdValues) {
-    final values = requestIdValues.map((e) => [e]).toList();
-    return deleteAllByIndexSync(r'requestId', values);
-  }
-
-  Future<Id> putByRequestId(JoinRequestDBISAR object) {
-    return putByIndex(r'requestId', object);
-  }
-
-  Id putByRequestIdSync(JoinRequestDBISAR object, {bool saveLinks = true}) {
-    return putByIndexSync(r'requestId', object, saveLinks: saveLinks);
-  }
-
-  Future<List<Id>> putAllByRequestId(List<JoinRequestDBISAR> objects) {
-    return putAllByIndex(r'requestId', objects);
-  }
-
-  List<Id> putAllByRequestIdSync(List<JoinRequestDBISAR> objects,
-      {bool saveLinks = true}) {
-    return putAllByIndexSync(r'requestId', objects, saveLinks: saveLinks);
-  }
-}
-
-extension JoinRequestDBISARQueryWhereSort
-    on QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QWhere> {
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterWhere> anyId() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(const IdWhereClause.any());
-    });
-  }
-}
-
-extension JoinRequestDBISARQueryWhere
-    on QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QWhereClause> {
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterWhereClause>
-      idEqualTo(Id id) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: id,
-        upper: id,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterWhereClause>
-      idNotEqualTo(Id id) {
-    return QueryBuilder.apply(this, (query) {
-      if (query.whereSort == Sort.asc) {
-        return query
-            .addWhereClause(
-              IdWhereClause.lessThan(upper: id, includeUpper: false),
-            )
-            .addWhereClause(
-              IdWhereClause.greaterThan(lower: id, includeLower: false),
-            );
-      } else {
-        return query
-            .addWhereClause(
-              IdWhereClause.greaterThan(lower: id, includeLower: false),
-            )
-            .addWhereClause(
-              IdWhereClause.lessThan(upper: id, includeUpper: false),
-            );
+@isarProtected
+dynamic deserializeJoinRequestDBISARProp(IsarReader reader, int property) {
+  switch (property) {
+    case 0:
+      return IsarCore.readId(reader);
+    case 1:
+      return IsarCore.readString(reader, 1) ?? '';
+    case 2:
+      return IsarCore.readString(reader, 2) ?? '';
+    case 3:
+      return IsarCore.readString(reader, 3) ?? '';
+    case 4:
+      {
+        final value = IsarCore.readLong(reader, 4);
+        if (value == -9223372036854775808) {
+          return 0;
+        } else {
+          return value;
+        }
       }
-    });
+    case 5:
+      return IsarCore.readString(reader, 5) ?? '';
+    default:
+      throw ArgumentError('Unknown property: $property');
   }
+}
 
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterWhereClause>
-      idGreaterThan(Id id, {bool include = false}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IdWhereClause.greaterThan(lower: id, includeLower: include),
-      );
-    });
-  }
+sealed class _JoinRequestDBISARUpdate {
+  bool call({
+    required int id,
+    String? requestId,
+    String? groupId,
+    String? author,
+    int? createdAt,
+    String? content,
+  });
+}
 
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterWhereClause>
-      idLessThan(Id id, {bool include = false}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(
-        IdWhereClause.lessThan(upper: id, includeUpper: include),
-      );
-    });
-  }
+class _JoinRequestDBISARUpdateImpl implements _JoinRequestDBISARUpdate {
+  const _JoinRequestDBISARUpdateImpl(this.collection);
 
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterWhereClause>
-      idBetween(
-    Id lowerId,
-    Id upperId, {
-    bool includeLower = true,
-    bool includeUpper = true,
+  final IsarCollection<int, JoinRequestDBISAR> collection;
+
+  @override
+  bool call({
+    required int id,
+    Object? requestId = ignore,
+    Object? groupId = ignore,
+    Object? author = ignore,
+    Object? createdAt = ignore,
+    Object? content = ignore,
   }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: lowerId,
-        includeLower: includeLower,
-        upper: upperId,
-        includeUpper: includeUpper,
-      ));
-    });
+    return collection.updateProperties([
+          id
+        ], {
+          if (requestId != ignore) 1: requestId as String?,
+          if (groupId != ignore) 2: groupId as String?,
+          if (author != ignore) 3: author as String?,
+          if (createdAt != ignore) 4: createdAt as int?,
+          if (content != ignore) 5: content as String?,
+        }) >
+        0;
   }
+}
 
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterWhereClause>
-      requestIdEqualTo(String requestId) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'requestId',
-        value: [requestId],
-      ));
-    });
-  }
+sealed class _JoinRequestDBISARUpdateAll {
+  int call({
+    required List<int> id,
+    String? requestId,
+    String? groupId,
+    String? author,
+    int? createdAt,
+    String? content,
+  });
+}
 
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterWhereClause>
-      requestIdNotEqualTo(String requestId) {
-    return QueryBuilder.apply(this, (query) {
-      if (query.whereSort == Sort.asc) {
-        return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'requestId',
-              lower: [],
-              upper: [requestId],
-              includeUpper: false,
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'requestId',
-              lower: [requestId],
-              includeLower: false,
-              upper: [],
-            ));
-      } else {
-        return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'requestId',
-              lower: [requestId],
-              includeLower: false,
-              upper: [],
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'requestId',
-              lower: [],
-              upper: [requestId],
-              includeUpper: false,
-            ));
-      }
+class _JoinRequestDBISARUpdateAllImpl implements _JoinRequestDBISARUpdateAll {
+  const _JoinRequestDBISARUpdateAllImpl(this.collection);
+
+  final IsarCollection<int, JoinRequestDBISAR> collection;
+
+  @override
+  int call({
+    required List<int> id,
+    Object? requestId = ignore,
+    Object? groupId = ignore,
+    Object? author = ignore,
+    Object? createdAt = ignore,
+    Object? content = ignore,
+  }) {
+    return collection.updateProperties(id, {
+      if (requestId != ignore) 1: requestId as String?,
+      if (groupId != ignore) 2: groupId as String?,
+      if (author != ignore) 3: author as String?,
+      if (createdAt != ignore) 4: createdAt as int?,
+      if (content != ignore) 5: content as String?,
     });
   }
+}
+
+extension JoinRequestDBISARUpdate on IsarCollection<int, JoinRequestDBISAR> {
+  _JoinRequestDBISARUpdate get update => _JoinRequestDBISARUpdateImpl(this);
+
+  _JoinRequestDBISARUpdateAll get updateAll =>
+      _JoinRequestDBISARUpdateAllImpl(this);
+}
+
+sealed class _JoinRequestDBISARQueryUpdate {
+  int call({
+    String? requestId,
+    String? groupId,
+    String? author,
+    int? createdAt,
+    String? content,
+  });
+}
+
+class _JoinRequestDBISARQueryUpdateImpl
+    implements _JoinRequestDBISARQueryUpdate {
+  const _JoinRequestDBISARQueryUpdateImpl(this.query, {this.limit});
+
+  final IsarQuery<JoinRequestDBISAR> query;
+  final int? limit;
+
+  @override
+  int call({
+    Object? requestId = ignore,
+    Object? groupId = ignore,
+    Object? author = ignore,
+    Object? createdAt = ignore,
+    Object? content = ignore,
+  }) {
+    return query.updateProperties(limit: limit, {
+      if (requestId != ignore) 1: requestId as String?,
+      if (groupId != ignore) 2: groupId as String?,
+      if (author != ignore) 3: author as String?,
+      if (createdAt != ignore) 4: createdAt as int?,
+      if (content != ignore) 5: content as String?,
+    });
+  }
+}
+
+extension JoinRequestDBISARQueryUpdate on IsarQuery<JoinRequestDBISAR> {
+  _JoinRequestDBISARQueryUpdate get updateFirst =>
+      _JoinRequestDBISARQueryUpdateImpl(this, limit: 1);
+
+  _JoinRequestDBISARQueryUpdate get updateAll =>
+      _JoinRequestDBISARQueryUpdateImpl(this);
+}
+
+class _JoinRequestDBISARQueryBuilderUpdateImpl
+    implements _JoinRequestDBISARQueryUpdate {
+  const _JoinRequestDBISARQueryBuilderUpdateImpl(this.query, {this.limit});
+
+  final QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QOperations> query;
+  final int? limit;
+
+  @override
+  int call({
+    Object? requestId = ignore,
+    Object? groupId = ignore,
+    Object? author = ignore,
+    Object? createdAt = ignore,
+    Object? content = ignore,
+  }) {
+    final q = query.build();
+    try {
+      return q.updateProperties(limit: limit, {
+        if (requestId != ignore) 1: requestId as String?,
+        if (groupId != ignore) 2: groupId as String?,
+        if (author != ignore) 3: author as String?,
+        if (createdAt != ignore) 4: createdAt as int?,
+        if (content != ignore) 5: content as String?,
+      });
+    } finally {
+      q.close();
+    }
+  }
+}
+
+extension JoinRequestDBISARQueryBuilderUpdate
+    on QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QOperations> {
+  _JoinRequestDBISARQueryUpdate get updateFirst =>
+      _JoinRequestDBISARQueryBuilderUpdateImpl(this, limit: 1);
+
+  _JoinRequestDBISARQueryUpdate get updateAll =>
+      _JoinRequestDBISARQueryBuilderUpdateImpl(this);
 }
 
 extension JoinRequestDBISARQueryFilter
     on QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QFilterCondition> {
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      authorEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+      idEqualTo(
+    int value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'author',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      authorGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'author',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      authorLessThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'author',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      authorBetween(
-    String lower,
-    String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'author',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      authorStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'author',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      authorEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'author',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      authorContains(String value, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'author',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      authorMatches(String pattern, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'author',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      authorIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'author',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      authorIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'author',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      contentEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'content',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      contentGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'content',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      contentLessThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'content',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      contentBetween(
-    String lower,
-    String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'content',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      contentStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'content',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      contentEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'content',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      contentContains(String value, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'content',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      contentMatches(String pattern, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'content',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      contentIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'content',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      contentIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'content',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      createdAtEqualTo(int value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'createdAt',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      createdAtGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'createdAt',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      createdAtLessThan(
-    int value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'createdAt',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      createdAtBetween(
-    int lower,
-    int upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'createdAt',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      groupIdEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'groupId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      groupIdGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'groupId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      groupIdLessThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'groupId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      groupIdBetween(
-    String lower,
-    String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'groupId',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      groupIdStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'groupId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      groupIdEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'groupId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      groupIdContains(String value, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'groupId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      groupIdMatches(String pattern, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'groupId',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      groupIdIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'groupId',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      groupIdIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'groupId',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
-      idEqualTo(Id value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 0,
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
       idGreaterThan(
-    Id value, {
-    bool include = false,
-  }) {
+    int value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 0,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      idGreaterThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 0,
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
       idLessThan(
-    Id value, {
-    bool include = false,
-  }) {
+    int value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        LessCondition(
+          property: 0,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      idLessThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 0,
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
       idBetween(
-    Id lower,
-    Id upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-  }) {
+    int lower,
+    int upper,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'id',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 0,
+          lower: lower,
+          upper: upper,
+        ),
+      );
     });
   }
 
@@ -859,43 +384,77 @@ extension JoinRequestDBISARQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'requestId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
       requestIdGreaterThan(
     String value, {
-    bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'requestId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      requestIdGreaterThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
       requestIdLessThan(
     String value, {
-    bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'requestId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        LessCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      requestIdLessThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -903,19 +462,17 @@ extension JoinRequestDBISARQueryFilter
       requestIdBetween(
     String lower,
     String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'requestId',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 1,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -925,11 +482,13 @@ extension JoinRequestDBISARQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'requestId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -939,53 +498,689 @@ extension JoinRequestDBISARQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'requestId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
       requestIdContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'requestId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 1,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
       requestIdMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'requestId',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 1,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
       requestIdIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'requestId',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 1,
+          value: '',
+        ),
+      );
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
       requestIdIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'requestId',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 1,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      groupIdEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      groupIdGreaterThan(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      groupIdGreaterThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      groupIdLessThan(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      groupIdLessThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      groupIdBetween(
+    String lower,
+    String upper, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 2,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      groupIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      groupIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      groupIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 2,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      groupIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 2,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      groupIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 2,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      groupIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 2,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      authorEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 3,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      authorGreaterThan(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 3,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      authorGreaterThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 3,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      authorLessThan(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 3,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      authorLessThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 3,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      authorBetween(
+    String lower,
+    String upper, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 3,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      authorStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 3,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      authorEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 3,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      authorContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 3,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      authorMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 3,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      authorIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 3,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      authorIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 3,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      createdAtEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 4,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      createdAtGreaterThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 4,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      createdAtGreaterThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 4,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      createdAtLessThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 4,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      createdAtLessThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 4,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      createdAtBetween(
+    int lower,
+    int upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 4,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      contentEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      contentGreaterThan(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      contentGreaterThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      contentLessThan(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      contentLessThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      contentBetween(
+    String lower,
+    String upper, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 5,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      contentStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      contentEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      contentContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 5,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      contentMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 5,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      contentIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 5,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterFilterCondition>
+      contentIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 5,
+          value: '',
+        ),
+      );
     });
   }
 }
@@ -993,242 +1188,367 @@ extension JoinRequestDBISARQueryFilter
 extension JoinRequestDBISARQueryObject
     on QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QFilterCondition> {}
 
-extension JoinRequestDBISARQueryLinks
-    on QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QFilterCondition> {}
-
 extension JoinRequestDBISARQuerySortBy
     on QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QSortBy> {
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      sortByAuthor() {
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy> sortById() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'author', Sort.asc);
+      return query.addSortBy(0);
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      sortByAuthorDesc() {
+      sortByIdDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'author', Sort.desc);
+      return query.addSortBy(0, sort: Sort.desc);
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      sortByContent() {
+      sortByRequestId({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'content', Sort.asc);
+      return query.addSortBy(
+        1,
+        caseSensitive: caseSensitive,
+      );
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      sortByContentDesc() {
+      sortByRequestIdDesc({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'content', Sort.desc);
+      return query.addSortBy(
+        1,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
+      sortByGroupId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        2,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
+      sortByGroupIdDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        2,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy> sortByAuthor(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        3,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
+      sortByAuthorDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        3,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
       sortByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'createdAt', Sort.asc);
+      return query.addSortBy(4);
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
       sortByCreatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'createdAt', Sort.desc);
+      return query.addSortBy(4, sort: Sort.desc);
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      sortByGroupId() {
+      sortByContent({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'groupId', Sort.asc);
+      return query.addSortBy(
+        5,
+        caseSensitive: caseSensitive,
+      );
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      sortByGroupIdDesc() {
+      sortByContentDesc({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'groupId', Sort.desc);
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      sortByRequestId() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'requestId', Sort.asc);
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      sortByRequestIdDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'requestId', Sort.desc);
+      return query.addSortBy(
+        5,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
     });
   }
 }
 
 extension JoinRequestDBISARQuerySortThenBy
     on QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QSortThenBy> {
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      thenByAuthor() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'author', Sort.asc);
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      thenByAuthorDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'author', Sort.desc);
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      thenByContent() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'content', Sort.asc);
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      thenByContentDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'content', Sort.desc);
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      thenByCreatedAt() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'createdAt', Sort.asc);
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      thenByCreatedAtDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'createdAt', Sort.desc);
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      thenByGroupId() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'groupId', Sort.asc);
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      thenByGroupIdDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'groupId', Sort.desc);
-    });
-  }
-
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'id', Sort.asc);
+      return query.addSortBy(0);
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
       thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'id', Sort.desc);
+      return query.addSortBy(0, sort: Sort.desc);
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      thenByRequestId() {
+      thenByRequestId({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'requestId', Sort.asc);
+      return query.addSortBy(1, caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
-      thenByRequestIdDesc() {
+      thenByRequestIdDesc({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'requestId', Sort.desc);
+      return query.addSortBy(1, sort: Sort.desc, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
+      thenByGroupId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(2, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
+      thenByGroupIdDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(2, sort: Sort.desc, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy> thenByAuthor(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(3, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
+      thenByAuthorDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(3, sort: Sort.desc, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
+      thenByCreatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(4);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
+      thenByCreatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(4, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
+      thenByContent({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(5, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterSortBy>
+      thenByContentDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(5, sort: Sort.desc, caseSensitive: caseSensitive);
     });
   }
 }
 
 extension JoinRequestDBISARQueryWhereDistinct
     on QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QDistinct> {
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QDistinct>
-      distinctByAuthor({bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'author', caseSensitive: caseSensitive);
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QDistinct>
-      distinctByContent({bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'content', caseSensitive: caseSensitive);
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QDistinct>
-      distinctByCreatedAt() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'createdAt');
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QDistinct>
-      distinctByGroupId({bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'groupId', caseSensitive: caseSensitive);
-    });
-  }
-
-  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QDistinct>
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterDistinct>
       distinctByRequestId({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'requestId', caseSensitive: caseSensitive);
+      return query.addDistinctBy(1, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterDistinct>
+      distinctByGroupId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(2, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterDistinct>
+      distinctByAuthor({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(3, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterDistinct>
+      distinctByCreatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(4);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QAfterDistinct>
+      distinctByContent({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(5, caseSensitive: caseSensitive);
     });
   }
 }
 
-extension JoinRequestDBISARQueryProperty
-    on QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QQueryProperty> {
-  QueryBuilder<JoinRequestDBISAR, int, QQueryOperations> idProperty() {
+extension JoinRequestDBISARQueryProperty1
+    on QueryBuilder<JoinRequestDBISAR, JoinRequestDBISAR, QProperty> {
+  QueryBuilder<JoinRequestDBISAR, int, QAfterProperty> idProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'id');
+      return query.addProperty(0);
     });
   }
 
-  QueryBuilder<JoinRequestDBISAR, String, QQueryOperations> authorProperty() {
+  QueryBuilder<JoinRequestDBISAR, String, QAfterProperty> requestIdProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'author');
+      return query.addProperty(1);
     });
   }
 
-  QueryBuilder<JoinRequestDBISAR, String, QQueryOperations> contentProperty() {
+  QueryBuilder<JoinRequestDBISAR, String, QAfterProperty> groupIdProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'content');
+      return query.addProperty(2);
     });
   }
 
-  QueryBuilder<JoinRequestDBISAR, int, QQueryOperations> createdAtProperty() {
+  QueryBuilder<JoinRequestDBISAR, String, QAfterProperty> authorProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'createdAt');
+      return query.addProperty(3);
     });
   }
 
-  QueryBuilder<JoinRequestDBISAR, String, QQueryOperations> groupIdProperty() {
+  QueryBuilder<JoinRequestDBISAR, int, QAfterProperty> createdAtProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'groupId');
+      return query.addProperty(4);
     });
   }
 
-  QueryBuilder<JoinRequestDBISAR, String, QQueryOperations>
+  QueryBuilder<JoinRequestDBISAR, String, QAfterProperty> contentProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(5);
+    });
+  }
+}
+
+extension JoinRequestDBISARQueryProperty2<R>
+    on QueryBuilder<JoinRequestDBISAR, R, QAfterProperty> {
+  QueryBuilder<JoinRequestDBISAR, (R, int), QAfterProperty> idProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(0);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, (R, String), QAfterProperty>
       requestIdProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'requestId');
+      return query.addProperty(1);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, (R, String), QAfterProperty>
+      groupIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(2);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, (R, String), QAfterProperty>
+      authorProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(3);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, (R, int), QAfterProperty>
+      createdAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(4);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, (R, String), QAfterProperty>
+      contentProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(5);
+    });
+  }
+}
+
+extension JoinRequestDBISARQueryProperty3<R1, R2>
+    on QueryBuilder<JoinRequestDBISAR, (R1, R2), QAfterProperty> {
+  QueryBuilder<JoinRequestDBISAR, (R1, R2, int), QOperations> idProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(0);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, (R1, R2, String), QOperations>
+      requestIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(1);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, (R1, R2, String), QOperations>
+      groupIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(2);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, (R1, R2, String), QOperations>
+      authorProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(3);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, (R1, R2, int), QOperations>
+      createdAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(4);
+    });
+  }
+
+  QueryBuilder<JoinRequestDBISAR, (R1, R2, String), QOperations>
+      contentProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(5);
     });
   }
 }

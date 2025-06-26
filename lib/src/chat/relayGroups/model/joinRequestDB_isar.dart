@@ -5,9 +5,9 @@ part 'joinRequestDB_isar.g.dart';
 
 @collection
 class JoinRequestDBISAR {
-  Id id = Isar.autoIncrement;
+  late int id;
 
-  @Index(unique: true, replace: true)
+  @Index(unique: true)
   String requestId;
 
   String groupId;

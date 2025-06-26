@@ -4,9 +4,9 @@ part 'badgeAwardDB_isar.g.dart';
 
 @collection
 class BadgeAwardDBISAR {
-  Id id = Isar.autoIncrement;
+  late int id;
 
-  @Index(unique: true, replace: true)
+  @Index(unique: true)
   String awardId; // event id
 
   int awardTime;
