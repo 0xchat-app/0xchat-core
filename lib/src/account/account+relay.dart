@@ -64,6 +64,10 @@ extension AccountRelay on Account {
     return result;
   }
 
+  List<String> getCurrentCircleRelay() {
+    return Connect.sharedInstance.relays(relayKinds: [RelayKind.circleRelay]);
+  }
+
   Future<List<String>> getUserDMRelayList(String pubkey) async {
     UserDBISAR? userDB = await getUserInfo(pubkey);
     if (userDB != null) {
@@ -75,9 +79,6 @@ extension AccountRelay on Account {
   Future<List<String>> getUserGeneralRelayList(String pubkey) async {
     UserDBISAR? userDB = await getUserInfo(pubkey);
     if (userDB != null) {
-      if (ChatCoreManager().isLite) {
-        return Connect.sharedInstance.relays(relayKinds: [RelayKind.circleRelay]);
-      }
       return userDB.relayList ?? [];
     }
     return [];
