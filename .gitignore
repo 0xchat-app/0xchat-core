@@ -20,3 +20,5 @@ example/windows/flutter/ephemeral/.plugin_symlinks/isar_flutter_libs
 example/windows/flutter/ephemeral/.plugin_symlinks/nostr_mls_package
 example/windows/flutter/ephemeral/.plugin_symlinks/path_provider_windows
 example/windows/flutter/generated_plugins.cmake
+/example
+/test
