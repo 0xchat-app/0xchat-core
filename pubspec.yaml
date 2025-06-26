@@ -16,10 +16,10 @@ dependencies:
   flutter:
     sdk: flutter
   sqflite_sqlcipher: ^3.1.0+1
-  isar:
+  isar_flutter_libs:
     git:
       url: https://github.com/isar-community/isar.git
-      path: packages/isar
+      path: packages/isar_flutter_libs
       ref: 4.0.3
   convert: ^3.1.1
   pointycastle: ^3.3.0
@@ -40,6 +40,12 @@ dependencies:
       url: https://github.com/0xchat-app/nostr-mls-package.git
       ref: main
 
+dependency_overrides:
+  isar:
+    git:
+      url: https://github.com/isar-community/isar.git
+      path: packages/isar
+      ref: 4.0.3
 
 
 

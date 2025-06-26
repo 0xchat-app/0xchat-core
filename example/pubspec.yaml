@@ -54,6 +54,11 @@ dependency_overrides:
     git:
       url: https://github.com/Agondev/auto_route_library
       path: auto_route
+  isar:
+    git:
+      url: https://github.com/isar-community/isar.git
+      path: packages/isar
+      ref: 4.0.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
