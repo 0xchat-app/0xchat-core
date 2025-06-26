@@ -539,25 +539,28 @@ extension MLSPrivateGroups on Groups {
           isMLSGroup: true,
           relay: relay,
           mlsGroupId: mlsGroup.mlsGroupId,
-          updateTime: currentUnixTimestampSeconds(),
+          updateTime: event.createdAt,
           name: mlsGroup.nostrGroupData.name,
           about: mlsGroup.nostrGroupData.description,
           members: mlsGroup.groupMembers,
           welcomeWrapperEventId: wrapperEventId,
           welcomeEventString: jsonEncode(event.toJson()),
           isDirectMessage: mlsGroup.groupMembers.length <= 2);
-    } else {
+    } else if (groupDBISAR.updateTime < event.createdAt) {
       groupDBISAR.groupId = mlsGroup.nostrGroupData.nostrGroupId;
       groupDBISAR.name = mlsGroup.nostrGroupData.name;
       groupDBISAR.about = mlsGroup.nostrGroupData.description;
       groupDBISAR.isMLSGroup = true;
       groupDBISAR.mlsGroupId = mlsGroup.mlsGroupId;
       groupDBISAR.relay = relay;
-      groupDBISAR.updateTime = currentUnixTimestampSeconds();
+      groupDBISAR.updateTime = event.createdAt;
       groupDBISAR.welcomeEventString = jsonEncode(event.toJson());
       groupDBISAR.welcomeWrapperEventId = wrapperEventId;
       groupDBISAR.members = mlsGroup.groupMembers;
       groupDBISAR.isDirectMessage = mlsGroup.groupMembers.length <= 2;
+    } else {
+      // old welcome event, ignore
+      return;
     }
     groups[groupDBISAR.privateGroupId] = ValueNotifier(groupDBISAR);
     syncGroupToDB(groupDBISAR);
@@ -567,7 +570,7 @@ extension MLSPrivateGroups on Groups {
         : '${userDBISAR?.name} invite you to join the private group';
     sendGroupMessage(groupDBISAR.privateGroupId, MessageType.system, inviteMessage, local: true);
 
-    if(checkInMyGroupList(groupDBISAR.privateGroupId)){
+    if (checkInMyGroupList(groupDBISAR.privateGroupId)) {
       await joinMLSGroup(groupDBISAR);
     }
   }
@@ -670,7 +673,7 @@ extension MLSPrivateGroups on Groups {
       }
       if (removed_members != null) {
         for (var member in removed_members) {
-          if(member == pubkey){
+          if (member == pubkey) {
             content = 'You have been removed from the group';
             break;
           }
@@ -746,8 +749,7 @@ extension MLSPrivateGroups on Groups {
         content = '${user?.name} $content ';
         content = '${content}joined the group';
       }
-      sendGroupMessage(group.privateGroupId, MessageType.system, content,
-          local: true);
+      sendGroupMessage(group.privateGroupId, MessageType.system, content, local: true);
     }
     return group;
   }
@@ -772,8 +774,7 @@ extension MLSPrivateGroups on Groups {
         content = '${user?.name} $content ';
         content = '${content}left the group';
       }
-      sendGroupMessage(group.privateGroupId, MessageType.system, content,
-          local: true);
+      sendGroupMessage(group.privateGroupId, MessageType.system, content, local: true);
     }
     return group;
   }
