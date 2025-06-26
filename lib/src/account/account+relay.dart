@@ -75,6 +75,9 @@ extension AccountRelay on Account {
   Future<List<String>> getUserGeneralRelayList(String pubkey) async {
     UserDBISAR? userDB = await getUserInfo(pubkey);
     if (userDB != null) {
+      if (ChatCoreManager().isLite) {
+        return Connect.sharedInstance.relays(relayKinds: [RelayKind.circleRelay]);
+      }
       return userDB.relayList ?? [];
     }
     return [];
@@ -225,10 +228,10 @@ extension AccountRelay on Account {
   Future<OKEvent> setInboxOutboxToRelay() async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     List<Relay> list = [];
-    for(var relay in me!.inboxRelayList ?? []){
+    for (var relay in me!.inboxRelayList ?? []) {
       list.add(Relay(relay, 'read'));
     }
-    for(var relay in me!.outboxRelayList ?? []){
+    for (var relay in me!.outboxRelayList ?? []) {
       list.add(Relay(relay, 'write'));
     }
     Event event = await Nip65.encode(list, currentPubkey, currentPrivkey);
