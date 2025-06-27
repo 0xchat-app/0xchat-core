@@ -16,11 +16,21 @@ dependencies:
   flutter:
     sdk: flutter
   sqflite_sqlcipher: ^3.1.0+1
+  
+  # Isar database - Required for code generation (build_runner)
+  # Even though isar_flutter_libs already includes isar as a dependency,
+  # we need to explicitly declare it here to enable the generator functionality
+  # for creating .g.dart files. DO NOT REMOVE this dependency.
+  isar:
+    git:
+      url: https://github.com/wcat7/isar.git
+      path: packages/isar
+      ref: 4.0.3-fix
   isar_flutter_libs:
     git:
-      url: https://github.com/isar-community/isar.git
+      url: https://github.com/wcat7/isar.git
       path: packages/isar_flutter_libs
-      ref: 4.0.3
+      ref: 4.0.3-fix
   convert: ^3.1.1
   pointycastle: ^3.3.0
   decimal: ^2.3.3
@@ -39,13 +49,3 @@ dependencies:
     git:
       url: https://github.com/0xchat-app/nostr-mls-package.git
       ref: main
-
-dependency_overrides:
-  isar:
-    git:
-      url: https://github.com/isar-community/isar.git
-      path: packages/isar
-      ref: 4.0.3
-
-
-

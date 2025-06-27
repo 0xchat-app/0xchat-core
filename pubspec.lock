@@ -377,21 +377,21 @@ packages:
     source: hosted
     version: "1.0.5"
   isar:
-    dependency: "direct overridden"
+    dependency: "direct main"
     description:
       path: "packages/isar"
-      ref: "4.0.3"
-      resolved-ref: acc382fa88c272678420e2430b242f23a57b1b0e
-      url: "https://github.com/isar-community/isar.git"
+      ref: "4.0.3-fix"
+      resolved-ref: "3292a8bc9d273077596cc0058acd8d35fd022b57"
+      url: "https://github.com/wcat7/isar.git"
     source: git
     version: "0.0.0-placeholder"
   isar_flutter_libs:
     dependency: "direct main"
     description:
       path: "packages/isar_flutter_libs"
-      ref: "4.0.3"
-      resolved-ref: acc382fa88c272678420e2430b242f23a57b1b0e
-      url: "https://github.com/isar-community/isar.git"
+      ref: "4.0.3-fix"
+      resolved-ref: "3292a8bc9d273077596cc0058acd8d35fd022b57"
+      url: "https://github.com/wcat7/isar.git"
     source: git
     version: "0.0.0-placeholder"
   js:
