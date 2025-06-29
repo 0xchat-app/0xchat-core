@@ -7,7 +7,7 @@ part 'relayDB_isar.g.dart';
 
 @collection
 class RelayDBISAR {
-  late int id;
+  int id = 0;
 
   @Index(unique: true)
   String url;

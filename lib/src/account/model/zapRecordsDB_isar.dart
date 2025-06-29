@@ -6,7 +6,7 @@ part 'zapRecordsDB_isar.g.dart';
 
 @collection
 class ZapRecordsDBISAR {
-  late int id;
+  int id = 0;
 
   @Index(unique: true)
   String bolt11;

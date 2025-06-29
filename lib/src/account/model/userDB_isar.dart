@@ -22,7 +22,7 @@ extension UserDBISARExtensions on UserDBISAR {
 
 @collection
 class UserDBISAR {
-  late int id;
+  int id = 0;
 
   @Index(unique: true)
   String pubKey;

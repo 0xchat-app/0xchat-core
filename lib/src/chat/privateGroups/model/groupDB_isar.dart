@@ -11,7 +11,7 @@ extension GroupDBISARExtensions on GroupDBISAR {
 
 @collection
 class GroupDBISAR {
-  late int id;
+  int id = 0;
 
   @Index(unique: true)
   String groupId; //group nostr pubkey

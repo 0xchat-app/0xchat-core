@@ -13,7 +13,7 @@ extension ModerationDBISARExtensions on ModerationDBISAR {
 
 @collection
 class ModerationDBISAR {
-  late int id;
+  int id = 0;
 
   @Index(unique: true)
   String moderationId;

@@ -19,7 +19,7 @@ extension NoteDBISARExtensions on NoteDBISAR {
 
 @collection
 class NoteDBISAR {
-  late int id;
+  int id = 0;
 
   @Index(unique: true)
   String noteId; //event id

@@ -5,7 +5,7 @@ part 'joinRequestDB_isar.g.dart';
 
 @collection
 class JoinRequestDBISAR {
-  late int id;
+  int id = 0;
 
   @Index(unique: true)
   String requestId;

@@ -15,7 +15,7 @@ extension RelayGroupDBISARExtensions on RelayGroupDBISAR {
 
 @collection
 class RelayGroupDBISAR {
-  late int id;
+  int id = 0;
 
   @Index(unique: true)
   String groupId;

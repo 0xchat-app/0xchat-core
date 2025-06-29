@@ -438,7 +438,7 @@ class Messages {
     assert(until == null || since == null, 'unsupported filter');
 
     final isar = DBISAR.sharedInstance.isar;
-    dynamic queryBuilder = isar.messageDBISARs.where();
+    QueryBuilder<MessageDBISAR, MessageDBISAR, QFilterCondition> queryBuilder = isar.messageDBISARs.where();
     if (receiver != null) {
       queryBuilder = queryBuilder.group((q) => q
           .group((q) => q
@@ -485,9 +485,9 @@ class Messages {
       queryBuilder = queryBuilder.createTimeGreaterThan(since);
     }
 
-    var queryBuilderAfterSort = since != null 
-        ? queryBuilder.sortByCreateTime()
-        : queryBuilder.sortByCreateTimeDesc();
+    var queryBuilderAfterSort = since != null
+        ? (queryBuilder as QueryBuilder<MessageDBISAR, MessageDBISAR, QSortBy>).sortByCreateTime()
+        : (queryBuilder as QueryBuilder<MessageDBISAR, MessageDBISAR, QSortBy>).sortByCreateTimeDesc();
 
     var messages = await queryBuilderAfterSort.findAll();
     if (limit != null && messages.length > limit) {

@@ -6,7 +6,7 @@ part 'groupKeysDB_isar.g.dart';
 
 @collection
 class GroupKeysDBISAR {
-  late int id;
+  int id = 0;
 
   @Index(unique: true)
   String groupId; //group nostr id

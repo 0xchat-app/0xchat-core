@@ -4,7 +4,7 @@ part 'zapsDB_isar.g.dart';
 
 @collection
 class ZapsDBISAR {
-  late int id;
+  int id = 0;
 
   @Index(unique: true)
   String lnAddr;

@@ -4,7 +4,7 @@ part 'configDB_isar.g.dart';
 
 @collection
 class ConfigDBISAR {
-  late int id;
+  int id = 0;
 
   @Index(unique: true)
   String d;

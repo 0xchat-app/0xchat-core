@@ -4,7 +4,7 @@ part 'circleDB_isar.g.dart';
 
 @collection
 class CircleDBISAR  {
-  late int id;
+  int id = 0;
 
   @Index(unique: true)
   String circleId;

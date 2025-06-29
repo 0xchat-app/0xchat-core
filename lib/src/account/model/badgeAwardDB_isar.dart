@@ -4,7 +4,7 @@ part 'badgeAwardDB_isar.g.dart';
 
 @collection
 class BadgeAwardDBISAR {
-  late int id;
+  int id = 0;
 
   @Index(unique: true)
   String awardId; // event id

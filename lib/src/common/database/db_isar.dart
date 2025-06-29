@@ -164,75 +164,199 @@ class DBISAR {
     final Map<Type, List<dynamic>> typeMap = Map.from(_buffers);
     _buffers.clear();
 
-    await DBISAR.sharedInstance.isar.writeAsync((isar) {
+    await DBISAR.sharedInstance.isar.writeAsyncWith(typeMap, (isar, typeMap) {
       for (final type in typeMap.keys) {
-        _saveTOISAR(typeMap[type]!, type);
+        _saveTOISAR(typeMap[type]!, type, isar);
       }
     });
   }
 
-  void _saveTOISAR(List<dynamic> objects, Type type) {
-    // 根据类型分发到具体集合，适配 Isar v4 API
+  /// Save objects to Isar database by type
+  /// 
+  /// This method is designed as static with explicit parameters to support 
+  /// execution in isolate context where instance methods and fields are not accessible.
+  /// 
+  /// Design rationale:
+  /// - [static]: Required for isolate execution - no access to instance state
+  /// - [objects]: Explicit list parameter since isolates can't access instance buffers
+  /// - [type]: Explicit type parameter for runtime type dispatch in isolate
+  /// - [isar]: Explicit Isar instance parameter since isolates can't access singleton
+  /// 
+  /// Each object with id == 0 gets assigned an auto-increment ID before saving.
+  static void _saveTOISAR(List<dynamic> objects, Type type, Isar isar) {
     switch (type) {
       case MessageDBISAR:
-        isar.messageDBISARs.putAll(objects.cast<MessageDBISAR>());
+        final messageList = objects.cast<MessageDBISAR>();
+        for (var message in messageList) {
+          if (message.id == 0) {
+            message.id = isar.messageDBISARs.autoIncrement();
+          }
+        }
+        isar.messageDBISARs.putAll(messageList);
         break;
       case UserDBISAR:
-        isar.userDBISARs.putAll(objects.cast<UserDBISAR>());
+        final userList = objects.cast<UserDBISAR>();
+        for (var user in userList) {
+          if (user.id == 0) {
+            user.id = isar.userDBISARs.autoIncrement();
+          }
+        }
+        isar.userDBISARs.putAll(userList);
         break;
       case BadgeAwardDBISAR:
-        isar.badgeAwardDBISARs.putAll(objects.cast<BadgeAwardDBISAR>());
+        final badgeAwardList = objects.cast<BadgeAwardDBISAR>();
+        for (var badgeAward in badgeAwardList) {
+          if (badgeAward.id == 0) {
+            badgeAward.id = isar.badgeAwardDBISARs.autoIncrement();
+          }
+        }
+        isar.badgeAwardDBISARs.putAll(badgeAwardList);
         break;
       case BadgeDBISAR:
-        isar.badgeDBISARs.putAll(objects.cast<BadgeDBISAR>());
+        final badgeList = objects.cast<BadgeDBISAR>();
+        for (var badge in badgeList) {
+          if (badge.id == 0) {
+            badge.id = isar.badgeDBISARs.autoIncrement();
+          }
+        }
+        isar.badgeDBISARs.putAll(badgeList);
         break;
       case RelayDBISAR:
-        isar.relayDBISARs.putAll(objects.cast<RelayDBISAR>());
+        final relayList = objects.cast<RelayDBISAR>();
+        for (var relay in relayList) {
+          if (relay.id == 0) {
+            relay.id = isar.relayDBISARs.autoIncrement();
+          }
+        }
+        isar.relayDBISARs.putAll(relayList);
         break;
       case ZapRecordsDBISAR:
-        isar.zapRecordsDBISARs.putAll(objects.cast<ZapRecordsDBISAR>());
+        final zapRecordsList = objects.cast<ZapRecordsDBISAR>();
+        for (var zapRecord in zapRecordsList) {
+          if (zapRecord.id == 0) {
+            zapRecord.id = isar.zapRecordsDBISARs.autoIncrement();
+          }
+        }
+        isar.zapRecordsDBISARs.putAll(zapRecordsList);
         break;
       case ZapsDBISAR:
-        isar.zapsDBISARs.putAll(objects.cast<ZapsDBISAR>());
+        final zapsList = objects.cast<ZapsDBISAR>();
+        for (var zap in zapsList) {
+          if (zap.id == 0) {
+            zap.id = isar.zapsDBISARs.autoIncrement();
+          }
+        }
+        isar.zapsDBISARs.putAll(zapsList);
         break;
       case ChannelDBISAR:
-        isar.channelDBISARs.putAll(objects.cast<ChannelDBISAR>());
+        final channelList = objects.cast<ChannelDBISAR>();
+        for (var channel in channelList) {
+          if (channel.id == 0) {
+            channel.id = isar.channelDBISARs.autoIncrement();
+          }
+        }
+        isar.channelDBISARs.putAll(channelList);
         break;
       case SecretSessionDBISAR:
-        isar.secretSessionDBISARs.putAll(objects.cast<SecretSessionDBISAR>());
+        final secretSessionList = objects.cast<SecretSessionDBISAR>();
+        for (var secretSession in secretSessionList) {
+          if (secretSession.id == 0) {
+            secretSession.id = isar.secretSessionDBISARs.autoIncrement();
+          }
+        }
+        isar.secretSessionDBISARs.putAll(secretSessionList);
         break;
       case GroupDBISAR:
-        isar.groupDBISARs.putAll(objects.cast<GroupDBISAR>());
+        final groupList = objects.cast<GroupDBISAR>();
+        for (var group in groupList) {
+          if (group.id == 0) {
+            group.id = isar.groupDBISARs.autoIncrement();
+          }
+        }
+        isar.groupDBISARs.putAll(groupList);
         break;
       case JoinRequestDBISAR:
-        isar.joinRequestDBISARs.putAll(objects.cast<JoinRequestDBISAR>());
+        final joinRequestList = objects.cast<JoinRequestDBISAR>();
+        for (var joinRequest in joinRequestList) {
+          if (joinRequest.id == 0) {
+            joinRequest.id = isar.joinRequestDBISARs.autoIncrement();
+          }
+        }
+        isar.joinRequestDBISARs.putAll(joinRequestList);
         break;
       case ModerationDBISAR:
-        isar.moderationDBISARs.putAll(objects.cast<ModerationDBISAR>());
+        final moderationList = objects.cast<ModerationDBISAR>();
+        for (var moderation in moderationList) {
+          if (moderation.id == 0) {
+            moderation.id = isar.moderationDBISARs.autoIncrement();
+          }
+        }
+        isar.moderationDBISARs.putAll(moderationList);
         break;
       case RelayGroupDBISAR:
-        isar.relayGroupDBISARs.putAll(objects.cast<RelayGroupDBISAR>());
+        final relayGroupList = objects.cast<RelayGroupDBISAR>();
+        for (var relayGroup in relayGroupList) {
+          if (relayGroup.id == 0) {
+            relayGroup.id = isar.relayGroupDBISARs.autoIncrement();
+          }
+        }
+        isar.relayGroupDBISARs.putAll(relayGroupList);
         break;
       case NoteDBISAR:
-        isar.noteDBISARs.putAll(objects.cast<NoteDBISAR>());
+        final noteList = objects.cast<NoteDBISAR>();
+        for (var note in noteList) {
+          if (note.id == 0) {
+            note.id = isar.noteDBISARs.autoIncrement();
+          }
+        }
+        isar.noteDBISARs.putAll(noteList);
         break;
       case NotificationDBISAR:
-        isar.notificationDBISARs.putAll(objects.cast<NotificationDBISAR>());
+        final notificationList = objects.cast<NotificationDBISAR>();
+        for (var notification in notificationList) {
+          if (notification.id == 0) {
+            notification.id = isar.notificationDBISARs.autoIncrement();
+          }
+        }
+        isar.notificationDBISARs.putAll(notificationList);
         break;
       case ConfigDBISAR:
-        isar.configDBISARs.putAll(objects.cast<ConfigDBISAR>());
+        final configList = objects.cast<ConfigDBISAR>();
+        for (var config in configList) {
+          if (config.id == 0) {
+            config.id = isar.configDBISARs.autoIncrement();
+          }
+        }
+        isar.configDBISARs.putAll(configList);
         break;
       case EventDBISAR:
-        isar.eventDBISARs.putAll(objects.cast<EventDBISAR>());
+        final eventList = objects.cast<EventDBISAR>();
+        for (var event in eventList) {
+          if (event.id == 0) {
+            event.id = isar.eventDBISARs.autoIncrement();
+          }
+        }
+        isar.eventDBISARs.putAll(eventList);
         break;
       case GroupKeysDBISAR:
-        isar.groupKeysDBISARs.putAll(objects.cast<GroupKeysDBISAR>());
+        final groupKeysList = objects.cast<GroupKeysDBISAR>();
+        for (var groupKeys in groupKeysList) {
+          if (groupKeys.id == 0) {
+            groupKeys.id = isar.groupKeysDBISARs.autoIncrement();
+          }
+        }
+        isar.groupKeysDBISARs.putAll(groupKeysList);
         break;
       case CircleDBISAR:
-        isar.circleDBISARs.putAll(objects.cast<CircleDBISAR>());
+        final circleList = objects.cast<CircleDBISAR>();
+        for (var circle in circleList) {
+          if (circle.id == 0) {
+            circle.id = isar.circleDBISARs.autoIncrement();
+          }
+        }
+        isar.circleDBISARs.putAll(circleList);
         break;
       default:
-        // 未匹配到的类型，可在此扩展
         break;
     }
   }

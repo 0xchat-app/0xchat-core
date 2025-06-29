@@ -30,7 +30,7 @@ extension MessageDBISARExtensions on MessageDBISAR {
 
 @collection
 class MessageDBISAR {
-  late int id;
+  int id = 0;
 
   @Index(unique: true)
   String messageId; //event id

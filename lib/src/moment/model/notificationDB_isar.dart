@@ -5,7 +5,7 @@ part 'notificationDB_isar.g.dart';
 
 @collection
 class NotificationDBISAR {
-  late int id;
+  int id = 0;
 
   @Index(unique: true)
   String notificationId; //event id
