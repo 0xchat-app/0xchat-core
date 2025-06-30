@@ -38,6 +38,9 @@ class DBISAR {
     CircleDBISARSchema
   ];
 
+  // Store encryption key after first open so subsequent opens re-use it.
+  static String? _sharedEncKey;
+
   /// Generate database name for given pubkey and optional circleId
   String _getDatabaseName(String pubkey, {String? circleId}) {
     if (circleId != null) {
@@ -60,16 +63,22 @@ class DBISAR {
     return '$dbDir/$dbName.isar';
   }
 
-  Future open(String pubkey, {String? circleId, String? dbPath}) async {
+  Future open(String pubkey, {String? circleId, String? dbPath, String? encryptionKey}) async {
     final dbName = _getDatabaseName(pubkey, circleId: circleId);
     dbPath ??= await _getDatabaseDirectory();
     LogUtils.v(() => 'DBISAR open: $dbPath, pubkey: $pubkey');
+    // Persist encryption key if provided.
+    if (encryptionKey != null) {
+      _sharedEncKey = encryptionKey;
+    }
+
+    final String key = encryptionKey ?? _sharedEncKey ?? pubkey;
     isar = await Isar.openAsync(
       schemas: schemas,
       directory: dbPath,
       name: dbName,
       engine: IsarEngine.sqlite,
-      encryptionKey: pubkey,
+      encryptionKey: key,
     );
   }
 
