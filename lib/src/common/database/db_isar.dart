@@ -366,6 +366,17 @@ class DBISAR {
         isar.circleDBISARs.putAll(circleList);
         break;
       default:
+        String typeName = type.toString().replaceAll('?', '');
+        final index = isar.schemas.indexWhere((schema) => schema.name == typeName);
+        if (index < 0 || index >= isar.schemas.length) return;
+
+        final collection = isar.collectionByIndex(index);
+        for (var object in objects) {
+          if (object.id == 0) {
+            object.id = collection.autoIncrement();
+          }
+        }
+        collection.putAll(objects);
         break;
     }
   }
