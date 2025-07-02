@@ -599,61 +599,54 @@ extension Load on Moment {
       int? limit,
       String? keyword}) async {
     final isar = DBISAR.sharedInstance.isar;
-    dynamic queryBuilder = isar.noteDBISARs.where();
-    if (noteId != null) {
-      queryBuilder = queryBuilder.noteIdEqualTo(noteId);
-    }
-    if (groupId != null && groupId.isNotEmpty) {
-      queryBuilder = queryBuilder.groupIdEqualTo(groupId);
-    } else {
-      queryBuilder = queryBuilder.groupIdIsEmpty();
-    }
-    if (authors != null) {
-      queryBuilder = queryBuilder.anyOf(authors, (q, author) => q.authorEqualTo(author));
-    }
-    if (root != null) {
-      queryBuilder = queryBuilder.rootEqualTo(root);
-    }
-    if (reply != null) {
-      queryBuilder = queryBuilder.replyEqualTo(reply);
-    }
-    if (repostId != null) {
-      queryBuilder = queryBuilder.repostIdEqualTo(repostId);
-    }
-    if (quoteRepostId != null) {
-      queryBuilder = queryBuilder.quoteRepostIdEqualTo(quoteRepostId);
-    }
-    if (reactedId != null) {
-      queryBuilder = queryBuilder.reactedIdEqualTo(reactedId);
-    }
-    if (until != null) {
-      queryBuilder = queryBuilder.createAtLessThan(until);
-    }
-    if (isReacted != null) {
-      queryBuilder =
-          isReacted ? queryBuilder.reactedIdIsNotEmpty() : queryBuilder.reactedIdIsEmpty();
-    }
-    if (private != null) {
-      queryBuilder = queryBuilder.privateEqualTo(private);
-    }
-    if (keyword != null) {
-      queryBuilder = queryBuilder.contentContains(keyword);
-    }
-    List<NoteDBISAR> result = searchNotesFromCache(noteId, groupId, authors, root, reply, repostId,
+    
+    // Start with a base query that returns at least one filter condition
+    final queryBuilder = isar.noteDBISARs.where().noteIdIsNotEmpty();
+    
+    // Apply optional filters using the built-in optional method
+    final filteredQuery = queryBuilder
+        .optional(noteId != null, (q) => q.noteIdEqualTo(noteId!))
+        .optional(groupId != null && groupId.isNotEmpty, 
+            (q) => q.groupIdEqualTo(groupId!))
+        .optional(groupId == null || groupId.isEmpty, 
+            (q) => q.groupIdIsEmpty())
+        .optional(authors != null, 
+            (q) => q.anyOf(authors!, (qq, author) => qq.authorEqualTo(author)))
+        .optional(root != null, (q) => q.rootEqualTo(root!))
+        .optional(reply != null, (q) => q.replyEqualTo(reply!))
+        .optional(repostId != null, (q) => q.repostIdEqualTo(repostId!))
+        .optional(quoteRepostId != null, (q) => q.quoteRepostIdEqualTo(quoteRepostId!))
+        .optional(reactedId != null, (q) => q.reactedIdEqualTo(reactedId!))
+        .optional(until != null, (q) => q.createAtLessThan(until!))
+        .optional(isReacted != null, (q) => 
+            isReacted! ? q.reactedIdIsNotEmpty() : q.reactedIdIsEmpty())
+        .optional(private != null, (q) => q.privateEqualTo(private!))
+        .optional(keyword != null, (q) => q.contentContains(keyword!));
+    
+    // Apply sorting
+    final sortedQuery = filteredQuery.sortByCreateAtDesc();
+    
+    // Execute the query
+    final searchResult = sortedQuery.findAll();
+    
+    // Get results from cache
+    List<NoteDBISAR> result = searchNotesFromCache(
+        noteId, groupId, authors, root, reply, repostId,
         quoteRepostId, reactedId, isReacted, private, until, limit);
-    final searchResult = await queryBuilder.sortByCreateAtDesc().findAll();
+    
+    // Process query results
+    List<NoteDBISAR> notesToAdd;
     if (limit != null && searchResult.length > limit) {
-      final limitedResult = searchResult.take(limit).toList();
-      for (NoteDBISAR note in limitedResult) {
-        note = note.withGrowableLevels();
-        result.add(note);
-      }
-      return result;
+      notesToAdd = searchResult.take(limit).toList();
+    } else {
+      notesToAdd = searchResult;
     }
-    for (NoteDBISAR note in searchResult) {
-      note = note.withGrowableLevels();
-      result.add(note);
+    
+    // Add results with growable levels
+    for (NoteDBISAR note in notesToAdd) {
+      result.add(note.withGrowableLevels());
     }
+    
     return result;
   }
 

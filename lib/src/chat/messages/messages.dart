@@ -438,58 +438,37 @@ class Messages {
     assert(until == null || since == null, 'unsupported filter');
 
     final isar = DBISAR.sharedInstance.isar;
-    QueryBuilder<MessageDBISAR, MessageDBISAR, QFilterCondition> queryBuilder = isar.messageDBISARs.where();
-    if (receiver != null) {
-      queryBuilder = queryBuilder.group((q) => q
-          .group((q) => q
-              .senderEqualTo(receiver)
-              .receiverEqualTo(Account.sharedInstance.currentPubkey)
-              .sessionIdIsEmpty())
-          .or()
-          .group((q) => q
-              .senderEqualTo(Account.sharedInstance.currentPubkey)
-              .receiverEqualTo(receiver)
-              .sessionIdIsEmpty()));
-    }
-    if (sessionId != null){
-      queryBuilder = queryBuilder.sessionIdEqualTo(sessionId);
-    }
-    if (groupId != null){
-      queryBuilder = queryBuilder.groupIdEqualTo(groupId);
-    }
 
-    if (messageTypes.isNotEmpty) {
-      queryBuilder = queryBuilder.anyOf(messageTypes, (q, messageType) {
-        final messageTypeStr = MessageDBISAR.messageTypeToString(messageType);
-        return q.typeEqualTo(messageTypeStr);
-      });
-    }
+    final whereBuilder = isar.messageDBISARs.where();
 
-    if (decryptContentLike != null) {
-      queryBuilder = queryBuilder.decryptContentContains(
-        decryptContentLike,
-        caseSensitive: false,
-      );
-    }
+    QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition> qb =
+        whereBuilder.messageIdIsNotEmpty();
 
-    if (hasPreviewData != null) {
-      queryBuilder = queryBuilder.anyOf(messageTypes, (q, messageType) {
-        return hasPreviewData ? q.previewDataIsNotNull() : q.previewDataIsNull();
-      });
-    }
+    qb = qb
+        .optional(receiver != null, (q) => q.group((qq) => qq
+                .group((qq) => qq
+                    .senderEqualTo(receiver!)
+                    .receiverEqualTo(Account.sharedInstance.currentPubkey)
+                    .sessionIdIsEmpty())
+                .or()
+                .group((qq) => qq
+                    .senderEqualTo(Account.sharedInstance.currentPubkey)
+                    .receiverEqualTo(receiver!)
+                    .sessionIdIsEmpty())))
+        .optional(sessionId != null, (q) => q.sessionIdEqualTo(sessionId!))
+        .optional(groupId != null, (q) => q.groupIdEqualTo(groupId!))
+        .optional(messageTypes.isNotEmpty, (q) => q.anyOf(messageTypes,
+            (qq, mt) => qq.typeEqualTo(MessageDBISAR.messageTypeToString(mt))))
+        .optional(decryptContentLike != null,
+            (q) => q.decryptContentContains(decryptContentLike!, caseSensitive: false))
+        .optional(hasPreviewData != null, (q) =>
+            hasPreviewData! ? q.previewDataIsNotNull() : q.previewDataIsNull())
+        .optional(until != null, (q) => q.createTimeLessThan(until!))
+        .optional(since != null, (q) => q.createTimeGreaterThan(since!));
 
-    if (until != null) {
-      queryBuilder = queryBuilder.createTimeLessThan(until);
-    }
-    if (since != null) {
-      queryBuilder = queryBuilder.createTimeGreaterThan(since);
-    }
+    final sortedBuilder = since != null ? qb.sortByCreateTime() : qb.sortByCreateTimeDesc();
 
-    var queryBuilderAfterSort = since != null
-        ? (queryBuilder as QueryBuilder<MessageDBISAR, MessageDBISAR, QSortBy>).sortByCreateTime()
-        : (queryBuilder as QueryBuilder<MessageDBISAR, MessageDBISAR, QSortBy>).sortByCreateTimeDesc();
-
-    var messages = await queryBuilderAfterSort.findAll();
+    var messages = sortedBuilder.findAll();
     if (limit != null && messages.length > limit) {
       messages = messages.take(limit).toList();
     }
@@ -506,13 +485,6 @@ class Messages {
     for (var message in messages) {
       message = message.withGrowableLevels();
       theLastTime = message.createTime > theLastTime ? message.createTime : theLastTime;
-      // if (message.content.isNotEmpty &&
-      //     message.decryptContent.isEmpty &&
-      //     message.type != 'text') {
-      //   var map = await MessageDBISAR.decodeContent(message.content);
-      //   message.decryptContent = map['content'];
-      //   message.type = map['contentType'];
-      // }
       result.add(message);
     }
     return {'theLastTime': theLastTime, 'messages': result};
@@ -539,13 +511,6 @@ class Messages {
     int theLastTime = 0;
     for (var message in messages) {
       theLastTime = message.createTime > theLastTime ? message.createTime : theLastTime;
-      // if (message.content.isNotEmpty &&
-      //     message.decryptContent.isEmpty &&
-      //     message.type != 'text') {
-      //   var map = await MessageDBISAR.decodeContent(message.content);
-      //   message.decryptContent = map['content'];
-      //   message.type = map['contentType'];
-      // }
     }
     return {'theLastTime': theLastTime, 'messages': messages};
   }
@@ -580,13 +545,6 @@ class Messages {
     int theLastTime = 0;
     for (var message in messages) {
       theLastTime = message.createTime > theLastTime ? message.createTime : theLastTime;
-      // if (message.content.isNotEmpty &&
-      //     message.decryptContent.isEmpty &&
-      //     message.type != 'text') {
-      //   var map = await MessageDBISAR.decodeContent(message.content);
-      //   message.decryptContent = map['content'];
-      //   message.type = map['contentType'];
-      // }
     }
     return {'theLastTime': theLastTime, 'messages': messages};
   }
