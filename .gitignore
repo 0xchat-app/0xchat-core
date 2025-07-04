@@ -22,3 +22,4 @@ example/windows/flutter/ephemeral/.plugin_symlinks/path_provider_windows
 example/windows/flutter/generated_plugins.cmake
 /example
 /test
+*.properties

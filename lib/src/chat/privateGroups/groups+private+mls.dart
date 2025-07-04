@@ -740,8 +740,7 @@ extension MLSPrivateGroups on Groups {
     Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
     OKEvent okEvent = await sendGroupEventToMLSGroup(group, groupEvent);
     if (okEvent.status) {
-      await sendWelcomeMessages(
-          welcome_message, members, Account.sharedInstance.me?.relayList ?? []);
+      await sendWelcomeMessages(welcome_message, members, []);
       updateMLSGroupInfo(group);
       String content = '';
       for (var member in members) {
