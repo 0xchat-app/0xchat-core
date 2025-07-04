@@ -63,7 +63,7 @@ extension AccountProfile on Account {
               break;
           }
         }
-        userCache[currentPubkey] = ValueNotifier<UserDBISAR>(me!);
+        updateOrCreateUserNotifier(currentPubkey, me!);
         syncMe();
         if (!completer.isCompleted) completer.complete(me);
       }
@@ -92,7 +92,7 @@ extension AccountProfile on Account {
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       if (unRelays.isEmpty) {
-        userCache[pubkey] = ValueNotifier<UserDBISAR>(db!);
+        updateOrCreateUserNotifier(pubkey, db!);
         if (pubkey == currentPubkey) me = db;
         Account.saveUserToDB(db!);
         if (!completer.isCompleted) completer.complete(db);
@@ -146,8 +146,12 @@ extension AccountProfile on Account {
       if (event.kind == 30008) {
         users[p] = _handleKind30008Event(db, event)!;
       }
-      userCache[p]?.value = users[p]!;
-      userCache[p]?.notifyListeners();
+      if (userCache.containsKey(p)) {
+        userCache[p]!.value = users[p]!;
+        userCache[p]!.notifyListeners();
+      } else {
+        updateOrCreateUserNotifier(p, users[p]!);
+      }
       pQueue.remove(p);
       Account.saveUserToDB(users[p]!);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {

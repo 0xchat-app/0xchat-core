@@ -38,6 +38,24 @@ class Groups {
   GroupMessageCallBack? groupMessageCallBack;
   GroupMessageUpdateCallBack? groupMessageUpdateCallBack;
 
+  /// Helper method to update or create ValueNotifier for groups
+  void updateOrCreateGroupNotifier(String groupId, GroupDBISAR groupDB) {
+    if (groups.containsKey(groupId)) {
+      groups[groupId]!.value = groupDB;
+    } else {
+      groups[groupId] = ValueNotifier(groupDB);
+    }
+  }
+
+  /// Helper method to update or create ValueNotifier for myGroups
+  void updateOrCreateMyGroupNotifier(String groupId, GroupDBISAR groupDB) {
+    if (myGroups.containsKey(groupId)) {
+      myGroups[groupId]!.value = groupDB;
+    } else {
+      myGroups[groupId] = ValueNotifier(groupDB);
+    }
+  }
+
   Future<void> init({GroupsUpdatedCallBack? callBack}) async {
     privkey = Account.sharedInstance.currentPrivkey;
     pubkey = Account.sharedInstance.currentPubkey;
@@ -81,7 +99,7 @@ class Groups {
     for (GroupDBISAR e in maps) {
       GroupDBISAR groupDB = e.withGrowableLevels();
       if (groupDB.name.isEmpty) groupDB.name = _shortGroupId(groupDB.privateGroupId);
-      groups[groupDB.privateGroupId] = ValueNotifier(groupDB);
+      updateOrCreateGroupNotifier(groupDB.privateGroupId, groupDB);
     }
     myGroups = _myGroups();
   }
@@ -93,6 +111,7 @@ class Groups {
       List<String> groupList = me.groupsList!;
       for (String groupId in groupList) {
         if (!groups.containsKey(groupId)) {
+          // Create new ValueNotifier for new group
           groups[groupId] = ValueNotifier(GroupDBISAR(groupId: groupId));
         }
         result[groupId] = groups[groupId]!;
@@ -239,6 +258,8 @@ class Groups {
 
   ValueNotifier<GroupDBISAR> getPrivateGroupNotifier(String groupId) {
     if (groups.containsKey(groupId)) return groups[groupId]!;
+    
+    // Create new ValueNotifier for new group
     groups[groupId] = ValueNotifier(GroupDBISAR(groupId: groupId));
     return groups[groupId]!;
   }

@@ -46,8 +46,8 @@ extension PrivateGroups on Groups {
           updateTime: currentUnixTimestampSeconds(),
           name: name ?? '',
           members: members);
-      groups[groupId] = ValueNotifier(groupDB);
-      myGroups[groupId] = ValueNotifier(groupDB);
+      updateOrCreateGroupNotifier(groupId, groupDB);
+      updateOrCreateMyGroupNotifier(groupId, groupDB);
       // update my group list
       await syncGroupToDB(groupDB);
       await syncMyGroupListToDB();

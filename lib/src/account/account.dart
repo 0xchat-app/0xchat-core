@@ -73,7 +73,7 @@ class Account {
     for (UserDBISAR? user in maps) {
       if (user != null) {
         user = user.withGrowableLevels();
-        userCache[user.pubKey] = ValueNotifier<UserDBISAR>(user);
+        updateOrCreateUserNotifier(user.pubKey, user);
       }
     }
   }
@@ -106,7 +106,7 @@ class Account {
     Completer<UserDBISAR?> completer = Completer();
     getUserFromDB(pubkey: pubkey).then((user) {
       if (user != null) {
-        userCache[pubkey] = ValueNotifier<UserDBISAR>(user);
+        updateOrCreateUserNotifier(pubkey, user);
         _addToPQueue(user);
       }
       completer.complete(user);
@@ -124,9 +124,8 @@ class Account {
   }
 
   ValueNotifier<UserDBISAR> getUserNotifier(String pubkey) {
-    if (userCache.containsKey(pubkey)) return userCache[pubkey]!;
-    userCache[pubkey] = ValueNotifier(UserDBISAR(pubKey: pubkey));
-    return userCache[pubkey]!;
+    return userCache.putIfAbsent(pubkey,
+            () => ValueNotifier(UserDBISAR(pubKey: pubkey)));
   }
 
   void _addToPQueue(UserDBISAR user) {
@@ -142,7 +141,7 @@ class Account {
         await DBISAR.sharedInstance.isar.userDBISARs.where().pubKeyEqualTo(pubkey).findFirst();
     if (user != null) {
       user = user.withGrowableLevels();
-      userCache[user.pubKey] = ValueNotifier<UserDBISAR>(user);
+      updateOrCreateUserNotifier(user.pubKey, user);
     }
     return user;
   }
@@ -172,7 +171,7 @@ class Account {
       currentPubkey = userDB.pubKey;
       currentPrivkey = SignerHelper.getSignerApplicationKey(signerApplication, '');
       userDB.privkey = currentPrivkey;
-      userCache[currentPubkey] = ValueNotifier<UserDBISAR>(userDB);
+      updateOrCreateUserNotifier(currentPubkey, userDB);
       await saveUserToDB(userDB);
       loginSuccess();
     }
@@ -195,7 +194,7 @@ class Account {
         me = db;
         currentPrivkey = bytesToHex(privkey);
         currentPubkey = db.pubKey;
-        userCache[currentPubkey] = ValueNotifier<UserDBISAR>(db);
+        updateOrCreateUserNotifier(currentPubkey, db);
         loginSuccess();
         return db;
       }
@@ -219,7 +218,7 @@ class Account {
     me = db;
     currentPrivkey = privkey;
     currentPubkey = db.pubKey;
-    userCache[currentPubkey] = ValueNotifier<UserDBISAR>(db);
+    updateOrCreateUserNotifier(currentPubkey, db);
     loginSuccess();
     return db;
   }
@@ -435,5 +434,15 @@ class Account {
     }
     final hexMessage = hex.encode(SHA256Digest().process(Uint8List.fromList(utf8.encode(secret))));
     return Keychain(privkey).sign(hexMessage);
+  }
+
+  /// Helper method to update or create ValueNotifier for user cache
+  void updateOrCreateUserNotifier(String pubkey, UserDBISAR user) {
+    if (userCache.containsKey(pubkey)) {
+      userCache[pubkey]!.value = user;
+      userCache[pubkey]!.notifyListeners();
+    } else {
+      userCache[pubkey] = ValueNotifier<UserDBISAR>(user);
+    }
   }
 }

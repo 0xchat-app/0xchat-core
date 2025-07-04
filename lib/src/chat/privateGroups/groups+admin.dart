@@ -26,7 +26,7 @@ extension Admin on Groups {
       ok = await updateGroup(groupDB);
       if (ok.status == true) {
         sendGroupMessage(groupDB.privateGroupId, MessageType.system, content, actionsType: 'add');
-        myGroups[groupDB.privateGroupId] = ValueNotifier(groupDB);
+        updateOrCreateMyGroupNotifier(groupDB.privateGroupId, groupDB);
         // update my group list
         await syncMyGroupListToRelay();
         myGroupsUpdatedCallBack?.call();

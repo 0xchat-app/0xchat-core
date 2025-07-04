@@ -482,8 +482,8 @@ extension MLSPrivateGroups on Groups {
         mlsGroupId: mlsGroup.mlsGroupId,
         relay: relays.firstOrNull,
         adminPubkeys: mlsGroup.nostrGroupData.adminPubkeys);
-    groups[groupDBISAR.privateGroupId] = ValueNotifier(groupDBISAR);
-    myGroups[groupDBISAR.privateGroupId] = ValueNotifier(groupDBISAR);
+    updateOrCreateGroupNotifier(groupDBISAR.privateGroupId, groupDBISAR);
+    updateOrCreateMyGroupNotifier(groupDBISAR.privateGroupId, groupDBISAR);
     await syncGroupToDB(groupDBISAR);
     await syncMyGroupListToDB();
     updateMLSGroupSubscription();
@@ -562,7 +562,7 @@ extension MLSPrivateGroups on Groups {
       // old welcome event, ignore
       return;
     }
-    groups[groupDBISAR.privateGroupId] = ValueNotifier(groupDBISAR);
+    updateOrCreateGroupNotifier(groupDBISAR.privateGroupId, groupDBISAR);
     syncGroupToDB(groupDBISAR);
     UserDBISAR? userDBISAR = await Account.sharedInstance.getUserInfo(welcomeEvent.pubkey);
     String inviteMessage = groupDBISAR.isDirectMessage
@@ -589,8 +589,8 @@ extension MLSPrivateGroups on Groups {
     group.members = members;
     group.mlsGroupId = mlsGroup.mlsGroupId;
     group.adminPubkeys = mlsGroup.nostrGroupData.adminPubkeys;
-    groups[group.privateGroupId] = ValueNotifier(group);
-    myGroups[group.privateGroupId] = ValueNotifier(group);
+    updateOrCreateGroupNotifier(group.privateGroupId, group);
+    updateOrCreateMyGroupNotifier(group.privateGroupId, group);
     await syncGroupToDB(group);
     await syncMyGroupListToDB();
     updateMLSGroupSubscription();
