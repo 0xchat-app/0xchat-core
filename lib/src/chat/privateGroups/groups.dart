@@ -66,8 +66,8 @@ class Groups {
       myGroupsUpdatedCallBack?.call();
     };
 
-    await initMLS();
     await _loadAllGroupsFromDB();
+    await initMLS();
   }
 
   /// 0, not in the group, 1, in the group & not joined, 2. joined
