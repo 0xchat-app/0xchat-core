@@ -56,6 +56,32 @@ class Groups {
     }
   }
 
+  /// Initialize Groups with configuration (recommended)
+  ///
+  /// [config] Configuration containing all necessary initialization parameters
+  Future<void> initWithConfig(ChatCoreInitConfig config) async {
+    privkey = Account.sharedInstance.currentPrivkey;
+    pubkey = Account.sharedInstance.currentPubkey;
+    myGroupsUpdatedCallBack = config.groupsUpdatedCallBack;
+
+    Account.sharedInstance.groupListUpdateCallback = () async {
+      myGroups = _myGroups();
+      myGroupsUpdatedCallBack?.call();
+    };
+
+    await _loadAllGroupsFromDB();
+    
+    // Initialize MLS with configuration parameters
+    await initMLS(
+      mlsPath: config.mlsPath,
+      mlsIdentity: config.mlsIdentity,
+      password: config.encryptionPassword,
+    );
+  }
+
+  /// Initialize Groups (legacy method)
+  ///
+  /// [callBack] Groups update callback
   Future<void> init({GroupsUpdatedCallBack? callBack}) async {
     privkey = Account.sharedInstance.currentPrivkey;
     pubkey = Account.sharedInstance.currentPubkey;

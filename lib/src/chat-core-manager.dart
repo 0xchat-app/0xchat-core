@@ -19,7 +19,36 @@ class ChatCoreManager {
   /// Get current lite mode status
   bool get isLite => _isLite;
 
-  /// Initialize chat core functionality
+  /// Initialize chat core functionality with configuration
+  ///
+  /// [config] - Unified configuration containing all initialization parameters
+  ///
+  /// Throws exception if initialization fails
+  Future<void> initChatCoreWithConfig(ChatCoreInitConfig config) async {
+    try {
+      _isLite = config.isLite;
+
+      // Load all event cache from database
+      await EventCache.sharedInstance.loadAllEventsFromDB();
+
+      // Initialize relay service
+      await Relays.sharedInstance.init(circleRelay: config.circleRelay);
+
+      // Initialize core components with configuration
+      await _initCoreComponentsWithConfig(config);
+
+      // Initialize extended features if not in lite mode
+      if (!_isLite) {
+        await _initExtendedFeaturesWithConfig(config);
+      }
+    } catch (e, stack) {
+      // Log error and rethrow
+      print('ChatCoreManager initialization failed: $e, $stack');
+      rethrow;
+    }
+  }
+
+  /// Initialize chat core functionality (legacy method)
   ///
   /// [isLite] - Whether to enable lite mode, channels and moments are not loaded in lite mode
   /// [contactUpdatedCallBack] - Contact update callback
@@ -28,6 +57,7 @@ class ChatCoreManager {
   /// [relayGroupsUpdatedCallBack] - Relay groups update callback
   ///
   /// Throws exception if initialization fails
+  @Deprecated('Use initChatCoreWithConfig instead')
   Future<void> initChatCore({
     bool isLite = false,
     String? circleRelay,
@@ -65,7 +95,29 @@ class ChatCoreManager {
     }
   }
 
-  /// Initialize core components
+  /// Initialize core components with configuration
+  Future<void> _initCoreComponentsWithConfig(ChatCoreInitConfig config) async {
+    // Initialize core components in parallel for better performance
+    await Future.wait([
+      Future(() => Messages.sharedInstance.init()),
+      Future(() => Contacts.sharedInstance.init(callBack: config.contactUpdatedCallBack)),
+      Future(() => Groups.sharedInstance.initWithConfig(config)),
+    ]);
+  }
+
+  /// Initialize extended features with configuration
+  Future<void> _initExtendedFeaturesWithConfig(ChatCoreInitConfig config) async {
+    // Initialize extended features in parallel
+    await Future.wait([
+      Future(() => Channels.sharedInstance.init(callBack: config.channelsUpdatedCallBack)),
+      Future(() => Moment.sharedInstance.init()),
+      Future(() => BadgesHelper.sharedInstance.init()),
+      Future(() => Zaps.sharedInstance.init()),
+      Future(() => RelayGroup.sharedInstance.init(callBack: config.relayGroupsUpdatedCallBack)),
+    ]);
+  }
+
+  /// Initialize core components (legacy method)
   Future<void> _initCoreComponents({
     ContactUpdatedCallBack? contactUpdatedCallBack,
     GroupsUpdatedCallBack? groupsUpdatedCallBack,

@@ -15,6 +15,9 @@ class DBISAR {
   final Map<Type, List<dynamic>> _buffers = {};
 
   Timer? _timer;
+  
+  // Track current circle ID for this database instance
+  String? _currentCircleId;
 
   List<IsarGeneratedSchema> schemas = [
     MessageDBISARSchema,
@@ -66,7 +69,11 @@ class DBISAR {
   Future open(String pubkey, {String? circleId, String? dbPath, String? encryptionKey}) async {
     final dbName = _getDatabaseName(pubkey, circleId: circleId);
     dbPath ??= await _getDatabaseDirectory();
-    LogUtils.v(() => 'DBISAR open: $dbPath, pubkey: $pubkey');
+    LogUtils.v(() => 'DBISAR open: $dbPath, pubkey: $pubkey, circleId: $circleId');
+    
+    // Store current circle ID
+    _currentCircleId = circleId;
+    
     // Persist encryption key if provided.
     if (encryptionKey != null) {
       _sharedEncKey = encryptionKey;
@@ -381,10 +388,15 @@ class DBISAR {
     }
   }
 
+  /// Get current circle ID for this database instance
+  /// Returns null if no circle is active (using main database)
+  String? get currentCircleId => _currentCircleId;
+
   Future<void> closeDatabase() async {
     _buffers.clear();
     _timer?.cancel();
     _timer = null;
+    _currentCircleId = null;
     if (isar.isOpen) isar.close();
   }
 }

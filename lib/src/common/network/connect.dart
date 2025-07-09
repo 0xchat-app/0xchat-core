@@ -111,6 +111,9 @@ class Connect {
 
   Map<String, List<String>> subscriptionsWaitingQueue = {};
 
+  // Track active reconnection tasks for proper cleanup
+  Map<String, Timer> _reconnectionTimers = {};
+
   void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
       timer = Timer.periodic(Duration(seconds: 5), (Timer t) {
@@ -269,9 +272,17 @@ class Connect {
   }
 
   Future closeAllConnects() async {
+    // Cancel all pending reconnection timers
+    for (var timer in _reconnectionTimers.values) {
+      timer.cancel();
+    }
+    _reconnectionTimers.clear();
+
     await Future.forEach(List.from(webSockets.keys), (relay) async {
       await closeConnect(relay);
     });
+    
+    // Clear all state
     sendsMap.clear();
     requestsMap.clear();
     auths.clear();
@@ -282,7 +293,13 @@ class Connect {
   Future closeConnect(String relay) async {
     LogUtils.v(() => 'closeConnect ${webSockets[relay]?.socket}');
     final socket = webSockets[relay]?.socket;
+    
     webSockets.remove(relay);
+
+    // Cancel any pending reconnection for this relay
+    _reconnectionTimers[relay]?.cancel();
+    _reconnectionTimers.remove(relay);
+    
     await socket?.close();
   }
 
@@ -660,10 +677,25 @@ class Connect {
 
   Future<void> _reConnectToRelay(String relay, RelayKind relayKind) async {
     _setConnectStatus(relay, 3); // closed
-    await Future.delayed(Duration(milliseconds: 3000));
-    if (webSockets.containsKey(relay)) {
-      await connect(relay, relayKind: relayKind);
+    
+    // Check if this relay is still managed (not closed)
+    if (!webSockets.containsKey(relay)) {
+      LogUtils.v(() => 'Skipping reconnection for relay no longer managed: $relay');
+      return;
     }
+    
+    // Cancel any existing reconnection timer for this relay
+    _reconnectionTimers[relay]?.cancel();
+    
+    // Schedule new reconnection attempt
+    _reconnectionTimers[relay] = Timer(Duration(milliseconds: 3000), () {
+      // Double check if reconnection is still needed
+      if (webSockets.containsKey(relay)) {
+        connect(relay, relayKind: relayKind);
+      }
+      // Clean up the timer reference
+      _reconnectionTimers.remove(relay);
+    });
   }
 
   void _listenEvent(WebSocket socket, String relay, RelayKind relayKind) {
@@ -688,11 +720,17 @@ class Connect {
 
       List<RelayKind>? relayKinds = webSockets[relay]?.relayKinds;
       bool hasNonTempKind = relayKinds?.any((kind) => kind != RelayKind.temp) ?? false;
-      if (hasNonTempKind) {
-        await Future.delayed(Duration(milliseconds: 3000));
-        if (webSockets.containsKey(relay)) {
-          return await _connectWs(relay);
-        }
+      if (hasNonTempKind && webSockets.containsKey(relay)) {
+        // Cancel any existing reconnection timer for this relay
+        _reconnectionTimers[relay]?.cancel();
+        
+        // Schedule new connection attempt
+        _reconnectionTimers[relay] = Timer(Duration(milliseconds: 3000), () {
+          if (webSockets.containsKey(relay)) {
+            _connectWs(relay);
+          }
+          _reconnectionTimers.remove(relay);
+        });
       }
     }
   }

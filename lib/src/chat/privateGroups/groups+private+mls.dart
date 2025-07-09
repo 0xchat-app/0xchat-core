@@ -218,17 +218,33 @@ class MemberChanges {
 }
 
 extension MLSPrivateGroups on Groups {
-  Future<void> initMLS() async {
-    bool isIOS = Platform.isIOS || Platform.isMacOS;
-    Directory directory =
-        isIOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
-    String? defaultPassword = Account.sharedInstance.me!.defaultPassword;
-    if (defaultPassword == null || defaultPassword.isEmpty) {
-      defaultPassword = generateStrongPassword(16);
-      Account.sharedInstance.me!.defaultPassword = defaultPassword;
-      Account.sharedInstance.syncMe();
-    }
-    await initNostrMls(path: directory.path, identity: pubkey, password: defaultPassword);
+  /// Initialize MLS with specified path, identity and password
+  /// 
+  /// [mlsPath] Required path for MLS database directory
+  /// [mlsIdentity] Required identity for MLS (typically pubkey or pubkey-circleId)
+  /// [password] Required password for MLS encryption
+  Future<void> initMLS({
+    String? mlsPath,
+    String? mlsIdentity,
+    String? password,
+  }) async {
+    mlsPath ??= await () async {
+      bool isIOS = Platform.isIOS || Platform.isMacOS;
+      Directory directory = isIOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
+      return directory.path;
+    }();
+    mlsIdentity ??= pubkey;
+    password ??= () {
+      String? defaultPassword = Account.sharedInstance.me!.defaultPassword;
+      if (defaultPassword == null || defaultPassword.isEmpty) {
+        defaultPassword = generateStrongPassword(16);
+        Account.sharedInstance.me!.defaultPassword = defaultPassword;
+        Account.sharedInstance.syncMe();
+      }
+      return defaultPassword;
+    }();
+
+    await initNostrMls(path: mlsPath, identity: mlsIdentity, password: password);
     _checkKeyPackage();
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 && Account.sharedInstance.me != null) {

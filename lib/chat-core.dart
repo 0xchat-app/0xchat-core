@@ -72,6 +72,7 @@ export 'src/common/thread/threadPoolManager.dart';
 export 'src/common/config/config.dart';
 export 'src/common/config/configDB.dart';
 export 'src/common/config/configDB_isar.dart';
+export 'src/common/config/chat_core_init_config.dart';
 export 'src/common/utils/LogUtil.dart';
 export 'src/moment/moment.dart';
 export 'src/moment/moment+load.dart';
