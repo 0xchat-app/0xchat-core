@@ -91,8 +91,10 @@ class NotificationHelper {
     startHeartBeat();
   }
 
-  Future<OKEvent> logout() async {
+  Future<OKEvent?> logout() async {
     Map map = {'online': 0, 'deviceId': ''};
+    if (serverPubkey.isEmpty) return null;
+
     Event event = await _encode(serverPubkey, jsonEncode(map), '');
     Completer<OKEvent> completer = Completer<OKEvent>();
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
