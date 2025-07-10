@@ -285,27 +285,6 @@ class BitchatService {
   /// Test method to send different types of messages
   Future<void> testSendMessages() async {
     try {
-      _statusController.add('🧪 Testing message sending...');
-      
-      // Test channel message
-      await sendChannelMessage('#test', 'Hello from 0xChat!');
-      
-      // Wait a bit
-      await Future.delayed(Duration(seconds: 2));
-      
-      // Test private message (if we have a peer)
-      final peers = getPeers();
-      if (peers.isNotEmpty) {
-        final firstPeer = peers.first;
-        await sendPrivateMessage(firstPeer.id, 'Hello from 0xChat private!');
-        _statusController.add('✅ Test messages sent');
-      } else {
-        _statusController.add('⚠️ No peers available for private message test');
-      }
-    } catch (e) {
-      _statusController.add('❌ Test failed: $e');
-    }
-  }
   
   /// Get all peers
   List<core.Peer> getPeers() {
