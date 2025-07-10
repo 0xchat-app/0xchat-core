@@ -146,7 +146,7 @@ class ChatCoreManager {
   }
 
   List<int> myProfileKinds() {
-    return _isLite ? [0] : [0, 3, 10000, 10002, 10005, 10009, 10050, 30000, 30001, 30003, 30008];
+    return _isLite ? [0, 3] : [0, 3, 10000, 10002, 10005, 10009, 10050, 30000, 30001, 30003, 30008];
   }
 
   List<int> userProfileKinds() {
