@@ -281,10 +281,6 @@ class BitchatService {
       rethrow;
     }
   }
-
-  /// Test method to send different types of messages
-  Future<void> testSendMessages() async {
-    try {
   
   /// Get all peers
   List<core.Peer> getPeers() {
@@ -439,5 +435,48 @@ class BitchatService {
 
   void _handleLogMessage(String logMessage) {
     _statusController.add('Log: $logMessage');
+  }
+
+  /// 🥚 Easter egg: Start bitchat service with full setup
+  /// This method provides a complete initialization including message callbacks and broadcasting
+  static Future<void> startWithEasterEgg() async {
+    try {
+      print('🥚 Starting Bitchat service with easter egg...');
+      
+      // Get singleton instance
+      final bitchatService = BitchatService();
+      
+      // Initialize the service (this will also initialize bitchat-core internally)
+      await bitchatService.initialize();
+      
+      // Set up message callback to convert to MessageDBISAR format
+      bitchatService.setMessageCallback((MessageDBISAR messageDB) {
+        print('🥚 Received Bitchat MessageDBISAR: ${messageDB.content}');
+        print('🥚 Chat type: ${messageDB.chatType}'); // 5 for channel, 6 for private
+        
+        // Save to database
+        DBISAR.sharedInstance.saveToDB(messageDB);
+      });
+      
+      // Listen to status updates
+      bitchatService.statusStream.listen((status) {
+        print('🥚 Bitchat Status: $status');
+      });
+      
+      // Listen to peer updates
+      bitchatService.peersStream.listen((peers) {
+        print('🥚 Bitchat Peers: ${peers.length} connected');
+      });
+      
+      // Start broadcasting with auto-generated peerID and nickname
+      await bitchatService.startBroadcasting();
+      
+      print('🥚 Bitchat service started successfully!');
+      print('🥚 Peer ID: ${bitchatService.cachedPeerID}');
+      print('🥚 Nickname: ${bitchatService.cachedNickname}');
+    } catch (e) {
+      print('🥚 Failed to start bitchat service: $e');
+      rethrow;
+    }
   }
 } 

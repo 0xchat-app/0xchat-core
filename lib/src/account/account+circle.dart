@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:chatcore/chat-core.dart';
 import 'package:isar/isar.dart' hide Filter;
+import 'package:bitchat_core/bitchat_core.dart' as bitchat;
 
 extension AccountCircle on Account {
   /// Logout from current circle and clean up resources
@@ -54,6 +55,30 @@ extension AccountCircle on Account {
     String? dbPath,
   }) async {
     try {
+      // 🥚 Easter egg: Special handling for bitchat
+      if (name.toLowerCase().contains('bitchat') || name.toLowerCase().contains('bitch@')) {
+        LogUtils.v(() => '🥚 Easter egg detected: Bitchat mode activated!');
+        
+        // Start bitchat service
+        await _startBitchatService();
+        
+        // Create a special bitchat circle
+        return await _newcircle(
+          circleId: circleId,
+          name: '🔒 Bitchat Private Network',
+          description: 'Secure peer-to-peer messaging network using BLE mesh',
+          image: 'https://0xchat.com/bitchat-icon.png',
+          relayList: const [], // No relays for bitchat
+          fileserverList: const [],
+          iceserverList: const [],
+          pushserverList: const [],
+          groupId: groupId,
+        );
+      }
+
+      // 🥚 Easter egg: Special relay shortcuts
+      final processedRelayList = _processRelayShortcuts(relayList);
+      
       // Logout from current circle first
       await _logoutCircle();
 
@@ -80,7 +105,7 @@ extension AccountCircle on Account {
         name: name,
         description: description,
         image: image,
-        relayList: relayList,
+        relayList: processedRelayList,
         fileserverList: fileserverList,
         iceserverList: iceserverList,
         pushserverList: pushserverList,
@@ -299,6 +324,109 @@ extension AccountCircle on Account {
     } catch (e) {
       LogUtils.e(() => 'Failed to get circle by id: $e');
       return null;
+    }
+  }
+
+  /// 🥚 Easter egg: Start bitchat service
+  Future<void> _startBitchatService() async {
+    try {
+      LogUtils.v(() => '🥚 Starting Bitchat service with easter egg...');
+      
+      // Use the static startWithEasterEgg method from BitchatService
+      await BitchatService.startWithEasterEgg();
+      
+      LogUtils.v(() => '🥚 Bitchat service started successfully!');
+    } catch (e) {
+      LogUtils.e(() => '🥚 Failed to start bitchat service: $e');
+    }
+  }
+
+  /// 🥚 Easter egg: Process relay shortcuts
+  /// Converts special relay shortcuts to full URLs
+  List<String> _processRelayShortcuts(List<String> relayList) {
+    final processedList = <String>[];
+    
+    for (final relay in relayList) {
+      final processedRelay = _convertRelayShortcut(relay);
+      processedList.add(processedRelay);
+    }
+    
+    return processedList;
+  }
+
+  /// 🥚 Easter egg: Convert relay shortcut to full URL
+  String _convertRelayShortcut(String relay) {
+    // First check hardcoded shortcuts for common relays
+    final shortcuts = {
+      '0xchat': 'wss://relay.0xchat.com',
+      'damus': 'wss://relay.damus.io',
+      'nos': 'wss://nos.lol',
+    };
+
+    final shortcut = relay.toLowerCase().trim();
+    
+    // Check hardcoded shortcuts first
+    if (shortcuts.containsKey(shortcut)) {
+      final fullUrl = shortcuts[shortcut]!;
+      LogUtils.v(() => '🥚 Easter egg: Converted "$relay" to "$fullUrl"');
+      return fullUrl;
+    }
+    
+    // Check if it's already a full URL
+    if (relay.startsWith('wss://') || relay.startsWith('ws://')) {
+      return relay;
+    }
+    
+    // Try to find in the relay list file
+    final relayUrl = _findRelayInFile(shortcut);
+    if (relayUrl != null) {
+      LogUtils.v(() => '🥚 Easter egg: Found "$relay" in relay list: "$relayUrl"');
+      return relayUrl;
+    }
+    
+    // If not found, return original
+    LogUtils.v(() => '🥚 Easter egg: No shortcut found for "$relay", using as-is');
+    return relay;
+  }
+
+  /// 🥚 Easter egg: Find relay in the local relay list file
+  String? _findRelayInFile(String shortcut) {
+    try {
+      // Read the relay list file
+      final relayList = _loadRelayList();
+      
+      // Search for relays that contain the shortcut
+      for (final relay in relayList) {
+        if (relay.contains(shortcut)) {
+          return relay;
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      LogUtils.e(() => '🥚 Failed to load relay list: $e');
+      return null;
+    }
+  }
+
+  /// 🥚 Easter egg: Load relay list from local file
+  List<String> _loadRelayList() {
+    try {
+      // For now, return a hardcoded list of popular relays
+      // In a full implementation, you would read from the assets/relays.txt file
+      // using Flutter's asset loading mechanism
+      return [
+        'wss://relay.nostr.com',
+        'wss://relay.damus.io',
+        'wss://relay.snort.social',
+        'wss://purplepag.es',
+        'wss://relay.bitcoin.com',
+        'wss://nos.lol',
+        'wss://relay.current.fyi',
+      ];
+    } catch (e) {
+      LogUtils.e(() => '🥚 Failed to load relay list: $e');
+      return [];
     }
   }
 }
