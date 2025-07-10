@@ -12,22 +12,22 @@ class BitchatService {
   BitchatService._internal();
 
   final core.BitchatService _coreService = core.BitchatService();
-  final List<core.BitchatPeer> _peers = [];
-  final List<core.BitchatMessageData> _messages = [];
+  final List<core.Peer> _peers = [];
+  final List<core.BitchatMessage> _messages = [];
   
   // Stream controllers for real-time updates
-  final StreamController<List<core.BitchatPeer>> _peersController = 
-      StreamController<List<core.BitchatPeer>>.broadcast();
-  final StreamController<core.BitchatMessageData> _messageController = 
-      StreamController<core.BitchatMessageData>.broadcast();
+  final StreamController<List<core.Peer>> _peersController = 
+      StreamController<List<core.Peer>>.broadcast();
+  final StreamController<core.BitchatMessage> _messageController = 
+      StreamController<core.BitchatMessage>.broadcast();
   final StreamController<String> _statusController = 
       StreamController<String>.broadcast();
 
   /// Get peers stream
-  Stream<List<core.BitchatPeer>> get peersStream => _peersController.stream;
+  Stream<List<core.Peer>> get peersStream => _peersController.stream;
   
   /// Get messages stream
-  Stream<core.BitchatMessageData> get messageStream => _messageController.stream;
+  Stream<core.BitchatMessage> get messageStream => _messageController.stream;
   
   /// Get status stream
   Stream<String> get statusStream => _statusController.stream;
@@ -78,20 +78,6 @@ class BitchatService {
         throw Exception('Failed to send channel message');
       }
       
-      // Create local message record
-      final message = core.BitchatMessageData(
-        id: _generateMessageId(),
-        type: core.BitchatMessageType.channelMessage,
-        content: content,
-        channel: channel,
-        timestamp: DateTime.now(),
-        senderID: await _getMyPeerId(),
-        senderNickname: await _getMyNickname(),
-      );
-      
-      _messages.add(message);
-      _messageController.add(message);
-      
       _statusController.add('Sent channel message to $channel');
     } catch (e) {
       _statusController.add('Failed to send channel message: $e');
@@ -106,20 +92,6 @@ class BitchatService {
       if (!success) {
         throw Exception('Failed to send private message');
       }
-      
-      // Create local message record
-      final message = core.BitchatMessageData(
-        id: _generateMessageId(),
-        type: core.BitchatMessageType.privateMessage,
-        content: content,
-        recipientID: recipientId,
-        timestamp: DateTime.now(),
-        senderID: await _getMyPeerId(),
-        senderNickname: await _getMyNickname(),
-      );
-      
-      _messages.add(message);
-      _messageController.add(message);
       
       _statusController.add('Sent private message to $recipientId');
     } catch (e) {
@@ -136,20 +108,6 @@ class BitchatService {
         throw Exception('Failed to join channel');
       }
       
-      // Create local message record
-      final message = core.BitchatMessageData(
-        id: _generateMessageId(),
-        type: core.BitchatMessageType.channelJoin,
-        content: 'Joined channel',
-        channel: channel,
-        timestamp: DateTime.now(),
-        senderID: await _getMyPeerId(),
-        senderNickname: await _getMyNickname(),
-      );
-      
-      _messages.add(message);
-      _messageController.add(message);
-      
       _statusController.add('Joined channel $channel');
     } catch (e) {
       _statusController.add('Failed to join channel: $e');
@@ -165,20 +123,6 @@ class BitchatService {
         throw Exception('Failed to leave channel');
       }
       
-      // Create local message record
-      final message = core.BitchatMessageData(
-        id: _generateMessageId(),
-        type: core.BitchatMessageType.channelLeave,
-        content: 'Left channel',
-        channel: channel,
-        timestamp: DateTime.now(),
-        senderID: await _getMyPeerId(),
-        senderNickname: await _getMyNickname(),
-      );
-      
-      _messages.add(message);
-      _messageController.add(message);
-      
       _statusController.add('Left channel $channel');
     } catch (e) {
       _statusController.add('Failed to leave channel: $e');
@@ -187,28 +131,28 @@ class BitchatService {
   }
 
   /// Get all peers
-  List<core.BitchatPeer> getPeers() {
+  List<core.Peer> getPeers() {
     return List.unmodifiable(_peers);
   }
 
   /// Get all messages
-  List<core.BitchatMessageData> getMessages() {
+  List<core.BitchatMessage> getMessages() {
     return List.unmodifiable(_messages);
   }
 
   /// Get messages for specific channel
-  List<core.BitchatMessageData> getChannelMessages(String channel) {
+  List<core.BitchatMessage> getChannelMessages(String channel) {
     return _messages
-        .where((msg) => msg.channel == channel && msg.isChannelMessage)
+        .where((msg) => msg.channel == channel && msg.type == core.MessageTypes.message)
         .toList();
   }
 
   /// Get private messages with specific peer
-  List<core.BitchatMessageData> getPrivateMessages(String peerId) {
+  List<core.BitchatMessage> getPrivateMessages(String peerId) {
     return _messages
         .where((msg) => 
             (msg.recipientID == peerId || msg.senderID == peerId) && 
-            msg.isPrivateMessage)
+            msg.type == core.MessageTypes.message)
         .toList();
   }
 
@@ -218,10 +162,10 @@ class BitchatService {
   }
 
   /// Check if service is running
-  bool get isRunning => _coreService.isRunning;
+  bool get isRunning => _coreService.status == core.BitchatStatus.running;
 
   /// Check if service is initialized
-  bool get isInitialized => _coreService.isInitialized;
+  bool get isInitialized => _coreService.status != core.BitchatStatus.stopped;
 
   /// Stop bitchat service
   Future<void> stop() async {
@@ -247,38 +191,18 @@ class BitchatService {
 
   // Private helper methods
   void _handlePeerDiscovered(core.Peer peer) {
-    // Convert core Peer to BitchatPeer
-    final bitchatPeer = core.BitchatPeer(
-      id: peer.id,
-      nickname: peer.nickname,
-      lastSeen: peer.lastSeen,
-      isConnected: peer.isConnected,
-    );
-    
-    final existingIndex = _peers.indexWhere((p) => p.id == bitchatPeer.id);
+    final existingIndex = _peers.indexWhere((p) => p.id == peer.id);
     if (existingIndex >= 0) {
-      _peers[existingIndex] = bitchatPeer;
+      _peers[existingIndex] = peer;
     } else {
-      _peers.add(bitchatPeer);
+      _peers.add(peer);
     }
     _peersController.add(List.unmodifiable(_peers));
   }
 
   void _handleMessageReceived(core.BitchatMessage message) {
-    // Convert core BitchatMessage to BitchatMessageData
-    final messageData = core.BitchatMessageData(
-      id: message.id,
-      type: _convertMessageType(message.type),
-      content: message.content,
-      channel: message.channel,
-      recipientID: message.recipientID,
-      timestamp: DateTime.fromMillisecondsSinceEpoch(message.timestamp),
-      senderID: message.senderID,
-      senderNickname: message.senderNickname,
-    );
-    
-    _messages.add(messageData);
-    _messageController.add(messageData);
+    _messages.add(message);
+    _messageController.add(message);
   }
 
   void _handleStatusChanged(core.BitchatStatus status) {
@@ -288,34 +212,5 @@ class BitchatService {
 
   void _handleLogMessage(String logMessage) {
     _statusController.add('Log: $logMessage');
-  }
-
-  core.BitchatMessageType _convertMessageType(int type) {
-    switch (type) {
-      case 1: // MessageTypes.channelMessage
-        return core.BitchatMessageType.channelMessage;
-      case 2: // MessageTypes.privateMessage
-        return core.BitchatMessageType.privateMessage;
-      case 3: // MessageTypes.channelJoin
-        return core.BitchatMessageType.channelJoin;
-      case 4: // MessageTypes.channelLeave
-        return core.BitchatMessageType.channelLeave;
-      default:
-        return core.BitchatMessageType.unknown;
-    }
-  }
-
-  String _generateMessageId() {
-    return DateTime.now().millisecondsSinceEpoch.toString();
-  }
-
-  Future<String> _getMyPeerId() async {
-    // TODO: Get from user settings or generate
-    return 'peer_${DateTime.now().millisecondsSinceEpoch}';
-  }
-
-  Future<String> _getMyNickname() async {
-    // TODO: Get from user settings
-    return 'User_${DateTime.now().millisecondsSinceEpoch % 1000}';
   }
 } 
