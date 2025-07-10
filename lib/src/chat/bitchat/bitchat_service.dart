@@ -1,9 +1,55 @@
 /// Bitchat service integration for 0xchat-core
 /// Provides high-level interface for bitchat functionality
+/// 
+/// Usage example:
+/// ```dart
+/// final bitchatService = BitchatService();
+/// 
+/// // Set up message callback to convert to MessageDBISAR format
+/// bitchatService.setMessageCallback((MessageDBISAR messageDB) {
+///   // Handle the converted message
+///   print('Received MessageDBISAR: ${messageDB.content}');
+///   print('Chat type: ${messageDB.chatType}'); // 5 for channel, 6 for private
+///   
+///   // Save to database or process further
+///   // await DBISAR.sharedInstance.saveToDB(messageDB);
+/// });
+/// 
+/// // Listen to status updates
+/// bitchatService.statusStream.listen((status) {
+///   print('Status: $status');
+/// });
+/// 
+/// // Listen to peer updates
+/// bitchatService.peersStream.listen((peers) {
+///   print('Peers: ${peers.length} connected');
+/// });
+/// 
+/// // Initialize and start the service
+/// await bitchatService.initialize();
+/// 
+/// // Start broadcasting (will auto-generate peerID and nickname)
+/// await bitchatService.startBroadcasting();
+/// 
+/// // Or start with custom peerID and nickname
+/// await bitchatService.startBroadcasting(
+///   peerID: 'my-peer-id',
+///   nickname: 'MyNickname'
+/// );
+/// 
+/// // Update nickname later
+/// await bitchatService.updateNickname(newNickname: 'NewNickname');
+/// 
+/// // Get current cached values
+/// print('Peer ID: ${bitchatService.cachedPeerID}');
+/// print('Nickname: ${bitchatService.cachedNickname}');
+/// ```
 
 import 'dart:async';
+import 'dart:math';
 
 import 'package:bitchat_core/bitchat_core.dart' as core;
+import 'package:chatcore/chat-core.dart';
 
 /// Bitchat service for 0xchat integration
 class BitchatService {
@@ -13,24 +59,93 @@ class BitchatService {
 
   final core.BitchatService _coreService = core.BitchatService();
   final List<core.Peer> _peers = [];
-  final List<core.BitchatMessage> _messages = [];
+  
+  // Cached peer ID and nickname
+  String? _cachedPeerID;
+  String? _cachedNickname;
   
   // Stream controllers for real-time updates
   final StreamController<List<core.Peer>> _peersController = 
       StreamController<List<core.Peer>>.broadcast();
-  final StreamController<core.BitchatMessage> _messageController = 
-      StreamController<core.BitchatMessage>.broadcast();
   final StreamController<String> _statusController = 
       StreamController<String>.broadcast();
+  
+  // Message callback for converting to MessageDBISAR format
+  Function(MessageDBISAR)? _messageCallback;
 
   /// Get peers stream
   Stream<List<core.Peer>> get peersStream => _peersController.stream;
   
-  /// Get messages stream
-  Stream<core.BitchatMessage> get messageStream => _messageController.stream;
-  
   /// Get status stream
   Stream<String> get statusStream => _statusController.stream;
+
+  /// Set message callback for converting to MessageDBISAR format
+  void setMessageCallback(Function(MessageDBISAR) callback) {
+    _messageCallback = callback;
+  }
+
+  /// Remove message callback
+  void removeMessageCallback() {
+    _messageCallback = null;
+  }
+
+  /// Generate a unique peer ID (4 random bytes as hex string)
+  String _generatePeerID() {
+    if (_cachedPeerID != null) {
+      return _cachedPeerID!;
+    }
+    
+    final random = Random();
+    final bytes = List<int>.generate(4, (_) => random.nextInt(256));
+    _cachedPeerID = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    return _cachedPeerID!;
+  }
+
+  /// Get current cached peer ID
+  String? get cachedPeerID => _cachedPeerID;
+
+  /// Get current cached nickname
+  String? get cachedNickname => _cachedNickname;
+
+  /// Update nickname and restart broadcasting
+  /// [newNickname] New nickname to use (optional, will use default if not provided)
+  Future<void> updateNickname({String? newNickname}) async {
+    try {
+      // Update cached nickname
+      if (newNickname != null) {
+        _cachedNickname = newNickname;
+      } else {
+        // Generate default nickname using peerID
+        final peerID = _generatePeerID();
+        _cachedNickname = 'user$peerID';
+      }
+      
+      print('🔄 [0xchat-core] Updating nickname to: $_cachedNickname');
+      
+      // Stop current broadcasting if running
+      if (isRunning) {
+        await stop();
+        print('⏹️ [0xchat-core] Stopped current broadcasting');
+      }
+      
+      // Start broadcasting with new nickname
+      await startBroadcasting(
+        peerID: _generatePeerID(),
+        nickname: _cachedNickname,
+      );
+      
+      print('✅ [0xchat-core] Nickname updated successfully');
+    } catch (e) {
+      print('❌ [0xchat-core] Failed to update nickname: $e');
+      rethrow;
+    }
+  }
+
+  /// Convert BitchatMessage to MessageDBISAR format manually
+  /// This method can be used to convert messages outside of the automatic callback
+  MessageDBISAR? convertToMessageDBISAR(core.BitchatMessage message) {
+    return _convertToMessageDBISAR(message);
+  }
 
   /// Initialize bitchat service
   Future<void> initialize() async {
@@ -43,10 +158,7 @@ class BitchatService {
         throw Exception('Failed to initialize core service');
       }
       
-      // Set up event listeners
-      print('🟩 [0xchat-core] Setting up message stream listener...');
       _coreService.messageStream.listen(_handleMessageReceived);
-      print('🟩 [0xchat-core] Message stream listener set up successfully');
       _coreService.peerStream.listen(_handlePeerDiscovered);
       _coreService.statusStream.listen(_handleStatusChanged);
       _coreService.logStream.listen(_handleLogMessage);
@@ -59,13 +171,32 @@ class BitchatService {
   }
 
   /// Start broadcasting identity
-  Future<void> startBroadcasting({required String peerID, String? nickname}) async {
+  Future<void> startBroadcasting({String? peerID, String? nickname}) async {
     try {
-      final success = await _coreService.start(peerID: peerID, nickname: nickname);
+      // Use cached values if not provided
+      final finalPeerID = peerID ?? _generatePeerID();
+      String finalNickname;
+      
+      if (nickname != null) {
+        finalNickname = nickname;
+      } else if (_cachedNickname != null) {
+        finalNickname = _cachedNickname!;
+      } else {
+        // Generate default nickname using peerID
+        finalNickname = 'user$finalPeerID';
+      }
+      
+      final success = await _coreService.start(peerID: finalPeerID, nickname: finalNickname);
       if (!success) {
         throw Exception('Failed to start broadcasting');
       }
+      
+      // Update cached values
+      _cachedPeerID = finalPeerID;
+      _cachedNickname = finalNickname;
+      
       _statusController.add('Started broadcasting identity');
+      print('✅ [0xchat-core] Started broadcasting with peerID: $finalPeerID, nickname: $finalNickname');
     } catch (e) {
       _statusController.add('Failed to start broadcasting: $e');
       rethrow;
@@ -181,27 +312,6 @@ class BitchatService {
     return List.unmodifiable(_peers);
   }
 
-  /// Get all messages
-  List<core.BitchatMessage> getMessages() {
-    return List.unmodifiable(_messages);
-  }
-
-  /// Get messages for specific channel
-  List<core.BitchatMessage> getChannelMessages(String channel) {
-    return _messages
-        .where((msg) => msg.channel == channel && msg.type == core.MessageTypes.message)
-        .toList();
-  }
-
-  /// Get private messages with specific peer
-  List<core.BitchatMessage> getPrivateMessages(String peerId) {
-    return _messages
-        .where((msg) => 
-            (msg.recipientID == peerId || msg.senderID == peerId) && 
-            msg.type == core.MessageTypes.message)
-        .toList();
-  }
-
   /// Get service status
   core.BitchatStatus getStatus() {
     return _coreService.status;
@@ -228,7 +338,6 @@ class BitchatService {
     try {
       await stop();
       await _peersController.close();
-      await _messageController.close();
       await _statusController.close();
     } catch (e) {
       print('Error disposing bitchat service: $e');
@@ -248,17 +357,9 @@ class BitchatService {
 
   /// Handle incoming messages from bitchat core
   void _handleMessageReceived(core.BitchatMessage message) {
-    try {
-      print('🟩 [0xchat-core] _handleMessageReceived called!');
-      print('📨 [0xchat-core] Received bitchat message:');
-      print('   Content: "${message.content}"');
-      print('   Sender: ${message.senderNickname} (${message.senderID})');
-      print('   Type: ${message.type}');
-      print('   Channel: ${message.channel ?? "main chat"}');
-      print('   Is Private: ${message.recipientID != null}');
-      print('   Timestamp: ${DateTime.fromMillisecondsSinceEpoch(message.timestamp)}');
-      print('   Raw message: $message');
-      
+    print('✅ [0xchat-core] _handleMessageReceived: ${message.content}');
+
+    try {      
       // Log message type details
       switch (message.type) {
         case core.MessageTypes.message:
@@ -284,12 +385,71 @@ class BitchatService {
           break;
         default:
           print('❓ [0xchat-core] Unknown message type: ${message.type}');
+      }      
+      // Convert to MessageDBISAR format and call callback if set
+      if (_messageCallback != null) {
+        try {
+          final messageDB = _convertToMessageDBISAR(message);
+          if (messageDB != null) {
+            _messageCallback!(messageDB);
+          }
+        } catch (e) {
+          print('❌ [0xchat-core] Error converting to MessageDBISAR: $e');
+        }
       }
-      
-      // Add to message stream
-      _messageController.add(message);
     } catch (e) {
       print('❌ [0xchat-core] Error handling incoming message: $e');
+    }
+  }
+
+  /// Convert BitchatMessage to MessageDBISAR format
+  MessageDBISAR? _convertToMessageDBISAR(core.BitchatMessage message) {
+    try {
+      // Determine chat type based on message properties
+      int? chatType;
+      if (message.recipientID != null) {
+        // Private message
+        chatType = 6; // ble private chat
+      } else if (message.channel != null) {
+        // Channel message
+        chatType = 5; // ble channel chat
+      } else {
+        // Broadcast message (main chat)
+        chatType = 5; // ble channel chat for broadcast
+      }
+
+      // Create MessageDBISAR object
+      final messageDB = MessageDBISAR(
+        messageId: message.id,
+        sender: message.senderID,
+        receiver: message.recipientID ?? '', // Empty for broadcast/channel messages
+        groupId: message.channel ?? '', // Channel name for channel messages
+        sessionId: '', // Not used for bitchat
+        kind: message.type,
+        tags: '', // Not used for bitchat
+        content: message.content,
+        createTime: message.timestamp,
+        read: false, // Default to unread
+        replyId: '', // No reply support in bitchat yet
+        decryptContent: message.content, // Same as content for now
+        type: 'text', // Default to text type
+        status: 1, // Sent status
+        plaintEvent: '', // Not used for bitchat
+        chatType: chatType,
+        subType: null,
+        previewData: null,
+        expiration: null,
+        decryptSecret: null,
+        decryptNonce: null,
+        decryptAlgo: null,
+        reactionEventIds: null,
+        zapEventIds: null,
+      );
+
+      return messageDB;
+    } catch (e) {
+      print('❌ [0xchat-core] Error converting BitchatMessage to MessageDBISAR: $e');
+      return null;
     }
   }
 

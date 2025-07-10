@@ -102,7 +102,7 @@ class Groups {
   void _initBitchatTest() {
     print('🧪 Initializing Bitchat test...');
     
-    final bitchatService = bitchat.BitchatService();
+    final bitchatService = BitchatService();
     bool isConnected = false;
     
     // Helper function to add debug logs (reduced output)
@@ -120,170 +120,33 @@ class Groups {
     }
     
     // Set up bitchat monitoring (reduced logging)
-    bitchatService.messageStream.listen((message) {
-      addLog('📨 Received message from ${message.senderNickname}: ${message.content}');
+    bitchatService.setMessageCallback((MessageDBISAR messageDB) {
+      addLog('📨 Received message from ${messageDB.sender}: ${messageDB.content}');
     });
     
-    bitchatService.peerStream.listen((peer) {
-      addLog('👥 Found peer: ${peer.nickname} (${peer.id})');
+    bitchatService.peersStream.listen((peers) {
+      addLog('👥 Found ${peers.length} peers');
     });
     
     bitchatService.statusStream.listen((status) {
-      isConnected = status == bitchat.BitchatStatus.running;
+      isConnected = status.contains('running');
       addLog('📊 Status changed: $status');
     });
     
-    bitchatService.logStream.listen((log) {
-      addLog('🔧 $log');
-    });
-    
     // Start broadcasting after a short delay
-    Future.delayed(Duration(seconds: 2), () async {
+    Future.delayed(Duration(seconds: 1), () async {
       try {
         addLog('🚀 Starting bitchat service...');
-        await bitchatService.start(
+        await bitchatService.startBroadcasting(
           peerID: _generateSwiftCompatiblePeerId(),
           nickname: 'w783',
         );
         addLog('✅ Service started successfully');
         
-        // Test sending messages after delays
-        _scheduleTestMessages(bitchatService, addLog);
-        
       } catch (e) {
         addLog('❌ Failed to start service: $e');
       }
     });
-    
-    // Add periodic status check (reduced frequency)
-    Timer.periodic(Duration(seconds: 30), (timer) {
-      if (isConnected) {
-        addLog('💓 Service heartbeat - Connected peers: ${bitchatService.discoveredPeers.length}');
-      }
-    });
-  }
-  
-  /// Schedule test messages with delays
-  void _scheduleTestMessages(bitchat.BitchatService service, Function(String) addLog) {
-    // Test channel message after 5 seconds
-    Future.delayed(Duration(seconds: 5), () async {
-      try {
-        addLog('📢 Sending test channel message...');
-        await service.sendChannelMessage('#test', 'Hello from 0xChat!');
-        addLog('✅ Channel message sent successfully');
-      } catch (e) {
-        addLog('❌ Failed to send channel message: $e');
-      }
-    });
-    
-    // Test private message after 8 seconds
-    Future.delayed(Duration(seconds: 8), () async {
-      try {
-        addLog('🔒 Sending test private message...');
-        await service.sendPrivateMessage('fa9c7954', 'Hello from 0xChat private!');
-        addLog('✅ Private message sent successfully');
-      } catch (e) {
-        addLog('❌ Failed to send private message: $e');
-      }
-    });
-    
-    // Test broadcast message after 10 seconds
-    Future.delayed(Duration(seconds: 10), () async {
-      try {
-        addLog('📢 Sending test broadcast message...');
-        await service.sendBroadcastMessage('Hello everyone from 0xChat!');
-        addLog('✅ Broadcast message sent successfully');
-      } catch (e) {
-        addLog('❌ Failed to send broadcast message: $e');
-      }
-    });
-    
-    // Test announce message after 12 seconds
-    Future.delayed(Duration(seconds: 12), () async {
-      try {
-        addLog('📢 Sending announce message...');
-        await service.sendAnnounceMessage();
-        addLog('✅ Announce message sent successfully');
-      } catch (e) {
-        addLog('❌ Failed to send announce message: $e');
-      }
-    });
-    
-    // Test joining channel after 15 seconds
-    Future.delayed(Duration(seconds: 15), () async {
-      try {
-        addLog('➕ Joining test channel...');
-        await service.joinChannel('#test');
-        addLog('✅ Channel join successful');
-      } catch (e) {
-        addLog('❌ Failed to join channel: $e');
-      }
-    });
-    
-    // Test leaving channel after 18 seconds
-    Future.delayed(Duration(seconds: 18), () async {
-      try {
-        addLog('➖ Leaving test channel...');
-        await service.leaveChannel('#test');
-        addLog('✅ Channel leave successful');
-      } catch (e) {
-        addLog('❌ Failed to leave channel: $e');
-      }
-    });
-  }
-  
-  /// Manual trigger for bitchat testing
-  /// Call this method to manually test bitchat functionality
-  Future<void> testBitchatManually() async {
-    print('🧪 Manual Bitchat Test Triggered');
-    
-    final bitchatService = bitchat.BitchatService();
-    
-    try {
-      // Initialize service
-      print('📋 Initializing bitchat service...');
-      await bitchatService.initialize();
-      print('✅ Initialization successful');
-      
-      // Start service
-      print('🚀 Starting bitchat service...');
-      await bitchatService.start(
-        peerID: _generateSwiftCompatiblePeerId(),
-        nickname: 'w783',
-      );
-      print('✅ Service started successfully');
-      
-      // Wait a bit for connection
-      await Future.delayed(Duration(seconds: 3));
-      
-      // Test sending messages
-      print('📢 Testing channel message...');
-      await bitchatService.sendChannelMessage('#test', 'Manual test from 0xChat!');
-      print('✅ Channel message sent');
-      
-      print('🔒 Testing private message...');
-      await bitchatService.sendPrivateMessage('fa9c7954', 'Manual private test from 0xChat!');
-      print('✅ Private message sent');
-      
-      print('📢 Testing broadcast message...');
-      await bitchatService.sendBroadcastMessage('Hello everyone from 0xChat!');
-      print('✅ Broadcast message sent');
-      
-      print('📢 Testing announce message...');
-      await bitchatService.sendAnnounceMessage();
-      print('✅ Announce message sent');
-      
-      // Show current status
-      print('📊 Current status:');
-      print('   Connected peers: ${bitchatService.discoveredPeers.length}');
-      print('   Discovered channels: ${bitchatService.discoveredChannels.length}');
-      print('   Service running: ${bitchatService.isRunning}');
-      
-      print('🎉 Manual test completed successfully!');
-      
-    } catch (e) {
-      print('❌ Manual test failed: $e');
-    }
   }
 
   /// Initialize Groups (legacy method)

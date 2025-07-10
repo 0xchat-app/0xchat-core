@@ -56,7 +56,7 @@ class MessageDBISAR {
   String plaintEvent;
 
   /// add type
-  int? chatType; // 0 private chat 1 group chat 2 channel chat 3 secret chat 4 relay group chat
+  int? chatType; // 0 private chat 1 group chat 2 channel chat 3 secret chat 4 relay group chat 5 ble channel chat 6 ble private chat
   String? subType; // subtype of template/system type
 
   /// add previewData
