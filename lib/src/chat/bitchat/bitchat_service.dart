@@ -86,16 +86,35 @@ class BitchatService {
   }
 
   /// Send private message
-  Future<void> sendPrivateMessage(String recipientId, String content) async {
+  Future<void> sendPrivateMessage(String recipientID, String content) async {
     try {
-      final success = await _coreService.sendPrivateMessage(recipientId, content);
+      final success = await _coreService.sendPrivateMessage(recipientID, content);
       if (!success) {
         throw Exception('Failed to send private message');
       }
       
-      _statusController.add('Sent private message to $recipientId');
+      _statusController.add('Sent private message to $recipientID');
     } catch (e) {
       _statusController.add('Failed to send private message: $e');
+      rethrow;
+    }
+  }
+  
+  /// Send broadcast message to all connected peers (main chat)
+  Future<void> sendBroadcastMessage(String content) async {
+    try {
+      print('📢 [0xchat-core] Sending broadcast message: "$content"');
+      
+      final success = await _coreService.sendBroadcastMessage(content);
+      if (!success) {
+        throw Exception('Failed to send broadcast message');
+      }
+      
+      _statusController.add('Sent broadcast message to all peers');
+      print('✅ [0xchat-core] Broadcast message sent successfully');
+    } catch (e) {
+      _statusController.add('Failed to send broadcast message: $e');
+      print('❌ [0xchat-core] Failed to send broadcast message: $e');
       rethrow;
     }
   }
@@ -130,6 +149,31 @@ class BitchatService {
     }
   }
 
+  /// Test method to send different types of messages
+  Future<void> testSendMessages() async {
+    try {
+      _statusController.add('🧪 Testing message sending...');
+      
+      // Test channel message
+      await sendChannelMessage('#test', 'Hello from 0xChat!');
+      
+      // Wait a bit
+      await Future.delayed(Duration(seconds: 2));
+      
+      // Test private message (if we have a peer)
+      final peers = getPeers();
+      if (peers.isNotEmpty) {
+        final firstPeer = peers.first;
+        await sendPrivateMessage(firstPeer.id, 'Hello from 0xChat private!');
+        _statusController.add('✅ Test messages sent');
+      } else {
+        _statusController.add('⚠️ No peers available for private message test');
+      }
+    } catch (e) {
+      _statusController.add('❌ Test failed: $e');
+    }
+  }
+  
   /// Get all peers
   List<core.Peer> getPeers() {
     return List.unmodifiable(_peers);
@@ -200,9 +244,50 @@ class BitchatService {
     _peersController.add(List.unmodifiable(_peers));
   }
 
+  /// Handle incoming messages from bitchat core
   void _handleMessageReceived(core.BitchatMessage message) {
-    _messages.add(message);
-    _messageController.add(message);
+    try {
+      print('📨 [0xchat-core] Received bitchat message:');
+      print('   Content: "${message.content}"');
+      print('   Sender: ${message.senderNickname} (${message.senderID})');
+      print('   Type: ${message.type}');
+      print('   Channel: ${message.channel ?? "main chat"}');
+      print('   Is Private: ${message.recipientID != null}');
+      print('   Timestamp: ${DateTime.fromMillisecondsSinceEpoch(message.timestamp)}');
+      print('   Raw message: $message');
+      
+      // Log message type details
+      switch (message.type) {
+        case core.MessageTypes.message:
+          if (message.recipientID != null) {
+            print('🔒 [0xchat-core] Private message from ${message.senderNickname}');
+          } else if (message.channel != null) {
+            print('📢 [0xchat-core] Channel message in ${message.channel} from ${message.senderNickname}');
+          } else {
+            print('📢 [0xchat-core] Broadcast message from ${message.senderNickname}');
+          }
+          break;
+        case core.MessageTypes.announce:
+          print('📢 [0xchat-core] Announce from ${message.senderNickname}');
+          break;
+        case core.MessageTypes.keyExchange:
+          print('🔑 [0xchat-core] Key exchange from ${message.senderID}');
+          break;
+        case core.MessageTypes.channelJoin:
+          print('➕ [0xchat-core] Channel join: ${message.channel} by ${message.senderNickname}');
+          break;
+        case core.MessageTypes.channelLeave:
+          print('➖ [0xchat-core] Channel leave: ${message.channel} by ${message.senderNickname}');
+          break;
+        default:
+          print('❓ [0xchat-core] Unknown message type: ${message.type}');
+      }
+      
+      // Add to message stream
+      _messageController.add(message);
+    } catch (e) {
+      print('❌ [0xchat-core] Error handling incoming message: $e');
+    }
   }
 
   void _handleStatusChanged(core.BitchatStatus status) {

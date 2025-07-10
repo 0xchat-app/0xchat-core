@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
+import 'package:bitchat_core/bitchat_core.dart' as bitchat;
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -77,6 +79,207 @@ class Groups {
       mlsIdentity: config.mlsIdentity,
       password: config.encryptionPassword,
     );
+
+    // Initialize bitchat service, for testing
+    await bitchat.BitchatService().initialize();
+    
+    // Simple bitchat test entry
+    _initBitchatTest();
+  }
+  
+  /// Generate Swift-compatible peer ID (4 random bytes as hex string)
+  String _generateSwiftCompatiblePeerId() {
+    final random = Random();
+    final bytes = List<int>.generate(4, (_) => random.nextInt(256));
+    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  }
+
+  /// Initialize bitchat test functionality
+  void _initBitchatTest() {
+    print('🧪 Initializing Bitchat test...');
+    
+    final bitchatService = bitchat.BitchatService();
+    final List<String> debugLogs = [];
+    bool isConnected = false;
+    
+    // Helper function to add debug logs
+    void addLog(String message) {
+      final timestamp = DateTime.now().toString().substring(11, 19);
+      final log = '[$timestamp] $message';
+      debugLogs.add(log);
+      print(log);
+      if (debugLogs.length > 50) {
+        debugLogs.removeAt(0);
+      }
+    }
+    
+    // Set up comprehensive bitchat monitoring
+    bitchatService.messageStream.listen((message) {
+      addLog('📨 Received message from ${message.senderNickname}: ${message.content}');
+      addLog('   Type: ${message.type}, Channel: ${message.channel}, Private: ${message.isPrivateMessage}');
+    });
+    
+    bitchatService.peerStream.listen((peer) {
+      addLog('👥 Found peer: ${peer.nickname} (${peer.id})');
+    });
+    
+    bitchatService.statusStream.listen((status) {
+      isConnected = status == bitchat.BitchatStatus.running;
+      addLog('📊 Status changed: $status');
+    });
+    
+    bitchatService.logStream.listen((log) {
+      addLog('🔧 $log');
+    });
+    
+    // Start broadcasting after a short delay
+    Future.delayed(Duration(seconds: 2), () async {
+      try {
+        addLog('🚀 Starting bitchat service...');
+        await bitchatService.start(
+          peerID: _generateSwiftCompatiblePeerId(),
+          nickname: '0xChatUser',
+        );
+        addLog('✅ Service started successfully');
+        
+        // Test sending messages after delays
+        _scheduleTestMessages(bitchatService, addLog);
+        
+      } catch (e) {
+        addLog('❌ Failed to start service: $e');
+      }
+    });
+    
+    // Add periodic status check
+    Timer.periodic(Duration(seconds: 10), (timer) {
+      if (isConnected) {
+        addLog('💓 Service heartbeat - Connected peers: ${bitchatService.discoveredPeers.length}');
+        addLog('   Discovered channels: ${bitchatService.discoveredChannels.length}');
+      }
+    });
+  }
+  
+  /// Schedule test messages with delays
+  void _scheduleTestMessages(bitchat.BitchatService service, Function(String) addLog) {
+    // Test channel message after 5 seconds
+    Future.delayed(Duration(seconds: 5), () async {
+      try {
+        addLog('📢 Sending test channel message...');
+        await service.sendChannelMessage('#test', 'Hello from 0xChat!');
+        addLog('✅ Channel message sent successfully');
+      } catch (e) {
+        addLog('❌ Failed to send channel message: $e');
+      }
+    });
+    
+    // Test private message after 8 seconds
+    Future.delayed(Duration(seconds: 8), () async {
+      try {
+        addLog('🔒 Sending test private message...');
+        await service.sendPrivateMessage('fa9c7954', 'Hello from 0xChat private!');
+        addLog('✅ Private message sent successfully');
+      } catch (e) {
+        addLog('❌ Failed to send private message: $e');
+      }
+    });
+    
+    // Test broadcast message after 10 seconds
+    Future.delayed(Duration(seconds: 10), () async {
+      try {
+        addLog('📢 Sending test broadcast message...');
+        await service.sendBroadcastMessage('Hello everyone from 0xChat!');
+        addLog('✅ Broadcast message sent successfully');
+      } catch (e) {
+        addLog('❌ Failed to send broadcast message: $e');
+      }
+    });
+    
+    // Test announce message after 12 seconds
+    Future.delayed(Duration(seconds: 12), () async {
+      try {
+        addLog('📢 Sending announce message...');
+        await service.sendAnnounceMessage();
+        addLog('✅ Announce message sent successfully');
+      } catch (e) {
+        addLog('❌ Failed to send announce message: $e');
+      }
+    });
+    
+    // Test joining channel after 15 seconds
+    Future.delayed(Duration(seconds: 15), () async {
+      try {
+        addLog('➕ Joining test channel...');
+        await service.joinChannel('#test');
+        addLog('✅ Channel join successful');
+      } catch (e) {
+        addLog('❌ Failed to join channel: $e');
+      }
+    });
+    
+    // Test leaving channel after 18 seconds
+    Future.delayed(Duration(seconds: 18), () async {
+      try {
+        addLog('➖ Leaving test channel...');
+        await service.leaveChannel('#test');
+        addLog('✅ Channel leave successful');
+      } catch (e) {
+        addLog('❌ Failed to leave channel: $e');
+      }
+    });
+  }
+  
+  /// Manual trigger for bitchat testing
+  /// Call this method to manually test bitchat functionality
+  Future<void> testBitchatManually() async {
+    print('🧪 Manual Bitchat Test Triggered');
+    
+    final bitchatService = bitchat.BitchatService();
+    
+    try {
+      // Initialize service
+      print('📋 Initializing bitchat service...');
+      await bitchatService.initialize();
+      print('✅ Initialization successful');
+      
+      // Start service
+      print('🚀 Starting bitchat service...');
+      await bitchatService.start(
+        peerID: _generateSwiftCompatiblePeerId(),
+        nickname: '0xChatUser',
+      );
+      print('✅ Service started successfully');
+      
+      // Wait a bit for connection
+      await Future.delayed(Duration(seconds: 3));
+      
+      // Test sending messages
+      print('📢 Testing channel message...');
+      await bitchatService.sendChannelMessage('#test', 'Manual test from 0xChat!');
+      print('✅ Channel message sent');
+      
+      print('🔒 Testing private message...');
+      await bitchatService.sendPrivateMessage('fa9c7954', 'Manual private test from 0xChat!');
+      print('✅ Private message sent');
+      
+      print('📢 Testing broadcast message...');
+      await bitchatService.sendBroadcastMessage('Hello everyone from 0xChat!');
+      print('✅ Broadcast message sent');
+      
+      print('📢 Testing announce message...');
+      await bitchatService.sendAnnounceMessage();
+      print('✅ Announce message sent');
+      
+      // Show current status
+      print('📊 Current status:');
+      print('   Connected peers: ${bitchatService.discoveredPeers.length}');
+      print('   Discovered channels: ${bitchatService.discoveredChannels.length}');
+      print('   Service running: ${bitchatService.isRunning}');
+      
+      print('🎉 Manual test completed successfully!');
+      
+    } catch (e) {
+      print('❌ Manual test failed: $e');
+    }
   }
 
   /// Initialize Groups (legacy method)
