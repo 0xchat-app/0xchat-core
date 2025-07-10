@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqlite_api.dart';
+import '../bitchat/bitchat_service.dart';
 
 typedef GroupsUpdatedCallBack = void Function();
 typedef GroupMessageCallBack = void Function(MessageDBISAR);
@@ -83,6 +84,9 @@ class Groups {
     // Initialize bitchat service, for testing
     await bitchat.BitchatService().initialize();
     
+    // Initialize 0xchat-core bitchat service
+    await BitchatService().initialize();
+    
     // Simple bitchat test entry
     _initBitchatTest();
   }
@@ -99,24 +103,25 @@ class Groups {
     print('🧪 Initializing Bitchat test...');
     
     final bitchatService = bitchat.BitchatService();
-    final List<String> debugLogs = [];
     bool isConnected = false;
     
-    // Helper function to add debug logs
+    // Helper function to add debug logs (reduced output)
     void addLog(String message) {
-      final timestamp = DateTime.now().toString().substring(11, 19);
-      final log = '[$timestamp] $message';
-      debugLogs.add(log);
-      print(log);
-      if (debugLogs.length > 50) {
-        debugLogs.removeAt(0);
+      // Only log important messages to reduce spam
+      if (message.contains('Error') || 
+          message.contains('Failed') || 
+          message.contains('Successfully') ||
+          message.contains('Started') ||
+          message.contains('New peer') ||
+          message.contains('Received message')) {
+        final timestamp = DateTime.now().toString().substring(11, 19);
+        print('[$timestamp] $message');
       }
     }
     
-    // Set up comprehensive bitchat monitoring
+    // Set up bitchat monitoring (reduced logging)
     bitchatService.messageStream.listen((message) {
       addLog('📨 Received message from ${message.senderNickname}: ${message.content}');
-      addLog('   Type: ${message.type}, Channel: ${message.channel}, Private: ${message.isPrivateMessage}');
     });
     
     bitchatService.peerStream.listen((peer) {
@@ -138,7 +143,7 @@ class Groups {
         addLog('🚀 Starting bitchat service...');
         await bitchatService.start(
           peerID: _generateSwiftCompatiblePeerId(),
-          nickname: '0xChatUser',
+          nickname: 'w783',
         );
         addLog('✅ Service started successfully');
         
@@ -150,11 +155,10 @@ class Groups {
       }
     });
     
-    // Add periodic status check
-    Timer.periodic(Duration(seconds: 10), (timer) {
+    // Add periodic status check (reduced frequency)
+    Timer.periodic(Duration(seconds: 30), (timer) {
       if (isConnected) {
         addLog('💓 Service heartbeat - Connected peers: ${bitchatService.discoveredPeers.length}');
-        addLog('   Discovered channels: ${bitchatService.discoveredChannels.length}');
       }
     });
   }
@@ -245,7 +249,7 @@ class Groups {
       print('🚀 Starting bitchat service...');
       await bitchatService.start(
         peerID: _generateSwiftCompatiblePeerId(),
-        nickname: '0xChatUser',
+        nickname: 'w783',
       );
       print('✅ Service started successfully');
       

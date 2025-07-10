@@ -44,7 +44,9 @@ class BitchatService {
       }
       
       // Set up event listeners
+      print('🟩 [0xchat-core] Setting up message stream listener...');
       _coreService.messageStream.listen(_handleMessageReceived);
+      print('🟩 [0xchat-core] Message stream listener set up successfully');
       _coreService.peerStream.listen(_handlePeerDiscovered);
       _coreService.statusStream.listen(_handleStatusChanged);
       _coreService.logStream.listen(_handleLogMessage);
@@ -247,6 +249,7 @@ class BitchatService {
   /// Handle incoming messages from bitchat core
   void _handleMessageReceived(core.BitchatMessage message) {
     try {
+      print('🟩 [0xchat-core] _handleMessageReceived called!');
       print('📨 [0xchat-core] Received bitchat message:');
       print('   Content: "${message.content}"');
       print('   Sender: ${message.senderNickname} (${message.senderID})');
