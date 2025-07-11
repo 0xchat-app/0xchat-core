@@ -364,7 +364,7 @@ extension MLSPrivateGroups on Groups {
 
   Future<OKEvent> _createNewKeyPackage(List<String> relays) async {
     if (relays.isEmpty) {
-      List<String> generalRelays = Account.sharedInstance.me?.relayList ?? [];
+      List<String> generalRelays = Account.sharedInstance.getCurrentCircleRelay();
       relays = generalRelays;
     }
     String result = await createKeyPackageForEvent(publicKey: pubkey, relay: relays);
@@ -824,7 +824,7 @@ extension MLSPrivateGroups on Groups {
     MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(result));
 
     group.members = mlsGroup.groupMembers;
-    group.name = mlsGroup.nostrGroupData.name;
+    // group.name = mlsGroup.nostrGroupData.name; // use local name
     group.about = mlsGroup.nostrGroupData.description;
     group.adminPubkeys = mlsGroup.nostrGroupData.adminPubkeys;
     group.groupId = mlsGroup.nostrGroupData.nostrGroupId;

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:chatcore/chat-core.dart';
 import 'package:isar/isar.dart' hide Filter;
 import 'package:bitchat_core/bitchat_core.dart' as bitchat;
@@ -57,6 +58,9 @@ extension AccountCircle on Account {
     try {
       // 🥚 Easter egg: Special handling for bitchat
       if (name.toLowerCase().contains('bitchat') || name.toLowerCase().contains('bitch@')) {
+        // soon
+        if(Platform.isAndroid) return null;
+
         LogUtils.v(() => '🥚 Easter egg detected: Bitchat mode activated!');
         
         // Start bitchat service
