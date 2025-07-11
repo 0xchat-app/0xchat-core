@@ -367,7 +367,7 @@ extension MLSPrivateGroups on Groups {
       List<String> generalRelays = Account.sharedInstance.me?.relayList ?? [];
       relays = generalRelays;
     }
-    String result = await createKeyPackageForEvent(publicKey: pubkey);
+    String result = await createKeyPackageForEvent(publicKey: pubkey, relay: relays);
     ParsedKeyPackage parsedKeyPackage = parseKeyPackageString(result);
     Event event = await Nip104.encodeKeyPackageEvent(
         parsedKeyPackage.encodedKeyPackage, parsedKeyPackage.tags, pubkey, privkey);
