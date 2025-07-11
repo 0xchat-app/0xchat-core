@@ -125,9 +125,9 @@ class BitchatService {
       if (newNickname != null) {
         _cachedNickname = newNickname;
       } else {
-        // Generate default nickname using peerID
+        // Generate default nickname using peerID first 4 characters
         final peerID = _generatePeerID();
-        _cachedNickname = 'user$peerID';
+        _cachedNickname = 'user${peerID.substring(0, 4)}';
       }
 
       print('🔄 [0xchat-core] Updating nickname to: $_cachedNickname');
