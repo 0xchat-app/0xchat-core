@@ -9,6 +9,7 @@ extension AccountCircle on Account {
   Future<void> _logoutCircle() async {
     await NotificationHelper.sharedInstance.logout();
     await Connect.sharedInstance.closeAllConnects();
+    Account.sharedInstance.userCache.clear();
     Contacts.sharedInstance.allContacts.clear();
     Contacts.sharedInstance.secretSessionMap.clear();
     Channels.sharedInstance.myChannels.clear();
