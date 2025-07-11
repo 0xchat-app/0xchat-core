@@ -403,7 +403,7 @@ class BitchatService {
         kind: message.type,
         tags: '', // Not used for bitchat
         content: message.content,
-        createTime: message.timestamp,
+        createTime: message.timestamp ~/ 1000,
         read: false, // Default to unread
         replyId: '', // No reply support in bitchat yet
         decryptContent: message.content, // Same as content for now
