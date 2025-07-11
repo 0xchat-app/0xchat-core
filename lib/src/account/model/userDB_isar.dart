@@ -179,10 +179,19 @@ class UserDBISAR {
     }
   }
 
+  @ignore
+  String? _encodedPubkey;
+
   /// nip19 encode
   @ignore
   String get encodedPubkey {
-    return Nip19.encodePubkey(pubKey);
+    if (_encodedPubkey != null) return _encodedPubkey!;
+    _encodedPubkey = Nip19.encodePubkey(pubKey);
+    return _encodedPubkey!;
+  }
+
+  void updateEncodedPubkey(String value) {
+    _encodedPubkey = value;
   }
 
   @ignore
