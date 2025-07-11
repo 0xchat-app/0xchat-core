@@ -89,15 +89,24 @@ class BitchatService {
     _messageCallback = null;
   }
 
-  /// Generate a unique peer ID (4 random bytes as hex string)
+  /// Generate a unique peer ID based on current user's pubkey (8 hex characters)
+  /// Returns a fixed 8-character hex string derived from the pubkey
   String _generatePeerID() {
     if (_cachedPeerID != null) {
       return _cachedPeerID!;
     }
 
-    final random = Random();
-    final bytes = List<int>.generate(4, (_) => random.nextInt(256));
-    _cachedPeerID = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    // Get current user's pubkey
+    final currentPubkey = Account.sharedInstance.currentPubkey;
+
+    // Simple hash: sum all character codes and take modulo
+    int hash = 0;
+    for (int i = 0; i < currentPubkey.length; i++) {
+      hash += currentPubkey.codeUnitAt(i);
+    }
+    
+    // Convert to 8-character hex string
+    _cachedPeerID = (hash % 0xFFFFFFFF).toRadixString(16).padLeft(8, '0');
     return _cachedPeerID!;
   }
 
