@@ -50,6 +50,7 @@ import 'dart:math';
 
 import 'package:bitchat_flutter_plugin/bitchat_core.dart' as core;
 import 'package:chatcore/chat-core.dart';
+import 'package:nostr_core_dart/nostr.dart';
 
 /// Bitchat service for 0xchat integration
 class BitchatService {
@@ -214,6 +215,36 @@ class BitchatService {
 
   /// Send channel message
   Future<void> sendChannelMessage(String channel, String content) async {
+    // Create MessageDBISAR object
+    final messageDB = MessageDBISAR(
+      messageId: generate64RandomHexChars(),
+      sender: _generatePeerID(),
+      receiver: '', // Empty for broadcast/channel messages
+      groupId: channel, // Channel name for channel messages
+      sessionId: '', // Not used for bitchat
+      kind: 4,
+      tags: '', // Not used for bitchat
+      content: content,
+      createTime: currentUnixTimestampSeconds(),
+      read: false, // Default to unread
+      replyId: '', // No reply support in bitchat yet
+      decryptContent: content, // Same as content for now
+      type: 'text', // Default to text type
+      status: 1, // Sent status
+      plaintEvent: '', // Not used for bitchat
+      chatType: 5,
+      subType: null,
+      previewData: null,
+      expiration: null,
+      decryptSecret: null,
+      decryptNonce: null,
+      decryptAlgo: null,
+      reactionEventIds: null,
+      zapEventIds: null,
+    );
+
+    Messages.saveMessageToDB(messageDB);
+
     try {
       final success = await _coreService.sendChannelMessage(channel, content);
       if (!success) {
