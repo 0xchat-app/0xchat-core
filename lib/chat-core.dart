@@ -84,5 +84,5 @@ export 'src/moment/model/notificationDB.dart';
 export 'src/moment/model/notificationDB_isar.dart';
 export 'src/chat-core-manager.dart';
 
-// Export bitchat-core functionality
+// Export bitchat-flutter-plugin functionality
 export 'src/chat/bitchat/bitchat_service.dart';

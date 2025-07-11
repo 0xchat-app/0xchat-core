@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'package:bitchat_core/bitchat_core.dart' as bitchat;
+import 'package:bitchat_flutter_plugin/bitchat_core.dart' as bitchat;
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';

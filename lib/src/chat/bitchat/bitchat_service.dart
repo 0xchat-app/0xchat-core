@@ -48,7 +48,7 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:bitchat_core/bitchat_core.dart' as core;
+import 'package:bitchat_flutter_plugin/bitchat_core.dart' as core;
 import 'package:chatcore/chat-core.dart';
 
 /// Bitchat service for 0xchat integration
@@ -446,7 +446,7 @@ class BitchatService {
       // Get singleton instance
       final bitchatService = BitchatService();
       
-      // Initialize the service (this will also initialize bitchat-core internally)
+      // Initialize the service (this will also initialize bitchat-flutter-plugin internally)
       await bitchatService.initialize();
       
       // Set up message callback to convert to MessageDBISAR format
