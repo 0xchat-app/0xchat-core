@@ -69,9 +69,9 @@ extension AccountCircle on Account {
         // Create a special bitchat circle
         return await _newcircle(
           circleId: circleId,
-          name: '🔒 Bitchat Private Network',
+          name: '🔒 Bitchat',
           description: 'Secure peer-to-peer messaging network using BLE mesh',
-          image: 'https://0xchat.com/bitchat-icon.png',
+          image: '',
           relayList: const [], // No relays for bitchat
           fileserverList: const [],
           iceserverList: const [],
@@ -365,6 +365,9 @@ extension AccountCircle on Account {
       '0xchat': 'wss://relay.0xchat.com',
       'damus': 'wss://relay.damus.io',
       'nos': 'wss://nos.lol',
+      'primal': 'wss://relay.primal.net',
+      'yabu': 'wss://yabu.me/',
+      'nostrband':'wss://relay.nostr.band/'
     };
 
     final shortcut = relay.toLowerCase().trim();
@@ -426,7 +429,6 @@ extension AccountCircle on Account {
         'wss://purplepag.es',
         'wss://relay.bitcoin.com',
         'wss://nos.lol',
-        'wss://relay.current.fyi',
       ];
     } catch (e) {
       LogUtils.e(() => '🥚 Failed to load relay list: $e');
