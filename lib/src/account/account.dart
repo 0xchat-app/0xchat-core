@@ -261,6 +261,24 @@ class Account {
     return Keychain.getPublicKey(privkey);
   }
 
+  /// 🥚 Easter egg: Check if the name indicates bitchat mode
+  static bool isBitchatMode(String name) {
+    return name.toLowerCase().contains('bitchat') || name.toLowerCase().contains('bitch@');
+  }
+
+  /// 🥚 Easter egg: Get relay shortcuts mapping
+  /// Returns a map of shortcut names to full relay URLs
+  static Map<String, String> getRelayShortcuts() {
+    return {
+      '0xchat': 'wss://relay.0xchat.com',
+      'damus': 'wss://relay.damus.io',
+      'nos': 'wss://nos.lol',
+      'primal': 'wss://relay.primal.net',
+      'yabu': 'wss://yabu.me/',
+      'nostrband':'wss://relay.nostr.band/'
+    };
+  }
+
   static Future<String> getPublicKeyWithNIP46URI(String uri) async {
     if (uri.startsWith('bunker://')) {
       RemoteSignerConnection remoteSignerConnection = Nip46.parseBunkerUri(uri);

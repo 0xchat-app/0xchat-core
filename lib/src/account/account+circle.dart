@@ -57,7 +57,7 @@ extension AccountCircle on Account {
   }) async {
     try {
       // 🥚 Easter egg: Special handling for bitchat
-      if (name.toLowerCase().contains('bitchat') || name.toLowerCase().contains('bitch@')) {
+      if (Account.isBitchatMode(name)) {
         // soon
         if(Platform.isAndroid) return null;
 
@@ -361,14 +361,7 @@ extension AccountCircle on Account {
   /// 🥚 Easter egg: Convert relay shortcut to full URL
   String _convertRelayShortcut(String relay) {
     // First check hardcoded shortcuts for common relays
-    final shortcuts = {
-      '0xchat': 'wss://relay.0xchat.com',
-      'damus': 'wss://relay.damus.io',
-      'nos': 'wss://nos.lol',
-      'primal': 'wss://relay.primal.net',
-      'yabu': 'wss://yabu.me/',
-      'nostrband':'wss://relay.nostr.band/'
-    };
+    final shortcuts = Account.getRelayShortcuts();
 
     final shortcut = relay.toLowerCase().trim();
     
