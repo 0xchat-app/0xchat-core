@@ -193,7 +193,7 @@ class BitchatService {
         finalNickname = _cachedNickname!;
       } else {
         // Generate default nickname using peerID
-        finalNickname = 'user$finalPeerID';
+        finalNickname = 'user${finalPeerID.substring(0, 4)}';
       }
 
       final success = await _coreService.start(peerID: finalPeerID, nickname: finalNickname);
@@ -275,6 +275,35 @@ class BitchatService {
 
   /// Send broadcast message to all connected peers (main chat)
   Future<void> sendBroadcastMessage(String content) async {
+    // Create MessageDBISAR object
+    final messageDB = MessageDBISAR(
+      messageId: generate64RandomHexChars(),
+      sender: _generatePeerID(),
+      receiver: '', // Empty for broadcast/channel messages
+      groupId: '', // Channel name for channel messages
+      sessionId: '', // Not used for bitchat
+      kind: 4,
+      tags: '', // Not used for bitchat
+      content: content,
+      createTime: currentUnixTimestampSeconds(),
+      read: false, // Default to unread
+      replyId: '', // No reply support in bitchat yet
+      decryptContent: content, // Same as content for now
+      type: 'text', // Default to text type
+      status: 1, // Sent status
+      plaintEvent: '', // Not used for bitchat
+      chatType: 5,
+      subType: null,
+      previewData: null,
+      expiration: null,
+      decryptSecret: null,
+      decryptNonce: null,
+      decryptAlgo: null,
+      reactionEventIds: null,
+      zapEventIds: null,
+    );
+
+    Messages.saveMessageToDB(messageDB);
     try {
       print('📢 [0xchat-core] Sending broadcast message: "$content"');
 
