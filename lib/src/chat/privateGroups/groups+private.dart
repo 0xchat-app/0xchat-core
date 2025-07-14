@@ -111,7 +111,7 @@ extension PrivateGroups on Groups {
     List<String>? members = groupDB.members;
     if (members == null) return null;
     late Event event;
-    if (groupDB.isMLSGroup) {
+    if (groupDB.isMLSGroup && encryptedFile == null) {
       event = await Nip29.encodeGroupMessageReply(
           groupDB.groupId, MessageDBISAR.getContent(type, content, source), [], pubkey, privkey,
           replyEvent: replyMessage,
