@@ -194,6 +194,7 @@ extension AccountProfile on Account {
     Event event = await Nip1.setMetadata(jsonEncode(map), currentPubkey, currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (ok.status) {
+        Account.sharedInstance.updateOrCreateUserNotifier(db.pubKey, db);
         completer.complete(db);
       } else {
         completer.complete(null);
