@@ -71,11 +71,11 @@ extension AccountProfile on Account {
     return completer.future;
   }
 
-  Future<UserDBISAR> reloadProfileFromRelay(String pubkey) async {
+  Future<UserDBISAR> reloadProfileFromRelay(String pubkey, {List<String>? relays}) async {
     Completer<UserDBISAR> completer = Completer<UserDBISAR>();
     UserDBISAR? db = await getUserInfo(pubkey);
     Filter f = Filter(kinds: ChatCoreManager().userProfileKinds(), authors: [pubkey]);
-    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
+    Connect.sharedInstance.addSubscription([f], relays: relays, eventCallBack: (event, relay) async {
       switch (event.kind) {
         case 0:
           db = _handleKind0Event(db, event);
