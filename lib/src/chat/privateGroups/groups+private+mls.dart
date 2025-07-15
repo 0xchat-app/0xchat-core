@@ -347,7 +347,7 @@ extension MLSPrivateGroups on Groups {
   }
 
   Future<void> _checkKeyPackage({List<String>? relays}) async {
-    String? encoded_key_package = await _getKeyPackageFromRelay(pubkey);
+    String? encoded_key_package = await getKeyPackageFromRelay(pubkey);
     if (encoded_key_package != null && encoded_key_package.isNotEmpty) {
       String result = await getKeyPackageFromStorage(serializedKeyPackage: encoded_key_package);
       bool found = jsonDecode(result)['found'];
@@ -388,7 +388,7 @@ extension MLSPrivateGroups on Groups {
   Future<Map<String, String>> _getMembersKeyPackages(List<String> pubkeys) async {
     Map<String, String> result = {};
     for (var pubkey in pubkeys) {
-      String? encodedKeyPackage = await _getKeyPackageFromRelay(pubkey);
+      String? encodedKeyPackage = await getKeyPackageFromRelay(pubkey);
       if (encodedKeyPackage != null && encodedKeyPackage.isNotEmpty) {
         result[pubkey] = encodedKeyPackage;
       } else {
@@ -408,7 +408,7 @@ extension MLSPrivateGroups on Groups {
     return result;
   }
 
-  Future<String?> _getKeyPackageFromRelay(String pubkey) async {
+  Future<String?> getKeyPackageFromRelay(String pubkey) async {
     Completer<String?> completer = Completer<String?>();
     Filter f = Filter(kinds: [443], limit: 1, authors: [pubkey]);
     Event? cachedEvent;
