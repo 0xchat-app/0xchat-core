@@ -165,7 +165,7 @@ extension AccountProfile on Account {
       pQueue.remove(p);
       Account.saveUserToDB(users[p]!);
       if (users[p]!.encodedKeyPackage == null) {
-        Groups.sharedInstance.getKeyPackageFromRelay(p);
+        Groups.sharedInstance.getKeyPackageFromRelay(p, client: '0xchat-lite');
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       if (unRelays.isEmpty) {
@@ -424,14 +424,12 @@ extension AccountProfile on Account {
     if (db != null) {
       try {
         KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
-        bool isValid = await _checkValidKeypackage(keyPackageEvent);
+        bool isValid = await _checkValidKeypackage(keyPackageEvent, client: '0xchat-lite');
         if (isValid) {
           db.encodedKeyPackage = keyPackageEvent.encoded_key_package;
-        } else {
-          LogUtils.d('Invalid key package for user: ${db.pubKey}');
         }
       } catch (e) {
-        LogUtils.d('Failed to decode key package event: $e');
+        LogUtils.d('Failed to decode key package event:$e');
       }
     }
     return db;
@@ -441,13 +439,24 @@ extension AccountProfile on Account {
     return Set.from(list1).containsAll(list2) && Set.from(list2).containsAll(list1);
   }
 
-  static Future<bool> _checkValidKeypackage(KeyPackageEvent keyPackageEvent) async {
+  static Future<bool> _checkValidKeypackage(KeyPackageEvent keyPackageEvent, {String? client}) async {
     try {
       String extensions = jsonDecode(await getExtensions())['extensions'];
       String ciphersuite = jsonDecode(await getCiphersuite())['ciphersuite'];
 
-      return _areListsEqual(keyPackageEvent.extensions, [extensions]) &&
+      // Check basic validity (extensions and ciphersuite)
+      bool basicValid = _areListsEqual(keyPackageEvent.extensions, [extensions]) &&
           ciphersuite == keyPackageEvent.ciphersuite;
+      
+      if (!basicValid) return false;
+      
+      // If client is specified, check if the key package has the correct client
+      if (client != null) {
+        return keyPackageEvent.client == client;
+      }
+      
+      // If no client specified, accept any valid key package
+      return true;
     } catch (e) {
       LogUtils.d('Failed to check valid keypackage: $e');
       return false;

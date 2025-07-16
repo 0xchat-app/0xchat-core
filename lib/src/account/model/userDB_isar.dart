@@ -5,6 +5,44 @@ import 'package:isar/isar.dart' hide Filter;
 
 part 'userDB_isar.g.dart';
 
+/// KeyPackage data class to store keypackage information
+class KeyPackageData {
+  final String encodedKeyPackage;
+  final int timestamp;
+  final String client;
+  final String eventId;
+
+  KeyPackageData({
+    required this.encodedKeyPackage,
+    required this.timestamp,
+    required this.client,
+    required this.eventId,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'encodedKeyPackage': encodedKeyPackage,
+      'timestamp': timestamp,
+      'client': client,
+      'eventId': eventId,
+    };
+  }
+
+  factory KeyPackageData.fromJson(Map<String, dynamic> json) {
+    return KeyPackageData(
+      encodedKeyPackage: json['encodedKeyPackage'] ?? '',
+      timestamp: json['timestamp'] ?? 0,
+      client: json['client'] ?? '',
+      eventId: json['eventId'] ?? '',
+    );
+  }
+
+  @override
+  String toString() {
+    return 'KeyPackageData(encodedKeyPackage: $encodedKeyPackage, timestamp: $timestamp, client: $client, eventId: $eventId)';
+  }
+}
+
 extension UserDBISARExtensions on UserDBISAR {
   UserDBISAR withGrowableLevels() => this
     ..channelsList = channelsList?.toList()
@@ -103,6 +141,9 @@ class UserDBISAR {
 
   String? encodedKeyPackage;
 
+  // KeyPackage list storage (JSON string)
+  String? keyPackageListJson;
+
   String? settings;
 
   UserDBISAR({
@@ -156,7 +197,8 @@ class UserDBISAR {
     this.clientPrivateKey,
     this.remoteSignerURI,
     this.remotePubkey,
-    this.encodedKeyPackage
+    this.encodedKeyPackage,
+    this.keyPackageListJson
   });
 
   static UserDBISAR fromMap(Map<String, Object?> map) {
@@ -233,6 +275,153 @@ class UserDBISAR {
     }
     return [];
   }
+
+  /// Get keypackage list from JSON string
+  @ignore
+  List<KeyPackageData> get keyPackageList {
+    if (keyPackageListJson == null || keyPackageListJson!.isEmpty) {
+      return [];
+    }
+    try {
+      List<dynamic> jsonList = jsonDecode(keyPackageListJson!);
+      return jsonList.map((json) => KeyPackageData.fromJson(json)).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Set keypackage list to JSON string
+  @ignore
+  set keyPackageList(List<KeyPackageData> keyPackages) {
+    keyPackageListJson = jsonEncode(keyPackages.map((kp) => kp.toJson()).toList());
+  }
+
+  /// Add a keypackage to the list
+  @ignore
+  void addKeyPackage(KeyPackageData keyPackage) {
+    List<KeyPackageData> currentList = keyPackageList;
+    
+    // If client is empty, directly add without comparison
+    if (keyPackage.client.isEmpty) {
+      currentList.add(keyPackage);
+      
+      // Sort by timestamp (newest first)
+      currentList.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      
+      keyPackageList = currentList;
+      return;
+    }
+    
+    // Find all keypackages with the same client
+    List<KeyPackageData> sameClientKeyPackages = currentList.where((kp) => kp.client == keyPackage.client).toList();
+    
+    if (sameClientKeyPackages.isNotEmpty) {
+      // Find the latest keypackage for this client
+      KeyPackageData latestKeyPackage = sameClientKeyPackages.reduce((a, b) => a.timestamp > b.timestamp ? a : b);
+      
+      // Only add if the new keypackage is newer than the latest existing one
+      if (keyPackage.timestamp > latestKeyPackage.timestamp) {
+        // Remove all existing keypackages with same client
+        currentList.removeWhere((kp) => kp.client == keyPackage.client);
+        
+        // Add new keypackage
+        currentList.add(keyPackage);
+        
+        // Sort by timestamp (newest first)
+        currentList.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        
+        keyPackageList = currentList;
+      }
+    } else {
+      // No existing keypackage for this client, add the new one
+      currentList.add(keyPackage);
+      
+      // Sort by timestamp (newest first)
+      currentList.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      
+      keyPackageList = currentList;
+    }
+  }
+
+  /// Get the selected keypackage (stored in encodedKeyPackage field)
+  @ignore
+  KeyPackageData? get selectedKeyPackage {
+    if (encodedKeyPackage == null || encodedKeyPackage!.isEmpty) {
+      return null;
+    }
+    
+    // Find the keypackage in the list that matches the selected encodedKeyPackage
+    return keyPackageList.firstWhere(
+      (kp) => kp.encodedKeyPackage == encodedKeyPackage,
+      orElse: () => KeyPackageData(
+        encodedKeyPackage: encodedKeyPackage!,
+        timestamp: lastUpdatedTime,
+        client: 'unknown',
+        eventId: '',
+      ),
+    );
+  }
+
+  /// Set the selected keypackage
+  @ignore
+  void setSelectedKeyPackage(KeyPackageData keyPackage) {
+    encodedKeyPackage = keyPackage.encodedKeyPackage;
+    addKeyPackage(keyPackage);
+  }
+
+  /// Check if a keypackage should be updated (newer timestamp)
+  @ignore
+  bool shouldUpdateKeyPackage(KeyPackageData newKeyPackage) {
+    // If client is empty, always allow update
+    if (newKeyPackage.client.isEmpty) {
+      return true;
+    }
+    
+    List<KeyPackageData> currentList = keyPackageList;
+    
+    // Find all keypackages with the same client
+    List<KeyPackageData> sameClientKeyPackages = currentList.where((kp) => kp.client == newKeyPackage.client).toList();
+    
+    if (sameClientKeyPackages.isNotEmpty) {
+      // Find the latest keypackage for this client
+      KeyPackageData latestKeyPackage = sameClientKeyPackages.reduce((a, b) => a.timestamp > b.timestamp ? a : b);
+      
+      // Return true if new keypackage is newer than the latest existing one
+      return newKeyPackage.timestamp > latestKeyPackage.timestamp;
+    } else {
+      // No existing keypackage for this client, should add
+      return true;
+    }
+  }
+
+  /// Get the latest keypackage by client
+  @ignore
+  KeyPackageData? getLatestKeyPackageByClient(String client) {
+    List<KeyPackageData> sameClientKeyPackages = keyPackageList.where((kp) => kp.client == client).toList();
+    
+    if (sameClientKeyPackages.isNotEmpty) {
+      // Return the latest keypackage for this client
+      return sameClientKeyPackages.reduce((a, b) => a.timestamp > b.timestamp ? a : b);
+    }
+    
+    return null;
+  }
+
+  /// Get all keypackages with empty client
+  @ignore
+  List<KeyPackageData> getEmptyClientKeyPackages() {
+    return keyPackageList.where((kp) => kp.client.isEmpty).toList();
+  }
+
+  /// Get keypackage by client (legacy method, returns first found)
+  @ignore
+  KeyPackageData? getKeyPackageByClient(String client) {
+    try {
+      return keyPackageList.firstWhere((kp) => kp.client == client);
+    } catch (e) {
+      return null;
+    }
+  }
 }
 
 class NostrWalletConnection {
@@ -297,6 +486,11 @@ UserDBISAR _userInfoFromMap(Map<String, dynamic> map) {
     lastDMRelayListUpdatedTime: map['lastDMRelayListUpdatedTime'] ?? 0,
     otherField: map['otherField']?.toString(),
     nwcURI: map['nwcURI']?.toString(),
+    remoteSignerURI: map['remoteSignerURI']?.toString(),
+    clientPrivateKey: map['clientPrivateKey']?.toString(),
+    remotePubkey: map['remotePubkey']?.toString(),
+    encodedKeyPackage: map['encodedKeyPackage']?.toString(),
+    keyPackageListJson: map['keyPackageListJson']?.toString(),
     settings: map['settings']?.toString(),
   );
 }
