@@ -874,7 +874,7 @@ extension MLSPrivateGroups on Groups {
     if (group.mlsGroupId == null) return group;
     Map<String, String> membersKeyPackages =
         await _getMembersKeyPackages(members, onKeyPackageSelection: onKeyPackageSelection, forceRefresh: forceRefresh);
-    if (membersKeyPackages.isEmpty) return group;
+    if (membersKeyPackages.keys.length < members.length) return group;
     String exportSecretResult = await exportSecret(groupId: group.mlsGroupId!);
     U8Array32 preSecret =
         U8Array32(Uint8List.fromList((jsonDecode(exportSecretResult)['secret']).cast<int>()));

@@ -56,13 +56,19 @@ extension PrivateGroups on Groups {
     return myGroups[groupId]?.value;
   }
 
-  Future<GroupDBISAR?> addMembersToPrivateGroup(String groupId, List<String> members) async {
+  Future<GroupDBISAR?> addMembersToPrivateGroup(
+    String groupId, 
+    List<String> members, {
+    Future<String?> Function(String pubkey, List<KeyPackageEvent> availableKeyPackages)?
+        onKeyPackageSelection,
+    bool forceRefresh = false,
+  }) async {
     GroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return null;
     List<String> existingMembers = groupDB.members ?? [];
     Set<String> uniqueMembersSet = {...existingMembers, ...members};
     if (groupDB.isMLSGroup) {
-      return await addMembersToMLSGroup(groupDB, members);
+      return await addMembersToMLSGroup(groupDB, members, onKeyPackageSelection: onKeyPackageSelection, forceRefresh: forceRefresh);
     } else {
       return await createPrivateGroup(pubkey, '', groupDB.name, uniqueMembersSet.toList());
     }
