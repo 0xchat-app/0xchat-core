@@ -101,10 +101,14 @@ class UserDBISAR {
   String? clientPrivateKey;
   String? remotePubkey;
 
+  // @deprecated Use encodedKeyPackageJson instead
   String? encodedKeyPackage;
 
   // KeyPackageEvent list storage (JSON string)
   String? keyPackageEventListJson;
+
+  // Selected KeyPackageEvent JSON storage (replaces encodedKeyPackage)
+  String? encodedKeyPackageJson;
 
   String? settings;
 
@@ -160,7 +164,8 @@ class UserDBISAR {
       this.remoteSignerURI,
       this.remotePubkey,
       this.encodedKeyPackage,
-      this.keyPackageEventListJson});
+      this.keyPackageEventListJson,
+      this.encodedKeyPackageJson});
 
   static UserDBISAR fromMap(Map<String, Object?> map) {
     return _userInfoFromMap(map);
@@ -285,23 +290,19 @@ class UserDBISAR {
     }
   }
 
-  /// Get the selected keypackage event (stored in encodedKeyPackage field)
+  /// Get the selected keypackage event (stored in encodedKeyPackageJson field)
   @ignore
   KeyPackageEvent? get selectedKeyPackageEvent {
-    if (encodedKeyPackage == null || encodedKeyPackage!.isEmpty) {
+    if (encodedKeyPackageJson == null || encodedKeyPackageJson!.isEmpty) {
       return null;
     }
-    return keyPackageEventList.firstWhere(
-      (kp) => kp.encoded_key_package == encodedKeyPackage,
-      orElse: () => KeyPackageEvent(
-          pubKey, lastUpdatedTime, '', '', [], [], 'unknown', encodedKeyPackage!, ''),
-    );
+    return KeyPackageEvent.fromJson(jsonDecode(encodedKeyPackageJson!));
   }
 
   /// Set the selected keypackage event
   @ignore
   void setSelectedKeyPackageEvent(KeyPackageEvent keyPackageEvent) {
-    encodedKeyPackage = keyPackageEvent.encoded_key_package;
+    encodedKeyPackageJson = jsonEncode(keyPackageEvent.toJson());
     addKeyPackageEvent(keyPackageEvent);
   }
 
@@ -418,6 +419,7 @@ UserDBISAR _userInfoFromMap(Map<String, dynamic> map) {
     remotePubkey: map['remotePubkey']?.toString(),
     encodedKeyPackage: map['encodedKeyPackage']?.toString(),
     keyPackageEventListJson: map['keyPackageEventListJson']?.toString(),
+    encodedKeyPackageJson: map['encodedKeyPackageJson']?.toString(),
     settings: map['settings']?.toString(),
   );
 }

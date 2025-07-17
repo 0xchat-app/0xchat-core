@@ -77,8 +77,8 @@ extension AccountProfile on Account {
     UserDBISAR? db = await getUserInfo(pubkey);
     List<Filter> filters = [Filter(kinds: ChatCoreManager().userProfileKinds(), authors: [pubkey])];
     
-    // If encodedKeyPackage doesn't exist, add a filter for kind 443
-    if (db == null || db!.encodedKeyPackage == null) {
+    // If selectedKeyPackageEvent doesn't exist, add a filter for kind 443
+    if (db == null || db!.selectedKeyPackageEvent == null) {
       filters.add(Filter(kinds: [443], limit: 1, authors: [pubkey]));
     }
     
@@ -164,7 +164,7 @@ extension AccountProfile on Account {
       }
       pQueue.remove(p);
       Account.saveUserToDB(users[p]!);
-      if (users[p]!.encodedKeyPackage == null) {
+      if (users[p]!.selectedKeyPackageEvent == null) {
         Groups.sharedInstance.getKeyPackageFromRelay(p, client: '0xchat-lite');
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
@@ -426,7 +426,7 @@ extension AccountProfile on Account {
         KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
         bool isValid = await _checkValidKeypackage(keyPackageEvent, client: '0xchat-lite');
         if (isValid) {
-          db.encodedKeyPackage = keyPackageEvent.encoded_key_package;
+          db.setSelectedKeyPackageEvent(keyPackageEvent);
         }
       } catch (e) {
         LogUtils.d('Failed to decode key package event:$e');

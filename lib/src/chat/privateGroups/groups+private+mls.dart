@@ -354,11 +354,12 @@ extension MLSPrivateGroups on Groups {
     List<KeyPackageEvent> oxchatLiteKeyPackages = categorizedKeyPackages['0xchat-lite'] ?? [];
 
     if (oxchatLiteKeyPackages.isNotEmpty) {
-      String encoded_key_package = oxchatLiteKeyPackages.first.encoded_key_package;
+      KeyPackageEvent keyPackageEvent = oxchatLiteKeyPackages.first;
+      String encoded_key_package = keyPackageEvent.encoded_key_package;
       String result = await getKeyPackageFromStorage(serializedKeyPackage: encoded_key_package);
       bool found = jsonDecode(result)['found'];
       if (found) {
-        Account.sharedInstance.me!.encodedKeyPackage = encoded_key_package;
+        Account.sharedInstance.me!.setSelectedKeyPackageEvent(keyPackageEvent);
         Account.sharedInstance.syncMe();
       } else {
         _createNewKeyPackage([]);
@@ -384,7 +385,19 @@ extension MLSPrivateGroups on Groups {
     Connect.sharedInstance.sendEvent(event, toRelays: relays, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
         if (ok.status) {
-          Account.sharedInstance.me!.encodedKeyPackage = parsedKeyPackage.encodedKeyPackage;
+          // Create KeyPackageEvent from the parsed data
+          KeyPackageEvent keyPackageEvent = KeyPackageEvent(
+            pubkey, 
+            currentUnixTimestampSeconds(), 
+            '', 
+            '', 
+            [], 
+            relays, 
+            '0xchat-lite', 
+            parsedKeyPackage.encodedKeyPackage, 
+            event.id
+          );
+          Account.sharedInstance.me!.setSelectedKeyPackageEvent(keyPackageEvent);
           Account.sharedInstance.syncMe();
         }
         completer.complete(ok);
@@ -434,8 +447,8 @@ extension MLSPrivateGroups on Groups {
         } else {
           // No key package found at all
           UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
-          if (user != null && user.encodedKeyPackage != null) {
-            result[pubkey] = user.encodedKeyPackage!;
+          if (user != null && user.selectedKeyPackageEvent != null) {
+            result[pubkey] = user.selectedKeyPackageEvent!.encoded_key_package;
           }
         }
       }
@@ -464,13 +477,10 @@ extension MLSPrivateGroups on Groups {
     // If forceRefresh is false and local data exists, return it directly
     if (!forceRefresh &&
         user != null &&
-        user.encodedKeyPackage != null &&
-        user.encodedKeyPackage!.isNotEmpty) {
+        user.selectedKeyPackageEvent != null) {
       String client = '0xchat-lite';
       if (!latestKeyPackages.containsKey(client)) {
-        KeyPackageEvent keyPackageEvent = KeyPackageEvent(
-            pubkey, user.lastUpdatedTime, '', '', [], [], client, user.encodedKeyPackage!, '');
-        latestKeyPackages[client] = keyPackageEvent;
+        latestKeyPackages[client] = user.selectedKeyPackageEvent!;
       }
       // Convert to Map<String, List<KeyPackageEvent>>
       return latestKeyPackages.map((k, v) => MapEntry(k, [v]));
