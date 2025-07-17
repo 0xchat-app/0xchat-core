@@ -221,7 +221,7 @@ const UserDBISARSchema = IsarGeneratedSchema(
         type: IsarType.string,
       ),
       IsarPropertySchema(
-        name: 'keyPackageListJson',
+        name: 'keyPackageEventListJson',
         type: IsarType.string,
       ),
       IsarPropertySchema(
@@ -630,7 +630,7 @@ int serializeUserDBISAR(IsarWriter writer, UserDBISAR object) {
     }
   }
   {
-    final value = object.keyPackageListJson;
+    final value = object.keyPackageEventListJson;
     if (value == null) {
       IsarCore.writeNull(writer, 51);
     } else {
@@ -1030,8 +1030,8 @@ UserDBISAR deserializeUserDBISAR(IsarReader reader) {
   _remotePubkey = IsarCore.readString(reader, 49);
   final String? _encodedKeyPackage;
   _encodedKeyPackage = IsarCore.readString(reader, 50);
-  final String? _keyPackageListJson;
-  _keyPackageListJson = IsarCore.readString(reader, 51);
+  final String? _keyPackageEventListJson;
+  _keyPackageEventListJson = IsarCore.readString(reader, 51);
   final String? _settings;
   _settings = IsarCore.readString(reader, 52);
   final object = UserDBISAR(
@@ -1085,7 +1085,7 @@ UserDBISAR deserializeUserDBISAR(IsarReader reader) {
     clientPrivateKey: _clientPrivateKey,
     remotePubkey: _remotePubkey,
     encodedKeyPackage: _encodedKeyPackage,
-    keyPackageListJson: _keyPackageListJson,
+    keyPackageEventListJson: _keyPackageEventListJson,
     settings: _settings,
   );
   object.id = IsarCore.readId(reader);
@@ -1525,7 +1525,7 @@ sealed class _UserDBISARUpdate {
     String? clientPrivateKey,
     String? remotePubkey,
     String? encodedKeyPackage,
-    String? keyPackageListJson,
+    String? keyPackageEventListJson,
     String? settings,
   });
 }
@@ -1574,7 +1574,7 @@ class _UserDBISARUpdateImpl implements _UserDBISARUpdate {
     Object? clientPrivateKey = ignore,
     Object? remotePubkey = ignore,
     Object? encodedKeyPackage = ignore,
-    Object? keyPackageListJson = ignore,
+    Object? keyPackageEventListJson = ignore,
     Object? settings = ignore,
   }) {
     return collection.updateProperties([
@@ -1625,7 +1625,8 @@ class _UserDBISARUpdateImpl implements _UserDBISARUpdate {
           if (clientPrivateKey != ignore) 48: clientPrivateKey as String?,
           if (remotePubkey != ignore) 49: remotePubkey as String?,
           if (encodedKeyPackage != ignore) 50: encodedKeyPackage as String?,
-          if (keyPackageListJson != ignore) 51: keyPackageListJson as String?,
+          if (keyPackageEventListJson != ignore)
+            51: keyPackageEventListJson as String?,
           if (settings != ignore) 52: settings as String?,
         }) >
         0;
@@ -1671,7 +1672,7 @@ sealed class _UserDBISARUpdateAll {
     String? clientPrivateKey,
     String? remotePubkey,
     String? encodedKeyPackage,
-    String? keyPackageListJson,
+    String? keyPackageEventListJson,
     String? settings,
   });
 }
@@ -1720,7 +1721,7 @@ class _UserDBISARUpdateAllImpl implements _UserDBISARUpdateAll {
     Object? clientPrivateKey = ignore,
     Object? remotePubkey = ignore,
     Object? encodedKeyPackage = ignore,
-    Object? keyPackageListJson = ignore,
+    Object? keyPackageEventListJson = ignore,
     Object? settings = ignore,
   }) {
     return collection.updateProperties(id, {
@@ -1769,7 +1770,8 @@ class _UserDBISARUpdateAllImpl implements _UserDBISARUpdateAll {
       if (clientPrivateKey != ignore) 48: clientPrivateKey as String?,
       if (remotePubkey != ignore) 49: remotePubkey as String?,
       if (encodedKeyPackage != ignore) 50: encodedKeyPackage as String?,
-      if (keyPackageListJson != ignore) 51: keyPackageListJson as String?,
+      if (keyPackageEventListJson != ignore)
+        51: keyPackageEventListJson as String?,
       if (settings != ignore) 52: settings as String?,
     });
   }
@@ -1819,7 +1821,7 @@ sealed class _UserDBISARQueryUpdate {
     String? clientPrivateKey,
     String? remotePubkey,
     String? encodedKeyPackage,
-    String? keyPackageListJson,
+    String? keyPackageEventListJson,
     String? settings,
   });
 }
@@ -1868,7 +1870,7 @@ class _UserDBISARQueryUpdateImpl implements _UserDBISARQueryUpdate {
     Object? clientPrivateKey = ignore,
     Object? remotePubkey = ignore,
     Object? encodedKeyPackage = ignore,
-    Object? keyPackageListJson = ignore,
+    Object? keyPackageEventListJson = ignore,
     Object? settings = ignore,
   }) {
     return query.updateProperties(limit: limit, {
@@ -1917,7 +1919,8 @@ class _UserDBISARQueryUpdateImpl implements _UserDBISARQueryUpdate {
       if (clientPrivateKey != ignore) 48: clientPrivateKey as String?,
       if (remotePubkey != ignore) 49: remotePubkey as String?,
       if (encodedKeyPackage != ignore) 50: encodedKeyPackage as String?,
-      if (keyPackageListJson != ignore) 51: keyPackageListJson as String?,
+      if (keyPackageEventListJson != ignore)
+        51: keyPackageEventListJson as String?,
       if (settings != ignore) 52: settings as String?,
     });
   }
@@ -1974,7 +1977,7 @@ class _UserDBISARQueryBuilderUpdateImpl implements _UserDBISARQueryUpdate {
     Object? clientPrivateKey = ignore,
     Object? remotePubkey = ignore,
     Object? encodedKeyPackage = ignore,
-    Object? keyPackageListJson = ignore,
+    Object? keyPackageEventListJson = ignore,
     Object? settings = ignore,
   }) {
     final q = query.build();
@@ -2025,7 +2028,8 @@ class _UserDBISARQueryBuilderUpdateImpl implements _UserDBISARQueryUpdate {
         if (clientPrivateKey != ignore) 48: clientPrivateKey as String?,
         if (remotePubkey != ignore) 49: remotePubkey as String?,
         if (encodedKeyPackage != ignore) 50: encodedKeyPackage as String?,
-        if (keyPackageListJson != ignore) 51: keyPackageListJson as String?,
+        if (keyPackageEventListJson != ignore)
+          51: keyPackageEventListJson as String?,
         if (settings != ignore) 52: settings as String?,
       });
     } finally {
@@ -10714,21 +10718,21 @@ extension UserDBISARQueryFilter
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
-      keyPackageListJsonIsNull() {
+      keyPackageEventListJsonIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const IsNullCondition(property: 51));
     });
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
-      keyPackageListJsonIsNotNull() {
+      keyPackageEventListJsonIsNotNull() {
     return QueryBuilder.apply(not(), (query) {
       return query.addFilterCondition(const IsNullCondition(property: 51));
     });
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
-      keyPackageListJsonEqualTo(
+      keyPackageEventListJsonEqualTo(
     String? value, {
     bool caseSensitive = true,
   }) {
@@ -10744,7 +10748,7 @@ extension UserDBISARQueryFilter
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
-      keyPackageListJsonGreaterThan(
+      keyPackageEventListJsonGreaterThan(
     String? value, {
     bool caseSensitive = true,
   }) {
@@ -10760,7 +10764,7 @@ extension UserDBISARQueryFilter
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
-      keyPackageListJsonGreaterThanOrEqualTo(
+      keyPackageEventListJsonGreaterThanOrEqualTo(
     String? value, {
     bool caseSensitive = true,
   }) {
@@ -10776,7 +10780,7 @@ extension UserDBISARQueryFilter
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
-      keyPackageListJsonLessThan(
+      keyPackageEventListJsonLessThan(
     String? value, {
     bool caseSensitive = true,
   }) {
@@ -10792,7 +10796,7 @@ extension UserDBISARQueryFilter
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
-      keyPackageListJsonLessThanOrEqualTo(
+      keyPackageEventListJsonLessThanOrEqualTo(
     String? value, {
     bool caseSensitive = true,
   }) {
@@ -10808,7 +10812,7 @@ extension UserDBISARQueryFilter
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
-      keyPackageListJsonBetween(
+      keyPackageEventListJsonBetween(
     String? lower,
     String? upper, {
     bool caseSensitive = true,
@@ -10826,7 +10830,7 @@ extension UserDBISARQueryFilter
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
-      keyPackageListJsonStartsWith(
+      keyPackageEventListJsonStartsWith(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -10842,7 +10846,7 @@ extension UserDBISARQueryFilter
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
-      keyPackageListJsonEndsWith(
+      keyPackageEventListJsonEndsWith(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -10858,7 +10862,8 @@ extension UserDBISARQueryFilter
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
-      keyPackageListJsonContains(String value, {bool caseSensitive = true}) {
+      keyPackageEventListJsonContains(String value,
+          {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         ContainsCondition(
@@ -10871,7 +10876,8 @@ extension UserDBISARQueryFilter
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
-      keyPackageListJsonMatches(String pattern, {bool caseSensitive = true}) {
+      keyPackageEventListJsonMatches(String pattern,
+          {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         MatchesCondition(
@@ -10884,7 +10890,7 @@ extension UserDBISARQueryFilter
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
-      keyPackageListJsonIsEmpty() {
+      keyPackageEventListJsonIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         const EqualCondition(
@@ -10896,7 +10902,7 @@ extension UserDBISARQueryFilter
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
-      keyPackageListJsonIsNotEmpty() {
+      keyPackageEventListJsonIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         const GreaterCondition(
@@ -11792,8 +11798,8 @@ extension UserDBISARQuerySortBy
     });
   }
 
-  QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy> sortByKeyPackageListJson(
-      {bool caseSensitive = true}) {
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy>
+      sortByKeyPackageEventListJson({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(
         51,
@@ -11803,7 +11809,7 @@ extension UserDBISARQuerySortBy
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy>
-      sortByKeyPackageListJsonDesc({bool caseSensitive = true}) {
+      sortByKeyPackageEventListJsonDesc({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(
         51,
@@ -12350,15 +12356,15 @@ extension UserDBISARQuerySortThenBy
     });
   }
 
-  QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy> thenByKeyPackageListJson(
-      {bool caseSensitive = true}) {
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy>
+      thenByKeyPackageEventListJson({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(51, caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterSortBy>
-      thenByKeyPackageListJsonDesc({bool caseSensitive = true}) {
+      thenByKeyPackageEventListJsonDesc({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(51, sort: Sort.desc, caseSensitive: caseSensitive);
     });
@@ -12726,7 +12732,7 @@ extension UserDBISARQueryWhereDistinct
   }
 
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterDistinct>
-      distinctByKeyPackageListJson({bool caseSensitive = true}) {
+      distinctByKeyPackageEventListJson({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(51, caseSensitive: caseSensitive);
     });
@@ -13070,7 +13076,7 @@ extension UserDBISARQueryProperty1
   }
 
   QueryBuilder<UserDBISAR, String?, QAfterProperty>
-      keyPackageListJsonProperty() {
+      keyPackageEventListJsonProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(51);
     });
@@ -13423,7 +13429,7 @@ extension UserDBISARQueryProperty2<R>
   }
 
   QueryBuilder<UserDBISAR, (R, String?), QAfterProperty>
-      keyPackageListJsonProperty() {
+      keyPackageEventListJsonProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(51);
     });
@@ -13780,7 +13786,7 @@ extension UserDBISARQueryProperty3<R1, R2>
   }
 
   QueryBuilder<UserDBISAR, (R1, R2, String?), QOperations>
-      keyPackageListJsonProperty() {
+      keyPackageEventListJsonProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(51);
     });

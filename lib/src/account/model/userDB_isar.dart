@@ -5,44 +5,6 @@ import 'package:isar/isar.dart' hide Filter;
 
 part 'userDB_isar.g.dart';
 
-/// KeyPackage data class to store keypackage information
-class KeyPackageData {
-  final String encodedKeyPackage;
-  final int timestamp;
-  final String client;
-  final String eventId;
-
-  KeyPackageData({
-    required this.encodedKeyPackage,
-    required this.timestamp,
-    required this.client,
-    required this.eventId,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'encodedKeyPackage': encodedKeyPackage,
-      'timestamp': timestamp,
-      'client': client,
-      'eventId': eventId,
-    };
-  }
-
-  factory KeyPackageData.fromJson(Map<String, dynamic> json) {
-    return KeyPackageData(
-      encodedKeyPackage: json['encodedKeyPackage'] ?? '',
-      timestamp: json['timestamp'] ?? 0,
-      client: json['client'] ?? '',
-      eventId: json['eventId'] ?? '',
-    );
-  }
-
-  @override
-  String toString() {
-    return 'KeyPackageData(encodedKeyPackage: $encodedKeyPackage, timestamp: $timestamp, client: $client, eventId: $eventId)';
-  }
-}
-
 extension UserDBISARExtensions on UserDBISAR {
   UserDBISAR withGrowableLevels() => this
     ..channelsList = channelsList?.toList()
@@ -141,65 +103,64 @@ class UserDBISAR {
 
   String? encodedKeyPackage;
 
-  // KeyPackage list storage (JSON string)
-  String? keyPackageListJson;
+  // KeyPackageEvent list storage (JSON string)
+  String? keyPackageEventListJson;
 
   String? settings;
 
-  UserDBISAR({
-    this.pubKey = '',
-    this.encryptedPrivKey = '',
-    this.privkey = '',
-    this.defaultPassword = '',
-    this.name = '',
-    this.nickName = '',
-    this.mainRelay = '',
-    this.dns = '',
-    this.lnurl = '',
-    this.badges = '',
-    this.gender = '',
-    this.area = '',
-    this.about = '',
-    this.picture = '',
-    this.banner = '',
-    this.aliasPubkey = '',
-    this.toAliasPubkey = '',
-    this.toAliasPrivkey = '',
-    this.friendsList,
-    this.channelsList,
-    this.groupsList,
-    this.relayGroupsList,
-    this.badgesList,
-    this.blockedList,
-    this.blockedHashTags,
-    this.blockedThreads,
-    this.blockedWords,
-    this.followersList,
-    this.followingList,
-    this.relayList,
-    this.dmRelayList,
-    this.inboxRelayList,
-    this.outboxRelayList,
-    this.mute = false,
-    this.lastUpdatedTime = 0,
-    this.lastBadgesListUpdatedTime = 0,
-    this.lastBlockListUpdatedTime = 0,
-    this.lastChannelsListUpdatedTime = 0,
-    this.lastFriendsListUpdatedTime = 0,
-    this.lastGroupsListUpdatedTime = 0,
-    this.lastRelayGroupsListUpdatedTime = 0,
-    this.lastRelayListUpdatedTime = 0,
-    this.lastFollowingListUpdatedTime = 0,
-    this.lastDMRelayListUpdatedTime = 0,
-    this.otherField = '{}',
-    this.nwcURI,
-    this.settings,
-    this.clientPrivateKey,
-    this.remoteSignerURI,
-    this.remotePubkey,
-    this.encodedKeyPackage,
-    this.keyPackageListJson
-  });
+  UserDBISAR(
+      {this.pubKey = '',
+      this.encryptedPrivKey = '',
+      this.privkey = '',
+      this.defaultPassword = '',
+      this.name = '',
+      this.nickName = '',
+      this.mainRelay = '',
+      this.dns = '',
+      this.lnurl = '',
+      this.badges = '',
+      this.gender = '',
+      this.area = '',
+      this.about = '',
+      this.picture = '',
+      this.banner = '',
+      this.aliasPubkey = '',
+      this.toAliasPubkey = '',
+      this.toAliasPrivkey = '',
+      this.friendsList,
+      this.channelsList,
+      this.groupsList,
+      this.relayGroupsList,
+      this.badgesList,
+      this.blockedList,
+      this.blockedHashTags,
+      this.blockedThreads,
+      this.blockedWords,
+      this.followersList,
+      this.followingList,
+      this.relayList,
+      this.dmRelayList,
+      this.inboxRelayList,
+      this.outboxRelayList,
+      this.mute = false,
+      this.lastUpdatedTime = 0,
+      this.lastBadgesListUpdatedTime = 0,
+      this.lastBlockListUpdatedTime = 0,
+      this.lastChannelsListUpdatedTime = 0,
+      this.lastFriendsListUpdatedTime = 0,
+      this.lastGroupsListUpdatedTime = 0,
+      this.lastRelayGroupsListUpdatedTime = 0,
+      this.lastRelayListUpdatedTime = 0,
+      this.lastFollowingListUpdatedTime = 0,
+      this.lastDMRelayListUpdatedTime = 0,
+      this.otherField = '{}',
+      this.nwcURI,
+      this.settings,
+      this.clientPrivateKey,
+      this.remoteSignerURI,
+      this.remotePubkey,
+      this.encodedKeyPackage,
+      this.keyPackageEventListJson});
 
   static UserDBISAR fromMap(Map<String, Object?> map) {
     return _userInfoFromMap(map);
@@ -276,148 +237,114 @@ class UserDBISAR {
     return [];
   }
 
-  /// Get keypackage list from JSON string
+  /// Get keypackage event list from JSON string
   @ignore
-  List<KeyPackageData> get keyPackageList {
-    if (keyPackageListJson == null || keyPackageListJson!.isEmpty) {
+  List<KeyPackageEvent> get keyPackageEventList {
+    if (keyPackageEventListJson == null || keyPackageEventListJson!.isEmpty) {
       return [];
     }
     try {
-      List<dynamic> jsonList = jsonDecode(keyPackageListJson!);
-      return jsonList.map((json) => KeyPackageData.fromJson(json)).toList();
+      List<dynamic> jsonList = jsonDecode(keyPackageEventListJson!);
+      return jsonList.map((json) => KeyPackageEvent.fromJson(json)).toList();
     } catch (e) {
       return [];
     }
   }
 
-  /// Set keypackage list to JSON string
+  /// Set keypackage event list to JSON string
   @ignore
-  set keyPackageList(List<KeyPackageData> keyPackages) {
-    keyPackageListJson = jsonEncode(keyPackages.map((kp) => kp.toJson()).toList());
+  set keyPackageEventList(List<KeyPackageEvent> keyPackageEvents) {
+    keyPackageEventListJson = jsonEncode(keyPackageEvents.map((kp) => kp.toJson()).toList());
   }
 
-  /// Add a keypackage to the list
+  /// Add a keypackage event to the list
   @ignore
-  void addKeyPackage(KeyPackageData keyPackage) {
-    List<KeyPackageData> currentList = keyPackageList;
-    
-    // If client is empty, directly add without comparison
-    if (keyPackage.client.isEmpty) {
-      currentList.add(keyPackage);
-      
-      // Sort by timestamp (newest first)
-      currentList.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      
-      keyPackageList = currentList;
+  void addKeyPackageEvent(KeyPackageEvent keyPackageEvent) {
+    List<KeyPackageEvent> currentList = keyPackageEventList;
+    if (keyPackageEvent.client.isEmpty) {
+      currentList.add(keyPackageEvent);
+      currentList.sort((a, b) => b.createTime.compareTo(a.createTime));
+      keyPackageEventList = currentList;
       return;
     }
-    
-    // Find all keypackages with the same client
-    List<KeyPackageData> sameClientKeyPackages = currentList.where((kp) => kp.client == keyPackage.client).toList();
-    
+    List<KeyPackageEvent> sameClientKeyPackages =
+        currentList.where((kp) => kp.client == keyPackageEvent.client).toList();
     if (sameClientKeyPackages.isNotEmpty) {
-      // Find the latest keypackage for this client
-      KeyPackageData latestKeyPackage = sameClientKeyPackages.reduce((a, b) => a.timestamp > b.timestamp ? a : b);
-      
-      // Only add if the new keypackage is newer than the latest existing one
-      if (keyPackage.timestamp > latestKeyPackage.timestamp) {
-        // Remove all existing keypackages with same client
-        currentList.removeWhere((kp) => kp.client == keyPackage.client);
-        
-        // Add new keypackage
-        currentList.add(keyPackage);
-        
-        // Sort by timestamp (newest first)
-        currentList.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-        
-        keyPackageList = currentList;
+      KeyPackageEvent latestKeyPackage =
+          sameClientKeyPackages.reduce((a, b) => a.createTime > b.createTime ? a : b);
+      if (keyPackageEvent.createTime > latestKeyPackage.createTime) {
+        currentList.removeWhere((kp) => kp.client == keyPackageEvent.client);
+        currentList.add(keyPackageEvent);
+        currentList.sort((a, b) => b.createTime.compareTo(a.createTime));
+        keyPackageEventList = currentList;
       }
     } else {
-      // No existing keypackage for this client, add the new one
-      currentList.add(keyPackage);
-      
-      // Sort by timestamp (newest first)
-      currentList.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      
-      keyPackageList = currentList;
+      currentList.add(keyPackageEvent);
+      currentList.sort((a, b) => b.createTime.compareTo(a.createTime));
+      keyPackageEventList = currentList;
     }
   }
 
-  /// Get the selected keypackage (stored in encodedKeyPackage field)
+  /// Get the selected keypackage event (stored in encodedKeyPackage field)
   @ignore
-  KeyPackageData? get selectedKeyPackage {
+  KeyPackageEvent? get selectedKeyPackageEvent {
     if (encodedKeyPackage == null || encodedKeyPackage!.isEmpty) {
       return null;
     }
-    
-    // Find the keypackage in the list that matches the selected encodedKeyPackage
-    return keyPackageList.firstWhere(
-      (kp) => kp.encodedKeyPackage == encodedKeyPackage,
-      orElse: () => KeyPackageData(
-        encodedKeyPackage: encodedKeyPackage!,
-        timestamp: lastUpdatedTime,
-        client: 'unknown',
-        eventId: '',
-      ),
+    return keyPackageEventList.firstWhere(
+      (kp) => kp.encoded_key_package == encodedKeyPackage,
+      orElse: () => KeyPackageEvent(
+          pubKey, lastUpdatedTime, '', '', [], [], 'unknown', encodedKeyPackage!, ''),
     );
   }
 
-  /// Set the selected keypackage
+  /// Set the selected keypackage event
   @ignore
-  void setSelectedKeyPackage(KeyPackageData keyPackage) {
-    encodedKeyPackage = keyPackage.encodedKeyPackage;
-    addKeyPackage(keyPackage);
+  void setSelectedKeyPackageEvent(KeyPackageEvent keyPackageEvent) {
+    encodedKeyPackage = keyPackageEvent.encoded_key_package;
+    addKeyPackageEvent(keyPackageEvent);
   }
 
-  /// Check if a keypackage should be updated (newer timestamp)
+  /// Check if a keypackage event should be updated (newer createTime)
   @ignore
-  bool shouldUpdateKeyPackage(KeyPackageData newKeyPackage) {
-    // If client is empty, always allow update
-    if (newKeyPackage.client.isEmpty) {
+  bool shouldUpdateKeyPackageEvent(KeyPackageEvent newKeyPackageEvent) {
+    if (newKeyPackageEvent.client.isEmpty) {
       return true;
     }
-    
-    List<KeyPackageData> currentList = keyPackageList;
-    
-    // Find all keypackages with the same client
-    List<KeyPackageData> sameClientKeyPackages = currentList.where((kp) => kp.client == newKeyPackage.client).toList();
-    
+    List<KeyPackageEvent> currentList = keyPackageEventList;
+    List<KeyPackageEvent> sameClientKeyPackages =
+        currentList.where((kp) => kp.client == newKeyPackageEvent.client).toList();
     if (sameClientKeyPackages.isNotEmpty) {
-      // Find the latest keypackage for this client
-      KeyPackageData latestKeyPackage = sameClientKeyPackages.reduce((a, b) => a.timestamp > b.timestamp ? a : b);
-      
-      // Return true if new keypackage is newer than the latest existing one
-      return newKeyPackage.timestamp > latestKeyPackage.timestamp;
+      KeyPackageEvent latestKeyPackage =
+          sameClientKeyPackages.reduce((a, b) => a.createTime > b.createTime ? a : b);
+      return newKeyPackageEvent.createTime > latestKeyPackage.createTime;
     } else {
-      // No existing keypackage for this client, should add
       return true;
     }
   }
 
-  /// Get the latest keypackage by client
+  /// Get the latest keypackage event by client
   @ignore
-  KeyPackageData? getLatestKeyPackageByClient(String client) {
-    List<KeyPackageData> sameClientKeyPackages = keyPackageList.where((kp) => kp.client == client).toList();
-    
+  KeyPackageEvent? getLatestKeyPackageEventByClient(String client) {
+    List<KeyPackageEvent> sameClientKeyPackages =
+        keyPackageEventList.where((kp) => kp.client == client).toList();
     if (sameClientKeyPackages.isNotEmpty) {
-      // Return the latest keypackage for this client
-      return sameClientKeyPackages.reduce((a, b) => a.timestamp > b.timestamp ? a : b);
+      return sameClientKeyPackages.reduce((a, b) => a.createTime > b.createTime ? a : b);
     }
-    
     return null;
   }
 
-  /// Get all keypackages with empty client
+  /// Get all keypackage events with empty client
   @ignore
-  List<KeyPackageData> getEmptyClientKeyPackages() {
-    return keyPackageList.where((kp) => kp.client.isEmpty).toList();
+  List<KeyPackageEvent> getEmptyClientKeyPackageEvents() {
+    return keyPackageEventList.where((kp) => kp.client.isEmpty).toList();
   }
 
-  /// Get keypackage by client (legacy method, returns first found)
+  /// Get keypackage event by client (legacy method, returns first found)
   @ignore
-  KeyPackageData? getKeyPackageByClient(String client) {
+  KeyPackageEvent? getKeyPackageEventByClient(String client) {
     try {
-      return keyPackageList.firstWhere((kp) => kp.client == client);
+      return keyPackageEventList.firstWhere((kp) => kp.client == client);
     } catch (e) {
       return null;
     }
@@ -490,7 +417,7 @@ UserDBISAR _userInfoFromMap(Map<String, dynamic> map) {
     clientPrivateKey: map['clientPrivateKey']?.toString(),
     remotePubkey: map['remotePubkey']?.toString(),
     encodedKeyPackage: map['encodedKeyPackage']?.toString(),
-    keyPackageListJson: map['keyPackageListJson']?.toString(),
+    keyPackageEventListJson: map['keyPackageEventListJson']?.toString(),
     settings: map['settings']?.toString(),
   );
 }

@@ -41,13 +41,9 @@ dependencies:
   bolt11_decoder: ^1.0.2
   connectivity_plus: ^6.1.3
   nostr_core_dart:
-    git:
-      url: https://github.com/0xchat-app/nostr-dart.git
-      ref: main
+    path: ../nostr-dart
   path_provider: ^2.1.3
   nostr_mls_package:
-    git:
-      url: https://github.com/0xchat-app/nostr-mls-package.git
-      ref: main
+    path: ../nostr-mls-package
   bitchat_flutter_plugin:
     path: ../bitchat-flutter-plugin

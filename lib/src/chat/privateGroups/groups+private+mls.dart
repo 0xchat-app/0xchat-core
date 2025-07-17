@@ -349,9 +349,10 @@ extension MLSPrivateGroups on Groups {
 
   Future<void> _checkKeyPackage({List<String>? relays}) async {
     // Use the new getAllKeyPackagesFromRelay method
-    Map<String, List<KeyPackageEvent>> categorizedKeyPackages = await getAllKeyPackagesFromRelay(pubkey);
+    Map<String, List<KeyPackageEvent>> categorizedKeyPackages =
+        await getAllKeyPackagesFromRelay(pubkey);
     List<KeyPackageEvent> oxchatLiteKeyPackages = categorizedKeyPackages['0xchat-lite'] ?? [];
-    
+
     if (oxchatLiteKeyPackages.isNotEmpty) {
       String encoded_key_package = oxchatLiteKeyPackages.first.encoded_key_package;
       String result = await getKeyPackageFromStorage(serializedKeyPackage: encoded_key_package);
@@ -392,7 +393,7 @@ extension MLSPrivateGroups on Groups {
     return completer.future;
   }
 
-    Future<Map<String, String>> _getMembersKeyPackages(
+  Future<Map<String, String>> _getMembersKeyPackages(
     List<String> pubkeys, {
     Future<String?> Function(String pubkey, List<KeyPackageEvent> availableKeyPackages)?
         onKeyPackageSelection,
@@ -401,25 +402,32 @@ extension MLSPrivateGroups on Groups {
     Map<String, String> result = {};
     for (var pubkey in pubkeys) {
       // Get all key packages in one request
-      Map<String, List<KeyPackageEvent>> categorizedKeyPackages = await getAllKeyPackagesFromRelay(pubkey, forceRefresh: forceRefresh);
-      
+      Map<String, List<KeyPackageEvent>> categorizedKeyPackages =
+          await getAllKeyPackagesFromRelay(pubkey, forceRefresh: forceRefresh);
+
       // First try to use 0xchat-lite key package
       List<KeyPackageEvent> oxchatLiteKeyPackages = categorizedKeyPackages['0xchat-lite'] ?? [];
       if (oxchatLiteKeyPackages.isNotEmpty) {
         result[pubkey] = oxchatLiteKeyPackages.first.encoded_key_package;
       } else {
-        // No 0xchat-lite key package found, try to get other available key packages
-        List<KeyPackageEvent> otherKeyPackages = categorizedKeyPackages['other'] ?? [];
-        if (otherKeyPackages.isNotEmpty) {
+        // No 0xchat-lite key package found, collect all other available key packages
+        List<KeyPackageEvent> allOtherKeyPackages = [];
+        for (var entry in categorizedKeyPackages.entries) {
+          if (entry.key != '0xchat-lite') {
+            allOtherKeyPackages.addAll(entry.value);
+          }
+        }
+        
+        if (allOtherKeyPackages.isNotEmpty) {
           // Found alternative key packages, use callback for selection
           String? selectedKeyPackage;
           if (onKeyPackageSelection != null) {
-            selectedKeyPackage = await onKeyPackageSelection(pubkey, otherKeyPackages);
+            selectedKeyPackage = await onKeyPackageSelection(pubkey, allOtherKeyPackages);
           } else {
             // Fallback to default selection (first available)
-            selectedKeyPackage = otherKeyPackages.first.encoded_key_package;
+            selectedKeyPackage = allOtherKeyPackages.first.encoded_key_package;
           }
-          
+
           if (selectedKeyPackage != null) {
             result[pubkey] = selectedKeyPackage;
           }
@@ -435,106 +443,99 @@ extension MLSPrivateGroups on Groups {
     return result;
   }
 
-    /// Get all key packages from relay and return them categorized by client
+  /// Get all key packages from relay and return them categorized by client
   /// If forceRefresh is false and user has encodedKeyPackage, use cached data
-  Future<Map<String, List<KeyPackageEvent>>> getAllKeyPackagesFromRelay(String pubkey, {bool forceRefresh = false}) async {
-    // If forceRefresh is false, first check if user has encodedKeyPackage in DB
-    if (!forceRefresh) {
-      UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
-      if (user != null && user.encodedKeyPackage != null && user.encodedKeyPackage!.isNotEmpty) {
-        // Create a simple KeyPackageEvent from the cached encodedKeyPackage
-        KeyPackageEvent keyPackageEvent = KeyPackageEvent(
-          pubkey, // Use the pubkey parameter
-          user.lastUpdatedTime, // Use user's last updated time as timestamp
-          '', // mls_protocol_version - we don't have this in cache
-          '', // ciphersuite - we don't have this in cache
-          [], // extensions - we don't have this in cache
-          [], // relays - we don't have this in cache
-          '0xchat-lite', // Assume it's 0xchat-lite since that's what we store in encodedKeyPackage
-          user.encodedKeyPackage!, // Use cached encoded key package
-        );
-        
-        // Return categorized result with only 0xchat-lite keypackage
-        return {
-          '0xchat-lite': [keyPackageEvent],
-          'other': [],
-        };
+  Future<Map<String, List<KeyPackageEvent>>> getAllKeyPackagesFromRelay(String pubkey,
+      {bool forceRefresh = false}) async {
+    Map<String, KeyPackageEvent> latestKeyPackages = {};
+
+    // Get existing key packages from local storage first
+    UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
+    if (user != null && user.keyPackageEventList.isNotEmpty) {
+      for (var keyPackageEvent in user.keyPackageEventList) {
+        String client = (keyPackageEvent.client.isEmpty) ? 'unknown' : keyPackageEvent.client;
+        if (!latestKeyPackages.containsKey(client) ||
+            keyPackageEvent.createTime > latestKeyPackages[client]!.createTime) {
+          latestKeyPackages[client] = keyPackageEvent;
+        }
       }
     }
-    
-    // If forceRefresh is true or no cached data, fetch from relay
-    Completer<Map<String, List<KeyPackageEvent>>> completer = Completer<Map<String, List<KeyPackageEvent>>>();
+
+    // If forceRefresh is false and local data exists, return it directly
+    if (!forceRefresh &&
+        user != null &&
+        user.encodedKeyPackage != null &&
+        user.encodedKeyPackage!.isNotEmpty) {
+      String client = '0xchat-lite';
+      if (!latestKeyPackages.containsKey(client)) {
+        KeyPackageEvent keyPackageEvent = KeyPackageEvent(
+            pubkey, user.lastUpdatedTime, '', '', [], [], client, user.encodedKeyPackage!, '');
+        latestKeyPackages[client] = keyPackageEvent;
+      }
+      // Convert to Map<String, List<KeyPackageEvent>>
+      return latestKeyPackages.map((k, v) => MapEntry(k, [v]));
+    }
+
+    // Fetch from network
+    Completer<Map<String, List<KeyPackageEvent>>> completer =
+        Completer<Map<String, List<KeyPackageEvent>>>();
     List<Event> cachedEvents = [];
-    
-    // Get all key packages for the pubkey
-    Filter filter = Filter(kinds: [443], authors: [pubkey], limit: 100);
+    Filter filter = Filter(kinds: [443], authors: [pubkey], limit: 30);
     
     Connect.sharedInstance.addSubscription([filter], eventCallBack: (event, relay) async {
       cachedEvents.add(event);
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
-      Map<String, List<KeyPackageEvent>> categorizedKeyPackages = {
-        '0xchat-lite': [],
-        'other': [],
-      };
-      
       for (Event event in cachedEvents) {
         try {
           KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
+          
           bool result = await _checkValidKeypackage(keyPackageEvent, client: null);
+          
           if (result) {
-            // Save valid key package to user table
-            UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
-            if (user != null) {
-              // Create KeyPackageData
-              KeyPackageData keyPackageData = KeyPackageData(
-                encodedKeyPackage: keyPackageEvent.encoded_key_package,
-                timestamp: event.createdAt,
-                client: keyPackageEvent.client ?? 'unknown',
-                eventId: event.id,
-              );
-              
-              // Only add if it's a newer keypackage
-              if (user.shouldUpdateKeyPackage(keyPackageData)) {
-                user.addKeyPackage(keyPackageData);
-                await Account.saveUserToDB(user);
-              }
-            }
+            // Only keep the latest for each client
+            String client = (keyPackageEvent.client.isEmpty) ? 'unknown' : keyPackageEvent.client;
             
-            // Categorize by client
-            String client = keyPackageEvent.client ?? 'unknown';
-            if (client == '0xchat-lite') {
-              categorizedKeyPackages['0xchat-lite']!.add(keyPackageEvent);
-            } else {
-              categorizedKeyPackages['other']!.add(keyPackageEvent);
+            if (!latestKeyPackages.containsKey(client) ||
+                keyPackageEvent.createTime > latestKeyPackages[client]!.createTime) {
+              latestKeyPackages[client] = keyPackageEvent;
+            }
+            // Sync to local
+            if (user != null && user.shouldUpdateKeyPackageEvent(keyPackageEvent)) {
+              user.addKeyPackageEvent(keyPackageEvent);
+              await Account.saveUserToDB(user);
             }
           }
-          // Save event to DB to avoid reprocessing
           EventCache.sharedInstance.saveEventToDB(EventDBISAR(eventId: event.id));
         } catch (e) {
-          // Skip invalid events
           continue;
         }
       }
       
-      completer.complete(categorizedKeyPackages);
+      // Convert latestKeyPackages to the expected format
+      Map<String, List<KeyPackageEvent>> result = {};
+      for (var entry in latestKeyPackages.entries) {
+        result[entry.key] = [entry.value];
+      }
+      
+      completer.complete(result);
     });
-    
     return completer.future;
   }
 
-    /// Get key package from relay with optional client filter
+  /// Get key package from relay with optional client filter
   Future<String?> getKeyPackageFromRelay(String pubkey, {String? client}) async {
     // Use the new getAllKeyPackagesFromRelay method
-    Map<String, List<KeyPackageEvent>> categorizedKeyPackages = await getAllKeyPackagesFromRelay(pubkey);
-    
+    Map<String, List<KeyPackageEvent>> categorizedKeyPackages =
+        await getAllKeyPackagesFromRelay(pubkey);
+
     String targetClient = client ?? '0xchat-lite';
-    
+
     // First try to find a key package with the specified client
     List<KeyPackageEvent> targetClientKeyPackages = categorizedKeyPackages[targetClient] ?? [];
     if (targetClientKeyPackages.isNotEmpty) {
       return targetClientKeyPackages.first.encoded_key_package;
     }
-    
+
     // If no matching client found, return null
     return null;
   }
@@ -595,8 +596,8 @@ extension MLSPrivateGroups on Groups {
     bool forceRefresh = false,
   }) async {
     members.remove(pubkey);
-    Map<String, String> membersKeyPackages =
-        await _getMembersKeyPackages(members, onKeyPackageSelection: onKeyPackageSelection, forceRefresh: forceRefresh);
+    Map<String, String> membersKeyPackages = await _getMembersKeyPackages(members,
+        onKeyPackageSelection: onKeyPackageSelection, forceRefresh: forceRefresh);
     if (membersKeyPackages.keys.length < members.length) return null;
     String createGroupResult = await createGroup(
         groupName: groupName,
@@ -872,8 +873,8 @@ extension MLSPrivateGroups on Groups {
     bool forceRefresh = false,
   }) async {
     if (group.mlsGroupId == null) return group;
-    Map<String, String> membersKeyPackages =
-        await _getMembersKeyPackages(members, onKeyPackageSelection: onKeyPackageSelection, forceRefresh: forceRefresh);
+    Map<String, String> membersKeyPackages = await _getMembersKeyPackages(members,
+        onKeyPackageSelection: onKeyPackageSelection, forceRefresh: forceRefresh);
     if (membersKeyPackages.keys.length < members.length) return group;
     String exportSecretResult = await exportSecret(groupId: group.mlsGroupId!);
     U8Array32 preSecret =

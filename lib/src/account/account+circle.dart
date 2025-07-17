@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:chatcore/chat-core.dart';
 import 'package:isar/isar.dart' hide Filter;
-import 'package:bitchat_flutter_plugin/bitchat_core.dart' as bitchat;
 
 extension AccountCircle on Account {
   /// Logout from current circle and clean up resources
