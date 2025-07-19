@@ -844,9 +844,14 @@ extension MLSPrivateGroups on Groups {
   }
 
   Future<void> _handleMLSGroupMessage(Event innerEvent, String privateGroupId, String relay) async {
-    if (innerEvent.kind == 9) {
-      _handleKind9MLSGroupMessage(innerEvent, privateGroupId);
-    } else if (innerEvent.kind == 15) {
+    switch (innerEvent.kind) {
+      case 9:
+        _handleKind9MLSGroupMessage(innerEvent, privateGroupId);
+        break;
+      case 5:
+        _handleKind5MLSGroupMessage(innerEvent);
+        break;
+      case 15:
       Contacts.sharedInstance
           .handlePrivateMessage(innerEvent, relay, privateGroupId: privateGroupId);
     }
@@ -873,6 +878,19 @@ extension MLSPrivateGroups on Groups {
     messageDB.decryptSecret = map['decryptSecret'];
     await Messages.saveMessageToDB(messageDB);
     groupMessageCallBack?.call(messageDB);
+  }
+
+  Future<void> _handleKind5MLSGroupMessage(Event innerEvent) async {
+    List<String> eventIds = Nip9.tagsToList(innerEvent.tags);
+    await Messages.deleteMessagesFromDB(messageIds: eventIds);
+  }
+
+  Future<void> deleteMLSGroupMessages(List<String> messageIds, GroupDBISAR group) async {
+    Event messageEvent = await Nip9.encode(messageIds, '', pubkey, privkey);
+    OKEvent okEvent = await sendMessageToMLSGroup(group, messageEvent);
+    if (okEvent.status) {
+      await Messages.deleteMessagesFromDB(messageIds: messageIds);
+    }
   }
 
   Future<GroupDBISAR> addMembersToMLSGroup(
