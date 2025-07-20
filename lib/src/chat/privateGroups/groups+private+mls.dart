@@ -348,7 +348,6 @@ extension MLSPrivateGroups on Groups {
   }
 
   Future<void> _checkKeyPackage({List<String>? relays}) async {
-    // Use the new getAllKeyPackagesFromRelay method
     Map<String, List<KeyPackageEvent>> categorizedKeyPackages =
         await getAllKeyPackagesFromRelay(pubkey);
     List<KeyPackageEvent> oxchatLiteKeyPackages = categorizedKeyPackages['0xchat-lite'] ?? [];
