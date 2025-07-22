@@ -56,7 +56,8 @@ class MessageDBISAR {
   String plaintEvent;
 
   /// add type
-  int? chatType; // 0 private chat 1 group chat 2 channel chat 3 secret chat 4 relay group chat 5 ble channel chat 6 ble private chat
+  int?
+      chatType; // 0 private chat 1 group chat 2 channel chat 3 secret chat 4 relay group chat 5 ble channel chat 6 ble private chat
   String? subType; // subtype of template/system type
 
   /// add previewData
@@ -384,7 +385,7 @@ class MessageDBISAR {
   }
 
   static Future<MessageDBISAR?> fromPrivateMessage(Event event, String receiver, String privkey,
-      {int chatType = 0, String? privateGroupId}) async {
+      {int chatType = 0}) async {
     EDMessage? message;
     if (event.kind == 4) {
       message = await Contacts.sharedInstance.decodeNip4Event(event, receiver, privkey);
@@ -392,7 +393,7 @@ class MessageDBISAR {
       message = await Contacts.sharedInstance.decodeNip44Event(event, receiver, privkey);
     } else if (event.kind == 14 || event.kind == 15) {
       message = await Contacts.sharedInstance.decodeKind14Event(event, receiver);
-      if (message?.groupId?.isNotEmpty == true && !ChatCoreManager().isLite) {
+      if (message?.groupId?.isNotEmpty == true) {
         Groups.sharedInstance.createPrivateGroup(
             message!.sender, message.groupId!, message.subject, message.members,
             createAt: event.createdAt);
@@ -404,7 +405,7 @@ class MessageDBISAR {
         messageId: event.id,
         sender: message.sender,
         receiver: message.receiver,
-        groupId: privateGroupId ?? message.groupId ?? '',
+        groupId: message.groupId ?? '',
         kind: event.kind,
         tags: jsonEncode(event.tags),
         content: message.content,

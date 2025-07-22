@@ -348,8 +348,6 @@ extension MLSPrivateGroups on Groups {
     }
   }
 
-
-
   Future<GroupDBISAR?> createMLSGroup(
     String groupName,
     String groupDescription,
@@ -610,8 +608,7 @@ extension MLSPrivateGroups on Groups {
         break;
       // media message
       case 15:
-        Contacts.sharedInstance
-            .handlePrivateMessage(innerEvent, relay, privateGroupId: privateGroupId);
+        _handleKind15MLSGroupMessage(innerEvent, privateGroupId);
         break;
       default:
         break;
@@ -644,6 +641,38 @@ extension MLSPrivateGroups on Groups {
   Future<void> _handleKind5MLSGroupMessage(Event innerEvent) async {
     List<String> eventIds = Nip9.tagsToList(innerEvent.tags);
     await Messages.deleteMessagesFromDB(messageIds: eventIds);
+  }
+
+  Future<void> _handleKind15MLSGroupMessage(Event innerEvent, String privateGroupId) async {
+    EDMessage? message = await Contacts.sharedInstance.decodeKind14Event(innerEvent, pubkey);
+    if (message == null) return;
+    MessageDBISAR messageDB = MessageDBISAR(
+        messageId: innerEvent.id,
+        sender: message.sender,
+        receiver: message.receiver,
+        groupId: privateGroupId,
+        kind: innerEvent.kind,
+        tags: jsonEncode(innerEvent.tags),
+        content: message.content,
+        createTime: innerEvent.createdAt,
+        replyId: message.replyId,
+        plaintEvent: jsonEncode(innerEvent),
+        chatType: 1,
+        expiration: message.expiration == null ? null : int.parse(message.expiration!),
+        decryptAlgo: message.algorithm,
+        decryptNonce: message.nonce,
+        decryptSecret: message.secret);
+    var map = await MessageDBISAR.decodeContent(message.content);
+    messageDB.decryptContent = map['content'];
+    messageDB.type = map['contentType'];
+    if (map['decryptSecret'] != null) {
+      messageDB.decryptSecret = map['decryptSecret'];
+    }
+    if (message.mimeType != null) {
+      messageDB.type = MessageDBISAR.mimeTypeToTpyeString(message.mimeType!);
+    }
+    await Messages.saveMessageToDB(messageDB);
+    groupMessageCallBack?.call(messageDB);
   }
 
   Future<void> deleteMLSGroupMessages(List<String> messageIds, GroupDBISAR group) async {

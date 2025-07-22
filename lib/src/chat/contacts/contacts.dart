@@ -369,9 +369,8 @@ class Contacts {
     });
   }
 
-  Future<void> handlePrivateMessage(Event event, String relay, {String? privateGroupId}) async {
-    MessageDBISAR? messageDB = await MessageDBISAR.fromPrivateMessage(event, pubkey, privkey,
-        privateGroupId: privateGroupId);
+  Future<void> handlePrivateMessage(Event event, String relay) async {
+    MessageDBISAR? messageDB = await MessageDBISAR.fromPrivateMessage(event, pubkey, privkey);
     if (messageDB != null) {
       await Messages.saveMessageToDB(messageDB);
       if (messageDB.groupId.isNotEmpty) {
