@@ -582,8 +582,16 @@ extension MLSPrivateGroups on Groups {
             break;
           }
           UserDBISAR? user = await Account.sharedInstance.getUserInfo(member);
-          content = '${user?.name} $content ';
-          content = '${content}left the group';
+          if (groupValueNotifier.value.adminPubkeys?.contains(user?.pubKey) == true) {
+            content = '${user?.name} $content ';
+            content = '${content}deleted the group';
+            await deleteMLSGroup(groupValueNotifier.value);
+            break;
+          }
+          else {
+            content = '${user?.name} $content ';
+            content = '${content}left the group';
+          }
         }
         sendGroupMessage(groupValueNotifier.value.privateGroupId, MessageType.system, content,
             local: true);
@@ -675,7 +683,12 @@ extension MLSPrivateGroups on Groups {
     groupMessageCallBack?.call(messageDB);
   }
 
-  Future<void> deleteMLSGroupMessages(List<String> messageIds, GroupDBISAR group) async {
+  Future<void> deleteMLSGroupMessages(List<String> messageIds, GroupDBISAR group,
+      {bool deleteFromRelay = false}) async {
+    if (!deleteFromRelay) {
+      await Messages.deleteMessagesFromDB(messageIds: messageIds);
+      return;
+    }
     Event messageEvent = await Nip9.encode(messageIds, '', pubkey, privkey);
     OKEvent okEvent = await sendMessageToMLSGroup(group, messageEvent);
     if (okEvent.status) {
@@ -758,12 +771,18 @@ extension MLSPrivateGroups on Groups {
 
     OKEvent okEvent = await sendGroupEventToMLSGroup(group, groupEvent);
     if (okEvent.status) {
+      await deleteMLSGroup(group);
       myGroups.remove(group);
       groups.remove(group);
       updateMLSGroupSubscription();
       await syncMyGroupListToDB();
     }
     return okEvent;
+  }
+
+  Future<void> deleteMLSGroup(GroupDBISAR group) async {
+    if (group.mlsGroupId == null) return;
+    await Messages.deleteGroupMessagesFromDB(group.groupId);
   }
 
   Future<GroupDBISAR?> updateMLSGroupInfo(GroupDBISAR group) async {
