@@ -684,8 +684,8 @@ extension MLSPrivateGroups on Groups {
   }
 
   Future<void> deleteMLSGroupMessages(List<String> messageIds, GroupDBISAR group,
-      {bool deleteFromRelay = false}) async {
-    if (!deleteFromRelay) {
+      {bool requestDeleteForAll = false}) async {
+    if (!requestDeleteForAll) {
       await Messages.deleteMessagesFromDB(messageIds: messageIds);
       return;
     }
