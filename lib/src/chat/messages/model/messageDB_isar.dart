@@ -392,7 +392,7 @@ class MessageDBISAR {
       message = await Contacts.sharedInstance.decodeNip44Event(event, receiver, privkey);
     } else if (event.kind == 14 || event.kind == 15) {
       message = await Contacts.sharedInstance.decodeKind14Event(event, receiver);
-      if (message?.groupId?.isNotEmpty == true) {
+      if (message?.groupId?.isNotEmpty == true && !ChatCoreManager().isLite) {
         Groups.sharedInstance.createPrivateGroup(
             message!.sender, message.groupId!, message.subject, message.members,
             createAt: event.createdAt);
