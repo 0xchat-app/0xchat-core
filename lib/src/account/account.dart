@@ -352,7 +352,7 @@ class Account {
     me = null;
     currentPubkey = '';
     currentPrivkey = '';
-    userCache.remove(currentPubkey);
+    userCache.clear();
     await DBISAR.sharedInstance.closeDatabase();
   }
 
