@@ -589,7 +589,8 @@ class KeyPackageManager {
 
   /// Handle permanent invite link
   /// This method processes a permanent keypackage from an invite link
-  static Future<bool> handlePermanentInviteLink({
+  /// Returns a tuple of (success, pubkey)
+  static Future<Map<String, dynamic>> handlePermanentInviteLink({
     required String eventId,
     required List<String> relays,
   }) async {
@@ -598,8 +599,9 @@ class KeyPackageManager {
       final keyPackageEvent = await _fetchKeyPackageFromRelay(eventId, relays);
       if (keyPackageEvent == null) {
         print('Failed to fetch keypackage event from relay');
-        return false;
+        return {'success': false, 'pubkey': null};
       }
+      
       // Create database record
       KeyPackageDBISAR keyPackageDB = KeyPackageDBISAR.fromKeyPackageEvent(
         keyPackageEvent,
@@ -611,10 +613,10 @@ class KeyPackageManager {
       await KeyPackageManager.saveKeyPackage(keyPackageDB);
 
       print('Successfully processed permanent invite link: $eventId');
-      return true;
+      return {'success': true, 'pubkey': keyPackageEvent.pubkey};
     } catch (e) {
       print('Failed to handle permanent invite link: $e');
-      return false;
+      return {'success': false, 'pubkey': null};
     }
   }
 
@@ -626,7 +628,22 @@ class KeyPackageManager {
         print('No relays provided for fetching keypackage');
         return null;
       }
-      // Create a temporary connection to fetch the event
+
+      // First, try to find the keypackage in local database
+      final isar = DBISAR.sharedInstance.isar;
+      final localKeyPackage = isar.keyPackageDBISARs
+          .where()
+          .eventIdEqualTo(eventId)
+          .findFirst();
+
+      if (localKeyPackage != null) {
+        print('Found keypackage in local database: $eventId');
+        return localKeyPackage.toKeyPackageEvent();
+      }
+
+      print('Keypackage not found in local database, fetching from relay: $eventId');
+
+      // If not found locally, fetch from relay
       final completer = Completer<KeyPackageEvent?>();
 
       // Wait for connection
