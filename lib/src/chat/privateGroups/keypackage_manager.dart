@@ -69,9 +69,9 @@ class KeyPackageManager {
 
     try {
       // Check if permanent keypackage already exists locally
-      List<KeyPackageDBISAR> existingPermanentKeyPackages = 
+      List<KeyPackageDBISAR> existingPermanentKeyPackages =
           await getLocalKeyPackagesByType(ownerPubkey, KeyPackageType.permanent);
-      
+
       if (existingPermanentKeyPackages.isNotEmpty) {
         // Use existing permanent keypackage
         KeyPackageDBISAR existingKeyPackage = existingPermanentKeyPackages.first;
@@ -161,8 +161,9 @@ class KeyPackageManager {
 
   static Future<KeyPackageDBISAR?> getKeyPackageById(String keyPackageId) async {
     final isar = DBISAR.sharedInstance.isar;
-    KeyPackageDBISAR? keyPackage = isar.keyPackageDBISARs.where().keyPackageIdEqualTo(keyPackageId).findFirst();
-    
+    KeyPackageDBISAR? keyPackage =
+        isar.keyPackageDBISARs.where().keyPackageIdEqualTo(keyPackageId).findFirst();
+
     if (keyPackage != null) {
       // Only verify keypackage in nostr_mls storage if this is the current user's keypackage
       String currentPubkey = Account.sharedInstance.currentPubkey;
@@ -175,7 +176,7 @@ class KeyPackageManager {
         }
       }
     }
-    
+
     return keyPackage;
   }
 
@@ -397,7 +398,7 @@ class KeyPackageManager {
   }
 
   static Future<void> saveKeyPackage(KeyPackageDBISAR keyPackage) async {
-      await DBISAR.sharedInstance.saveToDB(keyPackage);
+    await DBISAR.sharedInstance.saveToDB(keyPackage);
   }
 
   static Future<OKEvent> _publishKeyPackageEvent(Event event, List<String> relays) async {
@@ -539,11 +540,129 @@ class KeyPackageManager {
     try {
       final isar = DBISAR.sharedInstance.isar;
       await isar.writeAsync((isar) async {
-         isar.keyPackageDBISARs.delete(keyPackage.id);
+        isar.keyPackageDBISARs.delete(keyPackage.id);
       });
       print('Deleted keypackage ${keyPackage.keyPackageId} from database');
     } catch (e) {
       print('Failed to delete keypackage from database: $e');
+    }
+  }
+
+  /// Handle one-time invite link
+  /// This method processes a one-time keypackage from an invite link
+  static Future<bool> handleOneTimeInviteLink({
+    required String encodedKeyPackage,
+    required String senderPubkey,
+    required List<String> relays,
+  }) async {
+    try {
+      // Create KeyPackageEvent from the encoded keypackage
+      final keyPackageEvent = KeyPackageEvent(
+        senderPubkey,
+        currentUnixTimestampSeconds(),
+        '1.0',
+        '1',
+        ['RequiredCapabilities,LastResort,RatchetTree,Unknown(62190)'],
+        relays,
+        '0xchat-lite',
+        encodedKeyPackage,
+        '', // eventId will be empty for one-time keypackages
+      );
+
+      // Create database record
+      KeyPackageDBISAR keyPackageDB = KeyPackageDBISAR.fromKeyPackageEvent(
+        keyPackageEvent,
+        type: KeyPackageType.oneTime,
+        status: KeyPackageStatus.available,
+      );
+
+      // Save to database
+      await KeyPackageManager.saveKeyPackage(keyPackageDB);
+
+      print('Successfully processed one-time invite link from $senderPubkey');
+      return true;
+    } catch (e) {
+      print('Failed to handle one-time invite link: $e');
+      return false;
+    }
+  }
+
+  /// Handle permanent invite link
+  /// This method processes a permanent keypackage from an invite link
+  static Future<bool> handlePermanentInviteLink({
+    required String eventId,
+    required List<String> relays,
+  }) async {
+    try {
+      // Fetch the KeyPackageEvent from relay
+      final keyPackageEvent = await _fetchKeyPackageFromRelay(eventId, relays);
+      if (keyPackageEvent == null) {
+        print('Failed to fetch keypackage event from relay');
+        return false;
+      }
+      // Create database record
+      KeyPackageDBISAR keyPackageDB = KeyPackageDBISAR.fromKeyPackageEvent(
+        keyPackageEvent,
+        type: KeyPackageType.permanent,
+        status: KeyPackageStatus.available,
+      );
+
+      // Save to database
+      await KeyPackageManager.saveKeyPackage(keyPackageDB);
+
+      print('Successfully processed permanent invite link: $eventId');
+      return true;
+    } catch (e) {
+      print('Failed to handle permanent invite link: $e');
+      return false;
+    }
+  }
+
+  /// Fetch KeyPackageEvent from relay
+  static Future<KeyPackageEvent?> _fetchKeyPackageFromRelay(
+      String eventId, List<String> relays) async {
+    try {
+      if (relays.isEmpty) {
+        print('No relays provided for fetching keypackage');
+        return null;
+      }
+      final relayUrl = relays.first;
+
+      // Create a temporary connection to fetch the event
+      final completer = Completer<KeyPackageEvent?>();
+
+      Connect.sharedInstance.connect(relayUrl, relayKind: RelayKind.general);
+
+      // Wait for connection
+      await Future.delayed(Duration(seconds: 2));
+
+      // Subscribe to the specific event
+      final filter = Filter(ids: [eventId], kinds: [443]);
+      final subscriptionId = Connect.sharedInstance.addSubscription(
+        [filter],
+        eventCallBack: (event, relay) {
+          if (event.kind == 443) {
+            final keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
+            completer.complete(keyPackageEvent);
+          }
+        },
+        eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+          if (!completer.isCompleted) {
+            completer.complete(null);
+          }
+        },
+      );
+
+      // Wait for response with timeout
+      final result = await completer.future.timeout(Duration(seconds: 10));
+
+      // Clean up subscription
+      Connect.sharedInstance.closeRequests(subscriptionId);
+
+      return result;
+    } catch (e) {
+      print('Error fetching keypackage from relay: $e');
+      return null;
     }
   }
 }
