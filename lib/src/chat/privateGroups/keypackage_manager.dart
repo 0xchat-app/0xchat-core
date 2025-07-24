@@ -51,7 +51,6 @@ class KeyPackageManager {
 
       return keyPackageEvent;
     } catch (e) {
-      LogUtils.e('Failed to create one-time keypackage: $e');
       return null;
     }
   }
@@ -76,22 +75,8 @@ class KeyPackageManager {
       if (existingPermanentKeyPackages.isNotEmpty) {
         // Use existing permanent keypackage
         KeyPackageDBISAR existingKeyPackage = existingPermanentKeyPackages.first;
-        LogUtils.d('Using existing permanent keypackage: ${existingKeyPackage.keyPackageId}');
-        
-        // Convert KeyPackageDBISAR back to KeyPackageEvent
-        KeyPackageEvent existingKeyPackageEvent = KeyPackageEvent(
-          existingKeyPackage.ownerPubkey,
-          existingKeyPackage.createTime,
-          existingKeyPackage.mlsProtocolVersion,
-          existingKeyPackage.ciphersuite,
-          existingKeyPackage.extensions,
-          existingKeyPackage.relays,
-          existingKeyPackage.client,
-          existingKeyPackage.encodedKeyPackage,
-          existingKeyPackage.eventId,
-        );
-        
-        return existingKeyPackageEvent;
+        // Convert KeyPackageDBISAR back to KeyPackageEvent using the existing method
+        return existingKeyPackage.toKeyPackageEvent();
       }
 
       // Create new keypackage if none exists
@@ -121,8 +106,8 @@ class KeyPackageManager {
       } else {
         return null;
       }
-    } catch (e) {
-      LogUtils.e('Failed to create permanent keypackage: $e');
+    } catch (e, stackTrace) {
+      print('Failed to create permanent keypackage: $e $stackTrace');
       return null;
     }
   }
@@ -162,7 +147,6 @@ class KeyPackageManager {
             validKeyPackages.add(keyPackage);
           } else {
             // Remove from database if not found in nostr_mls storage
-            LogUtils.d('Removing keypackage ${keyPackage.keyPackageId} from database - not found in nostr_mls storage');
             await _deleteKeyPackageFromDB(keyPackage);
           }
         }
@@ -171,7 +155,6 @@ class KeyPackageManager {
 
       return keyPackages;
     } catch (e) {
-      LogUtils.e('Failed to get available keypackages: $e');
       return [];
     }
   }
@@ -187,7 +170,6 @@ class KeyPackageManager {
         bool existsInStorage = await _verifyKeyPackageInStorage(keyPackage.encodedKeyPackage);
         if (!existsInStorage) {
           // Remove from database if not found in nostr_mls storage
-          LogUtils.d('Removing keypackage $keyPackageId from database - not found in nostr_mls storage');
           await _deleteKeyPackageFromDB(keyPackage);
           return null;
         }
@@ -219,7 +201,6 @@ class KeyPackageManager {
             validKeyPackages.add(keyPackage);
           } else {
             // Remove from database if not found in nostr_mls storage
-            LogUtils.d('Removing keypackage ${keyPackage.keyPackageId} from database - not found in nostr_mls storage');
             await _deleteKeyPackageFromDB(keyPackage);
           }
         }
@@ -228,7 +209,6 @@ class KeyPackageManager {
 
       return keyPackages;
     } catch (e) {
-      LogUtils.e('Failed to get keypackages by type: $e');
       return [];
     }
   }
@@ -361,7 +341,6 @@ class KeyPackageManager {
             // Save to database
             await saveKeyPackage(keyPackageDB);
           } catch (e) {
-            LogUtils.e('Failed to process keypackage event: $e');
             continue;
           }
         }
@@ -373,7 +352,7 @@ class KeyPackageManager {
 
       await completer.future;
     } catch (e) {
-      LogUtils.e('Failed to search keypackages: $e');
+      print('Failed to search keypackages: $e');
     }
   }
 
@@ -395,7 +374,7 @@ class KeyPackageManager {
         });
       }
     } catch (e) {
-      LogUtils.e('Failed to mark keypackage as used: $e');
+      print('Failed to mark keypackage as used: $e');
     }
   }
 
@@ -417,7 +396,7 @@ class KeyPackageManager {
         });
       }
     } catch (e) {
-      LogUtils.e('Failed to mark keypackage as used: $e');
+      print('Failed to mark keypackage as used: $e');
     }
   }
 
@@ -428,7 +407,7 @@ class KeyPackageManager {
         isar.keyPackageDBISARs.put(keyPackage);
       });
     } catch (e) {
-      LogUtils.e('Failed to save keypackage: $e');
+      print('Failed to save keypackage: $e');
     }
   }
 
@@ -484,7 +463,7 @@ class KeyPackageManager {
       // Accept any valid keypackage with a known client
       return keyPackageEvent.client.isNotEmpty;
     } catch (e) {
-      LogUtils.e('Failed to check keypackage validity: $e');
+      print('Failed to check keypackage validity: $e');
       return false;
     }
   }
@@ -502,7 +481,7 @@ class KeyPackageManager {
         await Account.saveUserToDB(user);
       }
     } catch (e) {
-      LogUtils.e('Failed to update user last selected keypackage ID: $e');
+      print('Failed to update user last selected keypackage ID: $e');
     }
   }
 
@@ -549,7 +528,7 @@ class KeyPackageManager {
         'permanent': permanent,
       };
     } catch (e) {
-      LogUtils.e('Failed to get keypackage stats: $e');
+      print('Failed to get keypackage stats: $e');
       return {};
     }
   }
@@ -561,7 +540,7 @@ class KeyPackageManager {
       Map<String, dynamic> resultMap = jsonDecode(result);
       return resultMap['found'] == true;
     } catch (e) {
-      LogUtils.e('Failed to verify keypackage in storage: $e');
+      print('Failed to verify keypackage in storage: $e');
       return false;
     }
   }
@@ -573,9 +552,9 @@ class KeyPackageManager {
       await isar.writeAsync((isar) async {
          isar.keyPackageDBISARs.delete(keyPackage.id);
       });
-      LogUtils.d('Deleted keypackage ${keyPackage.keyPackageId} from database');
+      print('Deleted keypackage ${keyPackage.keyPackageId} from database');
     } catch (e) {
-      LogUtils.e('Failed to delete keypackage from database: $e');
+      print('Failed to delete keypackage from database: $e');
     }
   }
 }

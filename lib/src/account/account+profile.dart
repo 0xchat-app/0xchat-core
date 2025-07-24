@@ -400,7 +400,7 @@ extension AccountProfile on Account {
         List<BadgeAward> profileBadges = Nip58.getProfileBadges(event);
         db.badges = jsonEncode(profileBadges.map((e) => e.awardId).toList());
       } catch (e) {
-        LogUtils.d(e);
+        print(e);
       }
     }
     return db;

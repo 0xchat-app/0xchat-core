@@ -24,15 +24,9 @@ extension GroupsPrivateMlsKeyPackages on Groups {
         client: KeyPackageClient.oxchatLite,
       );
       
-      if (result == null) {
-        // Existing permanent keypackage found, no need to create new one
-        LogUtils.d('Using existing permanent keypackage for user $pubkey');
-        return null;
-      }
-      
       return result;
-    } catch (e) {
-      LogUtils.e('Failed to create permanent keypackage: $e');
+    } catch (e, stackTrace) {
+      print('Failed to create permanent keypackage: $e $stackTrace');
       return null;
     }
   }
@@ -141,11 +135,11 @@ extension GroupsPrivateMlsKeyPackages on Groups {
                 'No matching keypackage found in welcome event for group ${group.privateGroupId}');
           }
         } else {
-          LogUtils.d('No available keypackages found for user $pubkey');
+          print('No available keypackages found for user $pubkey');
         }
       }
     } catch (e) {
-      LogUtils.e('Failed to track keypackage usage: $e');
+      print('Failed to track keypackage usage: $e');
     }
   }
 
@@ -169,14 +163,14 @@ extension GroupsPrivateMlsKeyPackages on Groups {
             eventId: '', // No specific event ID for group creation
           );
 
-          LogUtils.d('Marked one-time keypackage for $memberPubkey as used for group $groupId');
+          print('Marked one-time keypackage for $memberPubkey as used for group $groupId');
         } else {
-          LogUtils.d(
+          print(
               'Skipped marking permanent keypackage for $memberPubkey as used for group $groupId');
         }
       }
     } catch (e) {
-      LogUtils.e('Failed to track one-time keypackage usage: $e');
+      print('Failed to track one-time keypackage usage: $e');
     }
   }
 
