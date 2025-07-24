@@ -554,11 +554,11 @@ class Messages {
     await DBISAR.sharedInstance.saveToDB(message);
   }
 
-  static deleteMessagesFromDB({List<String>? messageIds}) async {
+  static deleteMessagesFromDB({List<String>? messageIds, bool notify = true}) async {
     if (messageIds != null) {
       final isar = DBISAR.sharedInstance.isar;
       var queryBuilder = isar.messageDBISARs.where();
-      final messages = await queryBuilder
+      final messages = queryBuilder
           .anyOf(messageIds, (q, messageId) => q.messageIdEqualTo(messageId))
           .findAll();
       await DBISAR.sharedInstance.isar.writeAsync((isar) {
@@ -567,7 +567,9 @@ class Messages {
             .anyOf(messageIds, (q, messageId) => q.messageIdEqualTo(messageId))
             .deleteAll();
       });
-      Messages.sharedInstance.deleteCallBack?.call(messages);
+      if (notify) {
+        Messages.sharedInstance.deleteCallBack?.call(messages);
+      }
     }
   }
 

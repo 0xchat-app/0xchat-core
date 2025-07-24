@@ -154,42 +154,41 @@ extension PrivateGroups on Groups {
         encryptedFile: encryptedFile,
         createAt: createAt);
 
-    late MessageDBISAR messageDB;
+    MessageDBISAR messageDB = MessageDBISAR(
+      messageId: event!.id,
+      sender: event.pubkey,
+      receiver: '',
+      groupId: privateGroupId,
+      kind: event.kind,
+      tags: jsonEncode(event.tags),
+      replyId: replyMessage ?? '',
+      content: event.content,
+      decryptContent: content,
+      type: MessageDBISAR.messageTypeToString(type),
+      createTime: event.createdAt,
+      status: 0,
+      plaintEvent: jsonEncode(event),
+      chatType: 1,
+      decryptSecret: encryptedFile?.secret,
+      decryptNonce: encryptedFile?.nonce,
+      decryptAlgo: encryptedFile?.algorithm,
+    );
+
+    MessageDBISAR? replaceMessageDB;
     if (replaceMessageId != null) {
-      final replaceMessageDB = await Messages.sharedInstance.loadMessageDBFromDB(replaceMessageId);
+      replaceMessageDB = await Messages.sharedInstance.loadMessageDBFromDB(
+        replaceMessageId,
+      );
       if (replaceMessageDB == null) {
         return Future.value(OKEvent(
-          event?.innerEvent?.id ?? event!.id,
+          event.innerEvent?.id ?? event.id,
           false,
           'The message to be replaced was not found',
         ));
       }
-      replaceMessageDB.messageId = event!.id;
-      replaceMessageDB.content = event.content;
-      groupMessageUpdateCallBack?.call(replaceMessageDB, replaceMessageId);
-      messageDB = replaceMessageDB;
-    } else {
-      messageDB = MessageDBISAR(
-        messageId: event!.id,
-        sender: event.pubkey,
-        receiver: '',
-        groupId: privateGroupId,
-        kind: event.kind,
-        tags: jsonEncode(event.tags),
-        replyId: replyMessage ?? '',
-        content: event.content,
-        decryptContent: content,
-        type: MessageDBISAR.messageTypeToString(type),
-        createTime: event.createdAt,
-        status: 0,
-        plaintEvent: jsonEncode(event),
-        chatType: 1,
-        decryptSecret: encryptedFile?.secret,
-        decryptNonce: encryptedFile?.nonce,
-        decryptAlgo: encryptedFile?.algorithm,
-      );
-      groupMessageCallBack?.call(messageDB);
+      messageDB.createTime = replaceMessageDB.createTime;
     }
+
     var map = await MessageDBISAR.decodeContent(
         MessageDBISAR.getSubContent(type, content) ?? messageDB.content);
     messageDB.decryptContent = map['content'];
@@ -202,8 +201,12 @@ extension PrivateGroups on Groups {
       messageDB.type = MessageDBISAR.mimeTypeToTpyeString(encryptedFile!.mimeType);
     }
 
-    if (replaceMessageId != null) {
-      groupMessageUpdateCallBack?.call(messageDB, replaceMessageId);
+    if (replaceMessageDB != null) {
+      groupMessageUpdateCallBack?.call(messageDB, replaceMessageDB.messageId);
+      Messages.deleteMessagesFromDB(
+        messageIds: [replaceMessageDB.messageId],
+        notify: false,
+      );
     } else {
       groupMessageCallBack?.call(messageDB);
     }
