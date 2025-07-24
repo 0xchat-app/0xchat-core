@@ -9,6 +9,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:nostr_mls_package/nostr_mls_package.dart';
 import 'groups+private+mls+keypackages.dart';
+import 'keypackage_manager.dart';
+import 'model/keyPackageDB_isar.dart';
 
 String toHexString(List<int> bytes) {
   return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join('');
@@ -247,11 +249,9 @@ extension MLSPrivateGroups on Groups {
     }();
 
     await initNostrMls(path: mlsPath, identity: mlsIdentity, password: password);
-    checkKeyPackage();
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
       if (status == 1 && Account.sharedInstance.me != null) {
         updateMLSGroupSubscription(relay: relay);
-        checkKeyPackage();
       }
     });
     updateMLSGroupSubscription();
@@ -354,13 +354,12 @@ extension MLSPrivateGroups on Groups {
     List<String> members,
     List<String> admins,
     List<String> relays, {
-    Future<String?> Function(String pubkey, List<KeyPackageEvent> availableKeyPackages)?
+    Future<KeyPackageSelectionResult?> Function(String pubkey, List<KeyPackageEvent> availableKeyPackages)?
         onKeyPackageSelection,
-    bool forceRefresh = false,
   }) async {
     members.remove(pubkey);
     Map<String, String> membersKeyPackages = await getMembersKeyPackages(members,
-        onKeyPackageSelection: onKeyPackageSelection, forceRefresh: forceRefresh);
+        onKeyPackageSelection: onKeyPackageSelection);
     if (membersKeyPackages.keys.length < members.length) return null;
     String createGroupResult = await createGroup(
         groupName: groupName,
@@ -394,6 +393,9 @@ extension MLSPrivateGroups on Groups {
     String inviteMessage =
         groupDBISAR.isDirectMessage ? 'Private chat created!' : 'Private group created!';
     sendGroupMessage(groupDBISAR.privateGroupId, MessageType.system, inviteMessage, local: true);
+
+    // Track keypackage usage for one-time keypackages
+    await trackOneTimeKeyPackageUsage(membersKeyPackages, groupDBISAR.privateGroupId);
 
     return groupDBISAR;
   }
@@ -476,6 +478,8 @@ extension MLSPrivateGroups on Groups {
 
     if (checkInMyGroupList(groupDBISAR.privateGroupId)) {
       await joinMLSGroup(groupDBISAR);
+      // Track keypackage usage when processing welcome message
+      await trackKeyPackageUsageForWelcome(groupDBISAR, wrapperEventId);
     }
   }
 
@@ -699,13 +703,12 @@ extension MLSPrivateGroups on Groups {
   Future<GroupDBISAR> addMembersToMLSGroup(
     GroupDBISAR group,
     List<String> members, {
-    Future<String?> Function(String pubkey, List<KeyPackageEvent> availableKeyPackages)?
+    Future<KeyPackageSelectionResult?> Function(String pubkey, List<KeyPackageEvent> availableKeyPackages)?
         onKeyPackageSelection,
-    bool forceRefresh = false,
   }) async {
     if (group.mlsGroupId == null) return group;
     Map<String, String> membersKeyPackages = await getMembersKeyPackages(members,
-        onKeyPackageSelection: onKeyPackageSelection, forceRefresh: forceRefresh);
+        onKeyPackageSelection: onKeyPackageSelection);
     if (membersKeyPackages.keys.length < members.length) return group;
     String exportSecretResult = await exportSecret(groupId: group.mlsGroupId!);
     U8Array32 preSecret =
@@ -721,6 +724,10 @@ extension MLSPrivateGroups on Groups {
     if (okEvent.status) {
       await sendWelcomeMessages(welcome_message, members, []);
       updateMLSGroupInfo(group);
+      
+      // Track keypackage usage for one-time keypackages
+      trackOneTimeKeyPackageUsage(membersKeyPackages, group.privateGroupId);
+      
       String content = '';
       for (var member in members) {
         UserDBISAR? user = await Account.sharedInstance.getUserInfo(member);
@@ -805,4 +812,5 @@ extension MLSPrivateGroups on Groups {
     }
     return group;
   }
+
 }

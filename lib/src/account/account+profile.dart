@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:nostr_core_dart/nostr.dart';
-import 'package:nostr_mls_package/nostr_mls_package.dart';
 import 'package:chatcore/chat-core.dart';
 
 extension AccountProfile on Account {
@@ -77,11 +75,6 @@ extension AccountProfile on Account {
     UserDBISAR? db = await getUserInfo(pubkey);
     List<Filter> filters = [Filter(kinds: ChatCoreManager().userProfileKinds(), authors: [pubkey])];
     
-    // If selectedKeyPackageEvent doesn't exist, add a filter for kind 443
-    if (db == null || db!.selectedKeyPackageEvent == null) {
-      filters.add(Filter(kinds: [443], limit: 1, authors: [pubkey]));
-    }
-    
     Connect.sharedInstance.addSubscription(filters, relays: relays, eventCallBack: (event, relay) async {
       switch (event.kind) {
         case 0:
@@ -95,9 +88,6 @@ extension AccountProfile on Account {
           break;
         case 30008:
           db = _handleKind30008Event(db, event);
-          break;
-        case 443:
-          db = await _handleKind443Event(db, event);
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
@@ -164,9 +154,6 @@ extension AccountProfile on Account {
       }
       pQueue.remove(p);
       Account.saveUserToDB(users[p]!);
-      if (users[p]!.selectedKeyPackageEvent == null) {
-        Groups.sharedInstance.getKeyPackageFromRelay(p, client: '0xchat-lite');
-      }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
       if (unRelays.isEmpty) {
         pQueue.removeWhere((key) => users.keys.contains(key));
@@ -417,49 +404,5 @@ extension AccountProfile on Account {
       }
     }
     return db;
-  }
-
-  // key package
-  Future<UserDBISAR?> _handleKind443Event(UserDBISAR? db, Event event) async {
-    if (db != null) {
-      try {
-        KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
-        bool isValid = await _checkValidKeypackage(keyPackageEvent, client: '0xchat-lite');
-        if (isValid) {
-          db.setSelectedKeyPackageEvent(keyPackageEvent);
-        }
-      } catch (e) {
-        LogUtils.d('Failed to decode key package event:$e');
-      }
-    }
-    return db;
-  }
-
-  static bool _areListsEqual(List<String> list1, List<String> list2) {
-    return Set.from(list1).containsAll(list2) && Set.from(list2).containsAll(list1);
-  }
-
-  static Future<bool> _checkValidKeypackage(KeyPackageEvent keyPackageEvent, {String? client}) async {
-    try {
-      String extensions = jsonDecode(await getExtensions())['extensions'];
-      String ciphersuite = jsonDecode(await getCiphersuite())['ciphersuite'];
-
-      // Check basic validity (extensions and ciphersuite)
-      bool basicValid = _areListsEqual(keyPackageEvent.extensions, [extensions]) &&
-          ciphersuite == keyPackageEvent.ciphersuite;
-      
-      if (!basicValid) return false;
-      
-      // If client is specified, check if the key package has the correct client
-      if (client != null) {
-        return keyPackageEvent.client == client;
-      }
-      
-      // If no client specified, accept any valid key package
-      return true;
-    } catch (e) {
-      LogUtils.d('Failed to check valid keypackage: $e');
-      return false;
-    }
   }
 }

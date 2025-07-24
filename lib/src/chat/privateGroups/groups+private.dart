@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqlite_api.dart';
 
@@ -59,16 +58,15 @@ extension PrivateGroups on Groups {
   Future<GroupDBISAR?> addMembersToPrivateGroup(
     String groupId, 
     List<String> members, {
-    Future<String?> Function(String pubkey, List<KeyPackageEvent> availableKeyPackages)?
+    Future<KeyPackageSelectionResult?> Function(String pubkey, List<KeyPackageEvent> availableKeyPackages)?
         onKeyPackageSelection,
-    bool forceRefresh = false,
   }) async {
     GroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB == null) return null;
     List<String> existingMembers = groupDB.members ?? [];
     Set<String> uniqueMembersSet = {...existingMembers, ...members};
     if (groupDB.isMLSGroup) {
-      return await addMembersToMLSGroup(groupDB, members, onKeyPackageSelection: onKeyPackageSelection, forceRefresh: forceRefresh);
+      return await addMembersToMLSGroup(groupDB, members, onKeyPackageSelection: onKeyPackageSelection);
     } else {
       return await createPrivateGroup(pubkey, '', groupDB.name, uniqueMembersSet.toList());
     }

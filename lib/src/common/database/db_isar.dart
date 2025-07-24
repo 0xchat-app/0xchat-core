@@ -38,7 +38,8 @@ class DBISAR {
     ConfigDBISARSchema,
     EventDBISARSchema,
     GroupKeysDBISARSchema,
-    CircleDBISARSchema
+    CircleDBISARSchema,
+    KeyPackageDBISARSchema
   ];
 
   // Store encryption key after first open so subsequent opens re-use it.

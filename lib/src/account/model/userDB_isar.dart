@@ -101,16 +101,10 @@ class UserDBISAR {
   String? clientPrivateKey;
   String? remotePubkey;
 
-  // @deprecated Use encodedKeyPackageJson instead
-  String? encodedKeyPackage;
-
-  // KeyPackageEvent list storage (JSON string)
-  String? keyPackageEventListJson;
-
-  // Selected KeyPackageEvent JSON storage (replaces encodedKeyPackage)
-  String? encodedKeyPackageJson;
-
   String? settings;
+
+  /// Last selected keypackage ID for MLS private groups
+  String? lastSelectedKeyPackageId;
 
   UserDBISAR(
       {this.pubKey = '',
@@ -163,9 +157,7 @@ class UserDBISAR {
       this.clientPrivateKey,
       this.remoteSignerURI,
       this.remotePubkey,
-      this.encodedKeyPackage,
-      this.keyPackageEventListJson,
-      this.encodedKeyPackageJson});
+      this.lastSelectedKeyPackageId});
 
   static UserDBISAR fromMap(Map<String, Object?> map) {
     return _userInfoFromMap(map);
@@ -241,115 +233,6 @@ class UserDBISAR {
     }
     return [];
   }
-
-  /// Get keypackage event list from JSON string
-  @ignore
-  List<KeyPackageEvent> get keyPackageEventList {
-    if (keyPackageEventListJson == null || keyPackageEventListJson!.isEmpty) {
-      return [];
-    }
-    try {
-      List<dynamic> jsonList = jsonDecode(keyPackageEventListJson!);
-      return jsonList.map((json) => KeyPackageEvent.fromJson(json)).toList();
-    } catch (e) {
-      return [];
-    }
-  }
-
-  /// Set keypackage event list to JSON string
-  @ignore
-  set keyPackageEventList(List<KeyPackageEvent> keyPackageEvents) {
-    keyPackageEventListJson = jsonEncode(keyPackageEvents.map((kp) => kp.toJson()).toList());
-  }
-
-  /// Add a keypackage event to the list
-  @ignore
-  void addKeyPackageEvent(KeyPackageEvent keyPackageEvent) {
-    List<KeyPackageEvent> currentList = keyPackageEventList;
-    if (keyPackageEvent.client.isEmpty) {
-      currentList.add(keyPackageEvent);
-      currentList.sort((a, b) => b.createTime.compareTo(a.createTime));
-      keyPackageEventList = currentList;
-      return;
-    }
-    List<KeyPackageEvent> sameClientKeyPackages =
-        currentList.where((kp) => kp.client == keyPackageEvent.client).toList();
-    if (sameClientKeyPackages.isNotEmpty) {
-      KeyPackageEvent latestKeyPackage =
-          sameClientKeyPackages.reduce((a, b) => a.createTime > b.createTime ? a : b);
-      if (keyPackageEvent.createTime > latestKeyPackage.createTime) {
-        currentList.removeWhere((kp) => kp.client == keyPackageEvent.client);
-        currentList.add(keyPackageEvent);
-        currentList.sort((a, b) => b.createTime.compareTo(a.createTime));
-        keyPackageEventList = currentList;
-      }
-    } else {
-      currentList.add(keyPackageEvent);
-      currentList.sort((a, b) => b.createTime.compareTo(a.createTime));
-      keyPackageEventList = currentList;
-    }
-  }
-
-  /// Get the selected keypackage event (stored in encodedKeyPackageJson field)
-  @ignore
-  KeyPackageEvent? get selectedKeyPackageEvent {
-    if (encodedKeyPackageJson == null || encodedKeyPackageJson!.isEmpty) {
-      return null;
-    }
-    return KeyPackageEvent.fromJson(jsonDecode(encodedKeyPackageJson!));
-  }
-
-  /// Set the selected keypackage event
-  @ignore
-  void setSelectedKeyPackageEvent(KeyPackageEvent keyPackageEvent) {
-    encodedKeyPackageJson = jsonEncode(keyPackageEvent.toJson());
-    addKeyPackageEvent(keyPackageEvent);
-  }
-
-  /// Check if a keypackage event should be updated (newer createTime)
-  @ignore
-  bool shouldUpdateKeyPackageEvent(KeyPackageEvent newKeyPackageEvent) {
-    if (newKeyPackageEvent.client.isEmpty) {
-      return true;
-    }
-    List<KeyPackageEvent> currentList = keyPackageEventList;
-    List<KeyPackageEvent> sameClientKeyPackages =
-        currentList.where((kp) => kp.client == newKeyPackageEvent.client).toList();
-    if (sameClientKeyPackages.isNotEmpty) {
-      KeyPackageEvent latestKeyPackage =
-          sameClientKeyPackages.reduce((a, b) => a.createTime > b.createTime ? a : b);
-      return newKeyPackageEvent.createTime > latestKeyPackage.createTime;
-    } else {
-      return true;
-    }
-  }
-
-  /// Get the latest keypackage event by client
-  @ignore
-  KeyPackageEvent? getLatestKeyPackageEventByClient(String client) {
-    List<KeyPackageEvent> sameClientKeyPackages =
-        keyPackageEventList.where((kp) => kp.client == client).toList();
-    if (sameClientKeyPackages.isNotEmpty) {
-      return sameClientKeyPackages.reduce((a, b) => a.createTime > b.createTime ? a : b);
-    }
-    return null;
-  }
-
-  /// Get all keypackage events with empty client
-  @ignore
-  List<KeyPackageEvent> getEmptyClientKeyPackageEvents() {
-    return keyPackageEventList.where((kp) => kp.client.isEmpty).toList();
-  }
-
-  /// Get keypackage event by client (legacy method, returns first found)
-  @ignore
-  KeyPackageEvent? getKeyPackageEventByClient(String client) {
-    try {
-      return keyPackageEventList.firstWhere((kp) => kp.client == client);
-    } catch (e) {
-      return null;
-    }
-  }
 }
 
 class NostrWalletConnection {
@@ -417,9 +300,7 @@ UserDBISAR _userInfoFromMap(Map<String, dynamic> map) {
     remoteSignerURI: map['remoteSignerURI']?.toString(),
     clientPrivateKey: map['clientPrivateKey']?.toString(),
     remotePubkey: map['remotePubkey']?.toString(),
-    encodedKeyPackage: map['encodedKeyPackage']?.toString(),
-    keyPackageEventListJson: map['keyPackageEventListJson']?.toString(),
-    encodedKeyPackageJson: map['encodedKeyPackageJson']?.toString(),
     settings: map['settings']?.toString(),
+    lastSelectedKeyPackageId: map['lastSelectedKeyPackageId']?.toString(),
   );
 }
