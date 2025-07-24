@@ -626,12 +626,8 @@ class KeyPackageManager {
         print('No relays provided for fetching keypackage');
         return null;
       }
-      final relayUrl = relays.first;
-
       // Create a temporary connection to fetch the event
       final completer = Completer<KeyPackageEvent?>();
-
-      Connect.sharedInstance.connect(relayUrl, relayKind: RelayKind.general);
 
       // Wait for connection
       await Future.delayed(Duration(seconds: 2));
