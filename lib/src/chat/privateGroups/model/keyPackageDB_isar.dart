@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 

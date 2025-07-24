@@ -6,34 +6,39 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:nostr_mls_package/nostr_mls_package.dart';
 import 'package:convert/convert.dart';
 import 'package:isar/isar.dart' hide Filter;
-import 'groups.dart';
-import 'keypackage_manager.dart';
-import 'model/keyPackageDB_isar.dart';
 
 /// KeyPackage management for MLS private groups
 /// Enhanced with support for one-time and permanent keypackages
 extension GroupsPrivateMlsKeyPackages on Groups {
   /// Create new permanent key package and publish to relay
-  Future<OKEvent> createPermanentKeyPackage(List<String>? relays) async {
+  Future<KeyPackageEvent?> createPermanentKeyPackage(List<String>? relays) async {
     if (relays == null || relays.isEmpty) {
       relays = Account.sharedInstance.getCurrentCircleRelay();
     }
 
     try {
-      return await KeyPackageManager.createPermanentKeyPackage(
+      KeyPackageEvent? result = await KeyPackageManager.createPermanentKeyPackage(
         ownerPubkey: pubkey,
         ownerPrivkey: privkey,
         relays: relays,
         client: KeyPackageClient.oxchatLite,
       );
+      
+      if (result == null) {
+        // Existing permanent keypackage found, no need to create new one
+        LogUtils.d('Using existing permanent keypackage for user $pubkey');
+        return null;
+      }
+      
+      return result;
     } catch (e) {
       LogUtils.e('Failed to create permanent keypackage: $e');
-      return OKEvent('', false, e.toString());
+      return null;
     }
   }
 
   /// Create one-time keypackage for sharing
-  Future<OKEvent> createOneTimeKeyPackage({List<String>? relays}) async {
+  Future<KeyPackageEvent?> createOneTimeKeyPackage({List<String>? relays}) async {
     if (relays == null || relays.isEmpty) {
       relays = Account.sharedInstance.getCurrentCircleRelay();
     }
@@ -173,5 +178,14 @@ extension GroupsPrivateMlsKeyPackages on Groups {
     } catch (e) {
       LogUtils.e('Failed to track one-time keypackage usage: $e');
     }
+  }
+
+  Future<void> sendPrivateKeyPackageEvent(Event event, String toPubkey, List<String> relays) async {
+    Event giftWrappedEvent = await Nip59.encode(event, toPubkey);
+    Connect.sharedInstance.sendEvent(giftWrappedEvent, toRelays: relays);
+  }
+
+  Future<void> handlePrivateKeyPackageEvent(Event event, String relay) async {
+    //todo: handle private key package event
   }
 }

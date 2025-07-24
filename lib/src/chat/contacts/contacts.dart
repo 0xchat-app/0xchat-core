@@ -323,6 +323,9 @@ class Contacts {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
             /// MLS Welcome Message
+            case 443:
+              Groups.sharedInstance.handlePrivateKeyPackageEvent(innerEvent, relay);
+              break;
             case 444:
               Groups.sharedInstance.handleWelcomeMessageEvent(event.id, innerEvent, relay);
               break;

@@ -1,6 +1,5 @@
 import 'package:isar/isar.dart' hide Filter;
 import 'package:chatcore/chat-core.dart';
-import 'package:nostr_core_dart/nostr.dart';
 
 part 'groupKeysDB_isar.g.dart';
 

@@ -4,7 +4,6 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_mls_package/nostr_mls_package.dart';
-import 'model/keyPackageDB_isar.dart';
 
 /// Result of keypackage selection
 class KeyPackageSelectionResult {
@@ -17,10 +16,9 @@ class KeyPackageSelectionResult {
 /// KeyPackage Manager for MLS private groups
 /// Handles both one-time and permanent keypackages
 class KeyPackageManager {
-
   /// Create a one-time keypackage for sharing
   /// This keypackage can only be used once for processing welcome messages
-  static Future<OKEvent> createOneTimeKeyPackage({
+  static Future<KeyPackageEvent?> createOneTimeKeyPackage({
     required String ownerPubkey,
     required String ownerPrivkey,
     List<String>? relays,
@@ -48,30 +46,19 @@ class KeyPackageManager {
         ownerPrivkey,
       );
 
-      // Decode KeyPackageEvent from the created event
       KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
+      await saveKeyPackageEventToDB(event, KeyPackageType.oneTime);
 
-      // Create database record
-      KeyPackageDBISAR keyPackageDB = KeyPackageDBISAR.fromKeyPackageEvent(
-        keyPackageEvent,
-        type: KeyPackageType.oneTime,
-        status: KeyPackageStatus.available,
-      );
-
-      // Save to database only (no relay publishing for one-time keypackages)
-      await _saveKeyPackage(keyPackageDB);
-
-      return OKEvent(
-          keyPackageDB.keyPackageId, true, 'One-time keypackage created and stored locally');
+      return keyPackageEvent;
     } catch (e) {
       LogUtils.e('Failed to create one-time keypackage: $e');
-      return OKEvent('', false, e.toString());
+      return null;
     }
   }
 
   /// Create a permanent keypackage and sync to relay
   /// This keypackage can be used multiple times
-  static Future<OKEvent> createPermanentKeyPackage({
+  static Future<KeyPackageEvent?> createPermanentKeyPackage({
     required String ownerPubkey,
     required String ownerPrivkey,
     List<String>? relays,
@@ -82,7 +69,32 @@ class KeyPackageManager {
     }
 
     try {
-      // Create keypackage using MLS library
+      // Check if permanent keypackage already exists locally
+      List<KeyPackageDBISAR> existingPermanentKeyPackages = 
+          await getLocalKeyPackagesByType(ownerPubkey, KeyPackageType.permanent);
+      
+      if (existingPermanentKeyPackages.isNotEmpty) {
+        // Use existing permanent keypackage
+        KeyPackageDBISAR existingKeyPackage = existingPermanentKeyPackages.first;
+        LogUtils.d('Using existing permanent keypackage: ${existingKeyPackage.keyPackageId}');
+        
+        // Convert KeyPackageDBISAR back to KeyPackageEvent
+        KeyPackageEvent existingKeyPackageEvent = KeyPackageEvent(
+          existingKeyPackage.ownerPubkey,
+          existingKeyPackage.createTime,
+          existingKeyPackage.mlsProtocolVersion,
+          existingKeyPackage.ciphersuite,
+          existingKeyPackage.extensions,
+          existingKeyPackage.relays,
+          existingKeyPackage.client,
+          existingKeyPackage.encodedKeyPackage,
+          existingKeyPackage.eventId,
+        );
+        
+        return existingKeyPackageEvent;
+      }
+
+      // Create new keypackage if none exists
       String result = await createKeyPackageForEvent(
         publicKey: ownerPubkey,
         relay: relays,
@@ -99,25 +111,34 @@ class KeyPackageManager {
         ownerPrivkey,
       );
 
-      // Decode KeyPackageEvent from the created event
       KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
-
-      // Create database record
-      KeyPackageDBISAR keyPackageDB = KeyPackageDBISAR.fromKeyPackageEvent(
-        keyPackageEvent,
-        type: KeyPackageType.permanent,
-        status: KeyPackageStatus.available,
-      );
-
-      // Save to database
-      await _saveKeyPackage(keyPackageDB);
+      await saveKeyPackageEventToDB(event, KeyPackageType.permanent);
 
       // Publish to relay and return result
-      return await _publishKeyPackageEvent(event, relays);
+      OKEvent okEvent = await _publishKeyPackageEvent(event, relays);
+      if (okEvent.status) {
+        return keyPackageEvent;
+      } else {
+        return null;
+      }
     } catch (e) {
       LogUtils.e('Failed to create permanent keypackage: $e');
-      return OKEvent('', false, e.toString());
+      return null;
     }
+  }
+
+  static Future<void> saveKeyPackageEventToDB(Event event, KeyPackageType type) async {
+    KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
+
+    // Create database record
+    KeyPackageDBISAR keyPackageDB = KeyPackageDBISAR.fromKeyPackageEvent(
+      keyPackageEvent,
+      type: type,
+      status: KeyPackageStatus.available,
+    );
+
+    // Save to database
+    await KeyPackageManager.saveKeyPackage(keyPackageDB);
   }
 
   /// Get available keypackages for a user
@@ -131,6 +152,23 @@ class KeyPackageManager {
           .sortByCreateTimeDesc()
           .findAll();
 
+      // Only verify keypackages in nostr_mls storage if this is the current user's keypackages
+      String currentPubkey = Account.sharedInstance.currentPubkey;
+      if (pubkey == currentPubkey) {
+        List<KeyPackageDBISAR> validKeyPackages = [];
+        for (KeyPackageDBISAR keyPackage in keyPackages) {
+          bool existsInStorage = await _verifyKeyPackageInStorage(keyPackage.encodedKeyPackage);
+          if (existsInStorage) {
+            validKeyPackages.add(keyPackage);
+          } else {
+            // Remove from database if not found in nostr_mls storage
+            LogUtils.d('Removing keypackage ${keyPackage.keyPackageId} from database - not found in nostr_mls storage');
+            await _deleteKeyPackageFromDB(keyPackage);
+          }
+        }
+        return validKeyPackages;
+      }
+
       return keyPackages;
     } catch (e) {
       LogUtils.e('Failed to get available keypackages: $e');
@@ -138,8 +176,30 @@ class KeyPackageManager {
     }
   }
 
+  static Future<KeyPackageDBISAR?> getKeyPackageById(String keyPackageId) async {
+    final isar = DBISAR.sharedInstance.isar;
+    KeyPackageDBISAR? keyPackage = isar.keyPackageDBISARs.where().keyPackageIdEqualTo(keyPackageId).findFirst();
+    
+    if (keyPackage != null) {
+      // Only verify keypackage in nostr_mls storage if this is the current user's keypackage
+      String currentPubkey = Account.sharedInstance.currentPubkey;
+      if (keyPackage.ownerPubkey == currentPubkey) {
+        bool existsInStorage = await _verifyKeyPackageInStorage(keyPackage.encodedKeyPackage);
+        if (!existsInStorage) {
+          // Remove from database if not found in nostr_mls storage
+          LogUtils.d('Removing keypackage $keyPackageId from database - not found in nostr_mls storage');
+          await _deleteKeyPackageFromDB(keyPackage);
+          return null;
+        }
+      }
+    }
+    
+    return keyPackage;
+  }
+
   /// Get keypackages by type
-  static Future<List<KeyPackageDBISAR>> getLocalKeyPackagesByType(String pubkey, KeyPackageType type) async {
+  static Future<List<KeyPackageDBISAR>> getLocalKeyPackagesByType(
+      String pubkey, KeyPackageType type) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
       final keyPackages = isar.keyPackageDBISARs
@@ -148,6 +208,23 @@ class KeyPackageManager {
           .typeEqualTo(type.value)
           .sortByCreateTimeDesc()
           .findAll();
+
+      // Only verify keypackages in nostr_mls storage if this is the current user's keypackages
+      String currentPubkey = Account.sharedInstance.currentPubkey;
+      if (pubkey == currentPubkey) {
+        List<KeyPackageDBISAR> validKeyPackages = [];
+        for (KeyPackageDBISAR keyPackage in keyPackages) {
+          bool existsInStorage = await _verifyKeyPackageInStorage(keyPackage.encodedKeyPackage);
+          if (existsInStorage) {
+            validKeyPackages.add(keyPackage);
+          } else {
+            // Remove from database if not found in nostr_mls storage
+            LogUtils.d('Removing keypackage ${keyPackage.keyPackageId} from database - not found in nostr_mls storage');
+            await _deleteKeyPackageFromDB(keyPackage);
+          }
+        }
+        return validKeyPackages;
+      }
 
       return keyPackages;
     } catch (e) {
@@ -159,7 +236,8 @@ class KeyPackageManager {
   /// Get keypackages for multiple users
   static Future<Map<String, String>> getMembersKeyPackages(
     List<String> pubkeys, {
-    Future<KeyPackageSelectionResult?> Function(String pubkey, List<KeyPackageEvent> availableKeyPackages)?
+    Future<KeyPackageSelectionResult?> Function(
+            String pubkey, List<KeyPackageEvent> availableKeyPackages)?
         onKeyPackageSelection,
   }) async {
     Map<String, String> result = {};
@@ -181,7 +259,8 @@ class KeyPackageManager {
   /// Get the best available keypackage for a user
   static Future<String?> _getBestKeyPackageForUser(
     String pubkey, {
-    Future<KeyPackageSelectionResult?> Function(String pubkey, List<KeyPackageEvent> availableKeyPackages)?
+    Future<KeyPackageSelectionResult?> Function(
+            String pubkey, List<KeyPackageEvent> availableKeyPackages)?
         onKeyPackageSelection,
   }) async {
     // First check if user has a last selected keypackage ID
@@ -193,7 +272,7 @@ class KeyPackageManager {
           .where()
           .keyPackageIdEqualTo(user.lastSelectedKeyPackageId!)
           .findFirst();
-      
+
       if (lastSelectedKeyPackage != null && lastSelectedKeyPackage.isAvailable) {
         return lastSelectedKeyPackage.encodedKeyPackage;
       }
@@ -229,27 +308,26 @@ class KeyPackageManager {
     List<KeyPackageEvent> availableKeyPackages =
         localKeyPackages.map((kp) => kp.toKeyPackageEvent()).toList();
 
-         // If no 0xchat-lite keypackages locally, search relay and let upper layer choose
-     if (onKeyPackageSelection != null) {
-       KeyPackageSelectionResult? result = await onKeyPackageSelection(pubkey, availableKeyPackages);
-       if (result?.keyPackage != null) {
-         // Find the keypackage ID for the selected keypackage
-         KeyPackageDBISAR? selectedKeyPackageDB = localKeyPackages
-             .where((kp) => kp.encodedKeyPackage == result!.keyPackage)
-             .firstOrNull;
-         if (selectedKeyPackageDB != null) {
-           if (result!.rememberSelection) {
-             // Remember the selection
-             await updateUserLastSelectedKeyPackageId(pubkey, selectedKeyPackageDB.keyPackageId);
-           } else {
-             // Clear the last selected keypackage ID
-             await updateUserLastSelectedKeyPackageId(pubkey, '');
-           }
-         }
-       }
-       return result?.keyPackage;
-     }
-     return availableKeyPackages.first.encoded_key_package;
+    // If no 0xchat-lite keypackages locally, search relay and let upper layer choose
+    if (onKeyPackageSelection != null) {
+      KeyPackageSelectionResult? result = await onKeyPackageSelection(pubkey, availableKeyPackages);
+      if (result?.keyPackage != null) {
+        // Find the keypackage ID for the selected keypackage
+        KeyPackageDBISAR? selectedKeyPackageDB =
+            localKeyPackages.where((kp) => kp.encodedKeyPackage == result!.keyPackage).firstOrNull;
+        if (selectedKeyPackageDB != null) {
+          if (result!.rememberSelection) {
+            // Remember the selection
+            await updateUserLastSelectedKeyPackageId(pubkey, selectedKeyPackageDB.keyPackageId);
+          } else {
+            // Clear the last selected keypackage ID
+            await updateUserLastSelectedKeyPackageId(pubkey, '');
+          }
+        }
+      }
+      return result?.keyPackage;
+    }
+    return availableKeyPackages.first.encoded_key_package;
   }
 
   /// Search for keypackages on relay and store them locally
@@ -281,7 +359,7 @@ class KeyPackageManager {
             );
 
             // Save to database
-            await _saveKeyPackage(keyPackageDB);
+            await saveKeyPackage(keyPackageDB);
           } catch (e) {
             LogUtils.e('Failed to process keypackage event: $e');
             continue;
@@ -329,10 +407,8 @@ class KeyPackageManager {
   }) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
-      final keyPackage = isar.keyPackageDBISARs
-          .where()
-          .encodedKeyPackageEqualTo(encodedKeyPackage)
-          .findFirst();
+      final keyPackage =
+          isar.keyPackageDBISARs.where().encodedKeyPackageEqualTo(encodedKeyPackage).findFirst();
 
       if (keyPackage != null) {
         keyPackage.markAsUsed(groupId: groupId, eventId: eventId);
@@ -345,7 +421,7 @@ class KeyPackageManager {
     }
   }
 
-  static Future<void> _saveKeyPackage(KeyPackageDBISAR keyPackage) async {
+  static Future<void> saveKeyPackage(KeyPackageDBISAR keyPackage) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
       await isar.writeAsync((isar) {
@@ -435,30 +511,30 @@ class KeyPackageManager {
     try {
       final isar = DBISAR.sharedInstance.isar;
 
-      final total = await isar.keyPackageDBISARs.where().ownerPubkeyEqualTo(pubkey).count();
+      final total = isar.keyPackageDBISARs.where().ownerPubkeyEqualTo(pubkey).count();
 
-      final available = await isar.keyPackageDBISARs
+      final available = isar.keyPackageDBISARs
           .where()
           .ownerPubkeyEqualTo(pubkey)
           .and()
           .statusEqualTo(KeyPackageStatus.available.value)
           .count();
 
-      final used = await isar.keyPackageDBISARs
+      final used = isar.keyPackageDBISARs
           .where()
           .ownerPubkeyEqualTo(pubkey)
           .and()
           .statusEqualTo(KeyPackageStatus.used.value)
           .count();
 
-      final oneTime = await isar.keyPackageDBISARs
+      final oneTime = isar.keyPackageDBISARs
           .where()
           .ownerPubkeyEqualTo(pubkey)
           .and()
           .typeEqualTo(KeyPackageType.oneTime.value)
           .count();
 
-      final permanent = await isar.keyPackageDBISARs
+      final permanent = isar.keyPackageDBISARs
           .where()
           .ownerPubkeyEqualTo(pubkey)
           .and()
@@ -475,6 +551,31 @@ class KeyPackageManager {
     } catch (e) {
       LogUtils.e('Failed to get keypackage stats: $e');
       return {};
+    }
+  }
+
+  /// Verify if keypackage exists in nostr_mls storage
+  static Future<bool> _verifyKeyPackageInStorage(String encodedKeyPackage) async {
+    try {
+      String result = await getKeyPackageFromStorage(serializedKeyPackage: encodedKeyPackage);
+      Map<String, dynamic> resultMap = jsonDecode(result);
+      return resultMap['found'] == true;
+    } catch (e) {
+      LogUtils.e('Failed to verify keypackage in storage: $e');
+      return false;
+    }
+  }
+
+  /// Delete keypackage from database
+  static Future<void> _deleteKeyPackageFromDB(KeyPackageDBISAR keyPackage) async {
+    try {
+      final isar = DBISAR.sharedInstance.isar;
+      await isar.writeAsync((isar) async {
+         isar.keyPackageDBISARs.delete(keyPackage.id);
+      });
+      LogUtils.d('Deleted keypackage ${keyPackage.keyPackageId} from database');
+    } catch (e) {
+      LogUtils.e('Failed to delete keypackage from database: $e');
     }
   }
 }
