@@ -369,9 +369,7 @@ class KeyPackageManager {
 
       if (keyPackage != null) {
         keyPackage.markAsUsed(groupId: groupId, eventId: eventId);
-        await isar.writeAsync((isar) {
-          isar.keyPackageDBISARs.put(keyPackage);
-        });
+        await DBISAR.sharedInstance.saveToDB(keyPackage);
       }
     } catch (e) {
       print('Failed to mark keypackage as used: $e');
@@ -391,9 +389,7 @@ class KeyPackageManager {
 
       if (keyPackage != null) {
         keyPackage.markAsUsed(groupId: groupId, eventId: eventId);
-        await isar.writeAsync((isar) {
-          isar.keyPackageDBISARs.put(keyPackage);
-        });
+        await DBISAR.sharedInstance.saveToDB(keyPackage);
       }
     } catch (e) {
       print('Failed to mark keypackage as used: $e');
@@ -401,14 +397,7 @@ class KeyPackageManager {
   }
 
   static Future<void> saveKeyPackage(KeyPackageDBISAR keyPackage) async {
-    try {
-      final isar = DBISAR.sharedInstance.isar;
-      await isar.writeAsync((isar) {
-        isar.keyPackageDBISARs.put(keyPackage);
-      });
-    } catch (e) {
-      print('Failed to save keypackage: $e');
-    }
+      await DBISAR.sharedInstance.saveToDB(keyPackage);
   }
 
   static Future<OKEvent> _publishKeyPackageEvent(Event event, List<String> relays) async {

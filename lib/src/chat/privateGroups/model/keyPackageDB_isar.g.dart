@@ -99,14 +99,6 @@ const KeyPackageDBISARSchema = IsarGeneratedSchema(
         unique: true,
         hash: false,
       ),
-      IsarIndexSchema(
-        name: 'ownerPubkey',
-        properties: [
-          "ownerPubkey",
-        ],
-        unique: false,
-        hash: false,
-      ),
     ],
   ),
   converter: IsarObjectConverter<int, KeyPackageDBISAR>(

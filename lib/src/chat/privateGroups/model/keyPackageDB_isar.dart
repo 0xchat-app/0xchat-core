@@ -63,16 +63,11 @@ class KeyPackageDBISAR {
   @Index(unique: true)
   String keyPackageId; // Unique identifier for this keypackage
 
-  /// Owner of the keypackage (pubkey)
-  @Index()
   String ownerPubkey;
-
   /// Type of keypackage: 'one_time' or 'permanent'
   String type;
-
   /// Status: 'available', 'used', 'expired', 'revoked'
   String status;
-
   /// Client identifier
   String client;
 
@@ -121,7 +116,7 @@ class KeyPackageDBISAR {
     KeyPackageStatus status = KeyPackageStatus.available,
   }) {
     return KeyPackageDBISAR(
-      keyPackageId: event.eventId.isNotEmpty ? event.eventId : _generateKeyPackageId(event),
+      keyPackageId: generate64RandomHexChars(),
       ownerPubkey: event.pubkey,
       type: type.value,
       status: status.value,
@@ -135,11 +130,6 @@ class KeyPackageDBISAR {
       relays: event.relays,
       lastUpdatedTime: currentUnixTimestampSeconds(),
     );
-  }
-
-  /// Generate unique keypackage ID if eventId is empty
-  static String _generateKeyPackageId(KeyPackageEvent event) {
-    return '${event.pubkey}_${event.createTime}_${event.client}';
   }
 
   /// Convert to KeyPackageEvent
