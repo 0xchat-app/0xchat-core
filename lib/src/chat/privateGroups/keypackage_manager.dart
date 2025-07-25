@@ -585,16 +585,23 @@ class KeyPackageManager {
     required List<String> relays,
   }) async {
     try {
-      // Fetch the KeyPackageEvent from relay
-      final keyPackageEvent = await _fetchKeyPackageFromRelay(eventId, relays);
-      if (keyPackageEvent == null) {
+      // First try to fetch from local database
+      final keyPackageEvent = await _fetchKeyPackageFromLocal(eventId);
+      if (keyPackageEvent != null) {
+        print('Found keypackage in local database: $eventId');
+        return {'success': true, 'pubkey': keyPackageEvent.pubkey};
+      }
+
+      // If not found locally, fetch from relay
+      final relayKeyPackageEvent = await _fetchKeyPackageFromRelay(eventId, relays);
+      if (relayKeyPackageEvent == null) {
         print('Failed to fetch keypackage event from relay');
         return {'success': false, 'pubkey': null};
       }
       
       // Create database record
       KeyPackageDBISAR keyPackageDB = KeyPackageDBISAR.fromKeyPackageEvent(
-        keyPackageEvent,
+        relayKeyPackageEvent,
         type: KeyPackageType.permanent,
         status: KeyPackageStatus.available,
       );
@@ -603,10 +610,29 @@ class KeyPackageManager {
       await KeyPackageManager.saveKeyPackage(keyPackageDB);
 
       print('Successfully processed permanent invite link: $eventId');
-      return {'success': true, 'pubkey': keyPackageEvent.pubkey};
+      return {'success': true, 'pubkey': relayKeyPackageEvent.pubkey};
     } catch (e) {
       print('Failed to handle permanent invite link: $e');
       return {'success': false, 'pubkey': null};
+    }
+  }
+
+  /// Fetch KeyPackageEvent from local database
+  static Future<KeyPackageEvent?> _fetchKeyPackageFromLocal(String eventId) async {
+    try {
+      final isar = DBISAR.sharedInstance.isar;
+      final localKeyPackage = isar.keyPackageDBISARs
+          .where()
+          .eventIdEqualTo(eventId)
+          .findFirst();
+
+      if (localKeyPackage != null) {
+        return localKeyPackage.toKeyPackageEvent();
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching keypackage from local database: $e');
+      return null;
     }
   }
 
@@ -619,21 +645,9 @@ class KeyPackageManager {
         return null;
       }
 
-      // First, try to find the keypackage in local database
-      final isar = DBISAR.sharedInstance.isar;
-      final localKeyPackage = isar.keyPackageDBISARs
-          .where()
-          .eventIdEqualTo(eventId)
-          .findFirst();
+      print('Fetching keypackage from relay: $eventId');
 
-      if (localKeyPackage != null) {
-        print('Found keypackage in local database: $eventId');
-        return localKeyPackage.toKeyPackageEvent();
-      }
-
-      print('Keypackage not found in local database, fetching from relay: $eventId');
-
-      // If not found locally, fetch from relay
+      // Fetch from relay
       final completer = Completer<KeyPackageEvent?>();
       final relayUrl = relays.first;
       
