@@ -645,37 +645,53 @@ class KeyPackageManager {
 
       // If not found locally, fetch from relay
       final completer = Completer<KeyPackageEvent?>();
-
-      // Wait for connection
-      await Future.delayed(Duration(seconds: 2));
-
-      // Subscribe to the specific event
-      final filter = Filter(ids: [eventId], kinds: [443]);
-      final subscriptionId = Connect.sharedInstance.addSubscription(
-        [filter],
-        eventCallBack: (event, relay) {
-          if (event.kind == 443) {
-            final keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
-            completer.complete(keyPackageEvent);
-          }
-        },
-        eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
-          if (!completer.isCompleted) {
-            completer.complete(null);
-          }
-        },
-      );
+      final relayUrl = relays.first;
+      
+      // Check if already connected to the relay
+      final connectedRelays = Connect.sharedInstance.relays();
+      bool isConnected = connectedRelays.contains(relayUrl);
+      
+      if (isConnected) {
+        // Already connected, make request immediately
+        _makeKeyPackageRequest(eventId, completer);
+      } else {
+        // Not connected, listen for connection and then make request
+        _listenForConnectionAndRequest(relayUrl, eventId, completer);
+      }
 
       // Wait for response with timeout
       final result = await completer.future.timeout(Duration(seconds: 10));
-
-      // Clean up subscription
-      Connect.sharedInstance.closeRequests(subscriptionId);
-
       return result;
     } catch (e) {
       print('Error fetching keypackage from relay: $e');
       return null;
     }
+  }
+
+  /// Make keypackage request to relay
+  static void _makeKeyPackageRequest(String eventId, Completer<KeyPackageEvent?> completer) {
+    // Subscribe to the specific event
+    final filter = Filter(ids: [eventId], kinds: [443]);
+    Connect.sharedInstance.addSubscription(
+      [filter],
+      eventCallBack: (event, relay) {
+        if (event.kind == 443) {
+          final keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
+          completer.complete(keyPackageEvent);
+        }
+      },
+      eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+        if (!completer.isCompleted) {
+          completer.complete(null);
+        }
+      },
+    );
+  }
+
+  /// Listen for connection and then make request
+  static void _listenForConnectionAndRequest(String relayUrl, String eventId, Completer<KeyPackageEvent?> completer) {    
+     Future.delayed(Duration(seconds: 2), () {
+        _makeKeyPackageRequest(eventId, completer);
+     });
   }
 }
