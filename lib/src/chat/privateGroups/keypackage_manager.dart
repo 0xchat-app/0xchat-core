@@ -283,11 +283,17 @@ class KeyPackageManager {
     }
 
     // Search relay for more keypackages
-    await searchAndStoreKeyPackages(pubkey);
+    List<KeyPackageEvent> relayKeyPackages = await searchAndStoreKeyPackages(pubkey);
 
-    // Get all keypackages (local + relay)
-    List<KeyPackageEvent> availableKeyPackages =
-        localKeyPackages.map((kp) => kp.toKeyPackageEvent()).toList();
+    // Combine local and relay keypackages
+    List<KeyPackageEvent> localKeyPackageEvents = localKeyPackages.map((kp) => kp.toKeyPackageEvent()).toList();
+    List<KeyPackageEvent> availableKeyPackages = [...localKeyPackageEvents, ...relayKeyPackages];
+
+    // search all keypackages (local + relay)    
+    List<KeyPackageEvent> oxchatLiteKeyPackages = availableKeyPackages.where((kp) => kp.client == KeyPackageClient.oxchatLite.value).toList();
+    if (oxchatLiteKeyPackages.isNotEmpty) {
+      return oxchatLiteKeyPackages.first.encoded_key_package;
+    }
 
     // If no 0xchat-lite keypackages locally, search relay and let upper layer choose
     if (onKeyPackageSelection != null) {
@@ -308,14 +314,21 @@ class KeyPackageManager {
       }
       return result?.keyPackage;
     }
+    
+    // If no keypackages available, return null
+    if (availableKeyPackages.isEmpty) {
+      return null;
+    }
+    
     return availableKeyPackages.first.encoded_key_package;
   }
 
   /// Search for keypackages on relay and store them locally
-  static Future<void> searchAndStoreKeyPackages(String pubkey) async {
+  static Future<List<KeyPackageEvent>> searchAndStoreKeyPackages(String pubkey) async {
     try {
-      Completer<void> completer = Completer<void>();
+      Completer<List<KeyPackageEvent>> completer = Completer<List<KeyPackageEvent>>();
       List<Event> cachedEvents = [];
+      List<KeyPackageEvent> relayKeyPackages = [];
       Filter filter = Filter(kinds: [443], authors: [pubkey], limit: 10);
 
       Connect.sharedInstance.addSubscription([filter], eventCallBack: (event, relay) async {
@@ -341,19 +354,23 @@ class KeyPackageManager {
 
             // Save to database
             await saveKeyPackage(keyPackageDB);
+            
+            // Add to relay keypackages list
+            relayKeyPackages.add(keyPackageEvent);
           } catch (e) {
             continue;
           }
         }
 
         if (!completer.isCompleted) {
-          completer.complete();
+          completer.complete(relayKeyPackages);
         }
       });
 
-      await completer.future;
+      return await completer.future;
     } catch (e) {
       print('Failed to search keypackages: $e');
+      return [];
     }
   }
 
@@ -423,35 +440,8 @@ class KeyPackageManager {
       String ciphersuite = jsonDecode(await getCiphersuite())['ciphersuite'];
 
       // Check basic validity (extensions and ciphersuite)
-      bool basicValid = _areListsEqual(keyPackageEvent.extensions, [extensions]) &&
+      return _areListsEqual(keyPackageEvent.extensions, [extensions]) &&
           ciphersuite == keyPackageEvent.ciphersuite;
-
-      if (!basicValid) return false;
-
-      // Check if relays are not empty and contain current circle relay
-      if (keyPackageEvent.relays.isEmpty) {
-        return false;
-      }
-
-      List<String> currentCircleRelays = Account.sharedInstance.getCurrentCircleRelay();
-      if (currentCircleRelays.isEmpty) {
-        return false;
-      }
-
-      bool hasMatchingRelay = false;
-      for (String circleRelay in currentCircleRelays) {
-        if (keyPackageEvent.relays.contains(circleRelay)) {
-          hasMatchingRelay = true;
-          break;
-        }
-      }
-
-      if (!hasMatchingRelay) {
-        return false;
-      }
-
-      // Accept any valid keypackage with a known client
-      return keyPackageEvent.client.isNotEmpty;
     } catch (e) {
       print('Failed to check keypackage validity: $e');
       return false;
