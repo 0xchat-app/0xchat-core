@@ -67,13 +67,11 @@ extension GroupsPrivateMlsKeyPackages on Groups {
   /// Mark keypackage as used when processing welcome message
   Future<void> markKeyPackageAsUsed(
     String encodedKeyPackage, {
-    String? groupId,
-    String? eventId,
+    String? usedByPubkey,
   }) async {
     await KeyPackageManager.markKeyPackageAsUsedByEncoded(
       encodedKeyPackage,
-      groupId: groupId,
-      eventId: eventId,
+      usedByPubkey: usedByPubkey,
     );
   }
 
@@ -83,8 +81,8 @@ extension GroupsPrivateMlsKeyPackages on Groups {
   }
 
   /// Get available keypackages for a user
-  Future<List<KeyPackageDBISAR>> getAvailableKeyPackages(String pubkey) async {
-    return await KeyPackageManager.getAvailableLocalKeyPackages(pubkey);
+  Future<List<KeyPackageDBISAR>> getAvailableKeyPackages(String pubkey, {String? welcomeSenderPubkey}) async {
+    return await KeyPackageManager.getAvailableLocalKeyPackages(pubkey, welcomeSenderPubkey: welcomeSenderPubkey);
   }
 
   /// Get keypackages by type
@@ -93,13 +91,18 @@ extension GroupsPrivateMlsKeyPackages on Groups {
   }
 
   /// Track keypackage usage when processing welcome message
-  Future<void> trackKeyPackageUsageForWelcome(GroupDBISAR group, String wrapperEventId) async {
+  /// Returns true if the welcome should be accepted, false if it should be rejected
+  Future<bool> trackKeyPackageUsageForWelcome(
+    GroupDBISAR group, 
+    String wrapperEventId, 
+    String welcomeSenderPubkey,
+  ) async {
     try {
       // Get the welcome event to extract keypackage information
       if (group.welcomeEventString != null) {
         // Get available keypackages for the current user
         List<KeyPackageDBISAR> availableKeyPackages =
-            await KeyPackageManager.getAvailableLocalKeyPackages(pubkey);
+            await KeyPackageManager.getAvailableLocalKeyPackages(pubkey, welcomeSenderPubkey: welcomeSenderPubkey);
 
         if (availableKeyPackages.isNotEmpty) {
           // Extract encoded keypackages from available keypackages
@@ -120,26 +123,26 @@ extension GroupsPrivateMlsKeyPackages on Groups {
 
           if (resultMap['found'] == true) {
             int matchedIndex = resultMap['matched_index'];
+            KeyPackageDBISAR matchedKeyPackage = availableKeyPackages[matchedIndex];            
             // Mark the matched keypackage as used
-            KeyPackageDBISAR usedKeyPackage = availableKeyPackages[matchedIndex];
             await KeyPackageManager.markKeyPackageAsUsed(
-              usedKeyPackage.keyPackageId,
-              groupId: group.privateGroupId,
-              eventId: wrapperEventId,
+              matchedKeyPackage.keyPackageId,
+              usedByPubkey: welcomeSenderPubkey, // Use the welcome sender's pubkey
             );
 
-            LogUtils.d(
-                'Marked keypackage ${usedKeyPackage.keyPackageId} as used for group ${group.privateGroupId}');
+            return true; // Accept the welcome message
           } else {
-            LogUtils.d(
-                'No matching keypackage found in welcome event for group ${group.privateGroupId}');
+            return false;
           }
         } else {
           print('No available keypackages found for user $pubkey');
+          return false; 
         }
       }
-    } catch (e) {
-      print('Failed to track keypackage usage: $e');
+      return false; // Accept the welcome message if no welcome event string
+    } catch (e, stackTrace) {
+      print('Failed to track keypackage usage: $e $stackTrace');
+      return false; // Accept the welcome message on error
     }
   }
 
@@ -159,8 +162,7 @@ extension GroupsPrivateMlsKeyPackages on Groups {
         if (keyPackage != null && keyPackage.isOneTime) {
           await KeyPackageManager.markKeyPackageAsUsedByEncoded(
             encodedKeyPackage,
-            groupId: groupId,
-            eventId: '', // No specific event ID for group creation
+            usedByPubkey: Account.sharedInstance.currentPubkey,
           );
 
           print('Marked one-time keypackage for $memberPubkey as used for group $groupId');

@@ -351,12 +351,13 @@ extension MLSPrivateGroups on Groups {
     List<String> members,
     List<String> admins,
     List<String> relays, {
-    Future<KeyPackageSelectionResult?> Function(String pubkey, List<KeyPackageEvent> availableKeyPackages)?
+    Future<KeyPackageSelectionResult?> Function(
+            String pubkey, List<KeyPackageEvent> availableKeyPackages)?
         onKeyPackageSelection,
   }) async {
     members.remove(pubkey);
-    Map<String, String> membersKeyPackages = await getMembersKeyPackages(members,
-        onKeyPackageSelection: onKeyPackageSelection);
+    Map<String, String> membersKeyPackages =
+        await getMembersKeyPackages(members, onKeyPackageSelection: onKeyPackageSelection);
     if (membersKeyPackages.keys.length < members.length) return null;
     String createGroupResult = await createGroup(
         groupName: groupName,
@@ -465,6 +466,16 @@ extension MLSPrivateGroups on Groups {
       // old welcome event, ignore
       return;
     }
+
+    // Track keypackage usage when processing welcome message
+    bool shouldAcceptWelcome =
+        await trackKeyPackageUsageForWelcome(groupDBISAR, wrapperEventId, welcomeEvent.pubkey);
+
+    if (!shouldAcceptWelcome) {
+      // Reject the welcome message - keypackage already used by another user
+      return;
+    }
+
     updateOrCreateGroupNotifier(groupDBISAR.privateGroupId, groupDBISAR);
     syncGroupToDB(groupDBISAR);
     UserDBISAR? userDBISAR = await Account.sharedInstance.getUserInfo(welcomeEvent.pubkey);
@@ -475,8 +486,6 @@ extension MLSPrivateGroups on Groups {
 
     if (checkInMyGroupList(groupDBISAR.privateGroupId)) {
       await joinMLSGroup(groupDBISAR);
-      // Track keypackage usage when processing welcome message
-      await trackKeyPackageUsageForWelcome(groupDBISAR, wrapperEventId);
     }
   }
 
@@ -588,8 +597,7 @@ extension MLSPrivateGroups on Groups {
             content = '${content}deleted the group';
             await deleteMLSGroup(groupValueNotifier.value);
             break;
-          }
-          else {
+          } else {
             content = '${user?.name} $content ';
             content = '${content}left the group';
           }
@@ -700,12 +708,13 @@ extension MLSPrivateGroups on Groups {
   Future<GroupDBISAR> addMembersToMLSGroup(
     GroupDBISAR group,
     List<String> members, {
-    Future<KeyPackageSelectionResult?> Function(String pubkey, List<KeyPackageEvent> availableKeyPackages)?
+    Future<KeyPackageSelectionResult?> Function(
+            String pubkey, List<KeyPackageEvent> availableKeyPackages)?
         onKeyPackageSelection,
   }) async {
     if (group.mlsGroupId == null) return group;
-    Map<String, String> membersKeyPackages = await getMembersKeyPackages(members,
-        onKeyPackageSelection: onKeyPackageSelection);
+    Map<String, String> membersKeyPackages =
+        await getMembersKeyPackages(members, onKeyPackageSelection: onKeyPackageSelection);
     if (membersKeyPackages.keys.length < members.length) return group;
     String exportSecretResult = await exportSecret(groupId: group.mlsGroupId!);
     U8Array32 preSecret =
@@ -721,10 +730,10 @@ extension MLSPrivateGroups on Groups {
     if (okEvent.status) {
       await sendWelcomeMessages(welcome_message, members, []);
       updateMLSGroupInfo(group);
-      
+
       // Track keypackage usage for one-time keypackages
       trackOneTimeKeyPackageUsage(membersKeyPackages, group.privateGroupId);
-      
+
       String content = '';
       for (var member in members) {
         UserDBISAR? user = await Account.sharedInstance.getUserInfo(member);
@@ -809,5 +818,4 @@ extension MLSPrivateGroups on Groups {
     }
     return group;
   }
-
 }

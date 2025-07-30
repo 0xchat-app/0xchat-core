@@ -22,7 +22,6 @@ enum KeyPackageType {
 /// KeyPackage status enumeration
 enum KeyPackageStatus {
   available('available'),
-  used('used'),
   expired('expired'),
   revoked('revoked');
 
@@ -82,8 +81,7 @@ class KeyPackageDBISAR {
 
   /// Usage tracking
   int? usedTime; // When this keypackage was used (for one-time keypackages)
-  String? usedByGroupId; // Which group used this keypackage
-  String? usedByEventId; // Which event used this keypackage
+  String? usedByPubkey; // Which user used this keypackage
 
   /// Metadata
   int lastUpdatedTime;
@@ -103,8 +101,7 @@ class KeyPackageDBISAR {
     required this.extensions,
     required this.relays,
     this.usedTime,
-    this.usedByGroupId,
-    this.usedByEventId,
+    this.usedByPubkey,
     required this.lastUpdatedTime,
     this.notes,
   });
@@ -148,11 +145,9 @@ class KeyPackageDBISAR {
   }
 
   /// Mark keypackage as used
-  void markAsUsed({String? groupId, String? eventId}) {
-    status = KeyPackageStatus.used.value;
+  void markAsUsed({String? usedByPubkey}) {
     usedTime = currentUnixTimestampSeconds();
-    usedByGroupId = groupId;
-    usedByEventId = eventId;
+    this.usedByPubkey = usedByPubkey;
     lastUpdatedTime = currentUnixTimestampSeconds();
   }
 
@@ -192,10 +187,6 @@ class KeyPackageDBISAR {
   @ignore
   bool get isPermanent => keyPackageType == KeyPackageType.permanent;
 
-  /// Check if keypackage has been used
-  @ignore
-  bool get isUsed => keyPackageStatus == KeyPackageStatus.used;
-
   /// Get display name for keypackage
   @ignore
   String get displayName {
@@ -220,8 +211,7 @@ class KeyPackageDBISAR {
       'extensions': extensions,
       'relays': relays,
       'usedTime': usedTime,
-      'usedByGroupId': usedByGroupId,
-      'usedByEventId': usedByEventId,
+      'usedByPubkey': usedByPubkey,
       'lastUpdatedTime': lastUpdatedTime,
       'notes': notes,
     };
@@ -243,8 +233,7 @@ class KeyPackageDBISAR {
       extensions: List<String>.from(json['extensions'] ?? []),
       relays: List<String>.from(json['relays'] ?? []),
       usedTime: json['usedTime'],
-      usedByGroupId: json['usedByGroupId'],
-      usedByEventId: json['usedByEventId'],
+      usedByPubkey: json['usedByPubkey'],
       lastUpdatedTime: json['lastUpdatedTime'] ?? 0,
       notes: json['notes'],
     );

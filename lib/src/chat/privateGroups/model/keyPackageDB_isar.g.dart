@@ -74,11 +74,7 @@ const KeyPackageDBISARSchema = IsarGeneratedSchema(
         type: IsarType.long,
       ),
       IsarPropertySchema(
-        name: 'usedByGroupId',
-        type: IsarType.string,
-      ),
-      IsarPropertySchema(
-        name: 'usedByEventId',
+        name: 'usedByPubkey',
         type: IsarType.string,
       ),
       IsarPropertySchema(
@@ -139,28 +135,20 @@ int serializeKeyPackageDBISAR(IsarWriter writer, KeyPackageDBISAR object) {
   }
   IsarCore.writeLong(writer, 13, object.usedTime ?? -9223372036854775808);
   {
-    final value = object.usedByGroupId;
+    final value = object.usedByPubkey;
     if (value == null) {
       IsarCore.writeNull(writer, 14);
     } else {
       IsarCore.writeString(writer, 14, value);
     }
   }
-  {
-    final value = object.usedByEventId;
-    if (value == null) {
-      IsarCore.writeNull(writer, 15);
-    } else {
-      IsarCore.writeString(writer, 15, value);
-    }
-  }
-  IsarCore.writeLong(writer, 16, object.lastUpdatedTime);
+  IsarCore.writeLong(writer, 15, object.lastUpdatedTime);
   {
     final value = object.notes;
     if (value == null) {
-      IsarCore.writeNull(writer, 17);
+      IsarCore.writeNull(writer, 16);
     } else {
-      IsarCore.writeString(writer, 17, value);
+      IsarCore.writeString(writer, 16, value);
     }
   }
   return object.id;
@@ -231,14 +219,12 @@ KeyPackageDBISAR deserializeKeyPackageDBISAR(IsarReader reader) {
       _usedTime = value;
     }
   }
-  final String? _usedByGroupId;
-  _usedByGroupId = IsarCore.readString(reader, 14);
-  final String? _usedByEventId;
-  _usedByEventId = IsarCore.readString(reader, 15);
+  final String? _usedByPubkey;
+  _usedByPubkey = IsarCore.readString(reader, 14);
   final int _lastUpdatedTime;
-  _lastUpdatedTime = IsarCore.readLong(reader, 16);
+  _lastUpdatedTime = IsarCore.readLong(reader, 15);
   final String? _notes;
-  _notes = IsarCore.readString(reader, 17);
+  _notes = IsarCore.readString(reader, 16);
   final object = KeyPackageDBISAR(
     keyPackageId: _keyPackageId,
     ownerPubkey: _ownerPubkey,
@@ -253,8 +239,7 @@ KeyPackageDBISAR deserializeKeyPackageDBISAR(IsarReader reader) {
     extensions: _extensions,
     relays: _relays,
     usedTime: _usedTime,
-    usedByGroupId: _usedByGroupId,
-    usedByEventId: _usedByEventId,
+    usedByPubkey: _usedByPubkey,
     lastUpdatedTime: _lastUpdatedTime,
     notes: _notes,
   );
@@ -333,11 +318,9 @@ dynamic deserializeKeyPackageDBISARProp(IsarReader reader, int property) {
     case 14:
       return IsarCore.readString(reader, 14);
     case 15:
-      return IsarCore.readString(reader, 15);
+      return IsarCore.readLong(reader, 15);
     case 16:
-      return IsarCore.readLong(reader, 16);
-    case 17:
-      return IsarCore.readString(reader, 17);
+      return IsarCore.readString(reader, 16);
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -357,8 +340,7 @@ sealed class _KeyPackageDBISARUpdate {
     String? mlsProtocolVersion,
     String? ciphersuite,
     int? usedTime,
-    String? usedByGroupId,
-    String? usedByEventId,
+    String? usedByPubkey,
     int? lastUpdatedTime,
     String? notes,
   });
@@ -383,8 +365,7 @@ class _KeyPackageDBISARUpdateImpl implements _KeyPackageDBISARUpdate {
     Object? mlsProtocolVersion = ignore,
     Object? ciphersuite = ignore,
     Object? usedTime = ignore,
-    Object? usedByGroupId = ignore,
-    Object? usedByEventId = ignore,
+    Object? usedByPubkey = ignore,
     Object? lastUpdatedTime = ignore,
     Object? notes = ignore,
   }) {
@@ -402,10 +383,9 @@ class _KeyPackageDBISARUpdateImpl implements _KeyPackageDBISARUpdate {
           if (mlsProtocolVersion != ignore) 9: mlsProtocolVersion as String?,
           if (ciphersuite != ignore) 10: ciphersuite as String?,
           if (usedTime != ignore) 13: usedTime as int?,
-          if (usedByGroupId != ignore) 14: usedByGroupId as String?,
-          if (usedByEventId != ignore) 15: usedByEventId as String?,
-          if (lastUpdatedTime != ignore) 16: lastUpdatedTime as int?,
-          if (notes != ignore) 17: notes as String?,
+          if (usedByPubkey != ignore) 14: usedByPubkey as String?,
+          if (lastUpdatedTime != ignore) 15: lastUpdatedTime as int?,
+          if (notes != ignore) 16: notes as String?,
         }) >
         0;
   }
@@ -425,8 +405,7 @@ sealed class _KeyPackageDBISARUpdateAll {
     String? mlsProtocolVersion,
     String? ciphersuite,
     int? usedTime,
-    String? usedByGroupId,
-    String? usedByEventId,
+    String? usedByPubkey,
     int? lastUpdatedTime,
     String? notes,
   });
@@ -451,8 +430,7 @@ class _KeyPackageDBISARUpdateAllImpl implements _KeyPackageDBISARUpdateAll {
     Object? mlsProtocolVersion = ignore,
     Object? ciphersuite = ignore,
     Object? usedTime = ignore,
-    Object? usedByGroupId = ignore,
-    Object? usedByEventId = ignore,
+    Object? usedByPubkey = ignore,
     Object? lastUpdatedTime = ignore,
     Object? notes = ignore,
   }) {
@@ -468,10 +446,9 @@ class _KeyPackageDBISARUpdateAllImpl implements _KeyPackageDBISARUpdateAll {
       if (mlsProtocolVersion != ignore) 9: mlsProtocolVersion as String?,
       if (ciphersuite != ignore) 10: ciphersuite as String?,
       if (usedTime != ignore) 13: usedTime as int?,
-      if (usedByGroupId != ignore) 14: usedByGroupId as String?,
-      if (usedByEventId != ignore) 15: usedByEventId as String?,
-      if (lastUpdatedTime != ignore) 16: lastUpdatedTime as int?,
-      if (notes != ignore) 17: notes as String?,
+      if (usedByPubkey != ignore) 14: usedByPubkey as String?,
+      if (lastUpdatedTime != ignore) 15: lastUpdatedTime as int?,
+      if (notes != ignore) 16: notes as String?,
     });
   }
 }
@@ -496,8 +473,7 @@ sealed class _KeyPackageDBISARQueryUpdate {
     String? mlsProtocolVersion,
     String? ciphersuite,
     int? usedTime,
-    String? usedByGroupId,
-    String? usedByEventId,
+    String? usedByPubkey,
     int? lastUpdatedTime,
     String? notes,
   });
@@ -522,8 +498,7 @@ class _KeyPackageDBISARQueryUpdateImpl implements _KeyPackageDBISARQueryUpdate {
     Object? mlsProtocolVersion = ignore,
     Object? ciphersuite = ignore,
     Object? usedTime = ignore,
-    Object? usedByGroupId = ignore,
-    Object? usedByEventId = ignore,
+    Object? usedByPubkey = ignore,
     Object? lastUpdatedTime = ignore,
     Object? notes = ignore,
   }) {
@@ -539,10 +514,9 @@ class _KeyPackageDBISARQueryUpdateImpl implements _KeyPackageDBISARQueryUpdate {
       if (mlsProtocolVersion != ignore) 9: mlsProtocolVersion as String?,
       if (ciphersuite != ignore) 10: ciphersuite as String?,
       if (usedTime != ignore) 13: usedTime as int?,
-      if (usedByGroupId != ignore) 14: usedByGroupId as String?,
-      if (usedByEventId != ignore) 15: usedByEventId as String?,
-      if (lastUpdatedTime != ignore) 16: lastUpdatedTime as int?,
-      if (notes != ignore) 17: notes as String?,
+      if (usedByPubkey != ignore) 14: usedByPubkey as String?,
+      if (lastUpdatedTime != ignore) 15: lastUpdatedTime as int?,
+      if (notes != ignore) 16: notes as String?,
     });
   }
 }
@@ -575,8 +549,7 @@ class _KeyPackageDBISARQueryBuilderUpdateImpl
     Object? mlsProtocolVersion = ignore,
     Object? ciphersuite = ignore,
     Object? usedTime = ignore,
-    Object? usedByGroupId = ignore,
-    Object? usedByEventId = ignore,
+    Object? usedByPubkey = ignore,
     Object? lastUpdatedTime = ignore,
     Object? notes = ignore,
   }) {
@@ -594,10 +567,9 @@ class _KeyPackageDBISARQueryBuilderUpdateImpl
         if (mlsProtocolVersion != ignore) 9: mlsProtocolVersion as String?,
         if (ciphersuite != ignore) 10: ciphersuite as String?,
         if (usedTime != ignore) 13: usedTime as int?,
-        if (usedByGroupId != ignore) 14: usedByGroupId as String?,
-        if (usedByEventId != ignore) 15: usedByEventId as String?,
-        if (lastUpdatedTime != ignore) 16: lastUpdatedTime as int?,
-        if (notes != ignore) 17: notes as String?,
+        if (usedByPubkey != ignore) 14: usedByPubkey as String?,
+        if (lastUpdatedTime != ignore) 15: lastUpdatedTime as int?,
+        if (notes != ignore) 16: notes as String?,
       });
     } finally {
       q.close();
@@ -2897,21 +2869,21 @@ extension KeyPackageDBISARQueryFilter
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByGroupIdIsNull() {
+      usedByPubkeyIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const IsNullCondition(property: 14));
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByGroupIdIsNotNull() {
+      usedByPubkeyIsNotNull() {
     return QueryBuilder.apply(not(), (query) {
       return query.addFilterCondition(const IsNullCondition(property: 14));
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByGroupIdEqualTo(
+      usedByPubkeyEqualTo(
     String? value, {
     bool caseSensitive = true,
   }) {
@@ -2927,7 +2899,7 @@ extension KeyPackageDBISARQueryFilter
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByGroupIdGreaterThan(
+      usedByPubkeyGreaterThan(
     String? value, {
     bool caseSensitive = true,
   }) {
@@ -2943,7 +2915,7 @@ extension KeyPackageDBISARQueryFilter
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByGroupIdGreaterThanOrEqualTo(
+      usedByPubkeyGreaterThanOrEqualTo(
     String? value, {
     bool caseSensitive = true,
   }) {
@@ -2959,7 +2931,7 @@ extension KeyPackageDBISARQueryFilter
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByGroupIdLessThan(
+      usedByPubkeyLessThan(
     String? value, {
     bool caseSensitive = true,
   }) {
@@ -2975,7 +2947,7 @@ extension KeyPackageDBISARQueryFilter
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByGroupIdLessThanOrEqualTo(
+      usedByPubkeyLessThanOrEqualTo(
     String? value, {
     bool caseSensitive = true,
   }) {
@@ -2991,7 +2963,7 @@ extension KeyPackageDBISARQueryFilter
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByGroupIdBetween(
+      usedByPubkeyBetween(
     String? lower,
     String? upper, {
     bool caseSensitive = true,
@@ -3009,7 +2981,7 @@ extension KeyPackageDBISARQueryFilter
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByGroupIdStartsWith(
+      usedByPubkeyStartsWith(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -3025,7 +2997,7 @@ extension KeyPackageDBISARQueryFilter
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByGroupIdEndsWith(
+      usedByPubkeyEndsWith(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -3041,7 +3013,7 @@ extension KeyPackageDBISARQueryFilter
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByGroupIdContains(String value, {bool caseSensitive = true}) {
+      usedByPubkeyContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         ContainsCondition(
@@ -3054,7 +3026,7 @@ extension KeyPackageDBISARQueryFilter
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByGroupIdMatches(String pattern, {bool caseSensitive = true}) {
+      usedByPubkeyMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         MatchesCondition(
@@ -3067,7 +3039,7 @@ extension KeyPackageDBISARQueryFilter
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByGroupIdIsEmpty() {
+      usedByPubkeyIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         const EqualCondition(
@@ -3079,205 +3051,11 @@ extension KeyPackageDBISARQueryFilter
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByGroupIdIsNotEmpty() {
+      usedByPubkeyIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         const GreaterCondition(
           property: 14,
-          value: '',
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByEventIdIsNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const IsNullCondition(property: 15));
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByEventIdIsNotNull() {
-    return QueryBuilder.apply(not(), (query) {
-      return query.addFilterCondition(const IsNullCondition(property: 15));
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByEventIdEqualTo(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        EqualCondition(
-          property: 15,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByEventIdGreaterThan(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        GreaterCondition(
-          property: 15,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByEventIdGreaterThanOrEqualTo(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        GreaterOrEqualCondition(
-          property: 15,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByEventIdLessThan(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        LessCondition(
-          property: 15,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByEventIdLessThanOrEqualTo(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        LessOrEqualCondition(
-          property: 15,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByEventIdBetween(
-    String? lower,
-    String? upper, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        BetweenCondition(
-          property: 15,
-          lower: lower,
-          upper: upper,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByEventIdStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        StartsWithCondition(
-          property: 15,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByEventIdEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        EndsWithCondition(
-          property: 15,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByEventIdContains(String value, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        ContainsCondition(
-          property: 15,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByEventIdMatches(String pattern, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        MatchesCondition(
-          property: 15,
-          wildcard: pattern,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByEventIdIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const EqualCondition(
-          property: 15,
-          value: '',
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
-      usedByEventIdIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const GreaterCondition(
-          property: 15,
           value: '',
         ),
       );
@@ -3291,7 +3069,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
-          property: 16,
+          property: 15,
           value: value,
         ),
       );
@@ -3305,7 +3083,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterCondition(
-          property: 16,
+          property: 15,
           value: value,
         ),
       );
@@ -3319,7 +3097,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterOrEqualCondition(
-          property: 16,
+          property: 15,
           value: value,
         ),
       );
@@ -3333,7 +3111,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessCondition(
-          property: 16,
+          property: 15,
           value: value,
         ),
       );
@@ -3347,7 +3125,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessOrEqualCondition(
-          property: 16,
+          property: 15,
           value: value,
         ),
       );
@@ -3362,7 +3140,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         BetweenCondition(
-          property: 16,
+          property: 15,
           lower: lower,
           upper: upper,
         ),
@@ -3373,14 +3151,14 @@ extension KeyPackageDBISARQueryFilter
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
       notesIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const IsNullCondition(property: 17));
+      return query.addFilterCondition(const IsNullCondition(property: 16));
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
       notesIsNotNull() {
     return QueryBuilder.apply(not(), (query) {
-      return query.addFilterCondition(const IsNullCondition(property: 17));
+      return query.addFilterCondition(const IsNullCondition(property: 16));
     });
   }
 
@@ -3392,7 +3170,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
-          property: 17,
+          property: 16,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -3408,7 +3186,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterCondition(
-          property: 17,
+          property: 16,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -3424,7 +3202,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterOrEqualCondition(
-          property: 17,
+          property: 16,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -3440,7 +3218,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessCondition(
-          property: 17,
+          property: 16,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -3456,7 +3234,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessOrEqualCondition(
-          property: 17,
+          property: 16,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -3473,7 +3251,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         BetweenCondition(
-          property: 17,
+          property: 16,
           lower: lower,
           upper: upper,
           caseSensitive: caseSensitive,
@@ -3490,7 +3268,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         StartsWithCondition(
-          property: 17,
+          property: 16,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -3506,7 +3284,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EndsWithCondition(
-          property: 17,
+          property: 16,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -3519,7 +3297,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         ContainsCondition(
-          property: 17,
+          property: 16,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -3532,7 +3310,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         MatchesCondition(
-          property: 17,
+          property: 16,
           wildcard: pattern,
           caseSensitive: caseSensitive,
         ),
@@ -3545,7 +3323,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         const EqualCondition(
-          property: 17,
+          property: 16,
           value: '',
         ),
       );
@@ -3557,7 +3335,7 @@ extension KeyPackageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         const GreaterCondition(
-          property: 17,
+          property: 16,
           value: '',
         ),
       );
@@ -3801,7 +3579,7 @@ extension KeyPackageDBISARQuerySortBy
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
-      sortByUsedByGroupId({bool caseSensitive = true}) {
+      sortByUsedByPubkey({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(
         14,
@@ -3811,31 +3589,10 @@ extension KeyPackageDBISARQuerySortBy
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
-      sortByUsedByGroupIdDesc({bool caseSensitive = true}) {
+      sortByUsedByPubkeyDesc({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(
         14,
-        sort: Sort.desc,
-        caseSensitive: caseSensitive,
-      );
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
-      sortByUsedByEventId({bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(
-        15,
-        caseSensitive: caseSensitive,
-      );
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
-      sortByUsedByEventIdDesc({bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(
-        15,
         sort: Sort.desc,
         caseSensitive: caseSensitive,
       );
@@ -3845,14 +3602,14 @@ extension KeyPackageDBISARQuerySortBy
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
       sortByLastUpdatedTime() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(16);
+      return query.addSortBy(15);
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
       sortByLastUpdatedTimeDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(16, sort: Sort.desc);
+      return query.addSortBy(15, sort: Sort.desc);
     });
   }
 
@@ -3860,7 +3617,7 @@ extension KeyPackageDBISARQuerySortBy
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(
-        17,
+        16,
         caseSensitive: caseSensitive,
       );
     });
@@ -3870,7 +3627,7 @@ extension KeyPackageDBISARQuerySortBy
       sortByNotesDesc({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(
-        17,
+        16,
         sort: Sort.desc,
         caseSensitive: caseSensitive,
       );
@@ -4048,58 +3805,44 @@ extension KeyPackageDBISARQuerySortThenBy
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
-      thenByUsedByGroupId({bool caseSensitive = true}) {
+      thenByUsedByPubkey({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(14, caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
-      thenByUsedByGroupIdDesc({bool caseSensitive = true}) {
+      thenByUsedByPubkeyDesc({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(14, sort: Sort.desc, caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
-      thenByUsedByEventId({bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(15, caseSensitive: caseSensitive);
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
-      thenByUsedByEventIdDesc({bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(15, sort: Sort.desc, caseSensitive: caseSensitive);
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
       thenByLastUpdatedTime() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(16);
+      return query.addSortBy(15);
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
       thenByLastUpdatedTimeDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(16, sort: Sort.desc);
+      return query.addSortBy(15, sort: Sort.desc);
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy> thenByNotes(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(17, caseSensitive: caseSensitive);
+      return query.addSortBy(16, caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
       thenByNotesDesc({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(17, sort: Sort.desc, caseSensitive: caseSensitive);
+      return query.addSortBy(16, sort: Sort.desc, caseSensitive: caseSensitive);
     });
   }
 }
@@ -4198,30 +3941,23 @@ extension KeyPackageDBISARQueryWhereDistinct
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterDistinct>
-      distinctByUsedByGroupId({bool caseSensitive = true}) {
+      distinctByUsedByPubkey({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(14, caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterDistinct>
-      distinctByUsedByEventId({bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(15, caseSensitive: caseSensitive);
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterDistinct>
       distinctByLastUpdatedTime() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(16);
+      return query.addDistinctBy(15);
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterDistinct>
       distinctByNotes({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(17, caseSensitive: caseSensitive);
+      return query.addDistinctBy(16, caseSensitive: caseSensitive);
     });
   }
 }
@@ -4318,29 +4054,22 @@ extension KeyPackageDBISARQueryProperty1
   }
 
   QueryBuilder<KeyPackageDBISAR, String?, QAfterProperty>
-      usedByGroupIdProperty() {
+      usedByPubkeyProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(14);
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, String?, QAfterProperty>
-      usedByEventIdProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addProperty(15);
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, int, QAfterProperty>
       lastUpdatedTimeProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(16);
+      return query.addProperty(15);
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, String?, QAfterProperty> notesProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(17);
+      return query.addProperty(16);
     });
   }
 }
@@ -4441,29 +4170,22 @@ extension KeyPackageDBISARQueryProperty2<R>
   }
 
   QueryBuilder<KeyPackageDBISAR, (R, String?), QAfterProperty>
-      usedByGroupIdProperty() {
+      usedByPubkeyProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(14);
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, (R, String?), QAfterProperty>
-      usedByEventIdProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addProperty(15);
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, (R, int), QAfterProperty>
       lastUpdatedTimeProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(16);
+      return query.addProperty(15);
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, (R, String?), QAfterProperty> notesProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(17);
+      return query.addProperty(16);
     });
   }
 }
@@ -4567,30 +4289,23 @@ extension KeyPackageDBISARQueryProperty3<R1, R2>
   }
 
   QueryBuilder<KeyPackageDBISAR, (R1, R2, String?), QOperations>
-      usedByGroupIdProperty() {
+      usedByPubkeyProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(14);
-    });
-  }
-
-  QueryBuilder<KeyPackageDBISAR, (R1, R2, String?), QOperations>
-      usedByEventIdProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addProperty(15);
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, (R1, R2, int), QOperations>
       lastUpdatedTimeProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(16);
+      return query.addProperty(15);
     });
   }
 
   QueryBuilder<KeyPackageDBISAR, (R1, R2, String?), QOperations>
       notesProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(17);
+      return query.addProperty(16);
     });
   }
 }

@@ -127,33 +127,44 @@ class KeyPackageManager {
   }
 
   /// Get available keypackages for a user
-  static Future<List<KeyPackageDBISAR>> getAvailableLocalKeyPackages(String pubkey) async {
+  static Future<List<KeyPackageDBISAR>> getAvailableLocalKeyPackages(String pubkey,
+      {String? welcomeSenderPubkey}) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
-      final keyPackages = isar.keyPackageDBISARs
+      final allKeyPackages = isar.keyPackageDBISARs
           .where()
           .ownerPubkeyEqualTo(pubkey)
-          .statusEqualTo(KeyPackageStatus.available.value)
           .sortByCreateTimeDesc()
           .findAll();
 
-      // Only verify keypackages in nostr_mls storage if this is the current user's keypackages
+      // Filter out one-time keypackages that have been used by a different user
+      List<KeyPackageDBISAR> availableKeyPackages = [];
       String currentPubkey = Account.sharedInstance.currentPubkey;
-      if (pubkey == currentPubkey) {
-        List<KeyPackageDBISAR> validKeyPackages = [];
-        for (KeyPackageDBISAR keyPackage in keyPackages) {
+
+      for (KeyPackageDBISAR keyPackage in allKeyPackages) {
+        // For one-time keypackages, check if they've been used by a different user
+        if (keyPackage.isOneTime &&
+            keyPackage.usedByPubkey != null &&
+            welcomeSenderPubkey != null &&
+            keyPackage.usedByPubkey != welcomeSenderPubkey) {
+          continue;
+        }
+
+        // Only verify keypackages in nostr_mls storage if this is the current user's keypackages
+        if (pubkey == currentPubkey) {
           bool existsInStorage = await _verifyKeyPackageInStorage(keyPackage.encodedKeyPackage);
           if (existsInStorage) {
-            validKeyPackages.add(keyPackage);
+            availableKeyPackages.add(keyPackage);
           } else {
             // Remove from database if not found in nostr_mls storage
             await _deleteKeyPackageFromDB(keyPackage);
           }
+        } else {
+          availableKeyPackages.add(keyPackage);
         }
-        return validKeyPackages;
       }
 
-      return keyPackages;
+      return availableKeyPackages;
     } catch (e) {
       return [];
     }
@@ -286,11 +297,13 @@ class KeyPackageManager {
     List<KeyPackageEvent> relayKeyPackages = await searchAndStoreKeyPackages(pubkey);
 
     // Combine local and relay keypackages
-    List<KeyPackageEvent> localKeyPackageEvents = localKeyPackages.map((kp) => kp.toKeyPackageEvent()).toList();
+    List<KeyPackageEvent> localKeyPackageEvents =
+        localKeyPackages.map((kp) => kp.toKeyPackageEvent()).toList();
     List<KeyPackageEvent> availableKeyPackages = [...localKeyPackageEvents, ...relayKeyPackages];
 
-    // search all keypackages (local + relay)    
-    List<KeyPackageEvent> oxchatLiteKeyPackages = availableKeyPackages.where((kp) => kp.client == KeyPackageClient.oxchatLite.value).toList();
+    // search all keypackages (local + relay)
+    List<KeyPackageEvent> oxchatLiteKeyPackages =
+        availableKeyPackages.where((kp) => kp.client == KeyPackageClient.oxchatLite.value).toList();
     if (oxchatLiteKeyPackages.isNotEmpty) {
       return oxchatLiteKeyPackages.first.encoded_key_package;
     }
@@ -314,12 +327,12 @@ class KeyPackageManager {
       }
       return result?.keyPackage;
     }
-    
+
     // If no keypackages available, return null
     if (availableKeyPackages.isEmpty) {
       return null;
     }
-    
+
     return availableKeyPackages.first.encoded_key_package;
   }
 
@@ -354,7 +367,7 @@ class KeyPackageManager {
 
             // Save to database
             await saveKeyPackage(keyPackageDB);
-            
+
             // Add to relay keypackages list
             relayKeyPackages.add(keyPackageEvent);
           } catch (e) {
@@ -377,8 +390,7 @@ class KeyPackageManager {
   /// Mark a keypackage as used
   static Future<void> markKeyPackageAsUsed(
     String keyPackageId, {
-    String? groupId,
-    String? eventId,
+    String? usedByPubkey,
   }) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
@@ -386,7 +398,17 @@ class KeyPackageManager {
           isar.keyPackageDBISARs.where().keyPackageIdEqualTo(keyPackageId).findFirst();
 
       if (keyPackage != null) {
-        keyPackage.markAsUsed(groupId: groupId, eventId: eventId);
+        // For one-time keypackages, check if it's already used by a different user
+        if (keyPackage.isOneTime && keyPackage.usedByPubkey != null) {
+          // If it's already used by a different user, don't allow reuse
+          if (usedByPubkey != null && keyPackage.usedByPubkey != usedByPubkey) {
+            print(
+                'One-time keypackage ${keyPackage.keyPackageId} already used by user ${keyPackage.usedByPubkey}, cannot be used by $usedByPubkey');
+            return;
+          }
+        }
+
+        keyPackage.markAsUsed(usedByPubkey: usedByPubkey);
         await DBISAR.sharedInstance.saveToDB(keyPackage);
       }
     } catch (e) {
@@ -397,8 +419,7 @@ class KeyPackageManager {
   /// Mark a keypackage as used by encoded keypackage
   static Future<void> markKeyPackageAsUsedByEncoded(
     String encodedKeyPackage, {
-    String? groupId,
-    String? eventId,
+    String? usedByPubkey,
   }) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
@@ -406,7 +427,17 @@ class KeyPackageManager {
           isar.keyPackageDBISARs.where().encodedKeyPackageEqualTo(encodedKeyPackage).findFirst();
 
       if (keyPackage != null) {
-        keyPackage.markAsUsed(groupId: groupId, eventId: eventId);
+        // For one-time keypackages, check if it's already used by a different user
+        if (keyPackage.isOneTime && keyPackage.usedByPubkey != null) {
+          // If it's already used by a different user, don't allow reuse
+          if (usedByPubkey != null && keyPackage.usedByPubkey != usedByPubkey) {
+            print(
+                'One-time keypackage ${keyPackage.keyPackageId} already used by user ${keyPackage.usedByPubkey}, cannot be used by $usedByPubkey');
+            return;
+          }
+        }
+
+        keyPackage.markAsUsed(usedByPubkey: usedByPubkey);
         await DBISAR.sharedInstance.saveToDB(keyPackage);
       }
     } catch (e) {
@@ -472,18 +503,20 @@ class KeyPackageManager {
 
       final total = isar.keyPackageDBISARs.where().ownerPubkeyEqualTo(pubkey).count();
 
-      final available = isar.keyPackageDBISARs
-          .where()
-          .ownerPubkeyEqualTo(pubkey)
-          .and()
-          .statusEqualTo(KeyPackageStatus.available.value)
-          .count();
-
+      // Count keypackages that have been used (have usedByPubkey)
       final used = isar.keyPackageDBISARs
           .where()
           .ownerPubkeyEqualTo(pubkey)
           .and()
-          .statusEqualTo(KeyPackageStatus.used.value)
+          .usedByPubkeyIsNotNull()
+          .count();
+
+      // Count keypackages that haven't been used (usedByPubkey is null)
+      final available = isar.keyPackageDBISARs
+          .where()
+          .ownerPubkeyEqualTo(pubkey)
+          .and()
+          .usedByPubkeyIsNull()
           .count();
 
       final oneTime = isar.keyPackageDBISARs
@@ -598,7 +631,7 @@ class KeyPackageManager {
         print('Failed to fetch keypackage event from relay');
         return {'success': false, 'pubkey': null};
       }
-      
+
       // Create database record
       KeyPackageDBISAR keyPackageDB = KeyPackageDBISAR.fromKeyPackageEvent(
         relayKeyPackageEvent,
@@ -621,10 +654,7 @@ class KeyPackageManager {
   static Future<KeyPackageEvent?> _fetchKeyPackageFromLocal(String eventId) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
-      final localKeyPackage = isar.keyPackageDBISARs
-          .where()
-          .eventIdEqualTo(eventId)
-          .findFirst();
+      final localKeyPackage = isar.keyPackageDBISARs.where().eventIdEqualTo(eventId).findFirst();
 
       if (localKeyPackage != null) {
         return localKeyPackage.toKeyPackageEvent();
@@ -650,11 +680,11 @@ class KeyPackageManager {
       // Fetch from relay
       final completer = Completer<KeyPackageEvent?>();
       final relayUrl = relays.first;
-      
+
       // Check if already connected to the relay
       final connectedRelays = Connect.sharedInstance.relays();
       bool isConnected = connectedRelays.contains(relayUrl);
-      
+
       if (isConnected) {
         // Already connected, make request immediately
         _makeKeyPackageRequest(eventId, completer);
@@ -693,9 +723,10 @@ class KeyPackageManager {
   }
 
   /// Listen for connection and then make request
-  static void _listenForConnectionAndRequest(String relayUrl, String eventId, Completer<KeyPackageEvent?> completer) {    
-     Future.delayed(Duration(seconds: 2), () {
-        _makeKeyPackageRequest(eventId, completer);
-     });
+  static void _listenForConnectionAndRequest(
+      String relayUrl, String eventId, Completer<KeyPackageEvent?> completer) {
+    Future.delayed(Duration(seconds: 2), () {
+      _makeKeyPackageRequest(eventId, completer);
+    });
   }
 }
