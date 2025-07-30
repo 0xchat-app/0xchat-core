@@ -281,11 +281,11 @@ class KeyPackageManager {
           .toList();
 
       if (oxchatLiteKeyPackages.isNotEmpty) {
-        // Prefer one-time keypackages
-        KeyPackageDBISAR? oneTimeKeyPackage =
-            oxchatLiteKeyPackages.where((kp) => kp.isOneTime).firstOrNull;
-        if (oneTimeKeyPackage != null) {
-          return oneTimeKeyPackage.encodedKeyPackage;
+        // Prefer permanent keypackages
+        KeyPackageDBISAR? permanentKeyPackage =
+            oxchatLiteKeyPackages.where((kp) => kp.isPermanent).firstOrNull;
+        if (permanentKeyPackage != null) {
+          return permanentKeyPackage.encodedKeyPackage;
         }
 
         // Return first available 0xchat-lite keypackage
