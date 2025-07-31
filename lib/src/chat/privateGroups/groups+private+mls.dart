@@ -785,10 +785,6 @@ extension MLSPrivateGroups on Groups {
     OKEvent okEvent = await sendGroupEventToMLSGroup(group, groupEvent);
     if (okEvent.status) {
       await deleteMLSGroup(group);
-      myGroups.remove(group);
-      groups.remove(group);
-      updateMLSGroupSubscription();
-      await syncMyGroupListToDB();
     }
     return okEvent;
   }
@@ -796,6 +792,10 @@ extension MLSPrivateGroups on Groups {
   Future<void> deleteMLSGroup(GroupDBISAR group) async {
     if (group.mlsGroupId == null) return;
     await Messages.deleteGroupMessagesFromDB(group.groupId);
+    myGroups.remove(group);
+    groups.remove(group);
+    updateMLSGroupSubscription();
+    await syncMyGroupListToDB();
   }
 
   Future<GroupDBISAR?> updateMLSGroupInfo(GroupDBISAR group) async {
