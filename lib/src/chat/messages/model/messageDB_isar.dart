@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
@@ -299,7 +300,12 @@ class MessageDBISAR {
       return {'contentType': 'text', 'content': content};
     } catch (e) {
       LogUtils.v(() => 'decodeContent fail: $content, error msg: ${e.toString()}');
-      MessageType type = await identifyUrl(content);
+      MessageType type = await identifyUrl(content).timeout(
+        Duration(seconds: 1),
+        onTimeout: () {
+          return MessageType.text;
+        },
+      );
       return {'contentType': messageTypeToString(type), 'content': content};
     }
   }
