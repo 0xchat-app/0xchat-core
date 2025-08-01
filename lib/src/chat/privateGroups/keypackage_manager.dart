@@ -317,17 +317,6 @@ class KeyPackageManager {
   }) async {
     // First check if user has a scanned keypackage ID (highest priority)
     UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
-    if (user?.scannedKeyPackageId != null && user!.scannedKeyPackageId!.isNotEmpty) {
-      // Try to get the scanned keypackage
-      final isar = DBISAR.sharedInstance.isar;
-      final scannedKeyPackage =
-          isar.keyPackageDBISARs.where().keyPackageIdEqualTo(user.scannedKeyPackageId!).findFirst();
-
-      if (scannedKeyPackage != null && scannedKeyPackage.isAvailable) {
-        return scannedKeyPackage.encodedKeyPackage;
-      }
-    }
-
     // Second check if user has a last selected keypackage ID
     if (user?.lastSelectedKeyPackageId != null && user!.lastSelectedKeyPackageId!.isNotEmpty) {
       // Try to get the last selected keypackage
@@ -522,23 +511,14 @@ class KeyPackageManager {
   }
 
   /// Record scanned keypackage ID to user for priority selection
-  static Future<void> recordScannedKeyPackageId(
-      String senderPubkey, String? keypackage, String? eventid) async {
+  static Future<void> recordScannedKeyPackageId(String senderPubkey, String? keyPackageId) async {
     try {
       UserDBISAR? user = await Account.sharedInstance.getUserInfo(senderPubkey);
       if (user != null) {
         // Generate keypackage ID from the scanned data
-        String? keyPackageId;
-        if (keypackage != null) {
-          // For one-time invites, use the keypackage data to generate ID
-          keyPackageId = generate64RandomHexChars();
-        } else if (eventid != null) {
-          // For permanent invites, use the event ID
-          keyPackageId = eventid;
-        }
-
-        if (keyPackageId != null) {
-          user.scannedKeyPackageId = keyPackageId;
+        if (keyPackageId != null && keyPackageId.isNotEmpty) {
+          user.lastSelectedKeyPackageId = keyPackageId;
+          await Account.saveUserToDB(user);
           Groups.sharedInstance.sendPrivateKeyPackageEvent(senderPubkey);
           Groups.sharedInstance.sendMyPrivateMetadataEvent(senderPubkey);
         }
@@ -671,7 +651,7 @@ class KeyPackageManager {
 
   /// Handle one-time invite link
   /// This method processes a one-time keypackage from an invite link
-  static Future<bool> handleOneTimeInviteLink({
+  static Future<String> handleOneTimeInviteLink({
     required String encodedKeyPackage,
     required String senderPubkey,
     required List<String> relays,
@@ -701,10 +681,10 @@ class KeyPackageManager {
       await KeyPackageManager.saveKeyPackage(keyPackageDB);
 
       print('Successfully processed one-time invite link from $senderPubkey');
-      return true;
+      return keyPackageDB.keyPackageId;
     } catch (e) {
       print('Failed to handle one-time invite link: $e');
-      return false;
+      return '';
     }
   }
 
@@ -717,10 +697,14 @@ class KeyPackageManager {
   }) async {
     try {
       // First try to fetch from local database
-      final keyPackageEvent = await _fetchKeyPackageFromLocal(eventId);
-      if (keyPackageEvent != null) {
+      var keyPackageDB = await _fetchKeyPackageFromLocal(eventId);
+      if (keyPackageDB != null) {
         print('Found keypackage in local database: $eventId');
-        return {'success': true, 'pubkey': keyPackageEvent.pubkey};
+        return {
+          'success': true,
+          'pubkey': keyPackageDB.ownerPubkey,
+          'keyPackageId': keyPackageDB.keyPackageId
+        };
       }
 
       // If not found locally, fetch from relay
@@ -731,7 +715,7 @@ class KeyPackageManager {
       }
 
       // Create database record
-      KeyPackageDBISAR keyPackageDB = KeyPackageDBISAR.fromKeyPackageEvent(
+      keyPackageDB = KeyPackageDBISAR.fromKeyPackageEvent(
         relayKeyPackageEvent,
         type: KeyPackageType.permanent,
         status: KeyPackageStatus.available,
@@ -741,7 +725,11 @@ class KeyPackageManager {
       await KeyPackageManager.saveKeyPackage(keyPackageDB);
 
       print('Successfully processed permanent invite link: $eventId');
-      return {'success': true, 'pubkey': relayKeyPackageEvent.pubkey};
+      return {
+        'success': true,
+        'pubkey': relayKeyPackageEvent.pubkey,
+        'keyPackageId': keyPackageDB.keyPackageId
+      };
     } catch (e) {
       print('Failed to handle permanent invite link: $e');
       return {'success': false, 'pubkey': null};
@@ -749,13 +737,13 @@ class KeyPackageManager {
   }
 
   /// Fetch KeyPackageEvent from local database
-  static Future<KeyPackageEvent?> _fetchKeyPackageFromLocal(String eventId) async {
+  static Future<KeyPackageDBISAR?> _fetchKeyPackageFromLocal(String eventId) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
       final localKeyPackage = isar.keyPackageDBISARs.where().eventIdEqualTo(eventId).findFirst();
 
       if (localKeyPackage != null) {
-        return localKeyPackage.toKeyPackageEvent();
+        return localKeyPackage;
       }
       return null;
     } catch (e) {
