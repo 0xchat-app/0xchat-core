@@ -779,8 +779,29 @@ class KeyPackageManager {
   /// Listen for connection and then make request
   static void _listenForConnectionAndRequest(
       String relayUrl, String eventId, Completer<KeyPackageEvent?> completer) {
-    Future.delayed(Duration(seconds: 2), () {
-      _makeKeyPackageRequest(eventId, completer);
+    
+    // Add connection status listener
+    ConnectStatusCallBack? connectionListener;
+    connectionListener = (relay, status, relayKinds) {
+      if (relay == relayUrl && status == 1) { // status 1 = connected
+        // Remove the listener to avoid multiple calls
+        Connect.sharedInstance.removeConnectStatusListener(connectionListener!);
+        // Make the request once connected
+        _makeKeyPackageRequest(eventId, completer);
+      }
+    };
+    
+    Connect.sharedInstance.addConnectStatusListener(connectionListener);
+    
+    // Also connect to the relay if not already connected
+    Connect.sharedInstance.connect(relayUrl, relayKind: RelayKind.circleRelay);
+    
+    // Add a fallback timeout in case connection fails
+    Timer(Duration(seconds: 15), () {
+      if (!completer.isCompleted) {
+        Connect.sharedInstance.removeConnectStatusListener(connectionListener!);
+        completer.complete(null);
+      }
     });
   }
 }
