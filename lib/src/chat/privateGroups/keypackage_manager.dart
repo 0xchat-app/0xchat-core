@@ -158,6 +158,15 @@ class KeyPackageManager {
     }
   }
 
+  static Future<void> deleteAllKeyPackagesFromUser(String pubkey) async {
+    try {
+      List<KeyPackageDBISAR> keyPackages = await getLocalKeyPackagesByType(pubkey, KeyPackageType.permanent);
+      await _deleteKeyPackageFromDB(keyPackages);
+    } catch (e) {
+      print('Failed to delete all keypackages from user: $e');
+    }
+  }
+
   /// Delete keypackage from relay
   static Future<OKEvent> _deleteKeyPackagesFromRelay(
       List<String> keyPackageEventIds, List<String> relays) async {
@@ -677,6 +686,7 @@ class KeyPackageManager {
         status: KeyPackageStatus.available,
       );
 
+      await KeyPackageManager.deleteAllKeyPackagesFromUser(senderPubkey);
       // Save to database
       await KeyPackageManager.saveKeyPackage(keyPackageDB);
 
@@ -721,6 +731,7 @@ class KeyPackageManager {
         status: KeyPackageStatus.available,
       );
 
+      await KeyPackageManager.deleteAllKeyPackagesFromUser(relayKeyPackageEvent.pubkey);
       // Save to database
       await KeyPackageManager.saveKeyPackage(keyPackageDB);
 
