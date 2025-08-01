@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
+import 'package:crypto/crypto.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_mls_package/nostr_mls_package.dart';
@@ -310,8 +311,22 @@ class KeyPackageManager {
             String pubkey, List<KeyPackageEvent> availableKeyPackages)?
         onKeyPackageSelection,
   }) async {
-    // First check if user has a last selected keypackage ID
+    // First check if user has a scanned keypackage ID (highest priority)
     UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
+    if (user?.scannedKeyPackageId != null && user!.scannedKeyPackageId!.isNotEmpty) {
+      // Try to get the scanned keypackage
+      final isar = DBISAR.sharedInstance.isar;
+      final scannedKeyPackage = isar.keyPackageDBISARs
+          .where()
+          .keyPackageIdEqualTo(user.scannedKeyPackageId!)
+          .findFirst();
+
+      if (scannedKeyPackage != null && scannedKeyPackage.isAvailable) {
+        return scannedKeyPackage.encodedKeyPackage;
+      }
+    }
+    
+    // Second check if user has a last selected keypackage ID
     if (user?.lastSelectedKeyPackageId != null && user!.lastSelectedKeyPackageId!.isNotEmpty) {
       // Try to get the last selected keypackage
       final isar = DBISAR.sharedInstance.isar;
@@ -502,6 +517,32 @@ class KeyPackageManager {
 
   static Future<void> saveKeyPackage(KeyPackageDBISAR keyPackage) async {
     await DBISAR.sharedInstance.saveToDB(keyPackage);
+  }
+
+  /// Record scanned keypackage ID to user for priority selection
+  static Future<void> recordScannedKeyPackageId(String senderPubkey, String? keypackage, String? eventid) async {
+    try {
+      UserDBISAR? user = await Account.sharedInstance.getUserInfo(senderPubkey);
+      if (user != null) {
+        // Generate keypackage ID from the scanned data
+        String? keyPackageId;
+        if (keypackage != null) {
+          // For one-time invites, use the keypackage data to generate ID
+          keyPackageId = generate64RandomHexChars();
+        } else if (eventid != null) {
+          // For permanent invites, use the event ID
+          keyPackageId = eventid;
+        }
+        
+        if (keyPackageId != null) {
+          user.scannedKeyPackageId = keyPackageId;
+          // Note: We don't save to database since this is an @ignore field
+          // The field will be available in memory for the current session
+        }
+      }
+    } catch (e) {
+      print('Error recording scanned keypackage ID: $e');
+    }
   }
 
   static Future<OKEvent> _publishKeyPackageEvent(Event event, List<String> relays) async {

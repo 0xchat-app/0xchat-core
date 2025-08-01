@@ -105,6 +105,10 @@ class UserDBISAR {
 
   /// Last selected keypackage ID for MLS private groups
   String? lastSelectedKeyPackageId;
+  
+  /// Scanned keypackage ID from invite link (not stored in database)
+  @ignore
+  String? scannedKeyPackageId;
 
   UserDBISAR(
       {this.pubKey = '',
@@ -157,7 +161,8 @@ class UserDBISAR {
       this.clientPrivateKey,
       this.remoteSignerURI,
       this.remotePubkey,
-      this.lastSelectedKeyPackageId});
+      this.lastSelectedKeyPackageId,
+      this.scannedKeyPackageId});
 
   static UserDBISAR fromMap(Map<String, Object?> map) {
     return _userInfoFromMap(map);
