@@ -143,7 +143,7 @@ class KeyPackageManager {
   }
 
   /// Delete all permanent keypackages for a user from relay and database
-  static Future<void> _deleteAllPermanentKeyPackages(String ownerPubkey, List<String> relays) async {
+  static Future<void> _deleteAllPermanentKeyPackages(
       String ownerPubkey, List<String> relays) async {
     try {
       // Get all permanent keypackages from database
@@ -538,8 +538,6 @@ class KeyPackageManager {
         
         if (keyPackageId != null) {
           user.scannedKeyPackageId = keyPackageId;
-          // Note: We don't save to database since this is an @ignore field
-          // The field will be available in memory for the current session
           Groups.sharedInstance.sendPrivateKeyPackageEvent(senderPubkey);
           Groups.sharedInstance.sendMyPrivateMetadataEvent(senderPubkey);
         }
