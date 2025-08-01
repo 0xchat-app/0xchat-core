@@ -779,7 +779,7 @@ class KeyPackageManager {
       final relayUrl = relays.first;
 
       // Check if already connected to the relay
-      final connectedRelays = Connect.sharedInstance.relays();
+      final connectedRelays = Connect.sharedInstance.relays(relayKinds: [RelayKind.circleRelay]);
       bool isConnected = connectedRelays.contains(relayUrl);
 
       if (isConnected) {
@@ -840,7 +840,7 @@ class KeyPackageManager {
     Connect.sharedInstance.connect(relayUrl, relayKind: RelayKind.circleRelay);
     
     // Add a fallback timeout in case connection fails
-    Timer(Duration(seconds: 15), () {
+    Timer(Duration(seconds: 10), () {
       if (!completer.isCompleted) {
         Connect.sharedInstance.removeConnectStatusListener(connectionListener!);
         completer.complete(null);
