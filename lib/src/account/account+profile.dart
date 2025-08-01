@@ -28,7 +28,7 @@ extension AccountProfile on Account {
         for (var event in events) {
           switch (event.kind) {
             case 0:
-              me = _handleKind0Event(me, event);
+              me = handleKind0Event(me, event);
               break;
             case 3:
               me = _handleKind3Event(me, event);
@@ -78,7 +78,7 @@ extension AccountProfile on Account {
     Connect.sharedInstance.addSubscription(filters, relays: relays, eventCallBack: (event, relay) async {
       switch (event.kind) {
         case 0:
-          db = _handleKind0Event(db, event);
+          db = handleKind0Event(db, event);
           break;
         case 10002:
           db = _handleKind10002Event(db, event);
@@ -135,7 +135,7 @@ extension AccountProfile on Account {
       String p = event.pubkey;
       UserDBISAR db = users[p] ?? UserDBISAR(pubKey: p);
       if (event.kind == 0) {
-        users[p] = _handleKind0Event(db, event)!;
+        users[p] = handleKind0Event(db, event)!;
       }
       if (event.kind == 10050) {
         users[p] = _handleKind10050Event(db, event)!;
@@ -203,7 +203,27 @@ extension AccountProfile on Account {
     return completer.future;
   }
 
-  UserDBISAR? _handleKind0Event(UserDBISAR? db, Event event) {
+  Future<Event?> getMyMetadataEvent() async {
+    UserDBISAR? db = await getUserFromDB(pubkey: currentPubkey);
+    if (db == null) return null;
+        /// send metadata event
+    Map map = {
+      'name': db.name ?? '',
+      'about': db.about ?? '',
+      'gender': db.gender ?? '',
+      'area': db.area ?? '',
+      'picture': db.picture ?? '',
+      'banner': db.banner ?? '',
+      'nip05': db.dns ?? '',
+      'lud16': db.lnurl ?? ''
+    };
+    Map additionMap = jsonDecode(db.otherField ?? '{}');
+    map.addAll(additionMap);
+        Event event = await Nip1.setMetadata(jsonEncode(map), currentPubkey, currentPrivkey);
+    return event;
+  }
+
+  UserDBISAR? handleKind0Event(UserDBISAR? db, Event event) {
     if (event.content.isEmpty) return db;
     Map map = jsonDecode(event.content);
     if (db != null && db.lastUpdatedTime < event.createdAt) {

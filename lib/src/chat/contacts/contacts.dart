@@ -322,6 +322,9 @@ class Contacts {
             ChatCoreManager().isAcceptedEventKind(innerEvent.kind)) {
           updateFriendMessageTime(innerEvent.createdAt, relay);
           switch (innerEvent.kind) {
+            case 0:
+              Groups.sharedInstance.handlePrivateMetadataEvent(innerEvent, relay);
+              break;
             /// MLS Welcome Message
             case 443:
               Groups.sharedInstance.handlePrivateKeyPackageEvent(innerEvent, relay);

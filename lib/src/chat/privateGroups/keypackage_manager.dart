@@ -144,9 +144,10 @@ class KeyPackageManager {
 
   /// Delete all permanent keypackages for a user from relay and database
   static Future<void> _deleteAllPermanentKeyPackages(String ownerPubkey, List<String> relays) async {
+      String ownerPubkey, List<String> relays) async {
     try {
       // Get all permanent keypackages from database
-      List<KeyPackageDBISAR> permanentKeyPackages = 
+      List<KeyPackageDBISAR> permanentKeyPackages =
           await getLocalKeyPackagesByType(ownerPubkey, KeyPackageType.permanent);
       // Delete from relay and database
       await _deleteKeyPackageFromDB(permanentKeyPackages);
@@ -157,8 +158,10 @@ class KeyPackageManager {
   }
 
   /// Delete keypackage from relay
-  static Future<OKEvent> _deleteKeyPackagesFromRelay(List<String> keyPackageEventIds, List<String> relays) async {
+  static Future<OKEvent> _deleteKeyPackagesFromRelay(
+      List<String> keyPackageEventIds, List<String> relays) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
+
     /// send delete event to relay
     Event event = await Nip9.encode(keyPackageEventIds, '', Account.sharedInstance.currentPubkey,
         Account.sharedInstance.currentPrivkey);
@@ -316,10 +319,8 @@ class KeyPackageManager {
     if (user?.scannedKeyPackageId != null && user!.scannedKeyPackageId!.isNotEmpty) {
       // Try to get the scanned keypackage
       final isar = DBISAR.sharedInstance.isar;
-      final scannedKeyPackage = isar.keyPackageDBISARs
-          .where()
-          .keyPackageIdEqualTo(user.scannedKeyPackageId!)
-          .findFirst();
+      final scannedKeyPackage =
+          isar.keyPackageDBISARs.where().keyPackageIdEqualTo(user.scannedKeyPackageId!).findFirst();
 
       if (scannedKeyPackage != null && scannedKeyPackage.isAvailable) {
         return scannedKeyPackage.encodedKeyPackage;
@@ -422,7 +423,7 @@ class KeyPackageManager {
             KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
 
             // Validate keypackage
-            bool isValid = await _checkValidKeypackage(keyPackageEvent);
+            bool isValid = await checkValidKeypackage(keyPackageEvent);
             if (!isValid) continue;
 
             // Determine type based on client or other criteria
@@ -520,7 +521,8 @@ class KeyPackageManager {
   }
 
   /// Record scanned keypackage ID to user for priority selection
-  static Future<void> recordScannedKeyPackageId(String senderPubkey, String? keypackage, String? eventid) async {
+  static Future<void> recordScannedKeyPackageId(
+      String senderPubkey, String? keypackage, String? eventid) async {
     try {
       UserDBISAR? user = await Account.sharedInstance.getUserInfo(senderPubkey);
       if (user != null) {
@@ -538,6 +540,8 @@ class KeyPackageManager {
           user.scannedKeyPackageId = keyPackageId;
           // Note: We don't save to database since this is an @ignore field
           // The field will be available in memory for the current session
+          Groups.sharedInstance.sendPrivateKeyPackageEvent(senderPubkey);
+          Groups.sharedInstance.sendMyPrivateMetadataEvent(senderPubkey);
         }
       }
     } catch (e) {
@@ -561,7 +565,7 @@ class KeyPackageManager {
     return KeyPackageType.permanent;
   }
 
-  static Future<bool> _checkValidKeypackage(KeyPackageEvent keyPackageEvent) async {
+  static Future<bool> checkValidKeypackage(KeyPackageEvent keyPackageEvent) async {
     try {
       String extensions = jsonDecode(await getExtensions())['extensions'];
       String ciphersuite = jsonDecode(await getCiphersuite())['ciphersuite'];
@@ -820,11 +824,11 @@ class KeyPackageManager {
   /// Listen for connection and then make request
   static void _listenForConnectionAndRequest(
       String relayUrl, String eventId, Completer<KeyPackageEvent?> completer) {
-    
     // Add connection status listener
     ConnectStatusCallBack? connectionListener;
     connectionListener = (relay, status, relayKinds) {
-      if (relay == relayUrl && status == 1) { // status 1 = connected
+      if (relay == relayUrl && status == 1) {
+        // status 1 = connected
         // Remove the listener to avoid multiple calls
         Connect.sharedInstance.removeConnectStatusListener(connectionListener!);
         // Make the request once connected

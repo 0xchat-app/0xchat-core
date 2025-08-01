@@ -102,8 +102,10 @@ extension GroupsPrivateMlsKeyPackages on Groups {
   }
 
   /// Get available keypackages for a user
-  Future<List<KeyPackageDBISAR>> getAvailableKeyPackages(String pubkey, {String? welcomeSenderPubkey}) async {
-    return await KeyPackageManager.getAvailableLocalKeyPackages(pubkey, welcomeSenderPubkey: welcomeSenderPubkey);
+  Future<List<KeyPackageDBISAR>> getAvailableKeyPackages(String pubkey,
+      {String? welcomeSenderPubkey}) async {
+    return await KeyPackageManager.getAvailableLocalKeyPackages(pubkey,
+        welcomeSenderPubkey: welcomeSenderPubkey);
   }
 
   /// Get keypackages by type
@@ -114,8 +116,8 @@ extension GroupsPrivateMlsKeyPackages on Groups {
   /// Track keypackage usage when processing welcome message
   /// Returns true if the welcome should be accepted, false if it should be rejected
   Future<bool> trackKeyPackageUsageForWelcome(
-    GroupDBISAR group, 
-    String wrapperEventId, 
+    GroupDBISAR group,
+    String wrapperEventId,
     String welcomeSenderPubkey,
   ) async {
     try {
@@ -123,7 +125,8 @@ extension GroupsPrivateMlsKeyPackages on Groups {
       if (group.welcomeEventString != null) {
         // Get available keypackages for the current user
         List<KeyPackageDBISAR> availableKeyPackages =
-            await KeyPackageManager.getAvailableLocalKeyPackages(pubkey, welcomeSenderPubkey: welcomeSenderPubkey);
+            await KeyPackageManager.getAvailableLocalKeyPackages(pubkey,
+                welcomeSenderPubkey: welcomeSenderPubkey);
 
         if (availableKeyPackages.isNotEmpty) {
           // Extract encoded keypackages from available keypackages
@@ -144,7 +147,7 @@ extension GroupsPrivateMlsKeyPackages on Groups {
 
           if (resultMap['found'] == true) {
             int matchedIndex = resultMap['matched_index'];
-            KeyPackageDBISAR matchedKeyPackage = availableKeyPackages[matchedIndex];            
+            KeyPackageDBISAR matchedKeyPackage = availableKeyPackages[matchedIndex];
             // Mark the matched keypackage as used
             await KeyPackageManager.markKeyPackageAsUsed(
               matchedKeyPackage.keyPackageId,
@@ -157,7 +160,7 @@ extension GroupsPrivateMlsKeyPackages on Groups {
           }
         } else {
           print('No available keypackages found for user $pubkey');
-          return false; 
+          return false;
         }
       }
       return false; // Accept the welcome message if no welcome event string
@@ -197,12 +200,85 @@ extension GroupsPrivateMlsKeyPackages on Groups {
     }
   }
 
-  Future<void> sendPrivateKeyPackageEvent(Event event, String toPubkey, List<String> relays) async {
+  Future<OKEvent> sendPrivateKeyPackageEvent(String toPubkey) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    var relays = Account.sharedInstance.getCurrentCircleRelay();
+
+    KeyPackageEvent? keyPackageEvent = await createPermanentKeyPackage(relays);
+    if (keyPackageEvent == null) {
+      completer.complete(OKEvent('', false, 'Failed to create keypackage'));
+      return completer.future;
+    }
+
+    // Create sealed event for the target user
+    List<List<String>> tags = [
+      ['mls_protocol_version', keyPackageEvent.mls_protocol_version],
+      ['mls_ciphersuite', keyPackageEvent.ciphersuite],
+      ['mls_extensions', ...keyPackageEvent.extensions],
+      ['relays', ...keyPackageEvent.relays],
+      ['client', keyPackageEvent.client],
+    ];
+
+    Event event = await Nip104.encodeKeyPackageEvent(
+      keyPackageEvent.encoded_key_package,
+      tags,
+      pubkey,
+      privkey,
+    );
+
     Event giftWrappedEvent = await Nip59.encode(event, toPubkey);
-    Connect.sharedInstance.sendEvent(giftWrappedEvent, toRelays: relays);
+    Connect.sharedInstance.sendEvent(giftWrappedEvent, toRelays: relays, sendCallBack: (ok, relay) {
+      if (!completer.isCompleted) {
+        completer.complete(ok);
+      }
+    });
+    return completer.future;
   }
 
   Future<void> handlePrivateKeyPackageEvent(Event event, String relay) async {
-    //todo: handle private key package event
+    KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
+
+    // Validate keypackage
+    bool isValid = await KeyPackageManager.checkValidKeypackage(keyPackageEvent);
+    if (!isValid) return;
+
+    // Create database record
+    KeyPackageDBISAR keyPackageDB = KeyPackageDBISAR.fromKeyPackageEvent(
+      keyPackageEvent,
+      type: KeyPackageType.permanent,
+      status: KeyPackageStatus.available,
+    );
+
+    // Save to database
+    await KeyPackageManager.saveKeyPackage(keyPackageDB);
+  }
+
+  Future<OKEvent> sendMyPrivateMetadataEvent(String topubkey) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    Event? event = await Account.sharedInstance.getMyMetadataEvent();
+    if (event == null) {
+      // If failed to get metadata event, return error immediately
+      return OKEvent('', false, 'Failed to get my metadata event');
+    }
+    Event sealedEvent = await Nip17.encode(
+      event,
+      topubkey,
+      pubkey,
+      privkey,
+    );
+
+    Connect.sharedInstance.sendEvent(sealedEvent, sendCallBack: (ok, relay) {
+      if (!completer.isCompleted) {
+        completer.complete(OKEvent(sealedEvent.id, ok.status, ok.message));
+      }
+    });
+    return completer.future;
+  }
+
+  Future<void> handlePrivateMetadataEvent(Event event, String relay) async {
+    UserDBISAR? db = await Account.sharedInstance.getUserFromDB(pubkey: event.pubkey);
+    if (db == null) return;
+    db = Account.sharedInstance.handleKind0Event(db, event);
+    await Account.saveUserToDB(db!);
   }
 }
