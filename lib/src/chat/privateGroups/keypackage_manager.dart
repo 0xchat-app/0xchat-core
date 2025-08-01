@@ -99,14 +99,15 @@ class KeyPackageManager {
 
       KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
       await saveKeyPackageEventToDB(event, KeyPackageType.permanent);
+      return keyPackageEvent;
 
       // Publish to relay and return result
-      OKEvent okEvent = await _publishKeyPackageEvent(event, relays);
-      if (okEvent.status) {
-        return keyPackageEvent;
-      } else {
-        return null;
-      }
+      // OKEvent okEvent = await _publishKeyPackageEvent(event, relays);
+      // if (okEvent.status) {
+      //   return keyPackageEvent;
+      // } else {
+      //   return null;
+      // }
     } catch (e, stackTrace) {
       print('Failed to create permanent keypackage: $e $stackTrace');
       return null;
@@ -128,7 +129,7 @@ class KeyPackageManager {
     try {
       // First, delete all existing permanent keypackages from relay and database
       await _deleteAllPermanentKeyPackages(ownerPubkey, relays);
-      
+
       // Then create a new permanent keypackage
       return await createPermanentKeyPackage(
         ownerPubkey: ownerPubkey,
@@ -326,7 +327,7 @@ class KeyPackageManager {
         return scannedKeyPackage.encodedKeyPackage;
       }
     }
-    
+
     // Second check if user has a last selected keypackage ID
     if (user?.lastSelectedKeyPackageId != null && user!.lastSelectedKeyPackageId!.isNotEmpty) {
       // Try to get the last selected keypackage
@@ -535,7 +536,7 @@ class KeyPackageManager {
           // For permanent invites, use the event ID
           keyPackageId = eventid;
         }
-        
+
         if (keyPackageId != null) {
           user.scannedKeyPackageId = keyPackageId;
           Groups.sharedInstance.sendPrivateKeyPackageEvent(senderPubkey);
@@ -692,7 +693,7 @@ class KeyPackageManager {
       // Create database record
       KeyPackageDBISAR keyPackageDB = KeyPackageDBISAR.fromKeyPackageEvent(
         keyPackageEvent,
-        type: KeyPackageType.oneTime,
+        type: KeyPackageType.permanent,
         status: KeyPackageStatus.available,
       );
 
@@ -833,12 +834,12 @@ class KeyPackageManager {
         _makeKeyPackageRequest(eventId, completer);
       }
     };
-    
+
     Connect.sharedInstance.addConnectStatusListener(connectionListener);
-    
+
     // Also connect to the relay if not already connected
     Connect.sharedInstance.connect(relayUrl, relayKind: RelayKind.circleRelay);
-    
+
     // Add a fallback timeout in case connection fails
     Timer(Duration(seconds: 10), () {
       if (!completer.isCompleted) {
