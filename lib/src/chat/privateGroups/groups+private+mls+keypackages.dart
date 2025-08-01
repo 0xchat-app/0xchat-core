@@ -31,6 +31,27 @@ extension GroupsPrivateMlsKeyPackages on Groups {
     }
   }
 
+  /// Recreate permanent keypackage by deleting existing ones and creating a new one
+  Future<KeyPackageEvent?> recreatePermanentKeyPackage(List<String>? relays) async {
+    if (relays == null || relays.isEmpty) {
+      relays = Account.sharedInstance.getCurrentCircleRelay();
+    }
+
+    try {
+      KeyPackageEvent? result = await KeyPackageManager.recreatePermanentKeyPackage(
+        ownerPubkey: pubkey,
+        ownerPrivkey: privkey,
+        relays: relays,
+        client: KeyPackageClient.oxchatLite,
+      );
+      
+      return result;
+    } catch (e, stackTrace) {
+      print('Failed to recreate permanent keypackage: $e $stackTrace');
+      return null;
+    }
+  }
+
   /// Create one-time keypackage for sharing
   Future<KeyPackageEvent?> createOneTimeKeyPackage({List<String>? relays}) async {
     if (relays == null || relays.isEmpty) {

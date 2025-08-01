@@ -112,6 +112,61 @@ class KeyPackageManager {
     }
   }
 
+  /// Recreate permanent keypackage by deleting existing ones and creating a new one
+  /// This method deletes all existing permanent keypackages from relay and database, then creates a new one
+  static Future<KeyPackageEvent?> recreatePermanentKeyPackage({
+    required String ownerPubkey,
+    required String ownerPrivkey,
+    List<String>? relays,
+    KeyPackageClient client = KeyPackageClient.oxchatLite,
+  }) async {
+    if (relays == null || relays.isEmpty) {
+      relays = Account.sharedInstance.getCurrentCircleRelay();
+    }
+
+    try {
+      // First, delete all existing permanent keypackages from relay and database
+      await _deleteAllPermanentKeyPackages(ownerPubkey, relays);
+      
+      // Then create a new permanent keypackage
+      return await createPermanentKeyPackage(
+        ownerPubkey: ownerPubkey,
+        ownerPrivkey: ownerPrivkey,
+        relays: relays,
+        client: client,
+      );
+    } catch (e, stackTrace) {
+      print('Failed to recreate permanent keypackage: $e $stackTrace');
+      return null;
+    }
+  }
+
+  /// Delete all permanent keypackages for a user from relay and database
+  static Future<void> _deleteAllPermanentKeyPackages(String ownerPubkey, List<String> relays) async {
+    try {
+      // Get all permanent keypackages from database
+      List<KeyPackageDBISAR> permanentKeyPackages = 
+          await getLocalKeyPackagesByType(ownerPubkey, KeyPackageType.permanent);
+      // Delete from relay and database
+      await _deleteKeyPackageFromDB(permanentKeyPackages);
+      _deleteKeyPackagesFromRelay(permanentKeyPackages.map((e) => e.eventId).toList(), relays);
+    } catch (e) {
+      print('Failed to delete permanent keypackages: $e');
+    }
+  }
+
+  /// Delete keypackage from relay
+  static Future<OKEvent> _deleteKeyPackagesFromRelay(List<String> keyPackageEventIds, List<String> relays) async {
+    Completer<OKEvent> completer = Completer<OKEvent>();
+    /// send delete event to relay
+    Event event = await Nip9.encode(keyPackageEventIds, '', Account.sharedInstance.currentPubkey,
+        Account.sharedInstance.currentPrivkey);
+    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
+      if (!completer.isCompleted) completer.complete(ok);
+    });
+    return completer.future;
+  }
+
   static Future<void> saveKeyPackageEventToDB(Event event, KeyPackageType type) async {
     KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
 
@@ -157,7 +212,7 @@ class KeyPackageManager {
             availableKeyPackages.add(keyPackage);
           } else {
             // Remove from database if not found in nostr_mls storage
-            await _deleteKeyPackageFromDB(keyPackage);
+            await _deleteKeyPackageFromDB([keyPackage]);
           }
         } else {
           availableKeyPackages.add(keyPackage);
@@ -182,7 +237,7 @@ class KeyPackageManager {
         bool existsInStorage = await _verifyKeyPackageInStorage(keyPackage.encodedKeyPackage);
         if (!existsInStorage) {
           // Remove from database if not found in nostr_mls storage
-          await _deleteKeyPackageFromDB(keyPackage);
+          await _deleteKeyPackageFromDB([keyPackage]);
           return null;
         }
       }
@@ -213,7 +268,7 @@ class KeyPackageManager {
             validKeyPackages.add(keyPackage);
           } else {
             // Remove from database if not found in nostr_mls storage
-            await _deleteKeyPackageFromDB(keyPackage);
+            await _deleteKeyPackageFromDB([keyPackage]);
           }
         }
         return validKeyPackages;
@@ -559,13 +614,12 @@ class KeyPackageManager {
   }
 
   /// Delete keypackage from database
-  static Future<void> _deleteKeyPackageFromDB(KeyPackageDBISAR keyPackage) async {
+  static Future<void> _deleteKeyPackageFromDB(List<KeyPackageDBISAR> keyPackage) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
       await isar.writeAsync((isar) async {
-        isar.keyPackageDBISARs.delete(keyPackage.id);
+        isar.keyPackageDBISARs.deleteAll(keyPackage.map((e) => e.id).toList());
       });
-      print('Deleted keypackage ${keyPackage.keyPackageId} from database');
     } catch (e) {
       print('Failed to delete keypackage from database: $e');
     }
