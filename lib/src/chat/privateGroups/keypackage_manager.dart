@@ -666,6 +666,17 @@ class KeyPackageManager {
     required List<String> relays,
   }) async {
     try {
+      // First check if the encodedKeyPackage already exists in database
+      final isar = DBISAR.sharedInstance.isar;
+      final existingKeyPackage = isar.keyPackageDBISARs
+          .where()
+          .encodedKeyPackageEqualTo(encodedKeyPackage)
+          .findFirst();
+
+      if (existingKeyPackage != null) {
+        return existingKeyPackage.keyPackageId;
+      }
+
       // Create KeyPackageEvent from the encoded keypackage
       final keyPackageEvent = KeyPackageEvent(
         senderPubkey,
