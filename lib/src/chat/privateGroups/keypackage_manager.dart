@@ -341,11 +341,11 @@ class KeyPackageManager {
     }
 
     // If no last selected keypackage or it's not available, proceed with normal logic
-    // First try local database - prioritize 0xchat-lite client
+    // First try local database - prioritize XChat client
     List<KeyPackageDBISAR> localKeyPackages = await getAvailableLocalKeyPackages(pubkey);
 
     if (localKeyPackages.isNotEmpty) {
-      // First try to find 0xchat-lite client keypackages
+      // First try to find XChat client keypackages
       List<KeyPackageDBISAR> oxchatLiteKeyPackages = localKeyPackages
           .where((kp) => kp.keyPackageClient == KeyPackageClient.oxchatLite)
           .toList();
@@ -358,7 +358,7 @@ class KeyPackageManager {
           return permanentKeyPackage.encodedKeyPackage;
         }
 
-        // Return first available 0xchat-lite keypackage
+        // Return first available XChat keypackage
         return oxchatLiteKeyPackages.first.encodedKeyPackage;
       }
     }
@@ -378,7 +378,7 @@ class KeyPackageManager {
       return oxchatLiteKeyPackages.first.encoded_key_package;
     }
 
-    // If no 0xchat-lite keypackages locally, search relay and let upper layer choose
+    // If no XChat keypackages locally, search relay and let upper layer choose
     if (onKeyPackageSelection != null) {
       KeyPackageSelectionResult? result = await onKeyPackageSelection(pubkey, availableKeyPackages);
       if (result?.keyPackage != null) {
@@ -685,7 +685,7 @@ class KeyPackageManager {
         '1',
         ['RequiredCapabilities,LastResort,RatchetTree,Unknown(62190)'],
         relays,
-        '0xchat-lite',
+        'XChat',
         encodedKeyPackage,
         '', // eventId will be empty for one-time keypackages
       );

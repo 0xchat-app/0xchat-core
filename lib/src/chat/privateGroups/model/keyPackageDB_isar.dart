@@ -38,7 +38,7 @@ enum KeyPackageStatus {
 
 /// KeyPackage client enumeration
 enum KeyPackageClient {
-  oxchatLite('0xchat-lite'),
+  oxchatLite('XChat'),
   oxchat('0xchat'),
   unknown('unknown');
 
