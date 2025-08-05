@@ -790,7 +790,8 @@ extension MLSPrivateGroups on Groups {
 
   Future<void> deleteMLSGroup(GroupDBISAR group) async {
     if (group.mlsGroupId == null) return;
-    await Messages.deleteGroupMessagesFromDB(group.groupId);
+    await Messages.deleteGroupMessagesFromDB(group.privateGroupId);
+    await deleteGroup(group.groupId);
     myGroups.remove(group);
     groups.remove(group);
     updateMLSGroupSubscription();
