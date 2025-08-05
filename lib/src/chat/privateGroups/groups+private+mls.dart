@@ -592,11 +592,10 @@ extension MLSPrivateGroups on Groups {
             break;
           }
           UserDBISAR? user = await Account.sharedInstance.getUserInfo(member);
-          if (groupValueNotifier.value.adminPubkeys?.contains(user?.pubKey) == true) {
-            content = '${user?.name} $content ';
-            content = '${content}deleted the group';
+          if (groupValueNotifier.value.adminPubkeys?.contains(user?.pubKey) == true ||
+              groupValueNotifier.value.isDirectMessage == true) {
             await deleteMLSGroup(groupValueNotifier.value);
-            break;
+            return;
           } else {
             content = '${user?.name} $content ';
             content = '${content}left the group';
@@ -796,6 +795,7 @@ extension MLSPrivateGroups on Groups {
     groups.remove(group);
     updateMLSGroupSubscription();
     await syncMyGroupListToDB();
+    groupDeleteCallBack?.call(group.privateGroupId);
   }
 
   Future<GroupDBISAR?> updateMLSGroupInfo(GroupDBISAR group) async {

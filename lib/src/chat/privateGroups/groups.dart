@@ -1,19 +1,18 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'package:bitchat_flutter_plugin/bitchat_core.dart' as bitchat;
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqlite_api.dart';
-import '../bitchat/bitchat_service.dart';
 
 typedef GroupsUpdatedCallBack = void Function();
 typedef GroupMessageCallBack = void Function(MessageDBISAR);
 typedef GroupMessageUpdateCallBack = void Function(MessageDBISAR, String);
 typedef SendMessageCallBack = void Function();
+typedef GroupDeleteCallBack = void Function(String);
 
 class Groups {
   /// singleton
@@ -40,6 +39,7 @@ class Groups {
   GroupsUpdatedCallBack? myGroupsUpdatedCallBack;
   GroupMessageCallBack? groupMessageCallBack;
   GroupMessageUpdateCallBack? groupMessageUpdateCallBack;
+  GroupDeleteCallBack? groupDeleteCallBack;
 
   /// Helper method to update or create ValueNotifier for groups
   void updateOrCreateGroupNotifier(String groupId, GroupDBISAR groupDB) {
