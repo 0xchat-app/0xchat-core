@@ -575,7 +575,6 @@ class Messages {
 
   static deleteGroupMessagesFromDB(String? groupId) async {
     if (groupId != null) {
-      final isar = DBISAR.sharedInstance.isar;
       await DBISAR.sharedInstance.isar.writeAsync((isar) {
         isar.messageDBISARs.where().groupIdEqualTo(groupId).deleteAll();
       });
@@ -583,7 +582,6 @@ class Messages {
   }
 
   static deleteSingleChatMessagesFromDB(String sender, String receiver) async {
-    final isar = DBISAR.sharedInstance.isar;
     await DBISAR.sharedInstance.isar.writeAsync((isar) {
       isar.messageDBISARs
           .where()
@@ -595,7 +593,6 @@ class Messages {
   }
 
   static deleteSecretChatMessagesFromDB(String sessionId) async {
-    final isar = DBISAR.sharedInstance.isar;
     await DBISAR.sharedInstance.isar.writeAsync((isar) {
       isar.messageDBISARs.where().sessionIdEqualTo(sessionId).deleteAll();
     });
