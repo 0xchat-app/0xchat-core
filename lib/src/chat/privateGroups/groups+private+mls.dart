@@ -575,7 +575,7 @@ extension MLSPrivateGroups on Groups {
       }
 
       String content = '';
-      if (added_members != null) {
+      if (added_members != null && added_members is List && added_members.isNotEmpty) {
         for (var member in added_members) {
           UserDBISAR? user = await Account.sharedInstance.getUserInfo(member);
           content = '${user?.name} $content ';
@@ -585,7 +585,7 @@ extension MLSPrivateGroups on Groups {
             local: true);
         updateMLSGroupInfo(groupValueNotifier.value);
       }
-      if (removed_members != null) {
+      if (removed_members != null && removed_members is List && removed_members.isNotEmpty) {
         for (var member in removed_members) {
           if (member == pubkey) {
             content = 'You have been removed from the group';
