@@ -55,11 +55,7 @@ extension Member on Groups {
   Future<OKEvent> leaveGroup(String groupId, String content) async {
     GroupDBISAR? groupDB = myGroups[groupId]?.value;
     if (groupDB?.isMLSGroup == true) {
-      OKEvent result = await leaveMLSGroup(groupDB!);
-      if (result.status) {
-        await deleteGroup(groupId);
-      }
-      return result;
+      return leaveMLSGroup(groupDB!);
     }
 
     myGroups.remove(groupId);
@@ -71,7 +67,6 @@ extension Member on Groups {
   }
 
   Future<void> deleteGroup(String groupId) async {
-    final isar = DBISAR.sharedInstance.isar;
     await DBISAR.sharedInstance.isar.writeAsync((isar) {
       isar.groupDBISARs.where().groupIdEqualTo(groupId).deleteAll();
     });
