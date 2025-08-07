@@ -65,7 +65,8 @@ extension AccountRelay on Account {
   }
 
   List<String> getCurrentCircleRelay() {
-    return Connect.sharedInstance.relays(relayKinds: [RelayKind.circleRelay]);
+    String? circleRelay = ChatCoreManager().circleRelay;
+    return [circleRelay ?? ''];
   }
 
   Future<List<String>> getUserDMRelayList(String pubkey) async {

@@ -19,6 +19,12 @@ class ChatCoreManager {
   /// Get current lite mode status
   bool get isLite => _isLite;
 
+  /// circle relay
+  String? _circleRelay;
+
+  /// Get current circle relay
+  String? get circleRelay => _circleRelay;
+
   /// Initialize chat core functionality with configuration
   ///
   /// [config] - Unified configuration containing all initialization parameters
@@ -27,6 +33,8 @@ class ChatCoreManager {
   Future<void> initChatCoreWithConfig(ChatCoreInitConfig config) async {
     try {
       _isLite = config.isLite;
+
+      _circleRelay = config.circleRelay;
 
       // Load all event cache from database
       await EventCache.sharedInstance.loadAllEventsFromDB();
