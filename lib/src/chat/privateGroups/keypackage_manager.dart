@@ -160,7 +160,8 @@ class KeyPackageManager {
 
   static Future<void> deleteAllKeyPackagesFromUser(String pubkey) async {
     try {
-      List<KeyPackageDBISAR> keyPackages = await getLocalKeyPackagesByType(pubkey, KeyPackageType.permanent);
+      List<KeyPackageDBISAR> keyPackages =
+          await getLocalKeyPackagesByType(pubkey, KeyPackageType.permanent);
       await _deleteKeyPackageFromDB(keyPackages);
     } catch (e) {
       print('Failed to delete all keypackages from user: $e');
@@ -360,6 +361,15 @@ class KeyPackageManager {
 
         // Return first available XChat keypackage
         return oxchatLiteKeyPackages.first.encodedKeyPackage;
+      }
+    }
+    // If the user is the current user, create a permanent keypackage
+    else if (pubkey == Account.sharedInstance.currentPubkey) {
+      KeyPackageEvent? keyPackageEvent = await createPermanentKeyPackage(
+          ownerPubkey: Account.sharedInstance.currentPubkey,
+          ownerPrivkey: Account.sharedInstance.currentPrivkey);
+      if (keyPackageEvent != null) {
+        return keyPackageEvent.encoded_key_package;
       }
     }
 
@@ -668,10 +678,8 @@ class KeyPackageManager {
     try {
       // First check if the encodedKeyPackage already exists in database
       final isar = DBISAR.sharedInstance.isar;
-      final existingKeyPackage = isar.keyPackageDBISARs
-          .where()
-          .encodedKeyPackageEqualTo(encodedKeyPackage)
-          .findFirst();
+      final existingKeyPackage =
+          isar.keyPackageDBISARs.where().encodedKeyPackageEqualTo(encodedKeyPackage).findFirst();
 
       if (existingKeyPackage != null) {
         return existingKeyPackage.keyPackageId;
