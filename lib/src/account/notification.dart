@@ -39,7 +39,7 @@ class NotificationHelper {
   }
 
   // send notification to receivers
-  Future<OKEvent> sendNotification(List<String> receivers) async {
+  Future<OKEvent> sendNotification(List<String> receivers, String relay) async {
     if (!allowSendNotification) return OKEvent('', false, 'not allow send notification');
     Keychain keychain = Keychain.generate();
     List<List<String>> tags = Nip4.toTags('', '', '', null, members: receivers);
