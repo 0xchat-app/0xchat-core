@@ -10,16 +10,11 @@ class NotificationHelper {
 
   // memory storage
   String serverRelay = '';
-  bool allowSendNotification = false;
-  bool allowReceiveNotification = false;
+  bool allowSendNotification = true;
+  bool allowReceiveNotification = true;
+  String defaultGroupName = 'XChat';
   Future<void> init(String serverRelay,
-      {bool allowSendNotification = false, bool allowReceiveNotification = false}) async {
-
-    // test
-    serverRelay = 'ws://127.0.0.1:80';
-    allowSendNotification = true;
-    allowReceiveNotification = true;
-
+      {bool allowSendNotification = true, bool allowReceiveNotification = true}) async {
     setServerRelay(serverRelay);
     setAllowSendNotification(allowSendNotification);
     setAllowReceiveNotification(allowReceiveNotification);
@@ -29,17 +24,17 @@ class NotificationHelper {
     this.serverRelay = serverRelay;
   }
 
-  void setAllowSendNotification(bool allow) {
+  Future<void> setAllowSendNotification(bool allow) async {
     allowSendNotification = allow;
     if (allowSendNotification) {
-       Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
+      await Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
     }
   }
 
-  void setAllowReceiveNotification(bool allow) {
+  Future<void> setAllowReceiveNotification(bool allow) async {
     allowReceiveNotification = allow;
     if (allowReceiveNotification) {
-       Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
+      await Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
     }
   }
 
@@ -67,7 +62,7 @@ class NotificationHelper {
     ]);
     RelayGroupDBISAR? group = await RelayGroup.sharedInstance.createGroup(serverRelay,
         myGroupId: Account.sharedInstance.currentPubkey,
-        name: 'my notification',
+        name: defaultGroupName,
         closed: true,
         picture: '',
         about: request.serialize());
@@ -78,14 +73,15 @@ class NotificationHelper {
   // update notification
   Future<OKEvent> updateNotificationDeviceId(String deviceId) async {
     if (!allowReceiveNotification) return OKEvent('', false, 'not allow receive notification');
-    bool isInGroup =
-        RelayGroup.sharedInstance.checkInMyGroupList(Account.sharedInstance.currentPubkey);
-    if (!isInGroup) return _createNewNotificationGroup(deviceId);
+    RelayGroupDBISAR? group = await RelayGroup.sharedInstance
+        .searchGroupMetadataFromRelay(Account.sharedInstance.currentPubkey, serverRelay);
+    bool isExist = group != null;
+    if (!isExist) return _createNewNotificationGroup(deviceId);
     Request request = Request(deviceId, [
       Filter(p: [Account.sharedInstance.currentPubkey])
     ]);
     OKEvent ok = await RelayGroup.sharedInstance.editMetadata(Account.sharedInstance.currentPubkey,
-        'my notification', request.serialize(), '', true, true, '');
+        defaultGroupName, request.serialize(), '', true, true, '');
     if (!ok.status) return ok;
     return ok;
   }

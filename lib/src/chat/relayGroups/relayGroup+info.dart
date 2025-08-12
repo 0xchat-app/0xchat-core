@@ -53,7 +53,6 @@ extension EInfo on RelayGroup {
           }
           break;
         case 39003:
-
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
@@ -231,6 +230,24 @@ extension EInfo on RelayGroup {
       Connect.sharedInstance.closeConnects([relay], RelayKind.temp);
       if (!completer.isCompleted) {
         completer.complete(RelayGroupDBISAR(groupId: groupId, relay: relay));
+      }
+    });
+    return completer.future;
+  }
+
+  Future<RelayGroupDBISAR?> searchGroupMetadataFromRelay(String id, String? relay) async {
+    SimpleGroups simpleGroups = getHostAndGroupId(id);
+    String groupId = simpleGroups.groupId;
+    relay ??= simpleGroups.relay;
+    Completer<RelayGroupDBISAR?> completer = Completer<RelayGroupDBISAR?>();
+    Filter f = Filter(kinds: [39000], d: [groupId]);
+    Connect.sharedInstance.addSubscription([f], relays: [relay],
+        eventCallBack: (event, relay) async {
+      RelayGroupDBISAR groupDB = handleGroupMetadata(event, relay);
+      completer.complete(groupDB);
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
+      if (!completer.isCompleted) {
+        completer.complete(null);
       }
     });
     return completer.future;
