@@ -14,15 +14,32 @@ class NotificationHelper {
   bool allowReceiveNotification = false;
   Future<void> init(String serverRelay,
       {bool allowSendNotification = false, bool allowReceiveNotification = false}) async {
+
+    // test
+    serverRelay = 'ws://127.0.0.1:80';
+    allowSendNotification = true;
+    allowReceiveNotification = true;
+
+    setServerRelay(serverRelay);
+    setAllowSendNotification(allowSendNotification);
+    setAllowReceiveNotification(allowReceiveNotification);
+  }
+
+  void setServerRelay(String serverRelay) {
     this.serverRelay = serverRelay;
-    this.allowSendNotification = allowSendNotification;
-    this.allowReceiveNotification = allowReceiveNotification;
+  }
+
+  void setAllowSendNotification(bool allow) {
+    allowSendNotification = allow;
     if (allowSendNotification) {
-      await Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
+       Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
     }
+  }
+
+  void setAllowReceiveNotification(bool allow) {
+    allowReceiveNotification = allow;
     if (allowReceiveNotification) {
-      await Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
-      await RelayGroup.sharedInstance.init();
+       Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
     }
   }
 

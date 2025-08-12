@@ -16,6 +16,9 @@ class ChatCoreInitConfig {
     this.channelsUpdatedCallBack,
     this.groupsUpdatedCallBack,
     this.relayGroupsUpdatedCallBack,
+    this.allowSendNotification = false,
+    this.allowReceiveNotification = false,
+    this.pushServerRelay = '',
   });
 
   // User identity
@@ -35,6 +38,11 @@ class ChatCoreInitConfig {
   final ChannelsUpdatedCallBack? channelsUpdatedCallBack;
   final GroupsUpdatedCallBack? groupsUpdatedCallBack;
   final GroupsUpdatedCallBack? relayGroupsUpdatedCallBack;
+
+  // Notification configuration
+  final bool allowSendNotification;
+  final bool allowReceiveNotification;
+  final String pushServerRelay;
 
   // Derived properties for MLS
   String get mlsIdentity => circleId != null ? '$pubkey-$circleId' : pubkey;

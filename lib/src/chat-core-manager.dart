@@ -110,6 +110,10 @@ class ChatCoreManager {
       Future(() => Messages.sharedInstance.init()),
       Future(() => Contacts.sharedInstance.init(callBack: config.contactUpdatedCallBack)),
       Future(() => Groups.sharedInstance.initWithConfig(config)),
+      Future(() => RelayGroup.sharedInstance.init(callBack: config.relayGroupsUpdatedCallBack)),
+      Future(() => NotificationHelper.sharedInstance.init(config.pushServerRelay,
+          allowSendNotification: config.allowSendNotification,
+          allowReceiveNotification: config.allowReceiveNotification)),
     ]);
   }
 
@@ -121,7 +125,6 @@ class ChatCoreManager {
       Future(() => Moment.sharedInstance.init()),
       Future(() => BadgesHelper.sharedInstance.init()),
       Future(() => Zaps.sharedInstance.init()),
-      Future(() => RelayGroup.sharedInstance.init(callBack: config.relayGroupsUpdatedCallBack)),
     ]);
   }
 
