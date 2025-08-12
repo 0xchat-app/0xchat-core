@@ -521,6 +521,12 @@ extension MLSPrivateGroups on Groups {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Connect.sharedInstance.sendEvent(groupEvent, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
+        if (ok.status) {
+          List<String> members = group.members?.where((element) => element != pubkey).toList() ?? [];
+          if (members.isNotEmpty) {
+            NotificationHelper.sharedInstance.sendNotification(members, relay);
+          }
+        }
         completer.complete(ok);
       }
     });
