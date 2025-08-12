@@ -7,7 +7,7 @@ import 'package:nostr_core_dart/nostr.dart';
 
 extension EMember on RelayGroup {
   Future<RelayGroupDBISAR?> createGroup(String relay,
-      {String name = '', bool closed = false, String picture = '', String about = ''}) async {
+      {String? myGroupId, String name = '', bool closed = false, String picture = '', String about = ''}) async {
     // if (relay == 'wss://groups.fiatjaf.com') {
     //   return await createGroup2(relay,
     //       name: name, closed: closed, picture: picture, about: about);
@@ -15,7 +15,7 @@ extension EMember on RelayGroup {
 
     await Connect.sharedInstance.connectRelays([relay], relayKind: RelayKind.relayGroup);
     Completer<RelayGroupDBISAR?> completer = Completer<RelayGroupDBISAR?>();
-    String groupId = generate64RandomHexChars();
+    String groupId = myGroupId ?? generate64RandomHexChars();
     Event event = await Nip29.encodeCreateGroup(groupId, pubkey, privkey);
     Connect.sharedInstance.sendEvent(event, toRelays: [relay], sendCallBack: (ok, relay) async {
       if (ok.status) {

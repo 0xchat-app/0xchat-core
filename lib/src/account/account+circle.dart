@@ -6,7 +6,7 @@ import 'package:isar/isar.dart' hide Filter;
 extension AccountCircle on Account {
   /// Logout from current circle and clean up resources
   Future<void> _logoutCircle() async {
-    await NotificationHelper.sharedInstance.logout();
+    await NotificationHelper.sharedInstance.removeNotification();
     await Connect.sharedInstance.closeAllConnects();
     Account.sharedInstance.userCache.clear();
     Contacts.sharedInstance.allContacts.clear();

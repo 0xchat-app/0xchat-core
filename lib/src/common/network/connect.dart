@@ -76,6 +76,7 @@ enum RelayKind {
   nwc,
   remoteSigner,
   circleRelay,
+  notification,
   temp,
 }
 

@@ -338,7 +338,7 @@ class Account {
   }
 
   Future<void> logout() async {
-    NotificationHelper.sharedInstance.logout();
+    NotificationHelper.sharedInstance.removeNotification();
     await Connect.sharedInstance.closeAllConnects();
     Contacts.sharedInstance.allContacts.clear();
     Contacts.sharedInstance.secretSessionMap.clear();
