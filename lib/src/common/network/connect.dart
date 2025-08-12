@@ -432,7 +432,6 @@ class Connect {
     List<String> rs = (toRelays == null || toRelays.isEmpty)
         ? relays(relayKinds: relayKinds)
         : List.from(toRelays);
-    rs.addAll(relays(relayKinds: [RelayKind.circleRelay]));
     LogUtils.v(() => 'send event toRelays: ${jsonEncode(rs)}, eventString: $eventString');
     Sends sends = Sends(generate64RandomHexChars(), rs, DateTime.now().millisecondsSinceEpoch,
         event.id, sendCallBack, eventString);
