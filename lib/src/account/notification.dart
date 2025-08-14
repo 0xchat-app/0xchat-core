@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
@@ -89,6 +90,11 @@ class NotificationHelper {
         .searchGroupMetadataFromRelay(Account.sharedInstance.currentPubkey, serverRelay);
     bool isExist = group != null;
     if (!isExist) return _createNewNotificationGroup(deviceId);
+    String about = group.about;
+    Request r = Request.deserialize(jsonDecode(about));
+    if(r.subscriptionId == deviceId){
+      return OKEvent('', true, 'already updated');
+    }
     Request request = Request(deviceId, [
       Filter(p: [Account.sharedInstance.currentPubkey])
     ]);
