@@ -13,11 +13,19 @@ class NotificationHelper {
   bool allowSendNotification = true;
   bool allowReceiveNotification = true;
   String defaultGroupName = 'XChat';
+  String? unSendDevice;
   Future<void> init(String serverRelay,
       {bool allowSendNotification = true, bool allowReceiveNotification = true}) async {
     setServerRelay(serverRelay);
     setAllowSendNotification(allowSendNotification);
     setAllowReceiveNotification(allowReceiveNotification);
+    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
+      if (status == 1 && Account.sharedInstance.me != null && relay == serverRelay) {
+        if (unSendDevice != null) {
+          updateNotificationDeviceId(unSendDevice!);
+        }
+      }
+    });
   }
 
   void setServerRelay(String serverRelay) {
@@ -56,7 +64,6 @@ class NotificationHelper {
 
   // create notification
   Future<OKEvent> _createNewNotificationGroup(String deviceId) async {
-    if (!allowReceiveNotification) return OKEvent('', false, 'not allow receive notification');
     Request request = Request(deviceId, [
       Filter(p: [Account.sharedInstance.currentPubkey])
     ]);
@@ -73,6 +80,11 @@ class NotificationHelper {
   // update notification
   Future<OKEvent> updateNotificationDeviceId(String deviceId) async {
     if (!allowReceiveNotification) return OKEvent('', false, 'not allow receive notification');
+    if (Connect.sharedInstance.webSockets[serverRelay]?.connectStatus != 1) {
+      unSendDevice = deviceId;
+      return OKEvent('', false, 'server disconnected');
+    }
+    unSendDevice = null;
     RelayGroupDBISAR? group = await RelayGroup.sharedInstance
         .searchGroupMetadataFromRelay(Account.sharedInstance.currentPubkey, serverRelay);
     bool isExist = group != null;

@@ -244,7 +244,9 @@ extension EInfo on RelayGroup {
     Connect.sharedInstance.addSubscription([f], relays: [relay],
         eventCallBack: (event, relay) async {
       RelayGroupDBISAR groupDB = handleGroupMetadata(event, relay);
-      completer.complete(groupDB);
+      if (!completer.isCompleted) {
+        completer.complete(groupDB);
+      }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       if (!completer.isCompleted) {
         completer.complete(null);
