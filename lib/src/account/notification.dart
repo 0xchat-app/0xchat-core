@@ -45,6 +45,9 @@ class NotificationHelper {
     if (allowReceiveNotification) {
       await Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
     }
+    else{
+      await removeNotification();
+    }
   }
 
   // send notification to receivers
