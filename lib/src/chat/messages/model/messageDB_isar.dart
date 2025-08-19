@@ -339,7 +339,7 @@ class MessageDBISAR {
       // case MessageType.encryptedFile:
       //   return '[You\'ve received an end-to-end encrypted file via 0xChat!]';
       case MessageType.system:
-        return '[You\'ve received a system message via 0xChat!]';
+        return content;
       case MessageType.call:
         return '[You\'ve received a call via 0xChat!]';
       default:
