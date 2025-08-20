@@ -621,7 +621,7 @@ extension MLSPrivateGroups on Groups {
     } catch (e) {
       print('receiveMLSGroupMessage error: $e');
     }
-    if (innerEvent == null) return;
+    if (innerEvent == null || Contacts.sharedInstance.inBlockList(innerEvent.pubkey)) return;
     _handleMLSGroupMessage(innerEvent, groupValueNotifier.value.privateGroupId, relay);
   }
 
