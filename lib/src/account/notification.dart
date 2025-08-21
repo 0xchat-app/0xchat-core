@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
 class NotificationHelper {
@@ -42,10 +43,8 @@ class NotificationHelper {
 
   Future<void> setAllowReceiveNotification(bool allow) async {
     allowReceiveNotification = allow;
-    if (allowReceiveNotification) {
-      await Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
-    }
-    else{
+    await Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
+    if (!allowReceiveNotification) {
       await removeNotification();
     }
   }
@@ -96,9 +95,13 @@ class NotificationHelper {
         .searchGroupMetadataFromRelay(Account.sharedInstance.currentPubkey, serverRelay);
     bool isExist = group != null;
     if (!isExist) return _createNewNotificationGroup(deviceId);
+    group.admins = [
+      GroupAdmin(Account.sharedInstance.currentPubkey, 'king', GroupActionKind.king())
+    ];
+    RelayGroup.sharedInstance.myGroups[group.groupId] = ValueNotifier(group);
     String about = group.about;
     Request r = Request.deserialize(jsonDecode(about));
-    if(r.subscriptionId == deviceId){
+    if (r.subscriptionId == deviceId) {
       return OKEvent('', true, 'already updated');
     }
     Request request = Request(deviceId, [

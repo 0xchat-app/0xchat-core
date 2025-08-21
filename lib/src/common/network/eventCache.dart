@@ -10,7 +10,7 @@ class EventCache {
 
   Set<String> cacheIds = {};
   //cache kinds
-  List<int> kinds = [4, 1059, 42, 1, 6, 7, 9, 10, 11, 12, 9735];
+  List<int> kinds = [4, 1059, 42, 1, 6, 7, 9, 10, 11, 12, 9735, 445];
 
   final cacheTimeStamp = 24 * 60 * 60 * 7;
 
@@ -54,8 +54,8 @@ class EventCache {
 
   Future<void> receiveEvent(Event event, String relay) async {
     if (cacheIds.contains(event.id)) return;
-    cacheIds.add(event.id);
     if (!kinds.contains(event.kind)) return;
+    cacheIds.add(event.id);
     EventDBISAR? eventDB =
         EventDBISAR(eventId: event.id, expiration: currentUnixTimestampSeconds() + cacheTimeStamp);
     eventDB.eventReceiveStatus.add(EventStatusISAR(relay: relay, status: true, message: ''));

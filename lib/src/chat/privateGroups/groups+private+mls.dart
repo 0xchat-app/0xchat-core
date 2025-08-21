@@ -247,7 +247,7 @@ extension MLSPrivateGroups on Groups {
 
     await initNostrMls(path: mlsPath, identity: mlsIdentity, password: password);
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
-      if (status == 1 && Account.sharedInstance.me != null) {
+      if (status == 1 && Account.sharedInstance.me != null && relayKinds == RelayKind.circleRelay) {
         updateMLSGroupSubscription(relay: relay);
       }
     });
@@ -261,25 +261,14 @@ extension MLSPrivateGroups on Groups {
 
     Map<String, List<Filter>> subscriptions = {};
     List<String> groupList = [];
-    List<String> groupRelays = [];
     for (var g in myGroups.values) {
       groupList.add(g.value.groupId);
-      if (g.value.relay != null && !groupRelays.contains(g.value.relay)) {
-        groupRelays.add(g.value.relay!);
-      }
     }
     if (groupList.isEmpty) return;
-    if (relay == null) {
-      for (String relayURL in groupRelays) {
-        int groupMessageUntil = Relays.sharedInstance.getMLSGroupMessageUntil(relayURL);
-        Filter f = Filter(h: groupList, kinds: [445], since: (groupMessageUntil + 1));
-        subscriptions[relayURL] = [f];
-      }
-    } else {
-      int groupMessageUntil = Relays.sharedInstance.getMLSGroupMessageUntil(relay);
-      Filter f = Filter(h: groupList, kinds: [445], since: (groupMessageUntil + 1));
-      subscriptions[relay] = [f];
-    }
+    if (relay == null) relay = Account.sharedInstance.getCurrentCircleRelay().first;
+    int groupMessageUntil = Relays.sharedInstance.getMLSGroupMessageUntil(relay);
+    Filter f = Filter(h: groupList, kinds: [445], since: (groupMessageUntil + 1));
+    subscriptions[relay] = [f];
 
     groupMessageSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
         closeSubscription: false, eventCallBack: (event, relay) async {
@@ -522,7 +511,8 @@ extension MLSPrivateGroups on Groups {
     Connect.sharedInstance.sendEvent(groupEvent, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
         if (ok.status) {
-          List<String> members = group.members?.where((element) => element != pubkey).toList() ?? [];
+          List<String> members =
+              group.members?.where((element) => element != pubkey).toList() ?? [];
           if (members.isNotEmpty) {
             NotificationHelper.sharedInstance.sendNotification(members, relay);
           }
@@ -539,7 +529,8 @@ extension MLSPrivateGroups on Groups {
     Connect.sharedInstance.sendEvent(groupEvent, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
         if (ok.status) {
-          List<String> members = group.members?.where((element) => element != pubkey).toList() ?? [];
+          List<String> members =
+              group.members?.where((element) => element != pubkey).toList() ?? [];
           if (members.isNotEmpty) {
             NotificationHelper.sharedInstance.sendNotification(members, relay);
           }
