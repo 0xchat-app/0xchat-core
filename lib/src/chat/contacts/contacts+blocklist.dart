@@ -54,16 +54,19 @@ extension BlockList on Contacts {
     blockList ??= [];
     if (!blockList!.contains(blockPubkey)) {
       blockList!.add(blockPubkey);
-      _syncBlockListToRelay(okCallBack: (OKEvent ok, String relay) {
-        if (!completer.isCompleted) completer.complete(ok);
-      });
       _syncBlockListToDB();
+      if (ChatCoreManager().isLite) {
+        if (!completer.isCompleted) completer.complete(OKEvent(blockPubkey, true, 'block success'));
+      } else {
+        _syncBlockListToRelay(okCallBack: (OKEvent ok, String relay) {
+          if (!completer.isCompleted) completer.complete(ok);
+        });
+      }
     } else {
       if (!completer.isCompleted) {
         completer.complete(OKEvent(blockPubkey, false, 'blockPubkey already exit'));
       }
     }
-
     return completer.future;
   }
 
@@ -73,10 +76,16 @@ extension BlockList on Contacts {
       for (var p in blockPubkeys) {
         blockList!.remove(p);
       }
-      _syncBlockListToRelay(okCallBack: (OKEvent ok, String relay) {
-        if (!completer.isCompleted) completer.complete(ok);
-      });
       _syncBlockListToDB();
+      if (ChatCoreManager().isLite) {
+        if (!completer.isCompleted) {
+          completer.complete(OKEvent(blockPubkeys.join(','), true, 'remove block success'));
+        }
+      } else {
+        _syncBlockListToRelay(okCallBack: (OKEvent ok, String relay) {
+          if (!completer.isCompleted) completer.complete(ok);
+        });
+      }
     } else {
       if (!completer.isCompleted) {
         completer.complete(OKEvent('', false, 'blockList empty'));
