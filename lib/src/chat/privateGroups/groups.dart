@@ -48,7 +48,7 @@ class Groups {
       myGroupsUpdatedCallBack?.call();
     };
 
-    await initMLS();
+    // await initMLS();
     await _loadAllGroupsFromDB();
   }
 
