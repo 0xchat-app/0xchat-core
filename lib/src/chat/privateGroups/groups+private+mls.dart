@@ -250,12 +250,14 @@ extension MLSPrivateGroups on Groups {
     }();
 
     await initNostrMls(path: mlsPath, identity: mlsIdentity, password: password);
-    
+
     // Load staged messages from database to memory
     await _loadStagedMessagesFromDB();
-    
+
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
-      if (status == 1 && Account.sharedInstance.me != null && relayKinds.contains(RelayKind.circleRelay)) {
+      if (status == 1 &&
+          Account.sharedInstance.me != null &&
+          relayKinds.contains(RelayKind.circleRelay)) {
         updateMLSGroupSubscription(relay: relay);
       }
     });
@@ -282,19 +284,19 @@ extension MLSPrivateGroups on Groups {
     List<Future<void>> messageFutures = [];
 
     groupMessageSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
-                closeSubscription: false, eventCallBack: (event, relay) async {
+        closeSubscription: false, eventCallBack: (event, relay) async {
       _updateGroupMessageTime(event.createdAt, relay);
       // Add each message processing to the Future list
       messageFutures.add(receiveMLSGroupMessage(event, relay));
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       offlineGroupMessageFinish[relay] = true;
-      
+
       // Wait for all messages to be processed before handling staged messages
       if (messageFutures.isNotEmpty) {
         await Future.wait(messageFutures);
       }
       await processStagedMessages();
-      
+
       if (ok.status) {
         _updateGroupMessageTime(currentUnixTimestampSeconds() - 1, relay);
       }
@@ -421,16 +423,8 @@ extension MLSPrivateGroups on Groups {
     for (var member in members) {
       if (member == pubkey) continue;
       Event giftWrappedEvent = await Nip59.encode(welcomeEvent, member);
-      UserDBISAR? memberDB = await Account.sharedInstance.getUserInfo(member);
-      List<String> userRelays = [...relays];
-      if (!ChatCoreManager().isLite) {
-        List<String>? dmRelays = memberDB?.dmRelayList;
-        List<String>? inboxRelays = memberDB?.inboxRelayList;
-        userRelays.addAll([...(dmRelays ?? []), ...(inboxRelays ?? [])]);
-        await Connect.sharedInstance.connectRelays(userRelays, relayKind: RelayKind.temp);
-      }
       Connect.sharedInstance
-          .sendEvent(giftWrappedEvent, toRelays: userRelays, sendCallBack: (ok, relay) {});
+          .sendEvent(giftWrappedEvent, toRelays: relays, sendCallBack: (ok, relay) {});
     }
     NotificationHelper.sharedInstance.sendNotification(members, relays.first);
   }
@@ -593,9 +587,9 @@ extension MLSPrivateGroups on Groups {
       // Find the corresponding group
       ValueNotifier<GroupDBISAR>? groupValueNotifier =
           _findGroupByNostrId(stagedMessage.nostrGroupId);
-              if (groupValueNotifier == null) {
-          return;
-        }
+      if (groupValueNotifier == null) {
+        return;
+      }
 
       // Process the commit message
       String result = await processCommitMessageForGroup(
@@ -720,7 +714,7 @@ extension MLSPrivateGroups on Groups {
             senderPubkey: event.pubkey,
             createTime: event.createdAt);
         await DBISAR.sharedInstance.saveToDB(stagedMessage);
-        
+
         // Add to memory list
         _stagedMessages.add(stagedMessage);
       }
@@ -885,6 +879,7 @@ extension MLSPrivateGroups on Groups {
         U8Array32(Uint8List.fromList((jsonDecode(exportSecretResult)['secret']).cast<int>()));
     String result = await addMembers(
         groupId: group.mlsGroupId!, serializedKeyPackages: membersKeyPackages.values.toList());
+    print('add members: $result');
     List<int> commit_message = List<int>.from(jsonDecode(result)['commit_message']);
     List<int> welcome_message = List<int>.from(jsonDecode(result)['welcome_message']);
     String eventString = await createCommitMessageForGroup(
@@ -892,7 +887,8 @@ extension MLSPrivateGroups on Groups {
     Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
     OKEvent okEvent = await sendGroupEventToMLSGroup(group, groupEvent);
     if (okEvent.status) {
-      await sendWelcomeMessages(welcome_message, members, []);
+      await sendWelcomeMessages(
+          welcome_message, members, Account.sharedInstance.getCurrentCircleRelay());
       updateMLSGroupInfo(group);
 
       // Track keypackage usage for one-time keypackages
