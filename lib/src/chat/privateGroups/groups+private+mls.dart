@@ -879,7 +879,6 @@ extension MLSPrivateGroups on Groups {
         U8Array32(Uint8List.fromList((jsonDecode(exportSecretResult)['secret']).cast<int>()));
     String result = await addMembers(
         groupId: group.mlsGroupId!, serializedKeyPackages: membersKeyPackages.values.toList());
-    print('add members: $result');
     List<int> commit_message = List<int>.from(jsonDecode(result)['commit_message']);
     List<int> welcome_message = List<int>.from(jsonDecode(result)['welcome_message']);
     String eventString = await createCommitMessageForGroup(
