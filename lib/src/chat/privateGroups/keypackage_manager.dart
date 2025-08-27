@@ -657,11 +657,13 @@ class KeyPackageManager {
   }
 
   /// Delete keypackage from database
-  static Future<void> _deleteKeyPackageFromDB(List<KeyPackageDBISAR> keyPackage) async {
+  static Future<void> _deleteKeyPackageFromDB(List<KeyPackageDBISAR> keyPackages) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
-      await isar.writeAsync((isar) async {
-        isar.keyPackageDBISARs.deleteAll(keyPackage.map((e) => e.id).toList());
+      await isar.writeAsync((isar) {
+        for (var keyPackage in keyPackages) {
+          isar.keyPackageDBISARs.where().keyPackageIdEqualTo(keyPackage.keyPackageId).deleteAll();
+        }
       });
     } catch (e) {
       print('Failed to delete keypackage from database: $e');

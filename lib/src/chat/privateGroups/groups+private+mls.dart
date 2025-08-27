@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:nostr_mls_package/nostr_mls_package.dart';
+import 'package:isar/isar.dart' hide Filter;
 
 String toHexString(List<int> bytes) {
   return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join('');
@@ -218,6 +219,9 @@ class MemberChanges {
 }
 
 extension MLSPrivateGroups on Groups {
+  // In-memory storage for staged messages
+  static final List<StagedMessageDBISAR> _stagedMessages = [];
+
   /// Initialize MLS with specified path, identity and password
   ///
   /// [mlsPath] Required path for MLS database directory
@@ -246,8 +250,12 @@ extension MLSPrivateGroups on Groups {
     }();
 
     await initNostrMls(path: mlsPath, identity: mlsIdentity, password: password);
+    
+    // Load staged messages from database to memory
+    await _loadStagedMessagesFromDB();
+    
     Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
-      if (status == 1 && Account.sharedInstance.me != null && relayKinds == RelayKind.circleRelay) {
+      if (status == 1 && Account.sharedInstance.me != null && relayKinds.contains(RelayKind.circleRelay)) {
         updateMLSGroupSubscription(relay: relay);
       }
     });
@@ -265,31 +273,32 @@ extension MLSPrivateGroups on Groups {
       groupList.add(g.value.groupId);
     }
     if (groupList.isEmpty) return;
-    if (relay == null) relay = Account.sharedInstance.getCurrentCircleRelay().first;
+    relay ??= Account.sharedInstance.getCurrentCircleRelay().first;
     int groupMessageUntil = Relays.sharedInstance.getMLSGroupMessageUntil(relay);
     Filter f = Filter(h: groupList, kinds: [445], since: (groupMessageUntil + 1));
     subscriptions[relay] = [f];
 
+    // Collect all message processing Futures
+    List<Future<void>> messageFutures = [];
+
     groupMessageSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
-        closeSubscription: false, eventCallBack: (event, relay) async {
-      if (Messages.sharedInstance.mlsGroupMessageCompleter.isCompleted) {
-        _updateGroupMessageTime(event.createdAt, relay);
-        await receiveMLSGroupMessage(event, relay);
-      } else {
-        mlsGroupEventCache.add(event);
-      }
+                closeSubscription: false, eventCallBack: (event, relay) async {
+      _updateGroupMessageTime(event.createdAt, relay);
+      // Add each message processing to the Future list
+      messageFutures.add(receiveMLSGroupMessage(event, relay));
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
       offlineGroupMessageFinish[relay] = true;
+      
+      // Wait for all messages to be processed before handling staged messages
+      if (messageFutures.isNotEmpty) {
+        await Future.wait(messageFutures);
+      }
+      await processStagedMessages();
+      
       if (ok.status) {
         _updateGroupMessageTime(currentUnixTimestampSeconds() - 1, relay);
       }
       if (unCompletedRelays.isEmpty) {
-        mlsGroupEventCache.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-        var cacheList = List.from(mlsGroupEventCache);
-        for (var event in cacheList) {
-          await receiveMLSGroupMessage(event, relay);
-        }
-        mlsGroupEventCache.clear();
         offlineGroupMessageFinishCallBack?.call();
         if (!Messages.sharedInstance.mlsGroupMessageCompleter.isCompleted) {
           Messages.sharedInstance.mlsGroupMessageCompleter.complete();
@@ -306,20 +315,36 @@ extension MLSPrivateGroups on Groups {
     Filter f = Filter(h: [group.groupId], kinds: [445], until: currentUnixTimestampSeconds());
     subscriptions[relayURL] = [f];
 
+    // Collect all message processing Futures
+    List<Future<void>> messageFutures = [];
+
     groupMessageSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
         closeSubscription: true, eventCallBack: (event, relay) async {
-      mlsGroupEventCache.add(event);
+      // Add each message processing to the Future list
+      messageFutures.add(receiveMLSGroupMessage(event, relay));
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) async {
-      if (unCompletedRelays.isEmpty) {
-        mlsGroupEventCache.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-        var eventCache = List.from(mlsGroupEventCache);
-        for (var event in eventCache) {
-          await receiveMLSGroupMessage(event, relay);
-        }
-        mlsGroupEventCache.clear();
+      // Wait for all messages to be processed before handling staged messages
+      if (messageFutures.isNotEmpty) {
+        await Future.wait(messageFutures);
       }
+      await processStagedMessages();
     });
   }
+
+  /// Load staged messages from database to memory
+  Future<void> _loadStagedMessagesFromDB() async {
+    try {
+      final isar = DBISAR.sharedInstance.isar;
+      List<StagedMessageDBISAR> stagedMessages = isar.stagedMessageDBISARs.where().findAll();
+      _stagedMessages.clear();
+      _stagedMessages.addAll(stagedMessages);
+    } catch (e) {
+      print('_loadStagedMessagesFromDB error: $e');
+    }
+  }
+
+  /// Get count of staged messages in memory
+  int get stagedMessagesCount => _stagedMessages.length;
 
   void _updateGroupMessageTime(int eventTime, String relay) {
     if (Relays.sharedInstance.relays.containsKey(relay)) {
@@ -541,6 +566,125 @@ extension MLSPrivateGroups on Groups {
     return completer.future;
   }
 
+  /// Process staged messages that were queued for later processing
+  Future<void> processStagedMessages() async {
+    try {
+      // Get staged messages from memory
+      List<StagedMessageDBISAR> stagedMessages = List.from(_stagedMessages);
+
+      if (stagedMessages.isEmpty) {
+        return;
+      }
+
+      for (var stagedMessage in stagedMessages) {
+        await _processSingleStagedMessage(stagedMessage);
+      }
+      // delete staged message from database and clear memory
+      await _deleteStagedMessagesFromDB(stagedMessages);
+      _stagedMessages.clear();
+    } catch (e) {
+      print('processStagedMessages error: $e');
+    }
+  }
+
+  /// Process a single staged message
+  Future<void> _processSingleStagedMessage(StagedMessageDBISAR stagedMessage) async {
+    try {
+      // Find the corresponding group
+      ValueNotifier<GroupDBISAR>? groupValueNotifier =
+          _findGroupByNostrId(stagedMessage.nostrGroupId);
+              if (groupValueNotifier == null) {
+          return;
+        }
+
+      // Process the commit message
+      String result = await processCommitMessageForGroup(
+        groupId: groupValueNotifier.value.mlsGroupId!,
+        messageBytes: stagedMessage.messageBytes,
+      );
+
+      // Parse the result
+      final Map<String, dynamic> resultData = jsonDecode(result);
+      final addedMembers = resultData['added_members'];
+      final removedMembers = resultData['removed_members'];
+
+      // Handle added members
+      if (addedMembers is List && addedMembers.isNotEmpty) {
+        await _handleAddedMembers(groupValueNotifier.value, addedMembers);
+      }
+
+      // Handle removed members
+      if (removedMembers is List && removedMembers.isNotEmpty) {
+        await _handleRemovedMembers(groupValueNotifier.value, removedMembers);
+      }
+
+      // Update group info after processing
+      updateMLSGroupInfo(groupValueNotifier.value);
+    } catch (e) {
+      print('Error processing staged message ${stagedMessage.eventId}: $e');
+    }
+  }
+
+  /// Find group by Nostr group ID
+  ValueNotifier<GroupDBISAR>? _findGroupByNostrId(String nostrGroupId) {
+    for (var group in groups.values) {
+      if (group.value.groupId == nostrGroupId) {
+        return group;
+      }
+    }
+    return null;
+  }
+
+  /// Delete staged messages from database
+  static Future<void> _deleteStagedMessagesFromDB(List<StagedMessageDBISAR> stagedMessages) async {
+    try {
+      final isar = DBISAR.sharedInstance.isar;
+      await isar.writeAsync((isar) {
+        for (var stagedMessage in stagedMessages) {
+          isar.stagedMessageDBISARs.where().eventIdEqualTo(stagedMessage.eventId).deleteAll();
+        }
+      });
+    } catch (e) {
+      print('Failed to delete staged messages from database: $e');
+    }
+  }
+
+  /// Handle added members to the group
+  Future<void> _handleAddedMembers(GroupDBISAR group, List<dynamic> addedMembers) async {
+    String content = '';
+
+    for (var member in addedMembers) {
+      UserDBISAR? user = await Account.sharedInstance.getUserInfo(member);
+      content = '${user?.name} $content ';
+      content = '${content}joined the group';
+    }
+
+    sendGroupMessage(group.privateGroupId, MessageType.system, content, local: true);
+  }
+
+  /// Handle removed members from the group
+  Future<void> _handleRemovedMembers(GroupDBISAR group, List<dynamic> removedMembers) async {
+    String content = '';
+
+    for (var member in removedMembers) {
+      if (member == pubkey) {
+        content = 'You have been removed from the group';
+        break;
+      }
+
+      UserDBISAR? user = await Account.sharedInstance.getUserInfo(member);
+      if (group.adminPubkeys?.contains(user?.pubKey) == true || group.isDirectMessage == true) {
+        await deleteMLSGroup(group);
+        return;
+      } else {
+        content = '${user?.name} $content ';
+        content = '${content}left the group';
+      }
+    }
+
+    sendGroupMessage(group.privateGroupId, MessageType.system, content, local: true);
+  }
+
   Future<void> receiveMLSGroupMessage(Event event, String relay) async {
     EventCache.sharedInstance.receiveEvent(event, relay);
     GroupEvent groupEvent = Nip104.decodeGroupEvent(event);
@@ -563,6 +707,23 @@ extension MLSPrivateGroups on Groups {
       final added_members = jsonDecode(result)['added_members'];
       final removed_members = jsonDecode(result)['removed_members'];
       final commit = jsonDecode(result)['commit'];
+      final staged_message_bytes = jsonDecode(result)['staged_message_bytes'];
+
+      if (staged_message_bytes != null) {
+        // staged commit message, cache for late merge commit
+        var stagedMessageBytes = List<int>.from(staged_message_bytes);
+        StagedMessageDBISAR stagedMessage = StagedMessageDBISAR(
+            eventId: event.id,
+            nostrGroupId: groupValueNotifier.value.groupId,
+            mlsGroupId: groupValueNotifier.value.mlsGroupId!,
+            messageBytes: stagedMessageBytes,
+            senderPubkey: event.pubkey,
+            createTime: event.createdAt);
+        await DBISAR.sharedInstance.saveToDB(stagedMessage);
+        
+        // Add to memory list
+        _stagedMessages.add(stagedMessage);
+      }
 
       if (commit != null) {
         var commit_message = List<int>.from(commit);
@@ -571,7 +732,7 @@ extension MLSPrivateGroups on Groups {
             serializedCommit: commit_message,
             secretKey: preSecret);
         Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
-        await sendGroupEventToMLSGroup(groupValueNotifier.value, groupEvent);
+        sendGroupEventToMLSGroup(groupValueNotifier.value, groupEvent);
       }
 
       if (message != null) {

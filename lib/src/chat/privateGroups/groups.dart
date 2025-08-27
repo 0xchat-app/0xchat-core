@@ -30,8 +30,6 @@ class Groups {
   Map<String, ValueNotifier<GroupDBISAR>> groups = {};
   Map<String, ValueNotifier<GroupDBISAR>> myGroups = {};
 
-  List<Event> mlsGroupEventCache = [];
-
   Map<String, List<String>> currentGroupRelays = {};
   Map<String, bool> offlineGroupMessageFinish = {};
   OfflineGroupMessageFinishCallBack? offlineGroupMessageFinishCallBack;
@@ -73,7 +71,7 @@ class Groups {
     };
 
     await _loadAllGroupsFromDB();
-    
+
     // Initialize MLS with configuration parameters
     await initMLS(
       mlsPath: config.mlsPath,
@@ -287,7 +285,7 @@ class Groups {
 
   ValueNotifier<GroupDBISAR> getPrivateGroupNotifier(String groupId) {
     if (groups.containsKey(groupId)) return groups[groupId]!;
-    
+
     // Create new ValueNotifier for new group
     groups[groupId] = ValueNotifier(GroupDBISAR(groupId: groupId));
     return groups[groupId]!;

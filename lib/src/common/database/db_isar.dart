@@ -39,7 +39,8 @@ class DBISAR {
     EventDBISARSchema,
     GroupKeysDBISARSchema,
     CircleDBISARSchema,
-    KeyPackageDBISARSchema
+    KeyPackageDBISARSchema,
+    StagedMessageDBISARSchema,
   ];
 
   // Store encryption key after first open so subsequent opens re-use it.
@@ -372,6 +373,15 @@ class DBISAR {
           }
         }
         isar.circleDBISARs.putAll(circleList);
+        break;
+      case StagedMessageDBISAR:
+        final stagedMessageList = objects.cast<StagedMessageDBISAR>();
+        for (var stagedMessage in stagedMessageList) {
+          if (stagedMessage.id == 0) {
+            stagedMessage.id = isar.stagedMessageDBISARs.autoIncrement();
+          }
+        }
+        isar.stagedMessageDBISARs.putAll(stagedMessageList);
         break;
       default:
         String typeName = type.toString().replaceAll('?', '');

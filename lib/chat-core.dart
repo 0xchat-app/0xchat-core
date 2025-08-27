@@ -47,6 +47,7 @@ export 'src/chat/privateGroups/groups+private.dart';
 export 'src/chat/privateGroups/groups+private+mls.dart';
 export 'src/chat/privateGroups/groups+private+mls+keypackages.dart';
 export 'src/chat/privateGroups/keypackage_manager.dart';
+export 'src/chat/privateGroups/model/stagedMessageDB_isar.dart';
 export 'src/chat/relayGroups/relayGroup.dart';
 export 'src/chat/relayGroups/relayGroup+admin.dart';
 export 'src/chat/relayGroups/relayGroup+info.dart';
