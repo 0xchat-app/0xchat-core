@@ -713,10 +713,13 @@ extension MLSPrivateGroups on Groups {
             messageBytes: stagedMessageBytes,
             senderPubkey: event.pubkey,
             createTime: event.createdAt);
-        await DBISAR.sharedInstance.saveToDB(stagedMessage);
-
-        // Add to memory list
-        _stagedMessages.add(stagedMessage);
+        if(offlineGroupMessageFinish[relay] == true){
+          _processSingleStagedMessage(stagedMessage);
+        }
+        else{
+          await DBISAR.sharedInstance.saveToDB(stagedMessage);
+          _stagedMessages.add(stagedMessage);
+        }
       }
 
       if (commit != null) {
