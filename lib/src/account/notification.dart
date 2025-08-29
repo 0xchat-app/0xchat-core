@@ -115,6 +115,6 @@ class NotificationHelper {
 
   // delete notification
   Future<OKEvent> removeNotification() async {
-    return await RelayGroup.sharedInstance.deleteGroup(Account.sharedInstance.currentPubkey, '');
+    return await updateNotificationDeviceId('');
   }
 }
