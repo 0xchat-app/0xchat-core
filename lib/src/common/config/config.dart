@@ -73,6 +73,7 @@ class Config {
     "www.0xchat.com": "52.76.210.159:9602",
     "mint.0xchat.com": "35.181.15.130:3337",
     "wss://groups.0xchat.com": "wss://54.191.231.210/groups",
+    "ws://www.0xchat.com:9090": "ws://52.76.210.159:9090"
   };
   final String _serverPubkey = '093dff31a87bbf838c54fd39ff755e72b38bd6b7975c670c0f2633fa7c54ddd0';
   final String configD = '0xchat-config';
@@ -80,6 +81,7 @@ class Config {
   final String httpHost = 'www.0xchat.com';
   final String mintHost = 'mint.0xchat.com';
   final String relayGroupHost = 'wss://groups.0xchat.com';
+  final String pushServerHost = 'ws://www.0xchat.com:9090';
 
   Future<void> initConfig() async {
     // subscript friend requests
