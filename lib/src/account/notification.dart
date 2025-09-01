@@ -4,6 +4,11 @@ import 'package:chatcore/chat-core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
+abstract class PushPermissionChecker {
+  Future<bool> canSendNotification();
+  Future<bool> canReceiveNotification();
+}
+
 class NotificationHelper {
   /// singleton
   NotificationHelper._internal();
@@ -12,45 +17,21 @@ class NotificationHelper {
 
   // memory storage
   String serverRelay = '';
-  bool allowSendNotification = true;
-  bool allowReceiveNotification = true;
   String defaultGroupName = 'XChat';
-  String? unSendDevice;
-  Future<void> init(String serverRelay,
-      {bool allowSendNotification = true, bool allowReceiveNotification = true}) async {
-    setServerRelay(serverRelay);
-    setAllowSendNotification(allowSendNotification);
-    setAllowReceiveNotification(allowReceiveNotification);
-    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
-      if (status == 1 && Account.sharedInstance.me != null && relay == serverRelay) {
-        if (unSendDevice != null) {
-          updateNotificationDeviceId(unSendDevice!);
-        }
-      }
-    });
-  }
+
+  PushPermissionChecker? permissionChecker;
 
   void setServerRelay(String serverRelay) {
     this.serverRelay = serverRelay;
   }
 
-  Future<void> setAllowSendNotification(bool allow) async {
-    allowSendNotification = allow;
-    if (allowSendNotification) {
-      await Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
-    }
-  }
-
-  Future<void> setAllowReceiveNotification(bool allow) async {
-    allowReceiveNotification = allow;
-    await Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
-    if (!allowReceiveNotification) {
-      await removeNotification();
-    }
+  Future connectServerRelay() {
+    return Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
   }
 
   // send notification to receivers
   Future<OKEvent> sendNotification(List<String> receivers, String relay) async {
+    final allowSendNotification = await permissionChecker?.canSendNotification() ?? false;
     if (!allowSendNotification) return OKEvent('', false, 'not allow send notification');
     Keychain keychain = Keychain.generate();
     List<List<String>> tags = Nip4.toTags('', '', '', null, members: receivers);
@@ -87,10 +68,8 @@ class NotificationHelper {
         await Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
         return updateNotificationDeviceId(deviceId, retryTimes - 1);
       }
-      unSendDevice = deviceId;
       return OKEvent('', false, 'server disconnected');
     }
-    unSendDevice = null;
     RelayGroupDBISAR? group = await RelayGroup.sharedInstance
         .searchGroupMetadataFromRelay(Account.sharedInstance.currentPubkey, serverRelay);
     bool isExist = group != null;

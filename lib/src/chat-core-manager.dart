@@ -111,9 +111,7 @@ class ChatCoreManager {
       Future(() => Contacts.sharedInstance.init(callBack: config.contactUpdatedCallBack)),
       Future(() => Groups.sharedInstance.initWithConfig(config)),
       Future(() => RelayGroup.sharedInstance.init(callBack: config.relayGroupsUpdatedCallBack)),
-      Future(() => NotificationHelper.sharedInstance.init(config.pushServerRelay,
-          allowSendNotification: config.allowSendNotification,
-          allowReceiveNotification: config.allowReceiveNotification)),
+      Future(() => NotificationHelper.sharedInstance.setServerRelay(config.pushServerRelay)),
     ]);
   }
 
