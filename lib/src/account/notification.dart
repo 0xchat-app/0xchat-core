@@ -88,7 +88,6 @@ class NotificationHelper {
     ]);
     OKEvent ok = await RelayGroup.sharedInstance.editMetadata(Account.sharedInstance.currentPubkey,
         defaultGroupName, request.serialize(), '', true, true, '');
-    if (!ok.status) return ok;
     return ok;
   }
 
