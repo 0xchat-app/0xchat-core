@@ -121,7 +121,7 @@ class Connect {
         _checkTimeout();
       });
     }
-    resetConnection(force: false);
+    resetConnection(force: true);
   }
 
   Future<void> resetConnection({bool force = true}) async {
@@ -140,7 +140,7 @@ class Connect {
     _connectivitySubscription ??=
         Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) async {
       if (results.any((result) => result != ConnectivityResult.none)) {
-        resetConnection(force: false);
+        resetConnection(force: true);
       }
     });
   }
