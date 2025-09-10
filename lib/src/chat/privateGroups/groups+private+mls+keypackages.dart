@@ -200,7 +200,7 @@ extension GroupsPrivateMlsKeyPackages on Groups {
     }
   }
 
-  Future<OKEvent> sendPrivateKeyPackageEvent(String toPubkey) async {
+  Future<OKEvent> sendKeyPackageEventToMLSGroup(GroupDBISAR group) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     var relays = Account.sharedInstance.getCurrentCircleRelay();
 
@@ -226,16 +226,10 @@ extension GroupsPrivateMlsKeyPackages on Groups {
       privkey,
     );
 
-    Event giftWrappedEvent = await Nip59.encode(event, toPubkey);
-    Connect.sharedInstance.sendEvent(giftWrappedEvent, toRelays: relays, sendCallBack: (ok, relay) {
-      if (!completer.isCompleted) {
-        completer.complete(ok);
-      }
-    });
-    return completer.future;
+    return sendMessageToMLSGroup(group, event);
   }
 
-  Future<void> handlePrivateKeyPackageEvent(Event event, String relay) async {
+  Future<void> handleKeyPackageEvent(Event event, String relay) async {
     KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
 
     // Validate keypackage

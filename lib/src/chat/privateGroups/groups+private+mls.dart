@@ -407,7 +407,7 @@ extension MLSPrivateGroups on Groups {
     String inviteMessage =
         groupDBISAR.isDirectMessage ? 'Private chat created!' : 'Private group created!';
     sendGroupMessage(groupDBISAR.privateGroupId, MessageType.system, inviteMessage, local: true);
-
+    sendKeyPackageEventToMLSGroup(groupDBISAR);
     // Track keypackage usage for one-time keypackages
     await trackOneTimeKeyPackageUsage(membersKeyPackages, groupDBISAR.privateGroupId);
 
@@ -787,6 +787,9 @@ extension MLSPrivateGroups on Groups {
       // media message
       case 15:
         _handleKind15MLSGroupMessage(innerEvent, privateGroupId);
+        break;
+      case 443:
+        handleKeyPackageEvent(innerEvent, relay);
         break;
       default:
         break;

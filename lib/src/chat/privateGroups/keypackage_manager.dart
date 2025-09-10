@@ -538,7 +538,6 @@ class KeyPackageManager {
         if (keyPackageId != null && keyPackageId.isNotEmpty) {
           user.lastSelectedKeyPackageId = keyPackageId;
           await Account.saveUserToDB(user);
-          Groups.sharedInstance.sendPrivateKeyPackageEvent(senderPubkey);
           // Groups.sharedInstance.sendMyPrivateMetadataEvent(senderPubkey);
         }
       }

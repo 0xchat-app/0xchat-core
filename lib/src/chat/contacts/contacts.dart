@@ -327,7 +327,7 @@ class Contacts {
               break;
             /// MLS Welcome Message
             case 443:
-              Groups.sharedInstance.handlePrivateKeyPackageEvent(innerEvent, relay);
+              Groups.sharedInstance.handleKeyPackageEvent(innerEvent, relay);
               break;
             case 444:
               Groups.sharedInstance.handleWelcomeMessageEvent(event.id, innerEvent, relay);
