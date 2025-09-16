@@ -31,17 +31,7 @@ extension AccountNIP46 on Account {
   Future<UserDBISAR?> _loginWithBunkerURI(String uri) async {
     await connectToRemoteSigner(uri, false, '');
     String? getPubkey = await sendGetPubicKey();
-    
-    // If get_public_key command fails or times out, use pubkey from URI as fallback
-    if (getPubkey == null) {
-      print('Account: _loginWithBunkerURI() sendGetPubicKey failed, using pubkey from URI');
-      getPubkey = currentRemoteConnection!.remotePubkey;
-      if (getPubkey.isEmpty) {
-        print('Account: _loginWithBunkerURI() remotePubkey is empty');
-        return null;
-      }
-    }
-    
+    if (getPubkey == null) return null;
     UserDBISAR? userDBISAR = await loginWithPubKey(getPubkey, SignerApplication.remoteSigner);
     if (userDBISAR != null) {
       userDBISAR.remoteSignerURI = uri;
@@ -184,20 +174,8 @@ extension AccountNIP46 on Account {
     var id = generate64RandomHexChars();
     Event event = await Nip46.encode(currentRemoteConnection!.remotePubkey, id, command,
         currentRemoteConnection!.clientPubkey!, currentRemoteConnection!.clientPrivkey!);
-    
-    try {
-      NIP46CommandResult result = await sendToRemoteSigner(event, id).timeout(
-        Duration(seconds: 5),
-        onTimeout: () {
-          print('Account: sendGetPubicKey() timeout after 5 seconds');
-          return NIP46CommandResult(id: id, error: 'Timeout waiting for response');
-        },
-      );
-      return result.result;
-    } catch (e) {
-      print('Account: sendGetPubicKey() error: $e');
-      return null;
-    }
+    NIP46CommandResult result = await sendToRemoteSigner(event, id);
+    return result.result;
   }
 
   void updateNIP46Subscription({String? relay, RemoteSignerConnection? connection}) {
