@@ -19,17 +19,17 @@ extension AccountNIP46 on Account {
     return me;
   }
 
-  Future<UserDBISAR?> loginWithNip46URI(String uri) async {
+  Future<UserDBISAR?> loginWithNip46URI(String uri, {String? clientPrivkey}) async {
     if (uri.startsWith('bunker://')) {
-      return _loginWithBunkerURI(uri);
+      return _loginWithBunkerURI(uri, clientPrivkey: clientPrivkey);
     } else if (uri.startsWith('nostrconnect://')) {
       return _loginWithNostrConnectURI(uri);
     }
     return null;
   }
 
-  Future<UserDBISAR?> _loginWithBunkerURI(String uri) async {
-    await connectToRemoteSigner(uri, false, '');
+  Future<UserDBISAR?> _loginWithBunkerURI(String uri, {String? clientPrivkey}) async {
+    await connectToRemoteSigner(uri, false, '', clientPrivkey: clientPrivkey);
     String? getPubkey = await sendGetPubicKey();
     if (getPubkey == null) return null;
     UserDBISAR? userDBISAR = await loginWithPubKey(getPubkey, SignerApplication.remoteSigner);
@@ -122,7 +122,7 @@ extension AccountNIP46 on Account {
     };
   }
 
-  Future<OKEvent> connectToRemoteSigner(String uri, bool autoLogin, String remotePubkey) async {
+  Future<OKEvent> connectToRemoteSigner(String uri, bool autoLogin, String remotePubkey, {String? clientPrivkey}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     late RemoteSignerConnection remoteSignerConnection;
     if (uri.startsWith('bunker://')) {
@@ -131,7 +131,8 @@ extension AccountNIP46 on Account {
       remoteSignerConnection = Nip46.parseNostrConnectUri(uri);
     }
     currentRemoteConnection = remoteSignerConnection;
-    currentRemoteConnection!.clientPrivkey = me?.clientPrivateKey;
+    // Use provided clientPrivkey parameter first, then fall back to me?.clientPrivateKey
+    currentRemoteConnection!.clientPrivkey = clientPrivkey ?? me?.clientPrivateKey;
     if (currentRemoteConnection!.remotePubkey.isEmpty) {
       currentRemoteConnection!.remotePubkey = me?.remotePubkey ?? remotePubkey;
     }
