@@ -526,6 +526,7 @@ extension MLSPrivateGroups on Groups {
     String eventString = await createMessageForGroup(
         groupId: group.mlsGroupId!, rumorEventString: jsonEncode(messageEvent.toJson()));
     Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
+    await Connect.sharedInstance.connectRelays(Account.sharedInstance.getCurrentCircleRelay(), relayKind: RelayKind.circleRelay);
     Completer<OKEvent> completer = Completer<OKEvent>();
     Connect.sharedInstance.sendEvent(groupEvent, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
@@ -544,6 +545,7 @@ extension MLSPrivateGroups on Groups {
 
   Future<OKEvent> sendGroupEventToMLSGroup(GroupDBISAR group, Event groupEvent) async {
     if (group.mlsGroupId == null) return OKEvent('', false, 'invalid mls group');
+    await Connect.sharedInstance.connectRelays(Account.sharedInstance.getCurrentCircleRelay(), relayKind: RelayKind.circleRelay);
     Completer<OKEvent> completer = Completer<OKEvent>();
     Connect.sharedInstance.sendEvent(groupEvent, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
