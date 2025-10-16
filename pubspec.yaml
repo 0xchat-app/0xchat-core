@@ -36,6 +36,8 @@ dependencies:
     git:
       url: https://github.com/0xchat-app/nostr-mls-package.git
       ref: main
+  tor:
+    path: ../tor
 
 
 

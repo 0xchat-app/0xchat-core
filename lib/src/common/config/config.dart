@@ -4,7 +4,6 @@
 import 'dart:convert';
 
 import 'package:chatcore/chat-core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
@@ -12,12 +11,14 @@ enum EOnionHostOption { no, whenAvailable, required }
 
 class ProxySettings {
   bool turnOnProxy;
+  bool turnOnTor;
   String socksProxyHost;
   int socksProxyPort;
   EOnionHostOption onionHostOption;
 
   ProxySettings({
     this.turnOnProxy = false,
+    this.turnOnTor = false,
     this.socksProxyHost = '127.0.0.1',
     this.socksProxyPort = 9050,
     this.onionHostOption = EOnionHostOption.whenAvailable,
@@ -26,6 +27,7 @@ class ProxySettings {
   Map<String, dynamic> toJson() {
     return {
       'turnOnProxy': turnOnProxy,
+      'turnOnTor': turnOnTor,
       'socksProxyHost': socksProxyHost,
       'socksProxyPort': socksProxyPort,
       'onionHostOption': onionHostOption.index,
@@ -34,10 +36,11 @@ class ProxySettings {
 
   factory ProxySettings.fromJson(Map<String, dynamic> json) {
     return ProxySettings(
-      turnOnProxy: json['turnOnProxy'],
-      socksProxyHost: json['socksProxyHost'],
-      socksProxyPort: json['socksProxyPort'],
-      onionHostOption: EOnionHostOption.values[json['onionHostOption']],
+      turnOnProxy: json['turnOnProxy'] ?? false,
+      turnOnTor: json['turnOnTor'] ?? false,
+      socksProxyHost: json['socksProxyHost'] ?? '127.0.0.1',
+      socksProxyPort: json['socksProxyPort'] ?? 9050,
+      onionHostOption: EOnionHostOption.values[json['onionHostOption'] ?? 1],
     );
   }
 
@@ -175,13 +178,13 @@ class Config {
       try {
         proxySettings = ProxySettings.fromJsonString(json);
       } catch (_) {
-        proxySettings = ProxySettings(turnOnProxy: false);
+        proxySettings = ProxySettings(turnOnProxy: false, turnOnTor: false);
       }
     }
   }
 
   ProxySettings getProxy() {
-    return proxySettings ?? ProxySettings(turnOnProxy: false);
+    return proxySettings ?? ProxySettings(turnOnProxy: false, turnOnTor: false);
   }
 
   Future<void> setProxy(ProxySettings setting) async {
