@@ -41,6 +41,12 @@ class EventCache {
         .findFirst();
   }
 
+  Future<void> saveEventToDBImmediately(EventDBISAR eventDB) async {
+    // Immediately save to database instead of using buffered saveToDB
+    await DBISAR.sharedInstance.isar.writeTxn(() async {
+      await DBISAR.sharedInstance.isar.eventDBISARs.put(eventDB);
+    });
+  }
   Future<void> saveEventToDB(EventDBISAR eventDB) async {
     await DBISAR.sharedInstance.saveToDB(eventDB);
   }
@@ -67,5 +73,41 @@ class EventCache {
         EventDBISAR(eventId: event.id, expiration: currentUnixTimestampSeconds() + cacheTimeStamp);
     eventDB.eventSendStatus.add(EventStatusISAR(relay: relay, status: status, message: message));
     await saveEventToDB(eventDB);
+  }
+
+  /// Update eventSendStatus in EventDBISAR
+  /// [eventId] The event ID
+  /// [relay] The relay server address
+  /// [status] The status from OK event
+  /// [message] The message from OK event
+  Future<void> updateEventSendStatus(String eventId, String relay, bool status, String message) async {
+    try {
+      EventDBISAR? eventDB = await loadEventFromDB(eventId);
+      eventDB ??= EventDBISAR(
+        eventId: eventId,
+      );
+      // Check if status for this relay already exists, update it; otherwise add new one
+      List<EventStatusISAR> sendStatuses = eventDB.eventSendStatus;
+      int existingIndex = sendStatuses.indexWhere((s) => s.relay == relay);
+      if (existingIndex >= 0) {
+        // Update existing status
+        sendStatuses[existingIndex] = EventStatusISAR(
+          relay: relay,
+          status: status,
+          message: message,
+        );
+      } else {
+        // Add new status
+        sendStatuses.add(EventStatusISAR(
+          relay: relay,
+          status: status,
+          message: message,
+        ));
+      }
+      eventDB.eventSendStatus = sendStatuses;
+      await saveEventToDBImmediately(eventDB);
+    } catch (e) {
+      LogUtils.e(() => 'Failed to update eventSendStatus: $e');
+    }
   }
 }

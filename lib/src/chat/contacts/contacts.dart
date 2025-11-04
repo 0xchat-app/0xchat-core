@@ -495,6 +495,7 @@ class Contacts {
       Connect.sharedInstance.sendEvent(giftwrappedEvent!, toRelays: userRelays,
           sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
+        messageDB.giftwrappedEventId = giftwrappedEvent.id;
         privateChatMessageUpdateCallBack?.call(messageDB, messageDB.messageId);
         await Messages.saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
         if (!completer.isCompleted) {

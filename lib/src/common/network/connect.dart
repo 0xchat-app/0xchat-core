@@ -585,6 +585,12 @@ class Connect {
       auths.remove(relay);
       return;
     }
+    
+    // Update eventSendStatus in EventDBISAR
+    if (ok.eventId.isNotEmpty) {
+      EventCache.sharedInstance.updateEventSendStatus(ok.eventId, relay, ok.status, ok.message);
+    }
+    
     if (sendsMap.containsKey(ok.eventId)) {
       // check need auth
       if (!ok.status && Nip42.authRequired(ok.message)) {
