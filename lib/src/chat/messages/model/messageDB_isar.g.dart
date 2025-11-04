@@ -57,88 +57,93 @@ const MessageDBISARSchema = CollectionSchema(
       name: r'expiration',
       type: IsarType.long,
     ),
-    r'groupId': PropertySchema(
+    r'giftwrappedEventId': PropertySchema(
       id: 8,
+      name: r'giftwrappedEventId',
+      type: IsarType.string,
+    ),
+    r'groupId': PropertySchema(
+      id: 9,
       name: r'groupId',
       type: IsarType.string,
     ),
     r'kind': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'kind',
       type: IsarType.long,
     ),
     r'messageId': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'messageId',
       type: IsarType.string,
     ),
     r'plaintEvent': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'plaintEvent',
       type: IsarType.string,
     ),
     r'previewData': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'previewData',
       type: IsarType.string,
     ),
     r'reactionEventIds': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'reactionEventIds',
       type: IsarType.stringList,
     ),
     r'read': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'read',
       type: IsarType.bool,
     ),
     r'receiver': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'receiver',
       type: IsarType.string,
     ),
     r'replyId': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'replyId',
       type: IsarType.string,
     ),
     r'reportList': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'reportList',
       type: IsarType.stringList,
     ),
     r'sender': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'sender',
       type: IsarType.string,
     ),
     r'sessionId': PropertySchema(
-      id: 19,
+      id: 20,
       name: r'sessionId',
       type: IsarType.string,
     ),
     r'status': PropertySchema(
-      id: 20,
+      id: 21,
       name: r'status',
       type: IsarType.long,
     ),
     r'subType': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'subType',
       type: IsarType.string,
     ),
     r'tags': PropertySchema(
-      id: 22,
+      id: 23,
       name: r'tags',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 23,
+      id: 24,
       name: r'type',
       type: IsarType.string,
     ),
     r'zapEventIds': PropertySchema(
-      id: 24,
+      id: 25,
       name: r'zapEventIds',
       type: IsarType.stringList,
     )
@@ -193,6 +198,12 @@ int _messageDBISAREstimateSize(
   }
   {
     final value = object.decryptSecret;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.giftwrappedEventId;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
     }
@@ -271,23 +282,24 @@ void _messageDBISARSerialize(
   writer.writeString(offsets[5], object.decryptNonce);
   writer.writeString(offsets[6], object.decryptSecret);
   writer.writeLong(offsets[7], object.expiration);
-  writer.writeString(offsets[8], object.groupId);
-  writer.writeLong(offsets[9], object.kind);
-  writer.writeString(offsets[10], object.messageId);
-  writer.writeString(offsets[11], object.plaintEvent);
-  writer.writeString(offsets[12], object.previewData);
-  writer.writeStringList(offsets[13], object.reactionEventIds);
-  writer.writeBool(offsets[14], object.read);
-  writer.writeString(offsets[15], object.receiver);
-  writer.writeString(offsets[16], object.replyId);
-  writer.writeStringList(offsets[17], object.reportList);
-  writer.writeString(offsets[18], object.sender);
-  writer.writeString(offsets[19], object.sessionId);
-  writer.writeLong(offsets[20], object.status);
-  writer.writeString(offsets[21], object.subType);
-  writer.writeString(offsets[22], object.tags);
-  writer.writeString(offsets[23], object.type);
-  writer.writeStringList(offsets[24], object.zapEventIds);
+  writer.writeString(offsets[8], object.giftwrappedEventId);
+  writer.writeString(offsets[9], object.groupId);
+  writer.writeLong(offsets[10], object.kind);
+  writer.writeString(offsets[11], object.messageId);
+  writer.writeString(offsets[12], object.plaintEvent);
+  writer.writeString(offsets[13], object.previewData);
+  writer.writeStringList(offsets[14], object.reactionEventIds);
+  writer.writeBool(offsets[15], object.read);
+  writer.writeString(offsets[16], object.receiver);
+  writer.writeString(offsets[17], object.replyId);
+  writer.writeStringList(offsets[18], object.reportList);
+  writer.writeString(offsets[19], object.sender);
+  writer.writeString(offsets[20], object.sessionId);
+  writer.writeLong(offsets[21], object.status);
+  writer.writeString(offsets[22], object.subType);
+  writer.writeString(offsets[23], object.tags);
+  writer.writeString(offsets[24], object.type);
+  writer.writeStringList(offsets[25], object.zapEventIds);
 }
 
 MessageDBISAR _messageDBISARDeserialize(
@@ -305,25 +317,26 @@ MessageDBISAR _messageDBISARDeserialize(
     decryptNonce: reader.readStringOrNull(offsets[5]),
     decryptSecret: reader.readStringOrNull(offsets[6]),
     expiration: reader.readLongOrNull(offsets[7]),
-    groupId: reader.readStringOrNull(offsets[8]) ?? '',
-    kind: reader.readLongOrNull(offsets[9]) ?? 0,
-    messageId: reader.readStringOrNull(offsets[10]) ?? '',
-    plaintEvent: reader.readStringOrNull(offsets[11]) ?? '',
-    previewData: reader.readStringOrNull(offsets[12]),
-    reactionEventIds: reader.readStringList(offsets[13]),
-    read: reader.readBoolOrNull(offsets[14]) ?? false,
-    receiver: reader.readStringOrNull(offsets[15]) ?? '',
-    replyId: reader.readStringOrNull(offsets[16]) ?? '',
-    sender: reader.readStringOrNull(offsets[18]) ?? '',
-    sessionId: reader.readStringOrNull(offsets[19]) ?? '',
-    status: reader.readLongOrNull(offsets[20]),
-    subType: reader.readStringOrNull(offsets[21]),
-    tags: reader.readStringOrNull(offsets[22]) ?? '',
-    type: reader.readStringOrNull(offsets[23]) ?? 'text',
-    zapEventIds: reader.readStringList(offsets[24]),
+    giftwrappedEventId: reader.readStringOrNull(offsets[8]),
+    groupId: reader.readStringOrNull(offsets[9]) ?? '',
+    kind: reader.readLongOrNull(offsets[10]) ?? 0,
+    messageId: reader.readStringOrNull(offsets[11]) ?? '',
+    plaintEvent: reader.readStringOrNull(offsets[12]) ?? '',
+    previewData: reader.readStringOrNull(offsets[13]),
+    reactionEventIds: reader.readStringList(offsets[14]),
+    read: reader.readBoolOrNull(offsets[15]) ?? false,
+    receiver: reader.readStringOrNull(offsets[16]) ?? '',
+    replyId: reader.readStringOrNull(offsets[17]) ?? '',
+    sender: reader.readStringOrNull(offsets[19]) ?? '',
+    sessionId: reader.readStringOrNull(offsets[20]) ?? '',
+    status: reader.readLongOrNull(offsets[21]),
+    subType: reader.readStringOrNull(offsets[22]),
+    tags: reader.readStringOrNull(offsets[23]) ?? '',
+    type: reader.readStringOrNull(offsets[24]) ?? 'text',
+    zapEventIds: reader.readStringList(offsets[25]),
   );
   object.id = id;
-  object.reportList = reader.readStringList(offsets[17]);
+  object.reportList = reader.readStringList(offsets[18]);
   return object;
 }
 
@@ -351,38 +364,40 @@ P _messageDBISARDeserializeProp<P>(
     case 7:
       return (reader.readLongOrNull(offset)) as P;
     case 8:
-      return (reader.readStringOrNull(offset) ?? '') as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 9:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
-    case 10:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 10:
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 11:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 12:
-      return (reader.readStringOrNull(offset)) as P;
-    case 13:
-      return (reader.readStringList(offset)) as P;
-    case 14:
-      return (reader.readBoolOrNull(offset) ?? false) as P;
-    case 15:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 13:
+      return (reader.readStringOrNull(offset)) as P;
+    case 14:
+      return (reader.readStringList(offset)) as P;
+    case 15:
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     case 16:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 17:
-      return (reader.readStringList(offset)) as P;
-    case 18:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 18:
+      return (reader.readStringList(offset)) as P;
     case 19:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 20:
-      return (reader.readLongOrNull(offset)) as P;
-    case 21:
-      return (reader.readStringOrNull(offset)) as P;
-    case 22:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 21:
+      return (reader.readLongOrNull(offset)) as P;
+    case 22:
+      return (reader.readStringOrNull(offset)) as P;
     case 23:
-      return (reader.readStringOrNull(offset) ?? 'text') as P;
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 24:
+      return (reader.readStringOrNull(offset) ?? 'text') as P;
+    case 25:
       return (reader.readStringList(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1519,6 +1534,160 @@ extension MessageDBISARQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      giftwrappedEventIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'giftwrappedEventId',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      giftwrappedEventIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'giftwrappedEventId',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      giftwrappedEventIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'giftwrappedEventId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      giftwrappedEventIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'giftwrappedEventId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      giftwrappedEventIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'giftwrappedEventId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      giftwrappedEventIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'giftwrappedEventId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      giftwrappedEventIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'giftwrappedEventId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      giftwrappedEventIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'giftwrappedEventId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      giftwrappedEventIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'giftwrappedEventId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      giftwrappedEventIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'giftwrappedEventId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      giftwrappedEventIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'giftwrappedEventId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      giftwrappedEventIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'giftwrappedEventId',
+        value: '',
       ));
     });
   }
@@ -4092,6 +4261,20 @@ extension MessageDBISARQuerySortBy
     });
   }
 
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      sortByGiftwrappedEventId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'giftwrappedEventId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      sortByGiftwrappedEventIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'giftwrappedEventId', Sort.desc);
+    });
+  }
+
   QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy> sortByGroupId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'groupId', Sort.asc);
@@ -4374,6 +4557,20 @@ extension MessageDBISARQuerySortThenBy
     });
   }
 
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      thenByGiftwrappedEventId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'giftwrappedEventId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      thenByGiftwrappedEventIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'giftwrappedEventId', Sort.desc);
+    });
+  }
+
   QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy> thenByGroupId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'groupId', Sort.asc);
@@ -4617,6 +4814,14 @@ extension MessageDBISARQueryWhereDistinct
     });
   }
 
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QDistinct>
+      distinctByGiftwrappedEventId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'giftwrappedEventId',
+          caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<MessageDBISAR, MessageDBISAR, QDistinct> distinctByGroupId(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -4789,6 +4994,13 @@ extension MessageDBISARQueryProperty
   QueryBuilder<MessageDBISAR, int?, QQueryOperations> expirationProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'expiration');
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, String?, QQueryOperations>
+      giftwrappedEventIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'giftwrappedEventId');
     });
   }
 
