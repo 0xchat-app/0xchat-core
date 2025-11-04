@@ -496,6 +496,7 @@ class Contacts {
           sendCallBack: (ok, relay) async {
         messageDB.status = ok.status ? 1 : 2;
         messageDB.giftwrappedEventId = giftwrappedEvent.id;
+        messageDB.giftwrappedEventJson = jsonEncode(giftwrappedEvent.toJson());
         privateChatMessageUpdateCallBack?.call(messageDB, messageDB.messageId);
         await Messages.saveMessageToDB(messageDB, conflictAlgorithm: ConflictAlgorithm.replace);
         if (!completer.isCompleted) {

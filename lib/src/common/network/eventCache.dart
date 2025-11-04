@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:isar/isar.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
@@ -47,6 +48,7 @@ class EventCache {
       await DBISAR.sharedInstance.isar.eventDBISARs.put(eventDB);
     });
   }
+
   Future<void> saveEventToDB(EventDBISAR eventDB) async {
     await DBISAR.sharedInstance.saveToDB(eventDB);
   }
@@ -80,7 +82,8 @@ class EventCache {
   /// [relay] The relay server address
   /// [status] The status from OK event
   /// [message] The message from OK event
-  Future<void> updateEventSendStatus(String eventId, String relay, bool status, String message) async {
+  Future<void> updateEventSendStatus(
+      String eventId, String relay, bool status, String message) async {
     try {
       EventDBISAR? eventDB = await loadEventFromDB(eventId);
       eventDB ??= EventDBISAR(
@@ -109,5 +112,14 @@ class EventCache {
     } catch (e) {
       LogUtils.e(() => 'Failed to update eventSendStatus: $e');
     }
+  }
+
+  static Future<void> resendEventToRelays(
+      String eventString, List<String> relays, OKCallBack? sendCallBack) async {
+    await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.temp);
+    Connect.sharedInstance.sendEvent(await Event.fromJson(jsonDecode(eventString)),
+        toRelays: relays, sendCallBack: (ok, relay) {
+      sendCallBack?.call(ok, relay);
+    });
   }
 }
