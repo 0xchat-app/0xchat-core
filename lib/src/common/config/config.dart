@@ -7,30 +7,28 @@ import 'package:chatcore/chat-core.dart';
 import 'package:isar/isar.dart';
 import 'package:nostr_core_dart/nostr.dart';
 
-enum EOnionHostOption { no, whenAvailable, required }
-
 class ProxySettings {
   bool turnOnProxy;
   bool turnOnTor;
+  bool useSystemProxy;
   String socksProxyHost;
   int socksProxyPort;
-  EOnionHostOption onionHostOption;
 
   ProxySettings({
     this.turnOnProxy = false,
     this.turnOnTor = false,
+    this.useSystemProxy = false,
     this.socksProxyHost = '127.0.0.1',
     this.socksProxyPort = 9050,
-    this.onionHostOption = EOnionHostOption.whenAvailable,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'turnOnProxy': turnOnProxy,
       'turnOnTor': turnOnTor,
+      'useSystemProxy': useSystemProxy,
       'socksProxyHost': socksProxyHost,
       'socksProxyPort': socksProxyPort,
-      'onionHostOption': onionHostOption.index,
     };
   }
 
@@ -38,9 +36,9 @@ class ProxySettings {
     return ProxySettings(
       turnOnProxy: json['turnOnProxy'] ?? false,
       turnOnTor: json['turnOnTor'] ?? false,
+      useSystemProxy: json['useSystemProxy'] ?? false,
       socksProxyHost: json['socksProxyHost'] ?? '127.0.0.1',
       socksProxyPort: json['socksProxyPort'] ?? 9050,
-      onionHostOption: EOnionHostOption.values[json['onionHostOption'] ?? 1],
     );
   }
 
@@ -178,13 +176,13 @@ class Config {
       try {
         proxySettings = ProxySettings.fromJsonString(json);
       } catch (_) {
-        proxySettings = ProxySettings(turnOnProxy: false, turnOnTor: false);
+        proxySettings = ProxySettings(turnOnProxy: false, turnOnTor: false, useSystemProxy: false);
       }
     }
   }
 
   ProxySettings getProxy() {
-    return proxySettings ?? ProxySettings(turnOnProxy: false, turnOnTor: false);
+    return proxySettings ?? ProxySettings(turnOnProxy: false, turnOnTor: false, useSystemProxy: false);
   }
 
   Future<void> setProxy(ProxySettings setting) async {
