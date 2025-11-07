@@ -426,6 +426,14 @@ class Account {
     return await Nip4.decryptContent(content, peer, currentPubkey, currentPrivkey);
   }
 
+  Future<String> encryptNip44(String content, String peer) async {
+    return await Nip44.encryptContent(content, peer, currentPubkey, currentPrivkey);
+  }
+
+  Future<String> decryptNip44(String content, String peer) async {
+    return await Nip44.decryptContent(content, peer, currentPubkey, currentPrivkey);
+  }
+
   static Future<String> getSignatureWithSecret(String secret, [String? privkey]) async {
     privkey ??= Account.sharedInstance.currentPrivkey;
     if (SignerHelper.needSigner(privkey)) {
