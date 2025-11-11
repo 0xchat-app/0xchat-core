@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:tor/proxy_support.dart';
 import 'package:tor/tor.dart';
 
 class TorNetworkHelper {
@@ -50,5 +51,19 @@ class TorNetworkHelper {
 
     // For other addresses, check if Tor is enabled globally
     return false;
+  }
+
+  static void updateCustomProxy(String address, int port) {
+    Tor.instance.updateCustomProxy(
+      ProxyInfo(
+        address: address,
+        port: port,
+        type: ProxyType.socks5,
+      ),
+    );
+  }
+
+  static void clearCustomProxy() {
+    Tor.instance.updateCustomProxy(null);
   }
 }
