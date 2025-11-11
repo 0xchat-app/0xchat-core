@@ -39,7 +39,7 @@ dependencies:
   tor:
     git:
       url: https://github.com/0xchat-app/tor.git
-      ref: main
+      ref: 703504a16b00a274435bfd772de6d9b9b06a3f15
 
 
 
