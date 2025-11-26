@@ -95,4 +95,18 @@ class NotificationHelper {
   Future<OKEvent> removeNotification() async {
     return await updateNotificationDeviceId('');
   }
+
+  // Generate AUTH response for push service
+  // Same as connect.dart line 670-672
+  static Future<String> generateAuthJson(String challenge, String relay) async {
+    if (Account.sharedInstance.currentPubkey.isEmpty || 
+        Account.sharedInstance.currentPrivkey.isEmpty) {
+      return '';
+    }
+    Event event = await Nip42.encode(
+        challenge, relay, 
+        Account.sharedInstance.currentPubkey,
+        Account.sharedInstance.currentPrivkey);
+    return Nip42.authString(event);
+  }
 }

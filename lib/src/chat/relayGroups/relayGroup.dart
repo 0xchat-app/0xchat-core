@@ -165,6 +165,7 @@ class RelayGroup {
   }
 
   void updateGroupSubscription({String? relay}) {
+    return;
     if (myGroups.isEmpty) {
       offlineGroupMessageFinishCallBack?.call();
       if (!Messages.sharedInstance.groupMessageCompleter.isCompleted) {
