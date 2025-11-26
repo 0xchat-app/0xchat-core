@@ -75,6 +75,10 @@ class MessageDBISAR {
   List<String>? reactionEventIds;
   List<String>? zapEventIds;
 
+  /// Send OKEvent serialized string
+  /// Stores the OKEvent.serialize() result when message is sent
+  String? sendOkEvent;
+
   MessageDBISAR({
     this.messageId = '',
     this.sender = '',
@@ -100,6 +104,7 @@ class MessageDBISAR {
     this.decryptAlgo,
     this.reactionEventIds,
     this.zapEventIds,
+    this.sendOkEvent,
   });
 
   static MessageDBISAR fromMap(Map<String, Object?> map) {
@@ -478,5 +483,6 @@ MessageDBISAR _messageInfoFromMap(Map<String, dynamic> map) {
     decryptSecret: map['decryptSecret']?.toString(),
     reactionEventIds: UserDBISAR.decodeStringList(map['reactionEventIds'].toString()),
     zapEventIds: UserDBISAR.decodeStringList(map['zapEventIds'].toString()),
+    sendOkEvent: map['sendOkEvent']?.toString(),
   );
 }

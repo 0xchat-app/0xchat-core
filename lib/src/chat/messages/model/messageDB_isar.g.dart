@@ -120,6 +120,10 @@ const MessageDBISARSchema = IsarGeneratedSchema(
         name: 'zapEventIds',
         type: IsarType.stringList,
       ),
+      IsarPropertySchema(
+        name: 'sendOkEvent',
+        type: IsarType.string,
+      ),
     ],
     indexes: [
       IsarIndexSchema(
@@ -233,6 +237,14 @@ int serializeMessageDBISAR(IsarWriter writer, MessageDBISAR object) {
         IsarCore.writeString(listWriter, i, list[i]);
       }
       IsarCore.endList(writer, listWriter);
+    }
+  }
+  {
+    final value = object.sendOkEvent;
+    if (value == null) {
+      IsarCore.writeNull(writer, 26);
+    } else {
+      IsarCore.writeString(writer, 26, value);
     }
   }
   return object.id;
@@ -353,6 +365,8 @@ MessageDBISAR deserializeMessageDBISAR(IsarReader reader) {
       }
     }
   }
+  final String? _sendOkEvent;
+  _sendOkEvent = IsarCore.readString(reader, 26);
   final object = MessageDBISAR(
     messageId: _messageId,
     sender: _sender,
@@ -378,6 +392,7 @@ MessageDBISAR deserializeMessageDBISAR(IsarReader reader) {
     decryptAlgo: _decryptAlgo,
     reactionEventIds: _reactionEventIds,
     zapEventIds: _zapEventIds,
+    sendOkEvent: _sendOkEvent,
   );
   object.id = IsarCore.readId(reader);
   {
@@ -534,6 +549,8 @@ dynamic deserializeMessageDBISARProp(IsarReader reader, int property) {
           }
         }
       }
+    case 26:
+      return IsarCore.readString(reader, 26);
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -564,6 +581,7 @@ sealed class _MessageDBISARUpdate {
     String? decryptSecret,
     String? decryptNonce,
     String? decryptAlgo,
+    String? sendOkEvent,
   });
 }
 
@@ -597,6 +615,7 @@ class _MessageDBISARUpdateImpl implements _MessageDBISARUpdate {
     Object? decryptSecret = ignore,
     Object? decryptNonce = ignore,
     Object? decryptAlgo = ignore,
+    Object? sendOkEvent = ignore,
   }) {
     return collection.updateProperties([
           id
@@ -623,6 +642,7 @@ class _MessageDBISARUpdateImpl implements _MessageDBISARUpdate {
           if (decryptSecret != ignore) 21: decryptSecret as String?,
           if (decryptNonce != ignore) 22: decryptNonce as String?,
           if (decryptAlgo != ignore) 23: decryptAlgo as String?,
+          if (sendOkEvent != ignore) 26: sendOkEvent as String?,
         }) >
         0;
   }
@@ -653,6 +673,7 @@ sealed class _MessageDBISARUpdateAll {
     String? decryptSecret,
     String? decryptNonce,
     String? decryptAlgo,
+    String? sendOkEvent,
   });
 }
 
@@ -686,6 +707,7 @@ class _MessageDBISARUpdateAllImpl implements _MessageDBISARUpdateAll {
     Object? decryptSecret = ignore,
     Object? decryptNonce = ignore,
     Object? decryptAlgo = ignore,
+    Object? sendOkEvent = ignore,
   }) {
     return collection.updateProperties(id, {
       if (messageId != ignore) 1: messageId as String?,
@@ -710,6 +732,7 @@ class _MessageDBISARUpdateAllImpl implements _MessageDBISARUpdateAll {
       if (decryptSecret != ignore) 21: decryptSecret as String?,
       if (decryptNonce != ignore) 22: decryptNonce as String?,
       if (decryptAlgo != ignore) 23: decryptAlgo as String?,
+      if (sendOkEvent != ignore) 26: sendOkEvent as String?,
     });
   }
 }
@@ -744,6 +767,7 @@ sealed class _MessageDBISARQueryUpdate {
     String? decryptSecret,
     String? decryptNonce,
     String? decryptAlgo,
+    String? sendOkEvent,
   });
 }
 
@@ -777,6 +801,7 @@ class _MessageDBISARQueryUpdateImpl implements _MessageDBISARQueryUpdate {
     Object? decryptSecret = ignore,
     Object? decryptNonce = ignore,
     Object? decryptAlgo = ignore,
+    Object? sendOkEvent = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (messageId != ignore) 1: messageId as String?,
@@ -801,6 +826,7 @@ class _MessageDBISARQueryUpdateImpl implements _MessageDBISARQueryUpdate {
       if (decryptSecret != ignore) 21: decryptSecret as String?,
       if (decryptNonce != ignore) 22: decryptNonce as String?,
       if (decryptAlgo != ignore) 23: decryptAlgo as String?,
+      if (sendOkEvent != ignore) 26: sendOkEvent as String?,
     });
   }
 }
@@ -844,6 +870,7 @@ class _MessageDBISARQueryBuilderUpdateImpl
     Object? decryptSecret = ignore,
     Object? decryptNonce = ignore,
     Object? decryptAlgo = ignore,
+    Object? sendOkEvent = ignore,
   }) {
     final q = query.build();
     try {
@@ -870,6 +897,7 @@ class _MessageDBISARQueryBuilderUpdateImpl
         if (decryptSecret != ignore) 21: decryptSecret as String?,
         if (decryptNonce != ignore) 22: decryptNonce as String?,
         if (decryptAlgo != ignore) 23: decryptAlgo as String?,
+        if (sendOkEvent != ignore) 26: sendOkEvent as String?,
       });
     } finally {
       q.close();
@@ -5033,6 +5061,200 @@ extension MessageDBISARQueryFilter
       );
     });
   }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      sendOkEventIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 26));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      sendOkEventIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 26));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      sendOkEventEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 26,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      sendOkEventGreaterThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 26,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      sendOkEventGreaterThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 26,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      sendOkEventLessThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 26,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      sendOkEventLessThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 26,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      sendOkEventBetween(
+    String? lower,
+    String? upper, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 26,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      sendOkEventStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 26,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      sendOkEventEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 26,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      sendOkEventContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 26,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      sendOkEventMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 26,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      sendOkEventIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 26,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      sendOkEventIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 26,
+          value: '',
+        ),
+      );
+    });
+  }
 }
 
 extension MessageDBISARQueryObject
@@ -5462,6 +5684,27 @@ extension MessageDBISARQuerySortBy
       );
     });
   }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy> sortBySendOkEvent(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        26,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      sortBySendOkEventDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        26,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
 }
 
 extension MessageDBISARQuerySortThenBy
@@ -5776,6 +6019,20 @@ extension MessageDBISARQuerySortThenBy
       return query.addSortBy(23, sort: Sort.desc, caseSensitive: caseSensitive);
     });
   }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy> thenBySendOkEvent(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(26, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      thenBySendOkEventDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(26, sort: Sort.desc, caseSensitive: caseSensitive);
+    });
+  }
 }
 
 extension MessageDBISARQueryWhereDistinct
@@ -5952,6 +6209,13 @@ extension MessageDBISARQueryWhereDistinct
       return query.addDistinctBy(25);
     });
   }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterDistinct>
+      distinctBySendOkEvent({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(26, caseSensitive: caseSensitive);
+    });
+  }
 }
 
 extension MessageDBISARQueryProperty1
@@ -6112,6 +6376,12 @@ extension MessageDBISARQueryProperty1
       zapEventIdsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(25);
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, String?, QAfterProperty> sendOkEventProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(26);
     });
   }
 }
@@ -6280,6 +6550,13 @@ extension MessageDBISARQueryProperty2<R>
       zapEventIdsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(25);
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, (R, String?), QAfterProperty>
+      sendOkEventProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(26);
     });
   }
 }
@@ -6453,6 +6730,13 @@ extension MessageDBISARQueryProperty3<R1, R2>
       zapEventIdsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(25);
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, (R1, R2, String?), QOperations>
+      sendOkEventProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(26);
     });
   }
 }
