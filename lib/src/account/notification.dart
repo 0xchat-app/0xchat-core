@@ -79,7 +79,30 @@ class NotificationHelper {
     ];
     RelayGroup.sharedInstance.myGroups[group.groupId] = ValueNotifier(group);
     String about = group.about;
-    Request r = Request.deserialize(jsonDecode(about));
+    // Check if about is empty or invalid JSON before parsing
+    if (about.isEmpty) {
+      // If about is empty, create a new request
+      Request request = Request(deviceId, [
+        Filter(p: [Account.sharedInstance.currentPubkey])
+      ]);
+      OKEvent ok = await RelayGroup.sharedInstance.editMetadata(Account.sharedInstance.currentPubkey,
+          defaultGroupName, request.serialize(), '', true, true, '');
+      return ok;
+    }
+    
+    Request r;
+    try {
+      r = Request.deserialize(jsonDecode(about));
+    } catch (e) {
+      // If JSON parsing fails, create a new request
+      Request request = Request(deviceId, [
+        Filter(p: [Account.sharedInstance.currentPubkey])
+      ]);
+      OKEvent ok = await RelayGroup.sharedInstance.editMetadata(Account.sharedInstance.currentPubkey,
+          defaultGroupName, request.serialize(), '', true, true, '');
+      return ok;
+    }
+    
     if (r.subscriptionId == deviceId) {
       return OKEvent('', true, 'already updated');
     }
