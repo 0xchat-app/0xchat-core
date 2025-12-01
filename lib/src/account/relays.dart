@@ -42,6 +42,13 @@ class Relays {
     'wss://relay.0xchat.com'
   ];
 
+  List<String> recommendSearchRelays = [
+    'wss://relay.nostr.band/',
+    'wss://search.nos.today/',
+    'wss://relay.noswhere.com/',
+    'wss://filter.nostr.wine/',
+  ];
+
   Future<void> init({String? circleRelay}) async {
     await Config.sharedInstance.initConfig();
     List<RelayDBISAR> result = await _loadRelaysFromDB() ?? [];

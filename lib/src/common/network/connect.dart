@@ -77,6 +77,7 @@ enum RelayKind {
   remoteSigner,
   circleRelay,
   temp,
+  search,
 }
 
 class Connect {
@@ -691,6 +692,15 @@ class Connect {
     } catch (e) {
       LogUtils.v(() => "Error! can not connect WS connectWs $e relay:$relay");
       _setConnectStatus(relay, 3); // closed
+
+      // Check if error is "was not upgraded to websocket, HTTP status code: 200"
+      // If so, don't retry connection
+      String errorStr = e.toString();
+      if (errorStr.contains('was not upgraded to websocket') && 
+          errorStr.contains('HTTP status code: 200')) {
+        LogUtils.v(() => "WebSocket upgrade failed with HTTP 200, skipping retry for relay:$relay");
+        return;
+      }
 
       List<RelayKind>? relayKinds = webSockets[relay]?.relayKinds;
       bool hasNonTempKind = relayKinds?.any((kind) => kind != RelayKind.temp) ?? false;

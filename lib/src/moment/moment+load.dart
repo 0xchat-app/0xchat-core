@@ -728,7 +728,69 @@ extension Load on Moment {
   }
 
   Future<List<NoteDBISAR>> _searchNotesFromRelay(String keyword) async {
+    List<RelayDBISAR> searchRelayList = Account.sharedInstance.getMySearchRelayList();
+    
+    // If no search relay is selected, use the first recommended one
+    if (searchRelayList.isEmpty) {
+      List<RelayDBISAR> recommendRelayList = Account.sharedInstance.getMyRecommendSearchRelaysList();
+      if (recommendRelayList.isEmpty) {
+        return [];
+      }
+      // Auto-select the first recommended relay
+      String defaultRelay = recommendRelayList.first.url;
+      await Account.sharedInstance.setSearchRelay(defaultRelay);
+      searchRelayList = Account.sharedInstance.getMySearchRelayList();
+      if (searchRelayList.isEmpty) {
+        return [];
+      }
+    }
 
-    return [];
+    String searchRelay = searchRelayList.first.url;
+
+    await Connect.sharedInstance.connectRelays([searchRelay], relayKind: RelayKind.search);
+
+    Filter searchFilter = Nip50.encode(
+      search: keyword,
+      kinds: [1],
+      limit: 10,
+    );
+
+    Map<String, Event> result = {};
+    Completer<List<NoteDBISAR>> completer = Completer<List<NoteDBISAR>>();
+
+    Connect.sharedInstance.addSubscription(
+      [searchFilter],
+      relays: [searchRelay],
+      relayKinds: [RelayKind.search],
+      eventCallBack: (event, relay) async {
+        if (event.kind == 1 && !result.containsKey(event.id)) {
+          result[event.id] = event;
+        }
+      },
+      eoseCallBack: (requestId, ok, relay, unRelays) async {
+        if (unRelays.isEmpty) {
+          List<NoteDBISAR> notes = [];
+          for (Event event in result.values) {
+            Note note = Nip1.decodeNote(event);
+            NoteDBISAR noteDB = NoteDBISAR.noteDBFromNote(note);
+            await saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
+            notes.add(noteDB);
+          }
+          // Close the search relay connection after search
+          Connect.sharedInstance.closeConnects([searchRelay], RelayKind.search);
+          if (!completer.isCompleted) {
+            completer.complete(notes);
+          }
+        }
+      },
+    );
+
+    return completer.future.timeout(
+      Duration(seconds: 10),
+      onTimeout: () {
+        Connect.sharedInstance.closeConnects([searchRelay], RelayKind.search);
+        return <NoteDBISAR>[];
+      },
+    );
   }
 }

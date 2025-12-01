@@ -64,6 +64,26 @@ extension AccountRelay on Account {
     return result;
   }
 
+  List<RelayDBISAR> getMySearchRelayList() {
+    String? searchRelay = me?.searchRelay;
+    List<RelayDBISAR> result = [];
+    if (searchRelay != null && searchRelay.isNotEmpty) {
+      searchRelay = searchRelay.endsWith('/') ? searchRelay.substring(0, searchRelay.length - 1) : searchRelay;
+      result.add(Relays.sharedInstance.relays[searchRelay] ?? RelayDBISAR(url: searchRelay));
+    }
+    return result;
+  }
+
+  List<RelayDBISAR> getMyRecommendSearchRelaysList() {
+    List<String> searchRelays = Relays.sharedInstance.recommendSearchRelays;
+    List<RelayDBISAR> result = [];
+    for (var relay in searchRelays) {
+      relay = relay.endsWith('/') ? relay.substring(0, relay.length - 1) : relay;
+      result.add(Relays.sharedInstance.relays[relay] ?? RelayDBISAR(url: relay));
+    }
+    return result;
+  }
+
   List<String> getCurrentCircleRelay() {
     return Connect.sharedInstance.relays(relayKinds: [RelayKind.circleRelay]);
   }
@@ -169,6 +189,32 @@ extension AccountRelay on Account {
     relays.remove(relay);
     Connect.sharedInstance.closeConnects([relay], RelayKind.dm);
     return await setDMRelayListToRelay(relays);
+  }
+
+  Future<OKEvent> setSearchRelay(String relay) async {
+    if (relay.isEmpty) return OKEvent(relay, false, 'empty relay');
+    relay = relay.endsWith('/') ? relay.substring(0, relay.length - 1) : relay;
+    
+    // For search relay, we only keep one, so remove the old one first
+    String? oldRelay = me?.searchRelay;
+    if (oldRelay != null && oldRelay.isNotEmpty) {
+      oldRelay = oldRelay.endsWith('/') ? oldRelay.substring(0, oldRelay.length - 1) : oldRelay;
+      Connect.sharedInstance.closeConnects([oldRelay], RelayKind.temp);
+    }
+    
+    me!.searchRelay = relay;
+    syncMe();
+    return OKEvent(relay, true, '');
+  }
+
+  Future<OKEvent> removeSearchRelay() async {
+    String? relay = me?.searchRelay;
+    if (relay == null || relay.isEmpty) return OKEvent('', false, 'not exit');
+    relay = relay.endsWith('/') ? relay.substring(0, relay.length - 1) : relay;
+    Connect.sharedInstance.closeConnects([relay], RelayKind.temp);
+    me!.searchRelay = null;
+    syncMe();
+    return OKEvent(relay, true, '');
   }
 
   Future<void> closeAllRelays() async {

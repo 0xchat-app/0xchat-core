@@ -75,6 +75,7 @@ class UserDBISAR {
   List<String>? dmRelayList; // relay list
   List<String>? inboxRelayList; // inbox relay list
   List<String>? outboxRelayList; // outbox relay list
+  String? searchRelay; // search relay (single selection)
 
   /// list updated time
   int lastFriendsListUpdatedTime;
@@ -139,6 +140,7 @@ class UserDBISAR {
     this.dmRelayList,
     this.inboxRelayList,
     this.outboxRelayList,
+    this.searchRelay,
     this.mute = false,
     this.lastUpdatedTime = 0,
     this.lastBadgesListUpdatedTime = 0,
