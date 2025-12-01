@@ -72,7 +72,7 @@ extension AccountProfile on Account {
 
   Future<UserDBISAR> reloadProfileFromRelay(String pubkey, {List<String>? relays}) async {
     Completer<UserDBISAR> completer = Completer<UserDBISAR>();
-    UserDBISAR? db = await getUserInfo(pubkey);
+    UserDBISAR? db = await getUserInfo(pubkey, false);
     List<Filter> filters = [Filter(kinds: ChatCoreManager().userProfileKinds(), authors: [pubkey])];
     
     Connect.sharedInstance.addSubscription(filters, relays: relays, eventCallBack: (event, relay) async {

@@ -91,14 +91,14 @@ class Account {
     return pattern.hasMatch(pubKey);
   }
 
-  FutureOr<UserDBISAR?> getUserInfo(String pubkey) {
+  FutureOr<UserDBISAR?> getUserInfo(String pubkey, [bool updateFromRelay = true]) {
     if (pubkey.length == 66 && pubkey.startsWith('02')) {
       pubkey = pubkey.replaceFirst('02', '');
     }
     if (!isValidPubKey(pubkey)) return null;
 
     UserDBISAR? user = userCache[pubkey]?.value;
-    if (user != null) {
+    if (user != null && updateFromRelay) {
       _addToPQueue(user);
       return user;
     }
