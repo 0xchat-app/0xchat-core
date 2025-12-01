@@ -12,6 +12,7 @@ class ChatCoreInitConfig {
     this.circleId,
     this.isLite = false,
     this.circleRelay,
+    this.circleConnectCallback,
     this.contactUpdatedCallBack,
     this.channelsUpdatedCallBack,
     this.groupsUpdatedCallBack,
@@ -32,6 +33,7 @@ class ChatCoreInitConfig {
   // Mode configuration
   final bool isLite;
   final String? circleRelay;
+  final Function(bool isConnected)? circleConnectCallback;
 
   // Callbacks
   final ContactUpdatedCallBack? contactUpdatedCallBack;

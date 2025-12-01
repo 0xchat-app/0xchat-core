@@ -40,7 +40,10 @@ class ChatCoreManager {
       await EventCache.sharedInstance.loadAllEventsFromDB();
 
       // Initialize relay service
-      await Relays.sharedInstance.init(circleRelay: config.circleRelay);
+      await Relays.sharedInstance.init(
+        circleRelay: config.circleRelay,
+        circleConnectCallback: config.circleConnectCallback,
+      );
 
       // Initialize core components with configuration
       await _initCoreComponentsWithConfig(config);
