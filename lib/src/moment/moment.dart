@@ -94,7 +94,7 @@ class Moment {
         if (unCompletedRelays.isEmpty) {
           offlineMomentFinishCallBack?.call();
         }
-      });
+      }, closeSubscription: false);
     }
   }
 
