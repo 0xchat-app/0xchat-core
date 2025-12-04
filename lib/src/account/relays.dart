@@ -62,6 +62,7 @@ class Relays {
     connectGeneralRelays();
     connectDMRelays();
     connectInboxOutboxRelays();
+    connectSearchRelays();
   }
 
   Future<void> connectGeneralRelays() async {
@@ -103,6 +104,38 @@ class Relays {
     await Connect.sharedInstance.closeConnects(notInRelays, RelayKind.outbox);
     Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.inbox);
     Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.outbox);
+  }
+
+  Future<void> connectSearchRelays() async {
+    List<String> connectedSearchRelays =
+        Connect.sharedInstance.relays(relayKinds: [RelayKind.search]);
+    List<String> searchRelays = Account.sharedInstance.me?.searchRelayList ?? [];
+    
+    // Normalize relay URLs (remove trailing slash)
+    searchRelays = searchRelays.map((relay) {
+      return relay.endsWith('/') ? relay.substring(0, relay.length - 1) : relay;
+    }).toList();
+    
+    // Close search relays that are not in use
+    List<String> notInSearchRelays =
+        connectedSearchRelays.where((relay) => !searchRelays.contains(relay)).toList();
+    await Connect.sharedInstance.closeConnects(notInSearchRelays, RelayKind.search);
+    
+    // Connect the selected search relays
+    if (searchRelays.isNotEmpty) {
+      Connect.sharedInstance.connectRelays(searchRelays, relayKind: RelayKind.search);
+    } else {
+      // If no search relay is selected, connect all recommended search relays as default
+      if (recommendSearchRelays.isNotEmpty) {
+        List<String> defaultSearchRelays = recommendSearchRelays.map((relay) {
+          return relay.endsWith('/') ? relay.substring(0, relay.length - 1) : relay;
+        }).toList();
+        Connect.sharedInstance.connectRelays(defaultSearchRelays, relayKind: RelayKind.search);
+        // Also save them to user's search relay list
+        Account.sharedInstance.me?.searchRelayList = defaultSearchRelays;
+        Account.sharedInstance.syncMe();
+      }
+    }
   }
 
   Future<List<RelayDBISAR>?> _loadRelaysFromDB() async {

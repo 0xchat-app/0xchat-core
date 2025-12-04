@@ -723,31 +723,33 @@ extension Load on Moment {
     var notesFromDB = await searchNotesFromDB(keyword: keyword);
     var notesFromRelay = await _searchNotesFromRelay(keyword);
     var result = [...notesFromDB, ...notesFromRelay];
-    result.sort((a, b) => a.createAt.compareTo(b.createAt));
+    // Sort by createAt from new to old (descending)
+    result.sort((a, b) => b.createAt.compareTo(a.createAt));
     return result;
   }
 
   Future<List<NoteDBISAR>> _searchNotesFromRelay(String keyword) async {
     List<RelayDBISAR> searchRelayList = Account.sharedInstance.getMySearchRelayList();
     
-    // If no search relay is selected, use the first recommended one
+    // If no search relay is selected, use all recommended ones
     if (searchRelayList.isEmpty) {
       List<RelayDBISAR> recommendRelayList = Account.sharedInstance.getMyRecommendSearchRelaysList();
       if (recommendRelayList.isEmpty) {
         return [];
       }
-      // Auto-select the first recommended relay
-      String defaultRelay = recommendRelayList.first.url;
-      await Account.sharedInstance.setSearchRelay(defaultRelay);
+      // Auto-select all recommended relays
+      for (var relay in recommendRelayList) {
+        await Account.sharedInstance.addSearchRelay(relay.url);
+      }
       searchRelayList = Account.sharedInstance.getMySearchRelayList();
       if (searchRelayList.isEmpty) {
         return [];
       }
     }
 
-    String searchRelay = searchRelayList.first.url;
+    List<String> searchRelays = searchRelayList.map((r) => r.url).toList();
 
-    await Connect.sharedInstance.connectRelays([searchRelay], relayKind: RelayKind.search);
+    await Connect.sharedInstance.connectRelays(searchRelays, relayKind: RelayKind.search);
 
     Filter searchFilter = Nip50.encode(
       search: keyword,
@@ -760,7 +762,7 @@ extension Load on Moment {
 
     Connect.sharedInstance.addSubscription(
       [searchFilter],
-      relays: [searchRelay],
+      relays: searchRelays,
       relayKinds: [RelayKind.search],
       eventCallBack: (event, relay) async {
         if (event.kind == 1 && !result.containsKey(event.id)) {
@@ -775,9 +777,9 @@ extension Load on Moment {
             NoteDBISAR noteDB = NoteDBISAR.noteDBFromNote(note);
             await saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
             notes.add(noteDB);
+            // Remove noteId from event cache to avoid being cached for next search
+            EventCache.sharedInstance.cacheIds.remove(event.id);
           }
-          // Close the search relay connection after search
-          Connect.sharedInstance.closeConnects([searchRelay], RelayKind.search);
           if (!completer.isCompleted) {
             completer.complete(notes);
           }
@@ -788,7 +790,6 @@ extension Load on Moment {
     return completer.future.timeout(
       Duration(seconds: 10),
       onTimeout: () {
-        Connect.sharedInstance.closeConnects([searchRelay], RelayKind.search);
         return <NoteDBISAR>[];
       },
     );
