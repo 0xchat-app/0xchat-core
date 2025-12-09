@@ -386,7 +386,7 @@ extension MLSPrivateGroups on Groups {
     MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(createGroupResult));
 
     ///send welcome & invite members
-    sendWelcomeMessages(mlsGroup.serializedWelcomeMessage, mlsGroup.groupMembers, relays);
+    await sendWelcomeMessages(mlsGroup.serializedWelcomeMessage, mlsGroup.groupMembers, relays);
     GroupDBISAR groupDBISAR = GroupDBISAR(
         groupId: mlsGroup.nostrGroupData.nostrGroupId,
         owner: pubkey,
@@ -528,7 +528,7 @@ extension MLSPrivateGroups on Groups {
     Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
     await Connect.sharedInstance.connectRelays(Account.sharedInstance.getCurrentCircleRelay(), relayKind: RelayKind.circleRelay);
     Completer<OKEvent> completer = Completer<OKEvent>();
-    Connect.sharedInstance.sendEvent(groupEvent, sendCallBack: (ok, relay) {
+    Connect.sharedInstance.sendEvent(groupEvent, toRelays: Account.sharedInstance.getCurrentCircleRelay(), sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
         if (ok.status) {
           List<String> members =
@@ -547,7 +547,7 @@ extension MLSPrivateGroups on Groups {
     if (group.mlsGroupId == null) return OKEvent('', false, 'invalid mls group');
     await Connect.sharedInstance.connectRelays(Account.sharedInstance.getCurrentCircleRelay(), relayKind: RelayKind.circleRelay);
     Completer<OKEvent> completer = Completer<OKEvent>();
-    Connect.sharedInstance.sendEvent(groupEvent, sendCallBack: (ok, relay) {
+    Connect.sharedInstance.sendEvent(groupEvent, toRelays: Account.sharedInstance.getCurrentCircleRelay(), sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
         if (ok.status) {
           List<String> members =
