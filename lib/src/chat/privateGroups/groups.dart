@@ -427,7 +427,7 @@ class Groups {
         return await sendMessageEvent(groupDB.members, event);
       }
     } else {
-      return OKEvent(event.id, false, 'group not found');
+      return OKEvent(event.id, false, 'sendToGroup: group not found: $privateGroupId');
     }
   }
 
@@ -436,7 +436,7 @@ class Groups {
     if (groupDB != null) {
       return await sendMessageEvent([groupDB.owner], event);
     } else {
-      return OKEvent(event.id, false, 'group not found');
+      return OKEvent(event.id, false, 'sendToOwner: group not found: $groupId');
     }
   }
 
