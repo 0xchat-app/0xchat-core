@@ -284,6 +284,7 @@ class Connect {
     });
     
     // Clear all state
+    webSockets.clear(); // Explicitly clear webSockets (including relayKinds)
     sendsMap.clear();
     requestsMap.clear();
     auths.clear();
