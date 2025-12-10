@@ -18,7 +18,7 @@ typedef EOSECallBack = void Function(
     String requestId, OKEvent ok, String relay, List<String> unCompletedRelays);
 
 /// connect callback
-typedef ConnectStatusCallBack = void Function(String relay, int status, List<RelayKind> relayKinds);
+typedef ConnectStatusCallBack = void Function(String relay, ConnectStatus status, List<RelayKind> relayKinds);
 
 class Sends {
   String sendsId;
@@ -53,17 +53,23 @@ class AuthData {
   AuthData(this.challenge, this.eventId, this.resendDatas);
 }
 
+enum ConnectStatus {
+  connecting(0),
+  open(1),
+  closing(2),
+  closed(3);
+
+  final int value;
+  const ConnectStatus(this.value);
+}
+
 class ISocket {
   WebSocket? socket;
 
-  /// connecting = 0;
-  /// open = 1;
-  /// closing = 2;
-  /// closed = 3;
-  int connectStatus;
+  ConnectStatus status;
   List<RelayKind> relayKinds = [];
 
-  ISocket(this.socket, this.connectStatus, this.relayKinds);
+  ISocket(this.socket, this.status, this.relayKinds);
 }
 
 enum RelayKind {
@@ -126,8 +132,8 @@ class Connect {
 
   Future<void> resetConnection({bool force = true}) async {
     for (var relay in webSockets.keys) {
-      if (webSockets[relay]?.connectStatus != 3 && force) {
-        webSockets[relay]?.connectStatus = 3;
+      if (webSockets[relay]?.status != ConnectStatus.closed && force) {
+        webSockets[relay]?.status = ConnectStatus.closed;
         await webSockets[relay]?.socket?.close();
       }
       for (var relayKind in webSockets[relay]?.relayKinds ?? []) {
@@ -181,8 +187,8 @@ class Connect {
     }
   }
 
-  void _setConnectStatus(String relay, int status) {
-    webSockets[relay]?.connectStatus = status;
+  void _setConnectStatus(String relay, ConnectStatus status) {
+    webSockets[relay]?.status = status;
     for (var callBack in connectStatusListeners) {
       callBack(relay, status, webSockets[relay]?.relayKinds ?? []);
     }
@@ -203,7 +209,7 @@ class Connect {
   List<String> relays({List<RelayKind> relayKinds = const [RelayKind.general]}) {
     List<String> result = [];
     for (var relay in webSockets.keys) {
-      if (webSockets[relay]?.connectStatus == 1 &&
+      if (webSockets[relay]?.status == ConnectStatus.open &&
           webSockets[relay]!.relayKinds.any((e) => relayKinds.contains(e))) {
         result.add(relay);
       }
@@ -221,18 +227,18 @@ class Connect {
     }
     webSockets[relay]?.relayKinds = relayKinds;
     // connecting or open
-    if (webSockets[relay]?.connectStatus == 0 || webSockets[relay]?.connectStatus == 1) return;
+    if (webSockets[relay]?.status == ConnectStatus.connecting || webSockets[relay]?.status == ConnectStatus.open) return;
     LogUtils.v(() => "connecting... $relay");
-    webSockets[relay] = ISocket(null, 0, relayKinds);
+    webSockets[relay] = ISocket(null, ConnectStatus.connecting, relayKinds);
     try {
       WebSocket? socket;
       socket = await _connectWs(relay);
       if (socket != null) {
         socket.done.then((dynamic _) => _onDisconnected(relay, relayKind));
         _listenEvent(socket, relay, relayKind);
-        webSockets[relay] = ISocket(socket, 1, relayKinds);
+        webSockets[relay] = ISocket(socket, ConnectStatus.open, relayKinds);
         LogUtils.v(() => "$relay connection initialized");
-        _setConnectStatus(relay, 1);
+        _setConnectStatus(relay, ConnectStatus.open);
       }
     } catch (_) {
       _onDisconnected(relay, relayKind);
@@ -446,7 +452,7 @@ class Connect {
       for (var relay in toRelays) {
         if (webSockets.containsKey(relay)) {
           var socket = webSockets[relay]?.socket;
-          if (webSockets[relay]?.connectStatus == 1 && socket != null) {
+          if (webSockets[relay]?.status == ConnectStatus.open && socket != null) {
             socket.add(data);
           } else if (eventId != null) {
             _handleOk(OKEvent(eventId, false, 'not connect to relay'), relay);
@@ -461,7 +467,7 @@ class Connect {
       }
     } else {
       webSockets.forEach((url, socket) {
-        if (webSockets[url]?.connectStatus == 1 && socket.socket != null) {
+        if (webSockets[url]?.status == ConnectStatus.open && socket.socket != null) {
           socket.socket?.add(data);
         } else if (eventId != null) {
           _handleOk(OKEvent(eventId, false, 'not connect to relay'), url);
@@ -677,7 +683,7 @@ class Connect {
   }
 
   Future<void> _reConnectToRelay(String relay, RelayKind relayKind) async {
-    _setConnectStatus(relay, 3); // closed
+    _setConnectStatus(relay, ConnectStatus.connecting); // closed
     
     // Check if this relay is still managed (not closed)
     if (!webSockets.containsKey(relay)) {
@@ -713,11 +719,11 @@ class Connect {
 
   Future _connectWs(String relay) async {
     try {
-      _setConnectStatus(relay, 0); // connecting
+      _setConnectStatus(relay, ConnectStatus.connecting); // connecting
       return await _connectWsSetting(relay);
     } catch (e) {
       LogUtils.v(() => "Error! can not connect WS connectWs $e relay:$relay");
-      _setConnectStatus(relay, 3); // closed
+      _setConnectStatus(relay, ConnectStatus.closed); // closed
 
       List<RelayKind>? relayKinds = webSockets[relay]?.relayKinds;
       bool hasNonTempKind = relayKinds?.any((kind) => kind != RelayKind.temp) ?? false;
@@ -758,6 +764,6 @@ class Connect {
 
   Future<void> _onDisconnected(String relay, RelayKind relayKind) async {
     LogUtils.v(() => "_onDisconnected");
-    return await _reConnectToRelay(relay, relayKind);
+    return _reConnectToRelay(relay, relayKind);
   }
 }

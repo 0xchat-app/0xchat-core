@@ -485,7 +485,7 @@ class Contacts {
       List<String> userRelays = [...(dmRelays ?? []), ...(inboxRelays ?? [])];
       bool hasConnected = false;
       for (var relay in userRelays) {
-        if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
+        if (Connect.sharedInstance.webSockets[relay]?.status == ConnectStatus.open) {
           hasConnected = true;
           break;
         }
@@ -529,12 +529,12 @@ class Contacts {
     var relays = [...dmRelays, ...inboxRelays];
     if (relays.isEmpty) return true;
     for (var relay in relays) {
-      if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) return true;
+      if (Connect.sharedInstance.webSockets[relay]?.status == ConnectStatus.open) return true;
     }
     await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.temp);
     for (var relay in relays) {
-      int? status = Connect.sharedInstance.webSockets[relay]?.connectStatus;
-      if (status == 1 || status == 0) return true;
+      ConnectStatus? status = Connect.sharedInstance.webSockets[relay]?.status;
+      if (status == ConnectStatus.open || status == ConnectStatus.connecting) return true;
     }
     return false;
   }

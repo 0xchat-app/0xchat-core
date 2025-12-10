@@ -83,7 +83,7 @@ class RelayDB extends DBObject {
   }
 
   int? get connectStatus {
-    return Connect.sharedInstance.webSockets[url]?.connectStatus;
+    return Connect.sharedInstance.webSockets[url]?.status.value;
   }
 
   int getFriendMessageUntil(String relay) {

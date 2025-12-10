@@ -455,7 +455,7 @@ class Groups {
             ];
             bool hasConnected = false;
             for (var relay in relays) {
-              if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
+              if (Connect.sharedInstance.webSockets[relay]?.status == ConnectStatus.open) {
                 hasConnected = true;
                 break;
               }
@@ -463,7 +463,7 @@ class Groups {
             if (!hasConnected) {
               await Connect.sharedInstance.connectRelays(relays, relayKind: RelayKind.temp);
               for (var relay in relays) {
-                if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
+                if (Connect.sharedInstance.webSockets[relay]?.status == ConnectStatus.open) {
                   hasConnected = true;
                   break;
                 }

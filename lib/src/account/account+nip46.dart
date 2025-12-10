@@ -228,7 +228,7 @@ extension AccountNIP46 on Account {
     resultCompleters[id] = completer;
     bool hasConnected = false;
     for (var relay in currentRemoteConnection!.relays) {
-      if (Connect.sharedInstance.webSockets[relay]?.connectStatus == 1) {
+      if (Connect.sharedInstance.webSockets[relay]?.status == ConnectStatus.open) {
         hasConnected = true;
         break;
       }

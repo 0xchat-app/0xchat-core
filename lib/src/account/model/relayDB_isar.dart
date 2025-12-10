@@ -81,7 +81,7 @@ class RelayDBISAR {
 
   @ignore
   int? get connectStatus {
-    return Connect.sharedInstance.webSockets[url]?.connectStatus;
+    return Connect.sharedInstance.webSockets[url]?.status.value;
   }
 
   static RelayDBISAR fromMap(Map<String, Object?> map) {

@@ -63,7 +63,7 @@ class NotificationHelper {
 
   // update notification
   Future<OKEvent> updateNotificationDeviceId(String deviceId, [int retryTimes = 1]) async {
-    if (Connect.sharedInstance.webSockets[serverRelay]?.connectStatus != 1) {
+    if (Connect.sharedInstance.webSockets[serverRelay]?.status != ConnectStatus.open) {
       if (retryTimes > 0) {
         await Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
         return updateNotificationDeviceId(deviceId, retryTimes - 1);
