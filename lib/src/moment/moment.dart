@@ -28,6 +28,10 @@ class Moment {
   int latestNoteTime = 0;
   int latestNotificationTime = 0;
   int limit = 50;
+  
+  /// Current filter type: 0=global, 1=contacts, 2=reacted, 3=private
+  /// Used to automatically determine authors when authors parameter is null
+  int currentFilterType = 1; // Default to contacts
 
   Future<void> init() async {
     privkey = Account.sharedInstance.currentPrivkey;
@@ -41,8 +45,22 @@ class Moment {
   }
 
   /// Subscribe moments.
-  /// [authors] If null, no authors filter (global feed). If provided, use as-is.
-  Future<void> updateSubscriptions({String? relay, List<String>? relays, List<String>? authors}) async {
+  /// [filterType] Required parameter to determine authors:
+  ///   - contacts (1): use contacts + self
+  ///   - global (0): null (global feed)
+  ///   - other types: null
+  Future<void> updateSubscriptions({required int filterType, String? relay, List<String>? relays}) async {
+    // Update currentFilterType for reference
+    currentFilterType = filterType;
+    
+    // Determine authors based on filterType
+    List<String>? finalAuthors;
+    if (filterType == 1) {
+      // contacts type: automatically add contacts + self
+      finalAuthors = Contacts.sharedInstance.allContacts.keys.toList();
+      finalAuthors.add(pubkey);
+    }
+    
     // Close all old subscriptions first when switching filter types
     closeSubscriptions();
 
@@ -55,13 +73,15 @@ class Moment {
     } else {
       targetRelays = Connect.sharedInstance.relays();
     }
-    if (targetRelays.isEmpty) return;
+    if (targetRelays.isEmpty) {
+      return;
+    }
 
     for (String relayURL in targetRelays) {
       int momentUntil = Relays.sharedInstance.getMomentUntil(relayURL);
       Filter f1 = Filter(
           kinds: [1, 6],
-          authors: authors,
+          authors: finalAuthors,
           since: momentUntil,
           limit: limit);
       Filter f2 = Filter(
@@ -84,7 +104,6 @@ class Moment {
           handleReactionEvent(event, relay, false);
           break;
         default:
-          LogUtils.v(() => 'moment unhandled message ${event.toJson()}');
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
