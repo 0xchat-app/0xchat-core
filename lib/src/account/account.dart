@@ -202,18 +202,18 @@ class Account {
     return null;
   }
 
-  Future<UserDBISAR?> loginWithPriKey(String privkey) async {
+  Future<UserDBISAR?> loginWithPriKey(String privkey, [bool needEncryptedPrivKey = true]) async {
     String pubkey = Keychain.getPublicKey(privkey);
     UserDBISAR? db = await _searchUserFromDB(pubkey);
 
     /// insert a new account
     db ??= UserDBISAR();
     db.pubKey = pubkey;
-    if (db.defaultPassword == null || db.defaultPassword!.isEmpty) {
+    if (needEncryptedPrivKey && db.defaultPassword == null || db.defaultPassword!.isEmpty) {
       db.defaultPassword = generateStrongPassword(16);
+      Uint8List enPrivkey = encryptPrivateKey(hexToBytes(privkey), db.defaultPassword!);
+      db.encryptedPrivKey = bytesToHex(enPrivkey);
     }
-    Uint8List enPrivkey = encryptPrivateKey(hexToBytes(privkey), db.defaultPassword!);
-    db.encryptedPrivKey = bytesToHex(enPrivkey);
     await saveUserToDB(db);
     me = db;
     currentPrivkey = privkey;
