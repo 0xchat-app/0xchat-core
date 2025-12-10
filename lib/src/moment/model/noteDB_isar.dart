@@ -14,7 +14,8 @@ extension NoteDBISARExtensions on NoteDBISAR {
     ..repostEventIds = repostEventIds?.toList()
     ..quoteRepostEventIds = quoteRepostEventIds?.toList()
     ..reactionEventIds = reactionEventIds?.toList()
-    ..zapEventIds = zapEventIds?.toList();
+    ..zapEventIds = zapEventIds?.toList()
+    ..relayList = relayList?.toList();
 }
 
 @collection
@@ -77,6 +78,9 @@ class NoteDBISAR {
   List<String>? reactionEventIds;
   List<String>? zapEventIds;
 
+  /// relay list that this note comes from
+  List<String>? relayList;
+
   String? lastUpdatedTimeString;
 
   NoteDBISAR({
@@ -120,6 +124,7 @@ class NoteDBISAR {
     this.quoteRepostEventIds,
     this.reactionEventIds,
     this.zapEventIds,
+    this.relayList,
     this.lastUpdatedTimeString,
   });
 
@@ -309,6 +314,7 @@ NoteDBISAR _noteInfoFromMap(Map<String, dynamic> map) {
     reactionEventIds:
         NoteDBISAR.decodeStringList(map['reactionEventIds']?.toString()),
     zapEventIds: NoteDBISAR.decodeStringList(map['zapEventIds']?.toString()),
+    relayList: NoteDBISAR.decodeStringList(map['relayList']?.toString()),
     lastUpdatedTimeString: map['lastUpdatedTime'].toString(),
   );
 }

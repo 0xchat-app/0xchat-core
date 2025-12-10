@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:isar/isar.dart';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
+import 'package:sqflite_sqlcipher/sqlite_api.dart';
 
 class EventCache {
   /// singleton
@@ -59,7 +60,20 @@ class EventCache {
   }
 
   Future<void> receiveEvent(Event event, String relay) async {
-    if (cacheIds.contains(event.id)) return;
+    // If event already exists in cache and is kind 1 or 6, update NoteDBISAR relayList
+    if (cacheIds.contains(event.id)) {
+      if (event.kind == 1 || event.kind == 6) {
+        NoteDBISAR? noteDB = await Moment.sharedInstance.loadNoteFromDBWithNoteId(event.id);
+        if (noteDB != null) {
+          noteDB.relayList ??= [];
+          if (!noteDB.relayList!.contains(relay)) {
+            noteDB.relayList!.add(relay);
+            await Moment.sharedInstance.saveNoteToDB(noteDB, ConflictAlgorithm.replace);
+          }
+        }
+      }
+      return;
+    }
     cacheIds.add(event.id);
     if (!kinds.contains(event.kind)) return;
     EventDBISAR? eventDB =

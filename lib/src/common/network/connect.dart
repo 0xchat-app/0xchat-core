@@ -383,21 +383,36 @@ class Connect {
 
   Future closeRequests(String requestId, {String? relay}) async {
     Iterable<String> requestsMapKeys = List<String>.from(requestsMap.keys);
+
+    // Find all entries with matching requestId (there may be multiple entries, one per relay)
+    List<MapEntry<String, Requests>> matchingEntries = [];
     for (var key in requestsMapKeys) {
       var requests = requestsMap[key];
       if (requests!.requestId == requestId) {
-        if (relay != null) {
-          if (requests.subscriptions[relay] != null) {
-            await _closeSubscription(requests.subscriptions[relay]!, relay);
-          }
-        } else {
-          for (var relay in relays()) {
-            if (requests.subscriptions[relay] != null) {
-              await _closeSubscription(requests.subscriptions[relay]!, relay);
-            }
-          }
+        matchingEntries.add(MapEntry(key, requests));
+      }
+    }
+    
+    if (matchingEntries.isEmpty) {
+      return;
+    }
+    
+    // Close subscriptions for all matching entries
+    for (var entry in matchingEntries) {
+      var requests = entry.value;
+      
+      if (relay != null) {
+        // Close specific relay subscription if it exists in this entry
+        if (requests.subscriptions.containsKey(relay) && requests.subscriptions[relay] != null) {
+          await _closeSubscription(requests.subscriptions[relay]!, relay);
         }
-        return;
+      } else {
+        // Close all subscriptions for this entry
+        for (var subscriptionRelay in requests.subscriptions.keys) {
+          if (requests.subscriptions[subscriptionRelay] != null) {
+            await _closeSubscription(requests.subscriptions[subscriptionRelay]!, subscriptionRelay);
+          } 
+        }
       }
     }
   }

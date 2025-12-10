@@ -136,6 +136,15 @@ class DBISAR {
     return Map.from(_buffers);
   }
 
+  /// Force flush all buffered objects to database immediately
+  Future<void> flushBuffers() async {
+    if (_timer != null) {
+      _timer?.cancel();
+      _timer = null;
+    }
+    await _putAll();
+  }
+
   Future<void> saveObjectsToDB<T>(List<T> objects) async {
     for (var object in objects) {
       await saveToDB(object);

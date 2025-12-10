@@ -40,62 +40,62 @@ class Moment {
     }
   }
 
-  Future<void> updateSubscriptions({String? relay}) async {
-    closeSubscriptions(relay: relay);
+  /// Subscribe moments.
+  /// [authors] If null, no authors filter (global feed). If provided, use as-is.
+  Future<void> updateSubscriptions({String? relay, List<String>? relays, List<String>? authors}) async {
+    // Close all old subscriptions first when switching filter types
+    closeSubscriptions();
 
-    List<String> authors = Contacts.sharedInstance.allContacts.keys.toList();
-    authors.add(pubkey); // add self
-    if (authors.isNotEmpty) {
-      Map<String, List<Filter>> subscriptions = {};
-      if (relay == null) {
-        for (String relayURL in Connect.sharedInstance.relays()) {
-          int momentUntil = Relays.sharedInstance.getMomentUntil(relayURL);
-          Filter f1 = Filter(
-              authors: authors,
-              kinds: [1, 6],
-              since: momentUntil,
-              limit: limit);
-          Filter f2 = Filter(
-              authors: [pubkey], kinds: [7], since: momentUntil, limit: limit);
-          subscriptions[relayURL] = [f1, f2];
-        }
-      } else {
-        int momentUntil = Relays.sharedInstance.getMomentUntil(relay);
-        Filter f1 = Filter(
-            authors: authors, kinds: [1, 6], since: momentUntil, limit: limit);
-        Filter f2 = Filter(
-            authors: [pubkey], kinds: [7], since: momentUntil, limit: limit);
-        subscriptions[relay] = [f1, f2];
-      }
-
-      notesSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
-          eventCallBack: (event, relay) async {
-        updateMomentTime(event.createdAt, relay);
-        if (Contacts.sharedInstance.inBlockList(event.pubkey)) return;
-        switch (event.kind) {
-          case 1:
-            handleNoteEvent(event, relay, false);
-            break;
-          case 6:
-            handleRepostsEvent(event, relay, false);
-            break;
-          case 7:
-            handleReactionEvent(event, relay, false);
-            break;
-          default:
-            LogUtils.v(() => 'moment unhandled message ${event.toJson()}');
-            break;
-        }
-      }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
-        offlineMomentFinish[relay] = true;
-        if (ok.status) {
-          updateMomentTime(currentUnixTimestampSeconds() - 1, relay);
-        }
-        if (unCompletedRelays.isEmpty) {
-          offlineMomentFinishCallBack?.call();
-        }
-      }, closeSubscription: false);
+    Map<String, List<Filter>> subscriptions = {};
+    List<String> targetRelays = [];
+    if (relays != null && relays.isNotEmpty) {
+      targetRelays = relays;
+    } else if (relay != null) {
+      targetRelays = [relay];
+    } else {
+      targetRelays = Connect.sharedInstance.relays();
     }
+    if (targetRelays.isEmpty) return;
+
+    for (String relayURL in targetRelays) {
+      int momentUntil = Relays.sharedInstance.getMomentUntil(relayURL);
+      Filter f1 = Filter(
+          kinds: [1, 6],
+          authors: authors,
+          since: momentUntil,
+          limit: limit);
+      Filter f2 = Filter(
+          authors: [pubkey], kinds: [7], since: momentUntil, limit: limit);
+      subscriptions[relayURL] = [f1, f2];
+    }
+
+    notesSubscription = Connect.sharedInstance.addSubscriptions(subscriptions,
+        eventCallBack: (event, relay) async {
+      updateMomentTime(event.createdAt, relay);
+      if (Contacts.sharedInstance.inBlockList(event.pubkey)) return;
+      switch (event.kind) {
+        case 1:
+          handleNoteEvent(event, relay, false);
+          break;
+        case 6:
+          handleRepostsEvent(event, relay, false);
+          break;
+        case 7:
+          handleReactionEvent(event, relay, false);
+          break;
+        default:
+          LogUtils.v(() => 'moment unhandled message ${event.toJson()}');
+          break;
+      }
+    }, eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+      offlineMomentFinish[relay] = true;
+      if (ok.status) {
+        updateMomentTime(currentUnixTimestampSeconds() - 1, relay);
+      }
+      if (unCompletedRelays.isEmpty) {
+        offlineMomentFinishCallBack?.call();
+      }
+    }, closeSubscription: false);
   }
 
   void updateMomentTime(int eventTime, String relay) {

@@ -257,18 +257,23 @@ const UserDBISARSchema = CollectionSchema(
       name: r'remoteSignerURI',
       type: IsarType.string,
     ),
-    r'settings': PropertySchema(
+    r'searchRelayList': PropertySchema(
       id: 48,
+      name: r'searchRelayList',
+      type: IsarType.stringList,
+    ),
+    r'settings': PropertySchema(
+      id: 49,
       name: r'settings',
       type: IsarType.string,
     ),
     r'toAliasPrivkey': PropertySchema(
-      id: 49,
+      id: 50,
       name: r'toAliasPrivkey',
       type: IsarType.string,
     ),
     r'toAliasPubkey': PropertySchema(
-      id: 50,
+      id: 51,
       name: r'toAliasPubkey',
       type: IsarType.string,
     )
@@ -609,6 +614,18 @@ int _userDBISAREstimateSize(
     }
   }
   {
+    final list = object.searchRelayList;
+    if (list != null) {
+      bytesCount += 3 + list.length * 3;
+      {
+        for (var i = 0; i < list.length; i++) {
+          final value = list[i];
+          bytesCount += value.length * 3;
+        }
+      }
+    }
+  }
+  {
     final value = object.settings;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -683,9 +700,10 @@ void _userDBISARSerialize(
   writer.writeStringList(offsets[45], object.relayList);
   writer.writeString(offsets[46], object.remotePubkey);
   writer.writeString(offsets[47], object.remoteSignerURI);
-  writer.writeString(offsets[48], object.settings);
-  writer.writeString(offsets[49], object.toAliasPrivkey);
-  writer.writeString(offsets[50], object.toAliasPubkey);
+  writer.writeStringList(offsets[48], object.searchRelayList);
+  writer.writeString(offsets[49], object.settings);
+  writer.writeString(offsets[50], object.toAliasPrivkey);
+  writer.writeString(offsets[51], object.toAliasPubkey);
 }
 
 UserDBISAR _userDBISARDeserialize(
@@ -743,9 +761,10 @@ UserDBISAR _userDBISARDeserialize(
     relayList: reader.readStringList(offsets[45]),
     remotePubkey: reader.readStringOrNull(offsets[46]),
     remoteSignerURI: reader.readStringOrNull(offsets[47]),
-    settings: reader.readStringOrNull(offsets[48]),
-    toAliasPrivkey: reader.readStringOrNull(offsets[49]),
-    toAliasPubkey: reader.readStringOrNull(offsets[50]),
+    searchRelayList: reader.readStringList(offsets[48]),
+    settings: reader.readStringOrNull(offsets[49]),
+    toAliasPrivkey: reader.readStringOrNull(offsets[50]),
+    toAliasPubkey: reader.readStringOrNull(offsets[51]),
   );
   object.id = id;
   return object;
@@ -855,10 +874,12 @@ P _userDBISARDeserializeProp<P>(
     case 47:
       return (reader.readStringOrNull(offset)) as P;
     case 48:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringList(offset)) as P;
     case 49:
       return (reader.readStringOrNull(offset)) as P;
     case 50:
+      return (reader.readStringOrNull(offset)) as P;
+    case 51:
       return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -8546,6 +8567,251 @@ extension UserDBISARQueryFilter
     });
   }
 
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'searchRelayList',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'searchRelayList',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'searchRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'searchRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'searchRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'searchRelayList',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'searchRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'searchRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListElementContains(String value,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'searchRelayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListElementMatches(String pattern,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'searchRelayList',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'searchRelayList',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'searchRelayList',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'searchRelayList',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'searchRelayList',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'searchRelayList',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'searchRelayList',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'searchRelayList',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition>
+      searchRelayListLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'searchRelayList',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
   QueryBuilder<UserDBISAR, UserDBISAR, QAfterFilterCondition> settingsIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -10295,6 +10561,12 @@ extension UserDBISARQueryWhereDistinct
     });
   }
 
+  QueryBuilder<UserDBISAR, UserDBISAR, QDistinct> distinctBySearchRelayList() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'searchRelayList');
+    });
+  }
+
   QueryBuilder<UserDBISAR, UserDBISAR, QDistinct> distinctBySettings(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -10640,6 +10912,13 @@ extension UserDBISARQueryProperty
       remoteSignerURIProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'remoteSignerURI');
+    });
+  }
+
+  QueryBuilder<UserDBISAR, List<String>?, QQueryOperations>
+      searchRelayListProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'searchRelayList');
     });
   }
 

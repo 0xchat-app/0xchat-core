@@ -142,88 +142,93 @@ const NoteDBISARSchema = CollectionSchema(
       name: r'read',
       type: IsarType.bool,
     ),
-    r'reply': PropertySchema(
+    r'relayList': PropertySchema(
       id: 25,
+      name: r'relayList',
+      type: IsarType.stringList,
+    ),
+    r'reply': PropertySchema(
+      id: 26,
       name: r'reply',
       type: IsarType.string,
     ),
     r'replyCount': PropertySchema(
-      id: 26,
+      id: 27,
       name: r'replyCount',
       type: IsarType.long,
     ),
     r'replyCountByMe': PropertySchema(
-      id: 27,
+      id: 28,
       name: r'replyCountByMe',
       type: IsarType.long,
     ),
     r'replyEventIds': PropertySchema(
-      id: 28,
+      id: 29,
       name: r'replyEventIds',
       type: IsarType.stringList,
     ),
     r'replyRelay': PropertySchema(
-      id: 29,
+      id: 30,
       name: r'replyRelay',
       type: IsarType.string,
     ),
     r'repostCount': PropertySchema(
-      id: 30,
+      id: 31,
       name: r'repostCount',
       type: IsarType.long,
     ),
     r'repostCountByMe': PropertySchema(
-      id: 31,
+      id: 32,
       name: r'repostCountByMe',
       type: IsarType.long,
     ),
     r'repostEventIds': PropertySchema(
-      id: 32,
+      id: 33,
       name: r'repostEventIds',
       type: IsarType.stringList,
     ),
     r'repostId': PropertySchema(
-      id: 33,
+      id: 34,
       name: r'repostId',
       type: IsarType.string,
     ),
     r'root': PropertySchema(
-      id: 34,
+      id: 35,
       name: r'root',
       type: IsarType.string,
     ),
     r'rootRelay': PropertySchema(
-      id: 35,
+      id: 36,
       name: r'rootRelay',
       type: IsarType.string,
     ),
     r'warning': PropertySchema(
-      id: 36,
+      id: 37,
       name: r'warning',
       type: IsarType.string,
     ),
     r'zapAmount': PropertySchema(
-      id: 37,
+      id: 38,
       name: r'zapAmount',
       type: IsarType.long,
     ),
     r'zapAmountByMe': PropertySchema(
-      id: 38,
+      id: 39,
       name: r'zapAmountByMe',
       type: IsarType.long,
     ),
     r'zapCount': PropertySchema(
-      id: 39,
+      id: 40,
       name: r'zapCount',
       type: IsarType.long,
     ),
     r'zapCountByMe': PropertySchema(
-      id: 40,
+      id: 41,
       name: r'zapCountByMe',
       type: IsarType.long,
     ),
     r'zapEventIds': PropertySchema(
-      id: 41,
+      id: 42,
       name: r'zapEventIds',
       type: IsarType.stringList,
     )
@@ -370,6 +375,18 @@ int _noteDBISAREstimateSize(
     }
   }
   {
+    final list = object.relayList;
+    if (list != null) {
+      bytesCount += 3 + list.length * 3;
+      {
+        for (var i = 0; i < list.length; i++) {
+          final value = list[i];
+          bytesCount += value.length * 3;
+        }
+      }
+    }
+  }
+  {
     final value = object.reply;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -475,23 +492,24 @@ void _noteDBISARSerialize(
   writer.writeLong(offsets[22], object.reactionCountByMe);
   writer.writeStringList(offsets[23], object.reactionEventIds);
   writer.writeBool(offsets[24], object.read);
-  writer.writeString(offsets[25], object.reply);
-  writer.writeLong(offsets[26], object.replyCount);
-  writer.writeLong(offsets[27], object.replyCountByMe);
-  writer.writeStringList(offsets[28], object.replyEventIds);
-  writer.writeString(offsets[29], object.replyRelay);
-  writer.writeLong(offsets[30], object.repostCount);
-  writer.writeLong(offsets[31], object.repostCountByMe);
-  writer.writeStringList(offsets[32], object.repostEventIds);
-  writer.writeString(offsets[33], object.repostId);
-  writer.writeString(offsets[34], object.root);
-  writer.writeString(offsets[35], object.rootRelay);
-  writer.writeString(offsets[36], object.warning);
-  writer.writeLong(offsets[37], object.zapAmount);
-  writer.writeLong(offsets[38], object.zapAmountByMe);
-  writer.writeLong(offsets[39], object.zapCount);
-  writer.writeLong(offsets[40], object.zapCountByMe);
-  writer.writeStringList(offsets[41], object.zapEventIds);
+  writer.writeStringList(offsets[25], object.relayList);
+  writer.writeString(offsets[26], object.reply);
+  writer.writeLong(offsets[27], object.replyCount);
+  writer.writeLong(offsets[28], object.replyCountByMe);
+  writer.writeStringList(offsets[29], object.replyEventIds);
+  writer.writeString(offsets[30], object.replyRelay);
+  writer.writeLong(offsets[31], object.repostCount);
+  writer.writeLong(offsets[32], object.repostCountByMe);
+  writer.writeStringList(offsets[33], object.repostEventIds);
+  writer.writeString(offsets[34], object.repostId);
+  writer.writeString(offsets[35], object.root);
+  writer.writeString(offsets[36], object.rootRelay);
+  writer.writeString(offsets[37], object.warning);
+  writer.writeLong(offsets[38], object.zapAmount);
+  writer.writeLong(offsets[39], object.zapAmountByMe);
+  writer.writeLong(offsets[40], object.zapCount);
+  writer.writeLong(offsets[41], object.zapCountByMe);
+  writer.writeStringList(offsets[42], object.zapEventIds);
 }
 
 NoteDBISAR _noteDBISARDeserialize(
@@ -525,23 +543,24 @@ NoteDBISAR _noteDBISARDeserialize(
     reactionCountByMe: reader.readLongOrNull(offsets[22]) ?? 0,
     reactionEventIds: reader.readStringList(offsets[23]),
     read: reader.readBoolOrNull(offsets[24]) ?? false,
-    reply: reader.readStringOrNull(offsets[25]),
-    replyCount: reader.readLongOrNull(offsets[26]) ?? 0,
-    replyCountByMe: reader.readLongOrNull(offsets[27]) ?? 0,
-    replyEventIds: reader.readStringList(offsets[28]),
-    replyRelay: reader.readStringOrNull(offsets[29]),
-    repostCount: reader.readLongOrNull(offsets[30]) ?? 0,
-    repostCountByMe: reader.readLongOrNull(offsets[31]) ?? 0,
-    repostEventIds: reader.readStringList(offsets[32]),
-    repostId: reader.readStringOrNull(offsets[33]),
-    root: reader.readStringOrNull(offsets[34]),
-    rootRelay: reader.readStringOrNull(offsets[35]),
-    warning: reader.readStringOrNull(offsets[36]),
-    zapAmount: reader.readLongOrNull(offsets[37]) ?? 0,
-    zapAmountByMe: reader.readLongOrNull(offsets[38]) ?? 0,
-    zapCount: reader.readLongOrNull(offsets[39]) ?? 0,
-    zapCountByMe: reader.readLongOrNull(offsets[40]) ?? 0,
-    zapEventIds: reader.readStringList(offsets[41]),
+    relayList: reader.readStringList(offsets[25]),
+    reply: reader.readStringOrNull(offsets[26]),
+    replyCount: reader.readLongOrNull(offsets[27]) ?? 0,
+    replyCountByMe: reader.readLongOrNull(offsets[28]) ?? 0,
+    replyEventIds: reader.readStringList(offsets[29]),
+    replyRelay: reader.readStringOrNull(offsets[30]),
+    repostCount: reader.readLongOrNull(offsets[31]) ?? 0,
+    repostCountByMe: reader.readLongOrNull(offsets[32]) ?? 0,
+    repostEventIds: reader.readStringList(offsets[33]),
+    repostId: reader.readStringOrNull(offsets[34]),
+    root: reader.readStringOrNull(offsets[35]),
+    rootRelay: reader.readStringOrNull(offsets[36]),
+    warning: reader.readStringOrNull(offsets[37]),
+    zapAmount: reader.readLongOrNull(offsets[38]) ?? 0,
+    zapAmountByMe: reader.readLongOrNull(offsets[39]) ?? 0,
+    zapCount: reader.readLongOrNull(offsets[40]) ?? 0,
+    zapCountByMe: reader.readLongOrNull(offsets[41]) ?? 0,
+    zapEventIds: reader.readStringList(offsets[42]),
   );
   object.id = id;
   return object;
@@ -605,23 +624,23 @@ P _noteDBISARDeserializeProp<P>(
     case 24:
       return (reader.readBoolOrNull(offset) ?? false) as P;
     case 25:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringList(offset)) as P;
     case 26:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 27:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 28:
-      return (reader.readStringList(offset)) as P;
-    case 29:
-      return (reader.readStringOrNull(offset)) as P;
-    case 30:
       return (reader.readLongOrNull(offset) ?? 0) as P;
+    case 29:
+      return (reader.readStringList(offset)) as P;
+    case 30:
+      return (reader.readStringOrNull(offset)) as P;
     case 31:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 32:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 33:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readStringList(offset)) as P;
     case 34:
       return (reader.readStringOrNull(offset)) as P;
     case 35:
@@ -629,7 +648,7 @@ P _noteDBISARDeserializeProp<P>(
     case 36:
       return (reader.readStringOrNull(offset)) as P;
     case 37:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 38:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 39:
@@ -637,6 +656,8 @@ P _noteDBISARDeserializeProp<P>(
     case 40:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 41:
+      return (reader.readLongOrNull(offset) ?? 0) as P;
+    case 42:
       return (reader.readStringList(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -4142,6 +4163,249 @@ extension NoteDBISARQueryFilter
     });
   }
 
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'relayList',
+      ));
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'relayList',
+      ));
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'relayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'relayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'relayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'relayList',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'relayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'relayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'relayList',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListElementMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'relayList',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'relayList',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'relayList',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'relayList',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'relayList',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'relayList',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'relayList',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'relayList',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition>
+      relayListLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'relayList',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
   QueryBuilder<NoteDBISAR, NoteDBISAR, QAfterFilterCondition> replyIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -7243,6 +7507,12 @@ extension NoteDBISARQueryWhereDistinct
     });
   }
 
+  QueryBuilder<NoteDBISAR, NoteDBISAR, QDistinct> distinctByRelayList() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'relayList');
+    });
+  }
+
   QueryBuilder<NoteDBISAR, NoteDBISAR, QDistinct> distinctByReply(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -7511,6 +7781,13 @@ extension NoteDBISARQueryProperty
   QueryBuilder<NoteDBISAR, bool, QQueryOperations> readProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'read');
+    });
+  }
+
+  QueryBuilder<NoteDBISAR, List<String>?, QQueryOperations>
+      relayListProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'relayList');
     });
   }
 

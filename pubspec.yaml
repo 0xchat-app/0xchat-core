@@ -11,6 +11,7 @@ dev_dependencies:
   isar_generator: ^3.1.0+1
   lints: ^2.0.0
   test: ^1.16.0
+  watcher: ^1.1.0
 
 dependencies:
   flutter:
