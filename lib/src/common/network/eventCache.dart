@@ -63,6 +63,7 @@ class EventCache {
     if (event.kind == 1 || event.kind == 6) {
         if (Moment.sharedInstance.currentFilterType == 0) {
           return;
+        }
     }
     if (cacheIds.contains(event.id)) {
       return;
