@@ -24,8 +24,9 @@ extension Load on Moment {
 
   Future<List<NoteDBISAR>?> loadAllNotesFromDB(
       {int limit = 50, int? until, bool? private, List<String>? relayList}) async {
-    until ??= currentUnixTimestampSeconds() + 1;
-    List<NoteDBISAR>? notes = await searchNotesFromDB(
+    // If until is null, don't set a default - this means we want all notes (for initial load)
+    // Only set until if it's explicitly provided (for pagination)
+    List<NoteDBISAR> notes = await searchNotesFromDB(
         until: until, limit: limit, private: private, relayList: relayList);
     for (var note in notes) {
       notesCache[note.noteId] = note;
@@ -143,9 +144,9 @@ extension Load on Moment {
     if (!notesCache.containsKey(noteDB.noteId) || conflictAlgorithm != ConflictAlgorithm.ignore) {
       notesCache[noteDB.noteId] = noteDB;
     }
-    if(currentFilterType != 0) {
-      await DBISAR.sharedInstance.saveToDB(noteDB);
-    }
+    // Always save to DB, regardless of filterType
+    // The filterType only affects which subscriptions are active, not which notes are saved
+    await DBISAR.sharedInstance.saveToDB(noteDB);
     notesCache[noteDB.noteId] = noteDB;
   }
 
@@ -505,48 +506,61 @@ extension Load on Moment {
   ) {
     final Map<Type, List<dynamic>> buffers = DBISAR.sharedInstance.getBuffers();
     List<NoteDBISAR> result = [];
-    for (NoteDBISAR noteDB in buffers[NoteDBISAR]?.toList() ?? []) {
-      bool query = true;
-      if (query && noteId != null) {
-        query = noteDB.noteId == noteId;
+    Set<String> addedNoteIds = {}; // Track added note IDs to avoid duplicates
+    // Helper function to check if a note matches the query criteria
+    bool matchesQuery(NoteDBISAR noteDB) {
+      if (noteId != null && noteDB.noteId != noteId) return false;
+      if (groupId != null && groupId.isNotEmpty && noteDB.groupId != groupId) return false;
+      if (authors != null && !authors.any((author) => noteDB.author == author)) return false;
+      if (root != null && noteDB.root != root) return false;
+      if (reply != null && noteDB.reply != reply) return false;
+      if (repostId != null && noteDB.repostId != repostId) return false;
+      if (quoteRepostId != null && noteDB.quoteRepostId != quoteRepostId) return false;
+      if (reactedId != null && noteDB.reactedId != reactedId) return false;
+      if (isReacted != null) {
+        if (isReacted ? noteDB.reactedId?.isNotEmpty != true : noteDB.reactedId?.isEmpty != true) return false;
       }
-      if (query && groupId != null && groupId.isNotEmpty) {
-        query = noteDB.groupId == groupId;
+      if (private != null && noteDB.private != private) return false;
+      if (until != null && noteDB.createAt >= until) {
+        return false;
       }
-      if (query && authors != null) {
-        query = authors.any((author) => noteDB.author == author);
+      if (relayList != null && relayList.isNotEmpty) {
+        if (noteDB.relayList == null || noteDB.relayList!.isEmpty) {
+          return false;
+        }
+        if (!relayList.any((relay) => noteDB.relayList!.contains(relay))) {
+          return false;
+        }
       }
-      if (query && root != null) {
-        query = noteDB.root == root;
-      }
-      if (query && reply != null) {
-        query = noteDB.reply == reply;
-      }
-      if (query && repostId != null) {
-        query = noteDB.repostId == repostId;
-      }
-      if (query && quoteRepostId != null) {
-        query = noteDB.quoteRepostId == quoteRepostId;
-      }
-      if (query && reactedId != null) {
-        query = noteDB.reactedId == reactedId;
-      }
-      if (query && isReacted != null) {
-        query =
-            isReacted ? noteDB.reactedId?.isNotEmpty == true : noteDB.reactedId?.isEmpty == true;
-      }
-      if (query && private != null) {
-        query = noteDB.private == private;
-      }
-      if (query && until != null) {
-        query = noteDB.createAt < until;
-      }
-      if (query && relayList != null && relayList.isNotEmpty) {
-        query = noteDB.relayList != null && 
-                relayList.any((relay) => noteDB.relayList!.contains(relay));
-      }
-      if (query) result.add(noteDB);
+      return true;
     }
+    
+    // Search in buffers
+    for (NoteDBISAR noteDB in buffers[NoteDBISAR]?.toList() ?? []) {
+      if (matchesQuery(noteDB) && !addedNoteIds.contains(noteDB.noteId)) {
+        result.add(noteDB);
+        addedNoteIds.add(noteDB.noteId);
+        if (limit != null && result.length >= limit) break;
+      }
+    }
+    
+    // Search in notesCache
+    // First, collect all matching notes, then sort by createAt descending
+    List<NoteDBISAR> matchingNotes = [];
+    for (NoteDBISAR noteDB in notesCache.values) {
+      if (matchesQuery(noteDB) && !addedNoteIds.contains(noteDB.noteId)) {
+        matchingNotes.add(noteDB);
+        addedNoteIds.add(noteDB.noteId);
+      }
+    }
+    // Sort by createAt descending (newest first)
+    matchingNotes.sort((a, b) => b.createAt.compareTo(a.createAt));
+    // Add to result up to limit
+    for (NoteDBISAR noteDB in matchingNotes) {
+      result.add(noteDB);
+      if (limit != null && result.length >= limit) break;
+    }
+    
     return result;
   }
 
@@ -611,20 +625,36 @@ extension Load on Moment {
     }
     List<NoteDBISAR> result = searchNotesFromCache(noteId, groupId, authors, root, reply, repostId,
         quoteRepostId, reactedId, isReacted, private, until, limit, relayList);
+    
+    Set<String> resultNoteIds = result.map((n) => n.noteId).toSet();
     if (limit != null) {
       final searchResult =
           await queryBuilder.idBetween(0, Isar.maxId).sortByCreateAtDesc().limit(limit).findAll();
       for (NoteDBISAR note in searchResult) {
-        note = note.withGrowableLevels();
-        result.add(note);
+        if (!resultNoteIds.contains(note.noteId)) {
+          note = note.withGrowableLevels();
+          result.add(note);
+          resultNoteIds.add(note.noteId);
+          if (result.length >= limit) break;
+        }
+      }
+      // Sort by createAt descending
+      result.sort((a, b) => b.createAt.compareTo(a.createAt));
+      if (result.length > limit) {
+        result = result.take(limit).toList();
       }
       return result;
     }
     final searchResult = await queryBuilder.idBetween(0, Isar.maxId).sortByCreateAtDesc().findAll();
     for (NoteDBISAR note in searchResult) {
-      note = note.withGrowableLevels();
-      result.add(note);
+      if (!resultNoteIds.contains(note.noteId)) {
+        note = note.withGrowableLevels();
+        result.add(note);
+        resultNoteIds.add(note.noteId);
+      }
     }
+    // Sort by createAt descending
+    result.sort((a, b) => b.createAt.compareTo(a.createAt));
     return result;
   }
 
