@@ -131,12 +131,14 @@ class Connect {
   }
 
   Future<void> resetConnection({bool force = true}) async {
-    for (var relay in webSockets.keys) {
-      if (webSockets[relay]?.status != ConnectStatus.closed && force) {
-        webSockets[relay]?.status = ConnectStatus.closed;
-        await webSockets[relay]?.socket?.close();
+    final keys = [...webSockets.keys];
+    for (var relay in keys) {
+      final webSocket = webSockets.remove(relay);
+      if (webSocket != null && webSocket.status != ConnectStatus.closed && force) {
+        webSocket.status = ConnectStatus.closed;
+        webSocket.socket?.close();
       }
-      for (var relayKind in webSockets[relay]?.relayKinds ?? []) {
+      for (var relayKind in webSocket?.relayKinds ?? []) {
         connect(relay, relayKind: relayKind);
       }
     }
