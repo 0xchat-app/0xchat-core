@@ -823,7 +823,7 @@ extension Load on Moment {
     );
 
     return completer.future.timeout(
-      Duration(seconds: 10),
+      Duration(seconds: 20),
       onTimeout: () {
         return <NoteDBISAR>[];
       },
