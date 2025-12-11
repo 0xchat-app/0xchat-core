@@ -13,6 +13,14 @@ class Relays {
   // ALL relays list
   Map<String, RelayDBISAR> relays = {};
 
+  List<String> recommendGlobalRelays = [
+    'wss://relay.nostr.band',
+    'wss://relay.damus.io',
+    'wss://nos.lol',
+    'wss://yabu.me',
+    'wss://relay.siamstr.com',
+  ];
+
   List<String> recommendGeneralRelays = [
     'wss://relay.0xchat.com',
     'wss://yabu.me',

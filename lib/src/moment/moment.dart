@@ -66,15 +66,30 @@ class Moment {
 
     Map<String, List<Filter>> subscriptions = {};
     List<String> targetRelays = [];
+    bool needConnectRelays = false;
+    
     if (relays != null && relays.isNotEmpty) {
       targetRelays = relays;
+      needConnectRelays = true;
     } else if (relay != null) {
       targetRelays = [relay];
+      needConnectRelays = true;
     } else {
-      targetRelays = Connect.sharedInstance.relays();
+      // For global feed (filterType == 0), use recommendGlobalRelays if no relays specified
+      if (filterType == 0) {
+        targetRelays = Relays.sharedInstance.recommendGlobalRelays;
+        needConnectRelays = true;
+      } else {
+        targetRelays = Connect.sharedInstance.relays();
+      }
     }
     if (targetRelays.isEmpty) {
       return;
+    }
+
+    // Connect relays first if needed (when relays are explicitly provided or using recommendGlobalRelays)
+    if (needConnectRelays) {
+      await Connect.sharedInstance.connectRelays(targetRelays, relayKind: RelayKind.general);
     }
 
     for (String relayURL in targetRelays) {
