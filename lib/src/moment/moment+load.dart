@@ -6,6 +6,7 @@ import 'package:sqflite_sqlcipher/sqlite_api.dart';
 
 typedef NoteCallBack = void Function(NoteDBISAR);
 typedef ActionsCallBack = void Function(Map<String, List<dynamic>>);
+typedef NotesCallBack = void Function(List<NoteDBISAR>);
 
 extension Load on Moment {
   // Future<List<NoteDB>?> loadAllNotesFromDB({int limit = 50, int? until}) async {
@@ -735,16 +736,20 @@ extension Load on Moment {
     }
   }
 
-  Future<List<NoteDBISAR>> searchNotesWithKeyword(String keyword) async {
+  Future<List<NoteDBISAR>> searchNotesWithKeyword(String keyword, {NotesCallBack? notesCallBack}) async {
     var notesFromDB = await searchNotesFromDB(keyword: keyword);
-    var notesFromRelay = await _searchNotesFromRelay(keyword);
+    // Return DB results immediately via callback if available
+    if (notesFromDB.isNotEmpty && notesCallBack != null) {
+      notesCallBack(notesFromDB);
+    }
+    var notesFromRelay = await _searchNotesFromRelay(keyword, notesCallBack: notesCallBack);
     var result = [...notesFromDB, ...notesFromRelay];
     // Sort by createAt from new to old (descending)
     result.sort((a, b) => b.createAt.compareTo(a.createAt));
     return result;
   }
 
-  Future<List<NoteDBISAR>> _searchNotesFromRelay(String keyword) async {
+  Future<List<NoteDBISAR>> _searchNotesFromRelay(String keyword, {NotesCallBack? notesCallBack}) async {
     List<RelayDBISAR> searchRelayList = Account.sharedInstance.getMySearchRelayList();
     
     // If no search relay is selected, use all recommended ones
@@ -774,6 +779,8 @@ extension Load on Moment {
     );
 
     Map<String, Event> result = {};
+    Set<String> processedEventIds = {}; // Track processed events to avoid duplicates
+    List<NoteDBISAR> allProcessedNotes = []; // Store all processed notes
     Completer<List<NoteDBISAR>> completer = Completer<List<NoteDBISAR>>();
 
     Connect.sharedInstance.addSubscription(
@@ -786,18 +793,30 @@ extension Load on Moment {
         }
       },
       eoseCallBack: (requestId, ok, relay, unRelays) async {
-        if (unRelays.isEmpty) {
-          List<NoteDBISAR> notes = [];
-          for (Event event in result.values) {
+        // Process new events and return via callback for real-time display
+        List<NoteDBISAR> newNotes = [];
+        for (Event event in result.values) {
+          if (!processedEventIds.contains(event.id)) {
             Note note = Nip1.decodeNote(event);
             NoteDBISAR noteDB = NoteDBISAR.noteDBFromNote(note);
             await saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
-            notes.add(noteDB);
+            newNotes.add(noteDB);
+            allProcessedNotes.add(noteDB);
+            processedEventIds.add(event.id);
             // Remove noteId from event cache to avoid being cached for next search
             EventCache.sharedInstance.cacheIds.remove(event.id);
           }
+        }
+        
+        // Return new notes via callback for real-time display
+        if (newNotes.isNotEmpty && notesCallBack != null) {
+          notesCallBack(newNotes);
+        }
+        
+        // Complete completer when all relays are done
+        if (unRelays.isEmpty) {
           if (!completer.isCompleted) {
-            completer.complete(notes);
+            completer.complete(allProcessedNotes);
           }
         }
       },
