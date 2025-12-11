@@ -201,6 +201,36 @@ extension Load on Moment {
     return completer.future;
   }
 
+  /// Load user notes directly from relay (not DB). Returns newest-first list and persists to DB.
+  Future<List<NoteDBISAR>?> loadUserNotesFromRelay(List<String> userPubkeys,
+      {int limit = 20, NotesCallBack? notesCallBack}) async {
+    if (userPubkeys.isEmpty) return [];
+    Completer<List<NoteDBISAR>?> completer = Completer<List<NoteDBISAR>?>();
+    Map<String, Event> result = {};
+
+    // Build a subscription for the given authors.
+    Filter f = Filter(kinds: [1], authors: userPubkeys, limit: limit);
+    Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
+      if (Contacts.sharedInstance.inBlockList(event.pubkey)) return;
+      if (result.containsKey(event.id)) return;
+      result[event.id] = event;
+    }, eoseCallBack: (requestId, ok, relay, unRelays) async {
+      List<NoteDBISAR> notes = [];
+      for (Event event in result.values) {
+        Note note = Nip1.decodeNote(event);
+        NoteDBISAR noteDB = NoteDBISAR.noteDBFromNote(note);
+        await saveNoteToDB(noteDB, ConflictAlgorithm.ignore);
+        notes.add(noteDB);
+      }
+      notes.sort((a, b) => b.createAt.compareTo(a.createAt));
+      // Real-time callback on every EOSE
+      notesCallBack?.call(notes);
+      if (unRelays.isNotEmpty) return;
+      if (!completer.isCompleted) completer.complete(notes);
+    });
+    return completer.future;
+  }
+
   Future<NoteDBISAR> loadPublicNoteActionsFromDB(NoteDBISAR noteDB,
       {NoteCallBack? noteCallBack}) async {
     List<NoteDBISAR> notes1 = await searchNotesFromDB(root: noteDB.noteId);
