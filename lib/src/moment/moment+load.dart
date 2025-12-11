@@ -143,7 +143,9 @@ extension Load on Moment {
     if (!notesCache.containsKey(noteDB.noteId) || conflictAlgorithm != ConflictAlgorithm.ignore) {
       notesCache[noteDB.noteId] = noteDB;
     }
-    await DBISAR.sharedInstance.saveToDB(noteDB);
+    if(currentFilterType != 0) {
+      await DBISAR.sharedInstance.saveToDB(noteDB);
+    }
     notesCache[noteDB.noteId] = noteDB;
   }
 

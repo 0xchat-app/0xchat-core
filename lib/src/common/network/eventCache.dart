@@ -60,18 +60,11 @@ class EventCache {
   }
 
   Future<void> receiveEvent(Event event, String relay) async {
-    // If event already exists in cache and is kind 1 or 6, update NoteDBISAR relayList
+    if (event.kind == 1 || event.kind == 6) {
+        if (Moment.sharedInstance.currentFilterType == 0) {
+          return;
+    }
     if (cacheIds.contains(event.id)) {
-      if (event.kind == 1 || event.kind == 6) {
-        NoteDBISAR? noteDB = await Moment.sharedInstance.loadNoteFromDBWithNoteId(event.id);
-        if (noteDB != null) {
-          noteDB.relayList ??= [];
-          if (!noteDB.relayList!.contains(relay)) {
-            noteDB.relayList!.add(relay);
-            await Moment.sharedInstance.saveNoteToDB(noteDB, ConflictAlgorithm.replace);
-          }
-        }
-      }
       return;
     }
     cacheIds.add(event.id);
