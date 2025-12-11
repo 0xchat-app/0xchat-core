@@ -254,8 +254,8 @@ extension MLSPrivateGroups on Groups {
     // Load staged messages from database to memory
     await _loadStagedMessagesFromDB();
 
-    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
-      if (status == 1 &&
+    Connect.sharedInstance.addConnectStatusListener((relay, ConnectStatus status, relayKinds) async {
+      if (status == ConnectStatus.open &&
           Account.sharedInstance.me != null &&
           relayKinds.contains(RelayKind.circleRelay)) {
         updateMLSGroupSubscription(relay: relay);

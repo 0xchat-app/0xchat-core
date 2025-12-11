@@ -46,8 +46,8 @@ class Channels {
       myChannelsUpdatedCallBack?.call();
     };
     // subscript friend requests
-    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
-      if (status == 1 &&
+    Connect.sharedInstance.addConnectStatusListener((relay, ConnectStatus status, relayKinds) async {
+      if (status == ConnectStatus.open &&
           Account.sharedInstance.me != null &&
           relayKinds.contains(RelayKind.general)) {
         _updateSubscriptions(relay: relay);

@@ -48,8 +48,8 @@ class Zaps {
     updateNWC(null);
     updateZapsSubscription();
     Connect.sharedInstance
-        .addConnectStatusListener((relay, status, relayKinds) async {
-      if (status == 1 &&
+        .addConnectStatusListener((relay, ConnectStatus status, relayKinds) async {
+      if (status == ConnectStatus.open &&
           Account.sharedInstance.me != null &&
           relayKinds.contains(RelayKind.general)) {
         updateZapsSubscription(relay: relay);

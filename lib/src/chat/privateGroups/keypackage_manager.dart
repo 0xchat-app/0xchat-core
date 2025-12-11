@@ -844,8 +844,8 @@ class KeyPackageManager {
       String relayUrl, String eventId, Completer<KeyPackageEvent?> completer) {
     // Add connection status listener
     ConnectStatusCallBack? connectionListener;
-    connectionListener = (relay, status, relayKinds) {
-      if (relay == relayUrl && status == 1) {
+    connectionListener = (relay, ConnectStatus status, relayKinds) {
+      if (relay == relayUrl && status == ConnectStatus.open) {
         // status 1 = connected
         // Remove the listener to avoid multiple calls
         Connect.sharedInstance.removeConnectStatusListener(connectionListener!);

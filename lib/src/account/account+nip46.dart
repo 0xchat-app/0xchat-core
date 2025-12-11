@@ -75,8 +75,8 @@ extension AccountNIP46 on Account {
 
   Future<String> getPublicKeyWithNostrConnectURI(String uri) async {
     nip46connectionStatusCallback?.call(NIP46ConnectionStatus.waitingForSigning);
-    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
-      if (status == 1 && tempRemoteConnection!.relays.contains(relay)) {
+    Connect.sharedInstance.addConnectStatusListener((relay, ConnectStatus status, relayKinds) async {
+      if (status == ConnectStatus.open && tempRemoteConnection!.relays.contains(relay)) {
         updateNIP46Subscription(relay: relay, connection: tempRemoteConnection);
         for (var event in unsentNIP46EventQueue) {
           Connect.sharedInstance.sendEvent(event, toRelays: tempRemoteConnection!.relays);
@@ -144,8 +144,8 @@ extension AccountNIP46 on Account {
       currentRemoteConnection!.clientPubkey =
           Keychain(currentRemoteConnection!.clientPrivkey!).public;
     }
-    Connect.sharedInstance.addConnectStatusListener((relay, status, relayKinds) async {
-      if (status == 1 && remoteSignerConnection.relays.contains(relay)) {
+    Connect.sharedInstance.addConnectStatusListener((relay, ConnectStatus status, relayKinds) async {
+      if (status == ConnectStatus.open && remoteSignerConnection.relays.contains(relay)) {
         nip46connectionStatusCallback?.call(NIP46ConnectionStatus.connected);
         updateNIP46Subscription(relay: relay, connection: currentRemoteConnection);
         if (!autoLogin) {
@@ -158,7 +158,7 @@ extension AccountNIP46 on Account {
         }
         if (!completer.isCompleted) completer.complete(OKEvent(uri, true, ''));
       }
-      else if(status != 1 && remoteSignerConnection.relays.contains(relay)){
+      else if(status != ConnectStatus.open && remoteSignerConnection.relays.contains(relay)){
         // lost connection
         nip46connectionStatusCallback?.call(NIP46ConnectionStatus.disconnected);
       }
