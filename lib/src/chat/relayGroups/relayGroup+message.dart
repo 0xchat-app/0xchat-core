@@ -12,6 +12,18 @@ extension EMessage on RelayGroup {
     RelayGroupDBISAR? groupDB = groups[groupMessage.groupId]?.value;
     if (groupDB == null) return;
 
+    // Extract emoji tags (NIP-30)
+    Map<String, String> emojiMap = {};
+    for (var tag in event.tags) {
+      if (tag.isNotEmpty && tag[0] == 'emoji' && tag.length >= 3) {
+        emojiMap[tag[1]] = tag[2];
+      }
+    }
+    String? emojiJson;
+    if (emojiMap.isNotEmpty) {
+      emojiJson = jsonEncode(emojiMap);
+    }
+
     MessageDBISAR messageDB = MessageDBISAR(
         messageId: event.id,
         sender: groupMessage.pubkey,
@@ -23,7 +35,8 @@ extension EMessage on RelayGroup {
         replyId: groupMessage.replyId ?? '',
         createTime: event.createdAt,
         plaintEvent: jsonEncode(event),
-        chatType: 4);
+        chatType: 4,
+        emojiShortcodesJson: emojiJson);
     var map = await MessageDBISAR.decodeContent(groupMessage.content);
     messageDB.decryptContent = map['content'];
     messageDB.type = map['contentType'];

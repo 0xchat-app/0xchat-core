@@ -53,6 +53,10 @@ class NoteDBISAR {
   String? emojiURL;
   bool findEvent;
 
+  /// Custom emojis in note content (NIP-30)
+  /// Stored as JSON string: {"shortcode1": "url1", "shortcode2": "url2"}
+  String? emojiShortcodesJson;
+
   /// actions count
   int replyCount;
   int repostCount;
@@ -126,6 +130,7 @@ class NoteDBISAR {
     this.zapEventIds,
     this.relayList,
     this.lastUpdatedTimeString,
+    this.emojiShortcodesJson,
   });
 
   int getNoteKind() {
@@ -148,6 +153,23 @@ class NoteDBISAR {
 
   String get encodedNoteId {
     return Nip19.encodeNote(noteId);
+  }
+
+  // Get emoji shortcodes as Map (NIP-30)
+  @ignore
+  Map<String, String> get emojiShortcodes {
+    if (emojiShortcodesJson == null || emojiShortcodesJson!.isEmpty) {
+      return {};
+    }
+    try {
+      final decoded = jsonDecode(emojiShortcodesJson!);
+      if (decoded is Map) {
+        return Map<String, String>.from(decoded);
+      }
+    } catch (e) {
+      // Invalid JSON, return empty map
+    }
+    return {};
   }
 
   set lastUpdatedTime(Map<String, int> attributes) {
@@ -208,6 +230,11 @@ class NoteDBISAR {
     String? replyRelay = thread?.reply?.relayURL;
     List<String>? mentions = thread?.mentions?.map((e) => e.eventId).toList();
     List<String>? pTags = thread?.ptags?.map((e) => e.pubkey).toList();
+    // Encode emoji shortcodes to JSON string for storage (NIP-30)
+    String? emojiJson;
+    if (note.emojiShortcodes != null && note.emojiShortcodes!.isNotEmpty) {
+      emojiJson = jsonEncode(note.emojiShortcodes);
+    }
     return NoteDBISAR(
         noteId: note.nodeId,
         author: note.pubkey,
@@ -220,7 +247,8 @@ class NoteDBISAR {
         mentions: mentions,
         pTags: pTags,
         hashTags: note.hashTags,
-        quoteRepostId: note.quoteRepostId);
+        quoteRepostId: note.quoteRepostId,
+        emojiShortcodesJson: emojiJson);
   }
 
   static NoteDBISAR noteDBFromReposts(Reposts reposts) {
@@ -237,6 +265,11 @@ class NoteDBISAR {
   static NoteDBISAR noteDBFromQuoteReposts(QuoteReposts quoteReposts) {
     List<String>? pTags =
         quoteReposts.thread.ptags?.map((e) => e.pubkey).toList();
+    // Encode emoji shortcodes to JSON string for storage (NIP-30)
+    String? emojiJson;
+    if (quoteReposts.emojiShortcodes != null && quoteReposts.emojiShortcodes!.isNotEmpty) {
+      emojiJson = jsonEncode(quoteReposts.emojiShortcodes);
+    }
     return NoteDBISAR(
         noteId: quoteReposts.eventId,
         author: quoteReposts.pubkey,
@@ -244,7 +277,8 @@ class NoteDBISAR {
         content: quoteReposts.content,
         quoteRepostId: quoteReposts.quoteRepostsId,
         pTags: pTags,
-        hashTags: quoteReposts.hashTags);
+        hashTags: quoteReposts.hashTags,
+        emojiShortcodesJson: emojiJson);
   }
 
   static NoteDBISAR noteDBFromReactions(Reactions reactions) {

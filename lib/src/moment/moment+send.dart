@@ -13,7 +13,8 @@ extension Send on Moment {
       String? replyEventRelay,
       List<String>? mentions,
       List<String>? mentionsRelays,
-      List<String>? hashTags}) async {
+      List<String>? hashTags,
+      Map<String, String>? emojiShortcodes}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = await Nip1.encodeNote(content, pubkey, privkey,
         rootEvent: rootEvent,
@@ -22,7 +23,8 @@ extension Send on Moment {
         replyEventRelay: replyEventRelay,
         replyUsers: mentions,
         replyUserRelays: mentionsRelays,
-        hashTags: hashTags);
+        hashTags: hashTags,
+        emojiShortcodes: emojiShortcodes);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       if (!completer.isCompleted) {
         await handleNoteEvent(event, relay, false);
@@ -41,6 +43,7 @@ extension Send on Moment {
       List<String>? mentions,
       List<String>? mentionsRelays,
       List<String>? hashTags,
+      Map<String, String>? emojiShortcodes,
       SendMessageProgressCallBack? sendMessageProgressCallBack}) async {
     Event event = await Nip1.encodeNote(content, pubkey, privkey,
         rootEvent: rootEvent,
@@ -49,7 +52,8 @@ extension Send on Moment {
         replyEventRelay: replyEventRelay,
         replyUsers: mentions,
         replyUserRelays: mentionsRelays,
-        hashTags: hashTags);
+        hashTags: hashTags,
+        emojiShortcodes: emojiShortcodes);
     await handleNoteEvent(event, '', true);
     int sendedMessagesCount = 0;
     return await sendPrivateMessage(pubkeys, event, sendMessageCallBack: () {
@@ -234,7 +238,9 @@ extension Send on Moment {
   }
 
   Future<OKEvent> sendQuoteRepost(String quoteRepostNoteId, String content,
-      {List<String>? hashTags, List<String>? mentions}) async {
+      {List<String>? hashTags, 
+      List<String>? mentions,
+      Map<String, String>? emojiShortcodes}) async {
     NoteDBISAR? note = await loadNoteWithNoteId(quoteRepostNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
@@ -242,7 +248,8 @@ extension Send on Moment {
       String nostrNote = Nip21.encode(Nip19.encodeNote(quoteRepostNoteId));
       content = '$content\n$nostrNote';
       Event event = await Nip18.encodeQuoteReposts(
-          quoteRepostNoteId, note.pTags ?? [], content, hashTags, pubkey, privkey);
+          quoteRepostNoteId, note.pTags ?? [], content, hashTags, pubkey, privkey,
+          emojiShortcodes: emojiShortcodes);
       for (var mention in mentions ?? []) {
         if (!note.pTags!.contains(mention)) {
           note.pTags!.add(mention);

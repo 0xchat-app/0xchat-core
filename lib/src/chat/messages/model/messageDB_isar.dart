@@ -77,6 +77,10 @@ class MessageDBISAR {
   String? giftwrappedEventId;
   String? giftwrappedEventJson;
 
+  /// Custom emojis in message content (NIP-30)
+  /// Stored as JSON string: {"shortcode1": "url1", "shortcode2": "url2"}
+  String? emojiShortcodesJson;
+
   MessageDBISAR({
     this.messageId = '',
     this.sender = '',
@@ -104,7 +108,25 @@ class MessageDBISAR {
     this.zapEventIds,
     this.giftwrappedEventId,
     this.giftwrappedEventJson,
+    this.emojiShortcodesJson,
   });
+
+  // Get emoji shortcodes as Map (NIP-30)
+  @ignore
+  Map<String, String> get emojiShortcodes {
+    if (emojiShortcodesJson == null || emojiShortcodesJson!.isEmpty) {
+      return {};
+    }
+    try {
+      final decoded = jsonDecode(emojiShortcodesJson!);
+      if (decoded is Map) {
+        return Map<String, String>.from(decoded);
+      }
+    } catch (e) {
+      // Invalid JSON, return empty map
+    }
+    return {};
+  }
 
   static MessageDBISAR fromMap(Map<String, Object?> map) {
     return _messageInfoFromMap(map);
@@ -189,11 +211,19 @@ class MessageDBISAR {
   static Future<MessageType> identifyUrl(String urlString) async {
     final Uri uri;
     if (isImageBase64(urlString)) return MessageType.image;
+    
+    // Don't try to parse emoji shortcodes or other non-URL text as URLs (NIP-30)
+    final emojiPattern = RegExp(r'^:[a-zA-Z0-9_]+:$');
+    if (emojiPattern.hasMatch(urlString)) {
+      return MessageType.text;
+    }
+    
     try {
       uri = Uri.parse(urlString);
       if (uri.host.isEmpty) return MessageType.text;
     } catch (e) {
-      print(e);
+      // Silently return text type for invalid URIs instead of printing errors
+      // Common cases: emoji shortcodes, plain text, etc.
       return MessageType.text;
     }
 
@@ -305,6 +335,27 @@ class MessageDBISAR {
       return {'contentType': 'text', 'content': content};
     } catch (e) {
       LogUtils.v(() => 'decodeContent fail: $content, error msg: ${e.toString()}');
+      
+      // Check if content is emoji shortcode (NIP-30) - format: :shortcode:
+      // If so, treat as text and don't try to parse as URL
+      final emojiPattern = RegExp(r'^:[a-zA-Z0-9_]+:$');
+      if (emojiPattern.hasMatch(content)) {
+        return {'contentType': 'text', 'content': content};
+      }
+      
+      // Check if content looks like a URL before trying to parse it
+      // Only try to identify URL if content matches common URL patterns
+      final urlPattern = RegExp(
+        r'^(https?:\/\/|www\.|[a-zA-Z0-9-]+\.[a-zA-Z]{2,})',
+        caseSensitive: false,
+      );
+      
+      // If content doesn't look like a URL at all, treat as text
+      if (!urlPattern.hasMatch(content)) {
+        return {'contentType': 'text', 'content': content};
+      }
+      
+      // Only call identifyUrl for content that looks like it could be a URL
       MessageType type = await identifyUrl(content).timeout(
         Duration(seconds: 1),
         onTimeout: () {

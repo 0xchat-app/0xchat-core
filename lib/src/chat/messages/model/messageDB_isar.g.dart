@@ -52,103 +52,108 @@ const MessageDBISARSchema = CollectionSchema(
       name: r'decryptSecret',
       type: IsarType.string,
     ),
-    r'expiration': PropertySchema(
+    r'emojiShortcodesJson': PropertySchema(
       id: 7,
+      name: r'emojiShortcodesJson',
+      type: IsarType.string,
+    ),
+    r'expiration': PropertySchema(
+      id: 8,
       name: r'expiration',
       type: IsarType.long,
     ),
     r'giftwrappedEventId': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'giftwrappedEventId',
       type: IsarType.string,
     ),
     r'giftwrappedEventJson': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'giftwrappedEventJson',
       type: IsarType.string,
     ),
     r'groupId': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'groupId',
       type: IsarType.string,
     ),
     r'kind': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'kind',
       type: IsarType.long,
     ),
     r'messageId': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'messageId',
       type: IsarType.string,
     ),
     r'plaintEvent': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'plaintEvent',
       type: IsarType.string,
     ),
     r'previewData': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'previewData',
       type: IsarType.string,
     ),
     r'reactionEventIds': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'reactionEventIds',
       type: IsarType.stringList,
     ),
     r'read': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'read',
       type: IsarType.bool,
     ),
     r'receiver': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'receiver',
       type: IsarType.string,
     ),
     r'replyId': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'replyId',
       type: IsarType.string,
     ),
     r'reportList': PropertySchema(
-      id: 19,
+      id: 20,
       name: r'reportList',
       type: IsarType.stringList,
     ),
     r'sender': PropertySchema(
-      id: 20,
+      id: 21,
       name: r'sender',
       type: IsarType.string,
     ),
     r'sessionId': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'sessionId',
       type: IsarType.string,
     ),
     r'status': PropertySchema(
-      id: 22,
+      id: 23,
       name: r'status',
       type: IsarType.long,
     ),
     r'subType': PropertySchema(
-      id: 23,
+      id: 24,
       name: r'subType',
       type: IsarType.string,
     ),
     r'tags': PropertySchema(
-      id: 24,
+      id: 25,
       name: r'tags',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 25,
+      id: 26,
       name: r'type',
       type: IsarType.string,
     ),
     r'zapEventIds': PropertySchema(
-      id: 26,
+      id: 27,
       name: r'zapEventIds',
       type: IsarType.stringList,
     )
@@ -203,6 +208,12 @@ int _messageDBISAREstimateSize(
   }
   {
     final value = object.decryptSecret;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.emojiShortcodesJson;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
     }
@@ -292,26 +303,27 @@ void _messageDBISARSerialize(
   writer.writeString(offsets[4], object.decryptContent);
   writer.writeString(offsets[5], object.decryptNonce);
   writer.writeString(offsets[6], object.decryptSecret);
-  writer.writeLong(offsets[7], object.expiration);
-  writer.writeString(offsets[8], object.giftwrappedEventId);
-  writer.writeString(offsets[9], object.giftwrappedEventJson);
-  writer.writeString(offsets[10], object.groupId);
-  writer.writeLong(offsets[11], object.kind);
-  writer.writeString(offsets[12], object.messageId);
-  writer.writeString(offsets[13], object.plaintEvent);
-  writer.writeString(offsets[14], object.previewData);
-  writer.writeStringList(offsets[15], object.reactionEventIds);
-  writer.writeBool(offsets[16], object.read);
-  writer.writeString(offsets[17], object.receiver);
-  writer.writeString(offsets[18], object.replyId);
-  writer.writeStringList(offsets[19], object.reportList);
-  writer.writeString(offsets[20], object.sender);
-  writer.writeString(offsets[21], object.sessionId);
-  writer.writeLong(offsets[22], object.status);
-  writer.writeString(offsets[23], object.subType);
-  writer.writeString(offsets[24], object.tags);
-  writer.writeString(offsets[25], object.type);
-  writer.writeStringList(offsets[26], object.zapEventIds);
+  writer.writeString(offsets[7], object.emojiShortcodesJson);
+  writer.writeLong(offsets[8], object.expiration);
+  writer.writeString(offsets[9], object.giftwrappedEventId);
+  writer.writeString(offsets[10], object.giftwrappedEventJson);
+  writer.writeString(offsets[11], object.groupId);
+  writer.writeLong(offsets[12], object.kind);
+  writer.writeString(offsets[13], object.messageId);
+  writer.writeString(offsets[14], object.plaintEvent);
+  writer.writeString(offsets[15], object.previewData);
+  writer.writeStringList(offsets[16], object.reactionEventIds);
+  writer.writeBool(offsets[17], object.read);
+  writer.writeString(offsets[18], object.receiver);
+  writer.writeString(offsets[19], object.replyId);
+  writer.writeStringList(offsets[20], object.reportList);
+  writer.writeString(offsets[21], object.sender);
+  writer.writeString(offsets[22], object.sessionId);
+  writer.writeLong(offsets[23], object.status);
+  writer.writeString(offsets[24], object.subType);
+  writer.writeString(offsets[25], object.tags);
+  writer.writeString(offsets[26], object.type);
+  writer.writeStringList(offsets[27], object.zapEventIds);
 }
 
 MessageDBISAR _messageDBISARDeserialize(
@@ -328,28 +340,29 @@ MessageDBISAR _messageDBISARDeserialize(
     decryptContent: reader.readStringOrNull(offsets[4]) ?? '',
     decryptNonce: reader.readStringOrNull(offsets[5]),
     decryptSecret: reader.readStringOrNull(offsets[6]),
-    expiration: reader.readLongOrNull(offsets[7]),
-    giftwrappedEventId: reader.readStringOrNull(offsets[8]),
-    giftwrappedEventJson: reader.readStringOrNull(offsets[9]),
-    groupId: reader.readStringOrNull(offsets[10]) ?? '',
-    kind: reader.readLongOrNull(offsets[11]) ?? 0,
-    messageId: reader.readStringOrNull(offsets[12]) ?? '',
-    plaintEvent: reader.readStringOrNull(offsets[13]) ?? '',
-    previewData: reader.readStringOrNull(offsets[14]),
-    reactionEventIds: reader.readStringList(offsets[15]),
-    read: reader.readBoolOrNull(offsets[16]) ?? false,
-    receiver: reader.readStringOrNull(offsets[17]) ?? '',
-    replyId: reader.readStringOrNull(offsets[18]) ?? '',
-    sender: reader.readStringOrNull(offsets[20]) ?? '',
-    sessionId: reader.readStringOrNull(offsets[21]) ?? '',
-    status: reader.readLongOrNull(offsets[22]),
-    subType: reader.readStringOrNull(offsets[23]),
-    tags: reader.readStringOrNull(offsets[24]) ?? '',
-    type: reader.readStringOrNull(offsets[25]) ?? 'text',
-    zapEventIds: reader.readStringList(offsets[26]),
+    emojiShortcodesJson: reader.readStringOrNull(offsets[7]),
+    expiration: reader.readLongOrNull(offsets[8]),
+    giftwrappedEventId: reader.readStringOrNull(offsets[9]),
+    giftwrappedEventJson: reader.readStringOrNull(offsets[10]),
+    groupId: reader.readStringOrNull(offsets[11]) ?? '',
+    kind: reader.readLongOrNull(offsets[12]) ?? 0,
+    messageId: reader.readStringOrNull(offsets[13]) ?? '',
+    plaintEvent: reader.readStringOrNull(offsets[14]) ?? '',
+    previewData: reader.readStringOrNull(offsets[15]),
+    reactionEventIds: reader.readStringList(offsets[16]),
+    read: reader.readBoolOrNull(offsets[17]) ?? false,
+    receiver: reader.readStringOrNull(offsets[18]) ?? '',
+    replyId: reader.readStringOrNull(offsets[19]) ?? '',
+    sender: reader.readStringOrNull(offsets[21]) ?? '',
+    sessionId: reader.readStringOrNull(offsets[22]) ?? '',
+    status: reader.readLongOrNull(offsets[23]),
+    subType: reader.readStringOrNull(offsets[24]),
+    tags: reader.readStringOrNull(offsets[25]) ?? '',
+    type: reader.readStringOrNull(offsets[26]) ?? 'text',
+    zapEventIds: reader.readStringList(offsets[27]),
   );
   object.id = id;
-  object.reportList = reader.readStringList(offsets[19]);
+  object.reportList = reader.readStringList(offsets[20]);
   return object;
 }
 
@@ -375,44 +388,46 @@ P _messageDBISARDeserializeProp<P>(
     case 6:
       return (reader.readStringOrNull(offset)) as P;
     case 7:
-      return (reader.readLongOrNull(offset)) as P;
-    case 8:
       return (reader.readStringOrNull(offset)) as P;
+    case 8:
+      return (reader.readLongOrNull(offset)) as P;
     case 9:
       return (reader.readStringOrNull(offset)) as P;
     case 10:
-      return (reader.readStringOrNull(offset) ?? '') as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 11:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
-    case 12:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 12:
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 13:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 14:
-      return (reader.readStringOrNull(offset)) as P;
-    case 15:
-      return (reader.readStringList(offset)) as P;
-    case 16:
-      return (reader.readBoolOrNull(offset) ?? false) as P;
-    case 17:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 15:
+      return (reader.readStringOrNull(offset)) as P;
+    case 16:
+      return (reader.readStringList(offset)) as P;
+    case 17:
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     case 18:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 19:
-      return (reader.readStringList(offset)) as P;
-    case 20:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 20:
+      return (reader.readStringList(offset)) as P;
     case 21:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 22:
-      return (reader.readLongOrNull(offset)) as P;
-    case 23:
-      return (reader.readStringOrNull(offset)) as P;
-    case 24:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 23:
+      return (reader.readLongOrNull(offset)) as P;
+    case 24:
+      return (reader.readStringOrNull(offset)) as P;
     case 25:
-      return (reader.readStringOrNull(offset) ?? 'text') as P;
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 26:
+      return (reader.readStringOrNull(offset) ?? 'text') as P;
+    case 27:
       return (reader.readStringList(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1474,6 +1489,160 @@ extension MessageDBISARQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'decryptSecret',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      emojiShortcodesJsonIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'emojiShortcodesJson',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      emojiShortcodesJsonIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'emojiShortcodesJson',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      emojiShortcodesJsonEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'emojiShortcodesJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      emojiShortcodesJsonGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'emojiShortcodesJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      emojiShortcodesJsonLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'emojiShortcodesJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      emojiShortcodesJsonBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'emojiShortcodesJson',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      emojiShortcodesJsonStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'emojiShortcodesJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      emojiShortcodesJsonEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'emojiShortcodesJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      emojiShortcodesJsonContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'emojiShortcodesJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      emojiShortcodesJsonMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'emojiShortcodesJson',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      emojiShortcodesJsonIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'emojiShortcodesJson',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterFilterCondition>
+      emojiShortcodesJsonIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'emojiShortcodesJson',
         value: '',
       ));
     });
@@ -4417,6 +4586,20 @@ extension MessageDBISARQuerySortBy
     });
   }
 
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      sortByEmojiShortcodesJson() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'emojiShortcodesJson', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      sortByEmojiShortcodesJsonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'emojiShortcodesJson', Sort.desc);
+    });
+  }
+
   QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy> sortByExpiration() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'expiration', Sort.asc);
@@ -4727,6 +4910,20 @@ extension MessageDBISARQuerySortThenBy
     });
   }
 
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      thenByEmojiShortcodesJson() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'emojiShortcodesJson', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy>
+      thenByEmojiShortcodesJsonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'emojiShortcodesJson', Sort.desc);
+    });
+  }
+
   QueryBuilder<MessageDBISAR, MessageDBISAR, QAfterSortBy> thenByExpiration() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'expiration', Sort.asc);
@@ -5005,6 +5202,14 @@ extension MessageDBISARQueryWhereDistinct
     });
   }
 
+  QueryBuilder<MessageDBISAR, MessageDBISAR, QDistinct>
+      distinctByEmojiShortcodesJson({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'emojiShortcodesJson',
+          caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<MessageDBISAR, MessageDBISAR, QDistinct> distinctByExpiration() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'expiration');
@@ -5193,6 +5398,13 @@ extension MessageDBISARQueryProperty
       decryptSecretProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'decryptSecret');
+    });
+  }
+
+  QueryBuilder<MessageDBISAR, String?, QQueryOperations>
+      emojiShortcodesJsonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'emojiShortcodesJson');
     });
   }
 
