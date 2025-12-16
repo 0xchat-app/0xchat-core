@@ -7,30 +7,33 @@ import 'package:sqflite_sqlcipher/sqlite_api.dart';
 
 extension Calling on Contacts {
   Future<OKEvent> sendDisconnect(
-      String offerId, String friendPubkey, String content) async {
+      String offerId, String friendPubkey, String privateGroupId, String content) async {
     return await _sendSignaling(
-        offerId, friendPubkey, SignalingState.disconnect, content);
+        offerId, friendPubkey, privateGroupId, SignalingState.disconnect, content);
   }
 
-  Future<OKEvent> sendOffer(String friendPubkey, String content) async {
+  Future<OKEvent> sendOffer(String friendPubkey, String privateGroupId, String content) async {
     return await _sendSignaling(
-        '', friendPubkey, SignalingState.offer, content);
+        '', friendPubkey, privateGroupId, SignalingState.offer, content);
   }
 
   Future<OKEvent> sendAnswer(
-      String offerId, String friendPubkey, String content) async {
+      String offerId, String friendPubkey, String privateGroupId, String content) async {
     return await _sendSignaling(
-        offerId, friendPubkey, SignalingState.answer, content);
+        offerId, friendPubkey, privateGroupId, SignalingState.answer, content);
   }
 
   Future<OKEvent> sendCandidate(
-      String offerId, String friendPubkey, String content) async {
+      String offerId, String friendPubkey, String privateGroupId, String content) async {
     return await _sendSignaling(
-        offerId, friendPubkey, SignalingState.candidate, content);
+        offerId, friendPubkey, privateGroupId, SignalingState.candidate, content);
   }
 
   Future<OKEvent> _sendSignaling(String offerId, String toPubkey,
-      SignalingState state, String content) async {
+      String privateGroupId, SignalingState state, String content) async {
+    GroupDBISAR? groupDB = Groups.sharedInstance.myGroups[privateGroupId]?.value;
+    if (groupDB == null || groupDB.isMLSGroup) return OKEvent('', false, 'group not found');
+
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event? event;
     String? reason;
@@ -63,16 +66,7 @@ extension Calling on Contacts {
       await handleSignalingEvent(event, signaling, reason);
     }
 
-    /// 60s timeout for calling event
-    Event encodeEvent = await Nip17.encode(event, toPubkey, pubkey, privkey,
-        expiration: currentUnixTimestampSeconds() + 60, kind: kind);
-    Connect.sharedInstance.sendEvent(encodeEvent,
-        sendCallBack: (ok, relay) async {
-      if (!completer.isCompleted) {
-        completer.complete(OKEvent(event!.id, ok.status, ok.message));
-      }
-    });
-    return completer.future;
+    return Groups.sharedInstance.sendMessageToMLSGroup(groupDB, event);
   }
 
   Future<void> handleCallEvent(Event event, String relay) async {

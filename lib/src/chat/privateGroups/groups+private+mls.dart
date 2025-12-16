@@ -793,6 +793,9 @@ extension MLSPrivateGroups on Groups {
       case 443:
         handleKeyPackageEvent(innerEvent, relay);
         break;
+      case 25050:
+        Contacts.sharedInstance.handleCallEvent(innerEvent, relay);
+        break;
       default:
         break;
     }
