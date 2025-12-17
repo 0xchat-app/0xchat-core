@@ -521,10 +521,13 @@ extension MLSPrivateGroups on Groups {
     return OKEvent(group.privateGroupId, true, '');
   }
 
-  Future<OKEvent> sendMessageToMLSGroup(GroupDBISAR group, Event messageEvent) async {
+  Future<OKEvent> sendMessageToMLSGroup(GroupDBISAR group, Event messageEvent, {String? expiration, String? k}) async {
     if (group.mlsGroupId == null) return OKEvent('', false, 'invalid mls group');
     String eventString = await createMessageForGroup(
-        groupId: group.mlsGroupId!, rumorEventString: jsonEncode(messageEvent.toJson()));
+        groupId: group.mlsGroupId!, 
+        rumorEventString: jsonEncode(messageEvent.toJson()),
+        expiration: expiration,
+        k: k);
     Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
     await Connect.sharedInstance.connectRelays(Account.sharedInstance.getCurrentCircleRelay(), relayKind: RelayKind.circleRelay);
     Completer<OKEvent> completer = Completer<OKEvent>();

@@ -66,7 +66,14 @@ extension Calling on Contacts {
       await handleSignalingEvent(event, signaling, reason);
     }
 
-    return Groups.sharedInstance.sendMessageToMLSGroup(groupDB, event);
+    final expiration = (currentUnixTimestampSeconds() + 60).toString();
+    
+    return Groups.sharedInstance.sendMessageToMLSGroup(
+      groupDB, 
+      event,
+      expiration: expiration,
+      k: event.kind.toString(),
+    );
   }
 
   Future<void> handleCallEvent(Event event, String relay) async {
