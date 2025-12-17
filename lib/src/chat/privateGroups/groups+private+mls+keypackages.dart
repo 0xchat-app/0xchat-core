@@ -275,4 +275,55 @@ extension GroupsPrivateMlsKeyPackages on Groups {
     db = Account.sharedInstance.handleKind0Event(db, event);
     await Account.saveUserToDB(db!);
   }
+
+  /// Enable discoverable by ID: Create and publish permanent keypackage to relay
+  /// Returns true if successful, false otherwise
+  Future<bool> enableDiscoverableByID({List<String>? relays}) async {
+    if (relays == null || relays.isEmpty) {
+      relays = Account.sharedInstance.getCurrentCircleRelay();
+    }
+
+    try {
+      // Create permanent keypackage
+      KeyPackageEvent? keyPackageEvent = await createPermanentKeyPackage(relays);
+      
+      if (keyPackageEvent == null) {
+        return false;
+      }
+
+      // Publish keypackage to relay
+      OKEvent okEvent = await KeyPackageManager.publishKeyPackageEventToRelays(
+        keyPackageEvent,
+        relays,
+        pubkey,
+        privkey,
+      );
+
+      return okEvent.status;
+    } catch (e, stackTrace) {
+      print('Failed to enable discoverable by ID: $e $stackTrace');
+      return false;
+    }
+  }
+
+  /// Disable discoverable by ID: Delete all keypackage events from relay
+  /// Returns true if successful, false otherwise
+  Future<bool> disableDiscoverableByID({List<String>? relays}) async {
+    if (relays == null || relays.isEmpty) {
+      relays = Account.sharedInstance.getCurrentCircleRelay();
+    }
+
+    try {
+      OKEvent okEvent = await KeyPackageManager.deleteKeyPackageEventFromRelays(
+        pubkey,
+        privkey,
+        relays,
+      );
+
+      return okEvent.status;
+    } catch (e, stackTrace) {
+      print('Failed to disable discoverable by ID: $e $stackTrace');
+      return false;
+    }
+  }
 }

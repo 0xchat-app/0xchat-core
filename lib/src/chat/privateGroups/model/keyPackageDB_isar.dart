@@ -86,6 +86,9 @@ class KeyPackageDBISAR {
   /// Metadata
   int lastUpdatedTime;
   String? notes; // Additional notes or metadata
+  
+  /// Whether this keypackage has been published/shared to relay
+  bool isPublished = false;
 
   KeyPackageDBISAR({
     required this.keyPackageId,
@@ -104,6 +107,7 @@ class KeyPackageDBISAR {
     this.usedByPubkey,
     required this.lastUpdatedTime,
     this.notes,
+    this.isPublished = false,
   });
 
   /// Create from KeyPackageEvent
@@ -111,6 +115,7 @@ class KeyPackageDBISAR {
     KeyPackageEvent event, {
     KeyPackageType type = KeyPackageType.permanent,
     KeyPackageStatus status = KeyPackageStatus.available,
+    bool isPublished = false,
   }) {
     return KeyPackageDBISAR(
       keyPackageId: generate64RandomHexChars(),
@@ -126,6 +131,7 @@ class KeyPackageDBISAR {
       extensions: event.extensions,
       relays: event.relays,
       lastUpdatedTime: currentUnixTimestampSeconds(),
+      isPublished: isPublished,
     );
   }
 
@@ -214,6 +220,7 @@ class KeyPackageDBISAR {
       'usedByPubkey': usedByPubkey,
       'lastUpdatedTime': lastUpdatedTime,
       'notes': notes,
+      'isPublished': isPublished,
     };
   }
 
@@ -236,6 +243,7 @@ class KeyPackageDBISAR {
       usedByPubkey: json['usedByPubkey'],
       lastUpdatedTime: json['lastUpdatedTime'] ?? 0,
       notes: json['notes'],
+      isPublished: json['isPublished'] ?? false,
     );
   }
 } 

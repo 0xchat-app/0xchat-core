@@ -85,6 +85,10 @@ const KeyPackageDBISARSchema = IsarGeneratedSchema(
         name: 'notes',
         type: IsarType.string,
       ),
+      IsarPropertySchema(
+        name: 'isPublished',
+        type: IsarType.bool,
+      ),
     ],
     indexes: [
       IsarIndexSchema(
@@ -151,6 +155,7 @@ int serializeKeyPackageDBISAR(IsarWriter writer, KeyPackageDBISAR object) {
       IsarCore.writeString(writer, 16, value);
     }
   }
+  IsarCore.writeBool(writer, 17, object.isPublished);
   return object.id;
 }
 
@@ -225,6 +230,8 @@ KeyPackageDBISAR deserializeKeyPackageDBISAR(IsarReader reader) {
   _lastUpdatedTime = IsarCore.readLong(reader, 15);
   final String? _notes;
   _notes = IsarCore.readString(reader, 16);
+  final bool _isPublished;
+  _isPublished = IsarCore.readBool(reader, 17);
   final object = KeyPackageDBISAR(
     keyPackageId: _keyPackageId,
     ownerPubkey: _ownerPubkey,
@@ -242,6 +249,7 @@ KeyPackageDBISAR deserializeKeyPackageDBISAR(IsarReader reader) {
     usedByPubkey: _usedByPubkey,
     lastUpdatedTime: _lastUpdatedTime,
     notes: _notes,
+    isPublished: _isPublished,
   );
   object.id = IsarCore.readId(reader);
   return object;
@@ -321,6 +329,8 @@ dynamic deserializeKeyPackageDBISARProp(IsarReader reader, int property) {
       return IsarCore.readLong(reader, 15);
     case 16:
       return IsarCore.readString(reader, 16);
+    case 17:
+      return IsarCore.readBool(reader, 17);
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -343,6 +353,7 @@ sealed class _KeyPackageDBISARUpdate {
     String? usedByPubkey,
     int? lastUpdatedTime,
     String? notes,
+    bool? isPublished,
   });
 }
 
@@ -368,6 +379,7 @@ class _KeyPackageDBISARUpdateImpl implements _KeyPackageDBISARUpdate {
     Object? usedByPubkey = ignore,
     Object? lastUpdatedTime = ignore,
     Object? notes = ignore,
+    Object? isPublished = ignore,
   }) {
     return collection.updateProperties([
           id
@@ -386,6 +398,7 @@ class _KeyPackageDBISARUpdateImpl implements _KeyPackageDBISARUpdate {
           if (usedByPubkey != ignore) 14: usedByPubkey as String?,
           if (lastUpdatedTime != ignore) 15: lastUpdatedTime as int?,
           if (notes != ignore) 16: notes as String?,
+          if (isPublished != ignore) 17: isPublished as bool?,
         }) >
         0;
   }
@@ -408,6 +421,7 @@ sealed class _KeyPackageDBISARUpdateAll {
     String? usedByPubkey,
     int? lastUpdatedTime,
     String? notes,
+    bool? isPublished,
   });
 }
 
@@ -433,6 +447,7 @@ class _KeyPackageDBISARUpdateAllImpl implements _KeyPackageDBISARUpdateAll {
     Object? usedByPubkey = ignore,
     Object? lastUpdatedTime = ignore,
     Object? notes = ignore,
+    Object? isPublished = ignore,
   }) {
     return collection.updateProperties(id, {
       if (keyPackageId != ignore) 1: keyPackageId as String?,
@@ -449,6 +464,7 @@ class _KeyPackageDBISARUpdateAllImpl implements _KeyPackageDBISARUpdateAll {
       if (usedByPubkey != ignore) 14: usedByPubkey as String?,
       if (lastUpdatedTime != ignore) 15: lastUpdatedTime as int?,
       if (notes != ignore) 16: notes as String?,
+      if (isPublished != ignore) 17: isPublished as bool?,
     });
   }
 }
@@ -476,6 +492,7 @@ sealed class _KeyPackageDBISARQueryUpdate {
     String? usedByPubkey,
     int? lastUpdatedTime,
     String? notes,
+    bool? isPublished,
   });
 }
 
@@ -501,6 +518,7 @@ class _KeyPackageDBISARQueryUpdateImpl implements _KeyPackageDBISARQueryUpdate {
     Object? usedByPubkey = ignore,
     Object? lastUpdatedTime = ignore,
     Object? notes = ignore,
+    Object? isPublished = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (keyPackageId != ignore) 1: keyPackageId as String?,
@@ -517,6 +535,7 @@ class _KeyPackageDBISARQueryUpdateImpl implements _KeyPackageDBISARQueryUpdate {
       if (usedByPubkey != ignore) 14: usedByPubkey as String?,
       if (lastUpdatedTime != ignore) 15: lastUpdatedTime as int?,
       if (notes != ignore) 16: notes as String?,
+      if (isPublished != ignore) 17: isPublished as bool?,
     });
   }
 }
@@ -552,6 +571,7 @@ class _KeyPackageDBISARQueryBuilderUpdateImpl
     Object? usedByPubkey = ignore,
     Object? lastUpdatedTime = ignore,
     Object? notes = ignore,
+    Object? isPublished = ignore,
   }) {
     final q = query.build();
     try {
@@ -570,6 +590,7 @@ class _KeyPackageDBISARQueryBuilderUpdateImpl
         if (usedByPubkey != ignore) 14: usedByPubkey as String?,
         if (lastUpdatedTime != ignore) 15: lastUpdatedTime as int?,
         if (notes != ignore) 16: notes as String?,
+        if (isPublished != ignore) 17: isPublished as bool?,
       });
     } finally {
       q.close();
@@ -3341,6 +3362,20 @@ extension KeyPackageDBISARQueryFilter
       );
     });
   }
+
+  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterFilterCondition>
+      isPublishedEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 17,
+          value: value,
+        ),
+      );
+    });
+  }
 }
 
 extension KeyPackageDBISARQueryObject
@@ -3633,6 +3668,20 @@ extension KeyPackageDBISARQuerySortBy
       );
     });
   }
+
+  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
+      sortByIsPublished() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(17);
+    });
+  }
+
+  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
+      sortByIsPublishedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(17, sort: Sort.desc);
+    });
+  }
 }
 
 extension KeyPackageDBISARQuerySortThenBy
@@ -3845,6 +3894,20 @@ extension KeyPackageDBISARQuerySortThenBy
       return query.addSortBy(16, sort: Sort.desc, caseSensitive: caseSensitive);
     });
   }
+
+  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
+      thenByIsPublished() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(17);
+    });
+  }
+
+  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterSortBy>
+      thenByIsPublishedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(17, sort: Sort.desc);
+    });
+  }
 }
 
 extension KeyPackageDBISARQueryWhereDistinct
@@ -3960,6 +4023,13 @@ extension KeyPackageDBISARQueryWhereDistinct
       return query.addDistinctBy(16, caseSensitive: caseSensitive);
     });
   }
+
+  QueryBuilder<KeyPackageDBISAR, KeyPackageDBISAR, QAfterDistinct>
+      distinctByIsPublished() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(17);
+    });
+  }
 }
 
 extension KeyPackageDBISARQueryProperty1
@@ -4070,6 +4140,12 @@ extension KeyPackageDBISARQueryProperty1
   QueryBuilder<KeyPackageDBISAR, String?, QAfterProperty> notesProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(16);
+    });
+  }
+
+  QueryBuilder<KeyPackageDBISAR, bool, QAfterProperty> isPublishedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(17);
     });
   }
 }
@@ -4186,6 +4262,13 @@ extension KeyPackageDBISARQueryProperty2<R>
   QueryBuilder<KeyPackageDBISAR, (R, String?), QAfterProperty> notesProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(16);
+    });
+  }
+
+  QueryBuilder<KeyPackageDBISAR, (R, bool), QAfterProperty>
+      isPublishedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(17);
     });
   }
 }
@@ -4306,6 +4389,13 @@ extension KeyPackageDBISARQueryProperty3<R1, R2>
       notesProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(16);
+    });
+  }
+
+  QueryBuilder<KeyPackageDBISAR, (R1, R2, bool), QOperations>
+      isPublishedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(17);
     });
   }
 }
