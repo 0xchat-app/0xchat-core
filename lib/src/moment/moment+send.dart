@@ -14,7 +14,8 @@ extension Send on Moment {
       List<String>? mentions,
       List<String>? mentionsRelays,
       List<String>? hashTags,
-      Map<String, String>? emojiShortcodes}) async {
+      Map<String, String>? emojiShortcodes,
+      List<RelayKind>? relayKinds}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event event = await Nip1.encodeNote(content, pubkey, privkey,
         rootEvent: rootEvent,
@@ -25,12 +26,16 @@ extension Send on Moment {
         replyUserRelays: mentionsRelays,
         hashTags: hashTags,
         emojiShortcodes: emojiShortcodes);
-    Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
-      if (!completer.isCompleted) {
-        await handleNoteEvent(event, relay, false);
-        completer.complete(ok);
-      }
-    });
+    Connect.sharedInstance.sendEvent(
+      event,
+      relayKinds: relayKinds ?? [RelayKind.general, RelayKind.outbox],
+      sendCallBack: (ok, relay) async {
+        if (!completer.isCompleted) {
+          await handleNoteEvent(event, relay, false);
+          completer.complete(ok);
+        }
+      },
+    );
 
     return completer.future;
   }
@@ -240,7 +245,8 @@ extension Send on Moment {
   Future<OKEvent> sendQuoteRepost(String quoteRepostNoteId, String content,
       {List<String>? hashTags, 
       List<String>? mentions,
-      Map<String, String>? emojiShortcodes}) async {
+      Map<String, String>? emojiShortcodes,
+      List<RelayKind>? relayKinds}) async {
     NoteDBISAR? note = await loadNoteWithNoteId(quoteRepostNoteId);
     if (note != null) {
       Completer<OKEvent> completer = Completer<OKEvent>();
@@ -268,9 +274,13 @@ extension Send on Moment {
         OKEvent ok = await sendPrivateMessage([note.author, pubkey], event);
         if (!completer.isCompleted) completer.complete(ok);
       } else {
-        Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
-          if (!completer.isCompleted) completer.complete(ok);
-        });
+        Connect.sharedInstance.sendEvent(
+          event,
+          relayKinds: relayKinds ?? [RelayKind.general, RelayKind.outbox],
+          sendCallBack: (ok, relay) async {
+            if (!completer.isCompleted) completer.complete(ok);
+          },
+        );
       }
 
       return completer.future;

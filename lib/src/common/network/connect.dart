@@ -427,37 +427,77 @@ class Connect {
         RelayKind.circleRelay
       ]}) {
     String eventString = event.serialize();
-    List<String> rs = (toRelays == null || toRelays.isEmpty)
-        ? relays(relayKinds: relayKinds)
-        : List.from(toRelays);
-    rs.addAll(relays(relayKinds: [RelayKind.circleRelay]));
-    LogUtils.v(() => 'send event toRelays: ${jsonEncode(rs)}, eventString: $eventString');
+    List<String> rs;
+    bool useExplicitRelays = false;
+    
+    if (toRelays != null && toRelays.isNotEmpty) {
+      // User explicitly provided relay list
+      rs = List.from(toRelays);
+      useExplicitRelays = true;
+    } else {
+      // Get relays based on relayKinds
+      rs = relays(relayKinds: relayKinds);
+      // Only add circleRelay if it's included in the requested relayKinds
+      // This allows users to explicitly choose which relay types to use
+      if (relayKinds.contains(RelayKind.circleRelay)) {
+        rs.addAll(relays(relayKinds: [RelayKind.circleRelay]));
+      }
+      // If relayKinds is not the default (contains only general, outbox, circleRelay),
+      // then user explicitly chose, so don't fallback to all relays
+      final defaultKinds = [RelayKind.general, RelayKind.outbox, RelayKind.circleRelay];
+      useExplicitRelays = !_listEquals(relayKinds, defaultKinds);
+    }
+    
+    LogUtils.v(() => 'send event toRelays: ${jsonEncode(rs)}, relayKinds: ${relayKinds.map((e) => e.name)}, useExplicitRelays: $useExplicitRelays');
     Sends sends = Sends(generate64RandomHexChars(), rs, DateTime.now().millisecondsSinceEpoch,
         event.id, sendCallBack, eventString);
     sendsMap[event.id] = sends;
-    _send(eventString, toRelays: rs);
+    // If user explicitly chose relayKinds but no relays are available, don't fallback to all relays
+    _send(eventString, toRelays: rs, eventId: event.id, allowFallbackToAll: !useExplicitRelays);
+  }
+  
+  bool _listEquals<T>(List<T> a, List<T> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
-  void _send(String data, {List<String>? toRelays, String? eventId, String? subscriptionId}) {
-    if (toRelays != null && toRelays.isNotEmpty) {
-      toRelays = Set.from(toRelays).cast<String>().toList();
-      for (var relay in toRelays) {
-        if (webSockets.containsKey(relay)) {
-          var socket = webSockets[relay]?.socket;
-          if (webSockets[relay]?.connectStatus == 1 && socket != null) {
-            socket.add(data);
+  void _send(String data, {List<String>? toRelays, String? eventId, String? subscriptionId, bool allowFallbackToAll = true}) {
+    if (toRelays != null) {
+      // If toRelays is an empty list and allowFallbackToAll is false, don't send to any relay
+      if (toRelays.isEmpty && !allowFallbackToAll) {
+        if (eventId != null) {
+          _handleOk(OKEvent(eventId, false, 'no relays available'), '');
+        }
+        return;
+      }
+      
+      if (toRelays.isNotEmpty) {
+        toRelays = Set.from(toRelays).cast<String>().toList();
+        for (var relay in toRelays) {
+          if (webSockets.containsKey(relay)) {
+            var socket = webSockets[relay]?.socket;
+            if (webSockets[relay]?.connectStatus == 1 && socket != null) {
+              socket.add(data);
+            } else if (eventId != null) {
+              _handleOk(OKEvent(eventId, false, 'not connect to relay'), relay);
+            } else if (subscriptionId != null) {
+              _handleCLOSED(Closed(subscriptionId), relay);
+            }
           } else if (eventId != null) {
             _handleOk(OKEvent(eventId, false, 'not connect to relay'), relay);
           } else if (subscriptionId != null) {
             _handleCLOSED(Closed(subscriptionId), relay);
           }
-        } else if (eventId != null) {
-          _handleOk(OKEvent(eventId, false, 'not connect to relay'), relay);
-        } else if (subscriptionId != null) {
-          _handleCLOSED(Closed(subscriptionId), relay);
         }
+        return;
       }
-    } else {
+    }
+    
+    // Fallback to all connected relays only if allowFallbackToAll is true
+    if (allowFallbackToAll) {
       webSockets.forEach((url, socket) {
         if (webSockets[url]?.connectStatus == 1 && socket.socket != null) {
           socket.socket?.add(data);
@@ -467,6 +507,8 @@ class Connect {
           _handleCLOSED(Closed(subscriptionId), url);
         }
       });
+    } else if (eventId != null) {
+      _handleOk(OKEvent(eventId, false, 'no relays available'), '');
     }
   }
 
