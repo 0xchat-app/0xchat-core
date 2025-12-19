@@ -32,7 +32,7 @@ extension Calling on Contacts {
   Future<OKEvent> _sendSignaling(String offerId, String toPubkey,
       String privateGroupId, SignalingState state, String content) async {
     GroupDBISAR? groupDB = Groups.sharedInstance.myGroups[privateGroupId]?.value;
-    if (groupDB == null || groupDB.isMLSGroup) return OKEvent('', false, 'group not found');
+    if (groupDB == null || !groupDB.isMLSGroup) return OKEvent('', false, 'group not found');
 
     Completer<OKEvent> completer = Completer<OKEvent>();
     Event? event;
