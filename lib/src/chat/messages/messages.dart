@@ -162,11 +162,17 @@ class Messages {
 
   Future<MessageDBISAR?> loadMessageDBFromDB(String messageId) async {
     List<MessageDBISAR> result = loadMessagesFromCache(messageIds: [messageId]);
-    if (result.isNotEmpty) return result.first.withGrowableLevels();
+    if (result.isNotEmpty) {
+      return result.last.withGrowableLevels();
+    }
     final isar = DBISAR.sharedInstance.isar;
-    var queryBuilder = isar.messageDBISARs.where().messageIdEqualTo(messageId);
-    final message = await queryBuilder.findFirst();
-    return message?.withGrowableLevels();
+    return isar.readAsync((isar) {
+      final message = isar.messageDBISARs
+          .where()
+          .messageIdEqualTo(messageId)
+          .findFirst();
+      return message?.withGrowableLevels();
+    });
   }
 
   Future<List<MessageDBISAR>> loadMessageDBFromDBWithMsgIds(List<String> messageIds) async {
@@ -174,8 +180,12 @@ class Messages {
     List<MessageDBISAR> dbMsg = [];
     if (cacheMsg.length != messageIds.length) {
       final isar = DBISAR.sharedInstance.isar;
-      var queryBuilder = isar.messageDBISARs.where().anyOf(messageIds, (q, messageId) => q.messageIdEqualTo(messageId));
-      dbMsg = await queryBuilder.findAll();
+      dbMsg = await isar.readAsync((isar) {
+        return isar.messageDBISARs
+            .where()
+            .anyOf(messageIds, (q, messageId) => q.messageIdEqualTo(messageId))
+            .findAll();
+      });
     }
     return [...cacheMsg, ...dbMsg].map((e) => e.withGrowableLevels()).toList();
   }

@@ -181,12 +181,13 @@ class DBISAR {
 
     final Map<Type, List<dynamic>> typeMap = Map.from(_buffers);
 
+    _buffers.clear();
+
     await DBISAR.sharedInstance.isar.writeAsyncWith(typeMap, (isar, typeMap) {
       for (final type in typeMap.keys) {
         _saveTOISAR(typeMap[type]!, type, isar);
       }
     });
-    _buffers.clear();
   }
 
   /// Save objects to Isar database by type
