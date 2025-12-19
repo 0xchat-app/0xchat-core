@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
 import 'package:chatcore/chat-core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
@@ -719,10 +720,14 @@ class Connect {
     });
   }
 
-  Future _connectWs(String relay) async {
+  Future<WebSocket> _connectWs(String relay) async {
+    final cmp = Completer<WebSocket>();
     try {
       _setConnectStatus(relay, ConnectStatus.connecting); // connecting
-      return await _connectWsSetting(relay);
+      final socket = await _connectWsSetting(relay);
+      if (!cmp.isCompleted) {
+        cmp.complete(socket);
+      }
     } catch (e) {
       LogUtils.v(() => "Error! can not connect WS connectWs $e relay:$relay");
       _setConnectStatus(relay, ConnectStatus.closed); // closed
@@ -736,15 +741,19 @@ class Connect {
         // Schedule new connection attempt
         _reconnectionTimers[relay] = Timer(Duration(milliseconds: 3000), () {
           if (webSockets.containsKey(relay)) {
-            _connectWs(relay);
+            final socket = _connectWs(relay);
+            if (!cmp.isCompleted) {
+              cmp.complete(socket);
+            }
           }
           _reconnectionTimers.remove(relay);
         });
       }
     }
+    return cmp.future;
   }
 
-  Future _connectWsSetting(String relay) async {
+  Future<WebSocket> _connectWsSetting(String relay) async {
     String? host = Config.sharedInstance.hostConfig[relay];
     if (host != null && host.isNotEmpty) {
       relay = host;
