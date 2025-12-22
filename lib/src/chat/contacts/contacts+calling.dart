@@ -62,7 +62,7 @@ extension Calling on Contacts {
     Signaling signaling =
         Signaling(event.pubkey, toPubkey, content, state, offerId);
     if (state != SignalingState.candidate) {
-      await handleSignalingEvent(event, signaling, reason);
+      await handleSignalingEvent(event, signaling, reason, privateGroupId: privateGroupId);
     }
 
     final expiration = (currentUnixTimestampSeconds() + 60).toString();
@@ -75,7 +75,7 @@ extension Calling on Contacts {
     );
   }
 
-  Future<void> handleCallEvent(Event event, String relay) async {
+  Future<void> handleCallEvent(Event event, String relay, {String? privateGroupId}) async {
     Signaling signaling = Nip100.decode(event, pubkey);
     String? reason;
     if (signaling.state == SignalingState.disconnect) {
@@ -84,7 +84,7 @@ extension Calling on Contacts {
         reason = map['reason'];
       } catch (_) {}
     }
-    bool result = await handleSignalingEvent(event, signaling, reason);
+    bool result = await handleSignalingEvent(event, signaling, reason, privateGroupId: privateGroupId);
     if (result) {
       onCallStateChange?.call(
           event.pubkey, signaling.state, signaling.content, signaling.offerId);
@@ -92,7 +92,7 @@ extension Calling on Contacts {
   }
 
   Future<bool> handleSignalingEvent(
-      Event event, Signaling signaling, String? reason) async {
+      Event event, Signaling signaling, String? reason, {String? privateGroupId}) async {
     /// receive offer
     int eventTime = event.createdAt * 1000;
     if (signaling.state == SignalingState.offer) {
@@ -102,7 +102,7 @@ extension Calling on Contacts {
         /// outdated request
         callMessage.media = map['media'];
         callMessage.start = eventTime;
-        MessageDBISAR callMessageDB = callMessageToDB(callMessage);
+        MessageDBISAR callMessageDB = callMessageToDB(callMessage, event, privateGroupId);
         await Messages.saveMessageToDB(callMessageDB,
             conflictAlgorithm: ConflictAlgorithm.replace);
         privateChatMessageCallBack?.call(callMessageDB);
@@ -157,7 +157,7 @@ extension Calling on Contacts {
       callMessage.end = eventTime;
       callMessage.state = state;
       callMessages[callMessage.callId] = callMessage;
-      MessageDBISAR callMessageDB = callMessageToDB(callMessage);
+      MessageDBISAR callMessageDB = callMessageToDB(callMessage, event, privateGroupId);
       await Messages.saveMessageToDB(callMessageDB,
           conflictAlgorithm: ConflictAlgorithm.replace);
       privateChatMessageCallBack?.call(callMessageDB);
@@ -166,7 +166,7 @@ extension Calling on Contacts {
     return true;
   }
 
-  MessageDBISAR callMessageToDB(CallMessage callMessage) {
+  MessageDBISAR callMessageToDB(CallMessage callMessage, Event event, String? privateGroupId) {
     String content = jsonEncode({
       'contentType': 'call',
       'content': jsonEncode({
@@ -179,15 +179,18 @@ extension Calling on Contacts {
       messageId: callMessage.callId,
       sender: callMessage.sender,
       receiver: callMessage.receiver,
+      groupId: privateGroupId ?? '',
+      kind: event.kind,
+      tags: jsonEncode(event.tags),
       content: content,
-      kind: 25050,
       type: 'call',
       decryptContent: jsonEncode({
         'state': callMessage.state.toString(),
         'duration': (callMessage.end - callMessage.start),
         'media': callMessage.media
       }),
-      createTime: currentUnixTimestampSeconds(),
+      createTime: event.createdAt,
+      plaintEvent: jsonEncode(event),
       chatType: 1,
     );
   }

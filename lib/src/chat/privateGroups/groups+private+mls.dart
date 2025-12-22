@@ -797,7 +797,7 @@ extension MLSPrivateGroups on Groups {
         handleKeyPackageEvent(innerEvent, relay);
         break;
       case 25050:
-        Contacts.sharedInstance.handleCallEvent(innerEvent, relay);
+        Contacts.sharedInstance.handleCallEvent(innerEvent, relay, privateGroupId: privateGroupId);
         break;
       default:
         break;
