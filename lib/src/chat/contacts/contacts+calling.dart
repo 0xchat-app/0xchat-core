@@ -12,9 +12,9 @@ extension Calling on Contacts {
         offerId, friendPubkey, privateGroupId, SignalingState.disconnect, content);
   }
 
-  Future<OKEvent> sendOffer(String friendPubkey, String privateGroupId, String content) async {
+  Future<OKEvent> sendOffer(String offerId, String friendPubkey, String privateGroupId, String content) async {
     return await _sendSignaling(
-        '', friendPubkey, privateGroupId, SignalingState.offer, content);
+        offerId, friendPubkey, privateGroupId, SignalingState.offer, content);
   }
 
   Future<OKEvent> sendAnswer(
@@ -48,8 +48,7 @@ extension Calling on Contacts {
         break;
       case SignalingState.offer:
         kind = 25050;
-        event = await Nip100.offer(toPubkey, content, pubkey, privkey);
-        offerId = event.id;
+        event = await Nip100.offer(toPubkey, content, offerId, pubkey, privkey);
         break;
       case SignalingState.answer:
         event = await Nip100.answer(toPubkey, content, offerId, pubkey, privkey);
@@ -177,17 +176,19 @@ extension Calling on Contacts {
       })
     });
     return MessageDBISAR(
-        messageId: callMessage.callId,
-        sender: callMessage.sender,
-        receiver: callMessage.receiver,
-        content: content,
-        kind: 25050,
-        type: 'call',
-        decryptContent: jsonEncode({
-          'state': callMessage.state.toString(),
-          'duration': (callMessage.end - callMessage.start),
-          'media': callMessage.media
-        }),
-        createTime: currentUnixTimestampSeconds());
+      messageId: callMessage.callId,
+      sender: callMessage.sender,
+      receiver: callMessage.receiver,
+      content: content,
+      kind: 25050,
+      type: 'call',
+      decryptContent: jsonEncode({
+        'state': callMessage.state.toString(),
+        'duration': (callMessage.end - callMessage.start),
+        'media': callMessage.media
+      }),
+      createTime: currentUnixTimestampSeconds(),
+      chatType: 1,
+    );
   }
 }
