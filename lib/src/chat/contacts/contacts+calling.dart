@@ -52,7 +52,7 @@ extension Calling on Contacts {
         break;
       case SignalingState.offer:
         kind = 25050;
-        event = await Nip100.offer(toPubkey, content, pubkey, privkey,
+        event = await Nip100.offer(toPubkey, content, offerId, pubkey, privkey,
             groupid: privateGroupId);
         break;
       case SignalingState.answer:
@@ -98,7 +98,7 @@ extension Calling on Contacts {
         privateGroupId: privateGroupId);
     if (result) {
       onCallStateChange?.call(
-          event.pubkey, signaling.state, signaling.content, signaling.offerId);
+          event.pubkey, signaling.state, signaling.content, signaling.offerId, privateGroupId);
     }
   }
 
