@@ -71,7 +71,7 @@ class Contacts {
   Map<String, bool> offlinePrivateMessageFinish = {};
   Map<String, bool> offlineSecretMessageFinish = {};
 
-  void Function(String friend, SignalingState state, String data, String? offerId)?
+  void Function(String friend, SignalingState state, String data, String? offerId, String? groupid)?
       onCallStateChange;
 
   Future<void> init({ContactUpdatedCallBack? callBack}) async {

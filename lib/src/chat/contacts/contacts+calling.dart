@@ -6,41 +6,45 @@ import 'package:nostr_core_dart/nostr.dart';
 import 'package:sqflite_sqlcipher/sqlite_api.dart';
 
 extension Calling on Contacts {
-  Future<OKEvent> sendDisconnect(
-      String offerId, String friendPubkey, String privateGroupId, String content) async {
-    return await _sendSignaling(
-        offerId, friendPubkey, privateGroupId, SignalingState.disconnect, content);
+  Future<OKEvent> sendDisconnect(String offerId, String friendPubkey,
+      String privateGroupId, String content) async {
+    return await _sendSignaling(offerId, friendPubkey, privateGroupId,
+        SignalingState.disconnect, content);
   }
 
-  Future<OKEvent> sendOffer(String offerId, String friendPubkey, String privateGroupId, String content) async {
+  Future<OKEvent> sendOffer(String offerId, String friendPubkey,
+      String privateGroupId, String content) async {
     return await _sendSignaling(
         offerId, friendPubkey, privateGroupId, SignalingState.offer, content);
   }
 
-  Future<OKEvent> sendAnswer(
-      String offerId, String friendPubkey, String privateGroupId, String content) async {
+  Future<OKEvent> sendAnswer(String offerId, String friendPubkey,
+      String privateGroupId, String content) async {
     return await _sendSignaling(
         offerId, friendPubkey, privateGroupId, SignalingState.answer, content);
   }
 
-  Future<OKEvent> sendCandidate(
-      String offerId, String friendPubkey, String privateGroupId, String content) async {
-    return await _sendSignaling(
-        offerId, friendPubkey, privateGroupId, SignalingState.candidate, content);
+  Future<OKEvent> sendCandidate(String offerId, String friendPubkey,
+      String privateGroupId, String content) async {
+    return await _sendSignaling(offerId, friendPubkey, privateGroupId,
+        SignalingState.candidate, content);
   }
 
   Future<OKEvent> _sendSignaling(String offerId, String toPubkey,
       String privateGroupId, SignalingState state, String content) async {
-    GroupDBISAR? groupDB = Groups.sharedInstance.myGroups[privateGroupId]?.value;
-    if (groupDB == null || !groupDB.isMLSGroup) return OKEvent('', false, 'group not found');
+    GroupDBISAR? groupDB =
+        Groups.sharedInstance.myGroups[privateGroupId]?.value;
+    if (groupDB == null || !groupDB.isMLSGroup){
+      return OKEvent('', false, 'group not found');
+    }
 
-    Completer<OKEvent> completer = Completer<OKEvent>();
     Event? event;
     String? reason;
     int kind = 25051;
     switch (state) {
       case SignalingState.disconnect:
-        event = await Nip100.close(toPubkey, content, offerId, pubkey, privkey);
+        event = await Nip100.close(toPubkey, content, offerId, pubkey, privkey,
+            groupid: privateGroupId);
         try {
           Map map = jsonDecode(content);
           reason = map['reason'];
@@ -48,34 +52,40 @@ extension Calling on Contacts {
         break;
       case SignalingState.offer:
         kind = 25050;
-        event = await Nip100.offer(toPubkey, content, offerId, pubkey, privkey);
+        event = await Nip100.offer(toPubkey, content, pubkey, privkey,
+            groupid: privateGroupId);
         break;
       case SignalingState.answer:
-        event = await Nip100.answer(toPubkey, content, offerId, pubkey, privkey);
+        event = await Nip100.answer(toPubkey, content, offerId, pubkey, privkey,
+            groupid: privateGroupId);
         break;
       case SignalingState.candidate:
-        event = await Nip100.candidate(toPubkey, content, offerId, pubkey, privkey);
+        event = await Nip100.candidate(
+            toPubkey, content, offerId, pubkey, privkey,
+            groupid: privateGroupId);
         break;
       default:
         throw Exception('error state');
     }
-    Signaling signaling =
-        Signaling(event.pubkey, toPubkey, content, state, offerId);
+    Signaling signaling = Signaling(
+        event.pubkey, toPubkey, content, state, offerId, privateGroupId);
     if (state != SignalingState.candidate) {
-      await handleSignalingEvent(event, signaling, reason, privateGroupId: privateGroupId);
+      await handleSignalingEvent(event, signaling, reason,
+          privateGroupId: privateGroupId);
     }
 
     final expiration = (currentUnixTimestampSeconds() + 60).toString();
-    
+
     return Groups.sharedInstance.sendMessageToMLSGroup(
-      groupDB, 
+      groupDB,
       event,
       expiration: expiration,
-      k: event.kind.toString(),
+      k: kind.toString(),
     );
   }
 
-  Future<void> handleCallEvent(Event event, String relay, {String? privateGroupId}) async {
+  Future<void> handleCallEvent(Event event, String relay,
+      {String? privateGroupId}) async {
     Signaling signaling = Nip100.decode(event, pubkey);
     String? reason;
     if (signaling.state == SignalingState.disconnect) {
@@ -84,7 +94,8 @@ extension Calling on Contacts {
         reason = map['reason'];
       } catch (_) {}
     }
-    bool result = await handleSignalingEvent(event, signaling, reason, privateGroupId: privateGroupId);
+    bool result = await handleSignalingEvent(event, signaling, reason,
+        privateGroupId: privateGroupId);
     if (result) {
       onCallStateChange?.call(
           event.pubkey, signaling.state, signaling.content, signaling.offerId);
@@ -92,7 +103,8 @@ extension Calling on Contacts {
   }
 
   Future<bool> handleSignalingEvent(
-      Event event, Signaling signaling, String? reason, {String? privateGroupId}) async {
+      Event event, Signaling signaling, String? reason,
+      {String? privateGroupId}) async {
     /// receive offer
     int eventTime = event.createdAt * 1000;
     if (signaling.state == SignalingState.offer) {
@@ -102,7 +114,8 @@ extension Calling on Contacts {
         /// outdated request
         callMessage.media = map['media'];
         callMessage.start = eventTime;
-        MessageDBISAR callMessageDB = callMessageToDB(callMessage, event, privateGroupId);
+        MessageDBISAR callMessageDB =
+            callMessageToDB(callMessage, event, privateGroupId);
         await Messages.saveMessageToDB(callMessageDB,
             conflictAlgorithm: ConflictAlgorithm.replace);
         privateChatMessageCallBack?.call(callMessageDB);
@@ -157,7 +170,8 @@ extension Calling on Contacts {
       callMessage.end = eventTime;
       callMessage.state = state;
       callMessages[callMessage.callId] = callMessage;
-      MessageDBISAR callMessageDB = callMessageToDB(callMessage, event, privateGroupId);
+      MessageDBISAR callMessageDB =
+          callMessageToDB(callMessage, event, privateGroupId);
       await Messages.saveMessageToDB(callMessageDB,
           conflictAlgorithm: ConflictAlgorithm.replace);
       privateChatMessageCallBack?.call(callMessageDB);
@@ -166,7 +180,8 @@ extension Calling on Contacts {
     return true;
   }
 
-  MessageDBISAR callMessageToDB(CallMessage callMessage, Event event, String? privateGroupId) {
+  MessageDBISAR callMessageToDB(
+      CallMessage callMessage, Event event, String? privateGroupId) {
     String content = jsonEncode({
       'contentType': 'call',
       'content': jsonEncode({
