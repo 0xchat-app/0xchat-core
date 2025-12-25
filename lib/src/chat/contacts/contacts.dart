@@ -189,8 +189,6 @@ class Contacts {
 
   Future<OKEvent> updateContactNickName(String friendPubkey, String nickName) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-
-    UserDBISAR? friend = allContacts[friendPubkey];
     UserDBISAR? friend = await Account.sharedInstance.getUserInfo(friendPubkey);
     if (friend != null) {
       friend.nickName = nickName;
