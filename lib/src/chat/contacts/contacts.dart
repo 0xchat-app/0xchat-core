@@ -191,12 +191,13 @@ class Contacts {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     UserDBISAR? friend = allContacts[friendPubkey];
+    UserDBISAR? friend = await Account.sharedInstance.getUserInfo(friendPubkey);
     if (friend != null) {
       friend.nickName = nickName;
       await Account.saveUserToDB(friend);
-      _syncContactsToRelay(okCallBack: (ok, relay) {
-        if (!completer.isCompleted) completer.complete(ok);
-      });
+      if (!completer.isCompleted){
+        completer.complete(OKEvent(friendPubkey, true, ''));
+      }
     } else if (!completer.isCompleted) {
       completer.complete(OKEvent(friendPubkey, false, ''));
     }
