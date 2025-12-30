@@ -82,4 +82,5 @@ export 'src/moment/model/noteDB.dart';
 export 'src/moment/model/noteDB_isar.dart';
 export 'src/moment/model/notificationDB.dart';
 export 'src/moment/model/notificationDB_isar.dart';
+export 'src/utils/custom_emoji_utils.dart';
 export 'src/chat-core-manager.dart';
