@@ -105,8 +105,9 @@ extension Calling on Contacts {
       {String? privateGroupId}) async {
     /// receive offer
     int eventTime = event.createdAt * 1000;
+    final offerId = signaling.offerId ?? event.id;
     if (signaling.state == SignalingState.offer) {
-      CallMessage? callMessage = callMessages[event.id];
+      CallMessage? callMessage = callMessages[offerId];
       Map map = jsonDecode(signaling.content);
       if (callMessage != null) {
         /// outdated request
@@ -120,20 +121,20 @@ extension Calling on Contacts {
         return false;
       } else {
         callMessage = CallMessage(
-            event.id,
+            offerId,
             signaling.sender,
             signaling.receiver,
             callMessage?.state ?? CallMessageState.offer,
             eventTime,
             callMessage?.end ?? eventTime,
             map['media']);
-        callMessages[event.id] = callMessage;
+        callMessages[offerId] = callMessage;
       }
     }
 
     /// receive answer
     else if (signaling.state == SignalingState.answer) {
-      CallMessage? callMessage = callMessages[event.id];
+      CallMessage? callMessage = callMessages[offerId];
       if (callMessage != null) {
         callMessage.start = eventTime;
       }
@@ -156,9 +157,9 @@ extension Calling on Contacts {
           state = CallMessageState.inCalling;
           break;
       }
-      CallMessage? callMessage = callMessages[signaling.offerId];
+      CallMessage? callMessage = callMessages[offerId];
       callMessage ??= CallMessage(
-          signaling.offerId ?? event.id,
+          offerId,
           signaling.sender,
           signaling.receiver,
           state,
@@ -167,7 +168,7 @@ extension Calling on Contacts {
           '');
       callMessage.end = eventTime;
       callMessage.state = state;
-      callMessages[callMessage.callId] = callMessage;
+      callMessages[offerId] = callMessage;
       MessageDBISAR callMessageDB =
           callMessageToDB(callMessage, event, privateGroupId);
       await Messages.saveMessageToDB(callMessageDB,
@@ -183,7 +184,7 @@ extension Calling on Contacts {
     String content = jsonEncode({
       'contentType': 'call',
       'content': jsonEncode({
-        'state': callMessage.state.toString(),
+        'state': callMessage.state.value,
         'duration': (callMessage.end - callMessage.start),
         'media': callMessage.media
       })
@@ -198,7 +199,7 @@ extension Calling on Contacts {
       content: content,
       type: 'call',
       decryptContent: jsonEncode({
-        'state': callMessage.state.toString(),
+        'state': callMessage.state.value,
         'duration': (callMessage.end - callMessage.start),
         'media': callMessage.media
       }),
