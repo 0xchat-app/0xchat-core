@@ -64,8 +64,6 @@ extension Calling on Contacts {
             toPubkey, content, offerId, pubkey, privkey,
             groupid: privateGroupId);
         break;
-      default:
-        throw Exception('error state');
     }
     Signaling signaling = Signaling(
         event.pubkey, toPubkey, content, state, offerId, privateGroupId);

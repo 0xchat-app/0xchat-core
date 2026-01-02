@@ -18,7 +18,24 @@ typedef SecretChatMessageUpdateCallBack = void Function(MessageDBISAR, String);
 typedef ContactUpdatedCallBack = void Function();
 typedef OfflinePrivateMessageFinishCallBack = void Function();
 
-enum CallMessageState { disconnect, offer, answer, reject, timeout, cancel, inCalling }
+enum CallMessageState {
+  disconnect(1),
+  offer(2),
+  answer(3),
+  reject(4),
+  timeout(5),
+  cancel(6),
+  inCalling(7);
+
+  final int value;
+  const CallMessageState(this.value);
+}
+
+extension CallMessageStateEx on CallMessageState {
+  static CallMessageState? fromValue(dynamic value) {
+    return CallMessageState.values.where((e) => e == value).firstOrNull;
+  }
+}
 
 class CallMessage {
   String callId;
