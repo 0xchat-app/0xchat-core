@@ -33,7 +33,7 @@ enum CallMessageState {
 
 extension CallMessageStateEx on CallMessageState {
   static CallMessageState? fromValue(dynamic value) {
-    return CallMessageState.values.where((e) => e == value).firstOrNull;
+    return CallMessageState.values.where((e) => e.value == value).firstOrNull;
   }
 }
 
@@ -45,9 +45,11 @@ class CallMessage {
   int start;
   int end;
   String media;
+  bool answered;
 
   CallMessage(
-      this.callId, this.sender, this.receiver, this.state, this.start, this.end, this.media);
+      this.callId, this.sender, this.receiver, this.state, this.start, this.end, this.media,
+      {this.answered = false});
 }
 
 class Contacts {

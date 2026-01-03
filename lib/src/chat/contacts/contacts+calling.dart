@@ -121,13 +121,15 @@ extension Calling on Contacts {
         return false;
       } else {
         callMessage = CallMessage(
-            offerId,
-            signaling.sender,
-            signaling.receiver,
-            callMessage?.state ?? CallMessageState.offer,
-            eventTime,
-            callMessage?.end ?? eventTime,
-            map['media']);
+          offerId,
+          signaling.sender,
+          signaling.receiver,
+          callMessage?.state ?? CallMessageState.offer,
+          eventTime,
+          callMessage?.end ?? eventTime,
+          map['media'],
+          answered: callMessage?.answered ?? false,
+        );
         callMessages[offerId] = callMessage;
       }
     }
@@ -137,6 +139,7 @@ extension Calling on Contacts {
       CallMessage? callMessage = callMessages[offerId];
       if (callMessage != null) {
         callMessage.start = eventTime;
+        callMessage.answered = true;
       }
     }
 
@@ -159,13 +162,15 @@ extension Calling on Contacts {
       }
       CallMessage? callMessage = callMessages[offerId];
       callMessage ??= CallMessage(
-          offerId,
-          signaling.sender,
-          signaling.receiver,
-          state,
-          eventTime,
-          eventTime,
-          '');
+        offerId,
+        signaling.sender,
+        signaling.receiver,
+        state,
+        eventTime,
+        eventTime,
+        '',
+        answered: false,
+      );
       callMessage.end = eventTime;
       callMessage.state = state;
       callMessages[offerId] = callMessage;
@@ -181,11 +186,15 @@ extension Calling on Contacts {
 
   MessageDBISAR callMessageToDB(
       CallMessage callMessage, Event event, String? privateGroupId) {
+    int? duration;
+    if (callMessage.answered && callMessage.end > callMessage.start) {
+      duration = callMessage.end - callMessage.start;
+    }
     String content = jsonEncode({
       'contentType': 'call',
       'content': jsonEncode({
         'state': callMessage.state.value,
-        'duration': (callMessage.end - callMessage.start),
+        if (duration != null) 'duration': duration,
         'media': callMessage.media
       })
     });
@@ -200,7 +209,7 @@ extension Calling on Contacts {
       type: 'call',
       decryptContent: jsonEncode({
         'state': callMessage.state.value,
-        'duration': (callMessage.end - callMessage.start),
+        if (duration != null) 'duration': duration,
         'media': callMessage.media
       }),
       createTime: event.createdAt,
