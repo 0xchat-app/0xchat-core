@@ -45,7 +45,7 @@ extension Calling on Contacts {
         break;
       case SignalingState.offer:
         kind = 25050;
-        event = await Nip100.offer(toPubkey, content, pubkey, privkey);
+        event = await Nip100.offer(toPubkey, content, offerId, pubkey, privkey);
         offerId = event.id;
         break;
       case SignalingState.answer:
@@ -58,7 +58,7 @@ extension Calling on Contacts {
         throw Exception('error state');
     }
     Signaling signaling =
-        Signaling(event.pubkey, toPubkey, content, state, offerId);
+        Signaling(event.pubkey, toPubkey, content, state, offerId, '');
     if (state != SignalingState.candidate) {
       await handleSignalingEvent(event, signaling, reason);
     }
