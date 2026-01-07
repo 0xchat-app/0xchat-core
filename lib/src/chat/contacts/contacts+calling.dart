@@ -74,11 +74,14 @@ extension Calling on Contacts {
 
     final expiration = (currentUnixTimestampSeconds() + 60).toString();
 
+    final shouldSendPush = state == SignalingState.offer;
+
     return Groups.sharedInstance.sendMessageToMLSGroup(
       groupDB,
       event,
       expiration: expiration,
       k: kind.toString(),
+      sendPushNotification: shouldSendPush,
     );
   }
 
