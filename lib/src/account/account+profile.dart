@@ -289,18 +289,37 @@ extension AccountProfile on Account {
   // relay list
   UserDBISAR? _handleKind10002Event(UserDBISAR? db, Event event) {
     if (db != null) {
+      // Only process if event is newer than current data
+      if (db.lastRelayListUpdatedTime >= event.createdAt) {
+        return db;
+      }
+      
       db.lastRelayListUpdatedTime = event.createdAt;
       List<Relay> result = Nip65.decode(event);
-      db.inboxRelayList ??= [];
-      db.outboxRelayList ??= [];
+      
+      // Completely replace lists instead of appending
+      List<String> newInboxRelays = [];
+      List<String> newOutboxRelays = [];
+      
       for (var relay in result) {
-        if ((relay.r == 'read' || relay.r == null) && !db.inboxRelayList!.contains(relay.url)) {
-          db.inboxRelayList!.add(relay.url);
+        // Handle inbox relays (read or no read/write marker)
+        if (relay.r == 'read' || relay.r == null) {
+          if (!newInboxRelays.contains(relay.url)) {
+            newInboxRelays.add(relay.url);
+          }
         }
-        if ((relay.r == 'write' || relay.r == null) && !db.outboxRelayList!.contains(relay.url)) {
-          db.outboxRelayList!.add(relay.url);
+        // Handle outbox relays (write or no read/write marker)
+        if (relay.r == 'write' || relay.r == null) {
+          if (!newOutboxRelays.contains(relay.url)) {
+            newOutboxRelays.add(relay.url);
+          }
         }
       }
+      
+      // Replace the lists completely
+      db.inboxRelayList = newInboxRelays;
+      db.outboxRelayList = newOutboxRelays;
+      
       if (db.pubKey == currentPubkey) {
         Relays.sharedInstance.connectInboxOutboxRelays();
         relayListUpdateCallback?.call();
