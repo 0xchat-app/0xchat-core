@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
 import 'package:chatcore/chat-core.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
@@ -101,8 +100,11 @@ class Connect {
   NoticeCallBack? noticeCallBack;
   StreamSubscription? _connectivitySubscription;
 
-  /// sockets
-  Map<String, ISocket> webSockets = {};
+  /// sockets, key: relay url
+  final Map<String, ISocket> webSockets = {};
+
+  // Track pending ping requests to match PONG responses, key: relay url
+  final Map<String, Completer<int?>> _pendingPings = {};
 
   // subscriptionId+relay, Requests
   Map<String, Requests> requestsMap = {};
@@ -128,14 +130,72 @@ class Connect {
         _checkTimeout();
       });
     }
-    resetConnection(force: true);
+    resetConnection();
   }
 
-  Future<void> resetConnection({bool force = true}) async {
+  Future<void> checkAndReconnectIfNeeded() async {
     final keys = [...webSockets.keys];
+    List<String> relaysToReconnect = [];
+
     for (var relay in keys) {
+      final webSocket = webSockets[relay];
+      if (webSocket == null) continue;
+
+      final socket = webSocket.socket;
+      bool needReconnect = false;
+      
+      if (webSocket.status != ConnectStatus.open) {
+        LogUtils.v(() => 'Connection to $relay is not open (status: ${webSocket.status}), reconnecting...');
+        needReconnect = true;
+      } else if (socket == null) {
+        LogUtils.v(() => 'Socket for $relay is null but status is open, reconnecting...');
+        needReconnect = true;
+      } else {
+        try {
+          bool isClosed = true;
+          await socket.done.timeout(
+            Duration(milliseconds: 100),
+            onTimeout: () {
+              isClosed = false;
+            },
+          );
+
+          if (isClosed) {
+            LogUtils.v(() => 'Socket for $relay is closed (done completed), reconnecting...');
+            needReconnect = true;
+          } else {
+            final latency = await testRelayLatency(
+              relay,
+              webSocket: webSocket,
+            );
+
+            if (latency == null) {
+              LogUtils.v(() => 'Relay $relay latency test failed, reconnecting...');
+              needReconnect = true;
+            }
+          }
+        } catch (e) {
+          LogUtils.v(() => 'Exception checking connection for $relay: $e, reconnecting...');
+          needReconnect = true;
+        }
+      }
+
+      if (needReconnect) {
+        relaysToReconnect.add(relay);
+      }
+    }
+    
+    // If there are relays that need reconnection, call resetConnection with the list
+    if (relaysToReconnect.isNotEmpty) {
+      await resetConnection(relaysToReconnect);
+    }
+  }
+
+  Future<void> resetConnection([List<String>? relayList]) async {
+    relayList ??= [...webSockets.keys];
+    for (var relay in relayList) {
       final webSocket = webSockets.remove(relay);
-      if (webSocket != null && webSocket.status != ConnectStatus.closed && force) {
+      if (webSocket != null && webSocket.status != ConnectStatus.closed) {
         webSocket.status = ConnectStatus.closed;
         webSocket.socket?.close();
       }
@@ -149,7 +209,7 @@ class Connect {
     _connectivitySubscription ??=
         Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) async {
       if (results.any((result) => result != ConnectivityResult.none)) {
-        resetConnection(force: true);
+        resetConnection();
       }
     });
   }
@@ -486,6 +546,15 @@ class Connect {
   }
 
   Future<void> _handleMessage(String message, String relay) async {
+    // Check if this is a PONG message for pending ping
+    if (_isPongMessageForPing(message)) {
+      final completer = _pendingPings.remove(relay);
+      if (completer != null && !completer.isCompleted) {
+        completer.complete(DateTime.now().millisecondsSinceEpoch);
+        return;
+      }
+    }
+    
     var m = await ThreadPoolManager.sharedInstance.runOtherTask(() => _deserializeMessage(message));
     switch (m.type) {
       case "EVENT":
@@ -776,5 +845,166 @@ class Connect {
   Future<void> _onDisconnected(String relay, RelayKind relayKind) async {
     LogUtils.v(() => "_onDisconnected");
     return _reConnectToRelay(relay, relayKind);
+  }
+}
+
+extension ConnectLatencyHelper on Connect {
+  /// Test relay latency and connectivity
+  /// Returns latency in milliseconds, or null if connection failed
+  Future<int?> testRelayLatency(String relay, {
+    ISocket? webSocket,
+    Duration timeout = const Duration(seconds: 2),
+  }) async {
+    webSocket ??= webSockets[relay];
+    final socket = webSocket?.socket;
+
+    if (webSocket != null && webSocket.status == ConnectStatus.open && socket != null) {
+      // Have an open connection
+      return _testLatencyWithExistingConnection(relay, socket, timeout);
+    } else {
+      // No open connection, create a temporary connection to test
+      return _testLatencyWithTempConnection(relay, timeout);
+    }
+  }
+
+  /// Test latency using existing open connection
+  Future<int?> _testLatencyWithExistingConnection(
+    String relay,
+    WebSocket socket,
+    Duration timeout,
+  ) async {
+    try {
+      final pingId = _generatePingId();
+      final completer = Completer<int?>();
+      final startTime = DateTime.now().millisecondsSinceEpoch;
+
+      _pendingPings[relay] = completer;
+
+      // Send PING message
+      _sendPingMessage(socket, pingId);
+
+      // Wait for PONG response with timeout
+      return await _waitForPongResponse(relay, pingId, completer, startTime, timeout);
+    } catch (e) {
+      LogUtils.v(() => 'Failed to send PING to $relay: $e');
+      return null;
+    }
+  }
+
+  /// Test latency by creating a temporary connection
+  Future<int?> _testLatencyWithTempConnection(
+    String relay,
+    Duration timeout,
+  ) async {
+    try {
+      final ws = await WebSocket.connect(relay).timeout(
+        timeout,
+        onTimeout: () => throw Exception('connect timeout'),
+      );
+
+      final completer = Completer<int?>();
+      final pingId = _generatePingId();
+      final startTime = DateTime.now().millisecondsSinceEpoch;
+
+      // Setup message listener for PONG
+      late StreamSubscription sub;
+      sub = ws.listen((msg) {
+        if (_isPongMessageForPing(msg)) {
+          final latency = DateTime.now().millisecondsSinceEpoch - startTime;
+          if (!completer.isCompleted) {
+            completer.complete(latency);
+          }
+          _cleanupTempConnection(sub, ws);
+        }
+      });
+
+      // Send PING and setup timeout
+      _sendPingMessage(ws, pingId);
+      _setupPingTimeout(completer, sub, ws, timeout);
+
+      final latency = await completer.future;
+      LogUtils.v(() => 'Relay $relay latency test (temp connection): ${latency}ms');
+      return latency;
+    } catch (e) {
+      LogUtils.v(() => 'Failed to test relay $relay latency: $e');
+      return null;
+    }
+  }
+
+  /// Generate a unique ping ID
+  String _generatePingId() {
+    return DateTime.now().microsecondsSinceEpoch.toString();
+  }
+
+  /// Send PING message to socket
+  void _sendPingMessage(WebSocket socket, String pingId) {
+    final pingMessage = jsonEncode(['PING', pingId]);
+    socket.add(pingMessage);
+  }
+
+  /// Wait for PONG response from existing connection
+  Future<int?> _waitForPongResponse(
+    String relay,
+    String pingId,
+    Completer<int?> completer,
+    int startTime,
+    Duration timeout,
+  ) async {
+    try {
+      final responseTime = await completer.future.timeout(timeout);
+      if (responseTime != null) {
+        final latency = responseTime - startTime;
+        LogUtils.v(() => 'Relay $relay latency test: ${latency}ms');
+        return latency;
+      } else {
+        _pendingPings.remove(relay);
+        return null;
+      }
+    } catch (e) {
+      LogUtils.v(() => 'Relay $relay latency test timeout: $e');
+      _pendingPings.remove(relay);
+      return null;
+    }
+  }
+
+  /// Check if message is a PONG response for the given ping ID
+  bool _isPongMessageForPing(dynamic msg) {
+    var payload = msg;
+    if (msg is String) {
+      if (msg == 'PONG') return true;
+      try {
+        payload = jsonDecode(msg);
+      } catch (_) {
+        return false;
+      }
+    }
+
+    if (payload is List && payload.isNotEmpty) {
+      if (payload[0] == 'PONG' || payload[0] == 'NOTICE') {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Setup timeout for ping request
+  void _setupPingTimeout(
+    Completer<int?> completer,
+    StreamSubscription sub,
+    WebSocket ws,
+    Duration timeout,
+  ) {
+    Timer(timeout, () {
+      if (!completer.isCompleted) {
+        completer.complete(null);
+      }
+      _cleanupTempConnection(sub, ws);
+    });
+  }
+
+  /// Cleanup temporary connection resources
+  void _cleanupTempConnection(StreamSubscription sub, WebSocket ws) {
+    sub.cancel();
+    ws.close();
   }
 }
