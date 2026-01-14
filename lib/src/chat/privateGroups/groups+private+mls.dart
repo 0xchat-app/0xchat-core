@@ -371,7 +371,6 @@ extension MLSPrivateGroups on Groups {
             String pubkey, List<KeyPackageEvent> availableKeyPackages)?
         onKeyPackageSelection,
   }) async {
-    members.remove(pubkey);
     Map<String, String> membersKeyPackages =
         await getMembersKeyPackages(members, onKeyPackageSelection: onKeyPackageSelection);
     if (membersKeyPackages.keys.length < members.length) return null;
