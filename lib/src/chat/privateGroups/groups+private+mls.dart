@@ -404,8 +404,14 @@ extension MLSPrivateGroups on Groups {
       await syncGroupToDB(groupDBISAR);
       await syncMyGroupListToDB();
       updateMLSGroupSubscription();
-      String inviteMessage =
-          groupDBISAR.isDirectMessage ? 'Private chat created!' : 'Private group created!';
+      // Check if this is a self chat (only one member and it's the current user)
+      final isSelfChat = members.length == 1 && members.first == pubkey;
+      String inviteMessage;
+      if (isSelfChat) {
+        inviteMessage = 'Note to Self chat created!';
+      } else {
+        inviteMessage = groupDBISAR.isDirectMessage ? 'Private chat created!' : 'Private group created!';
+      }
       sendGroupMessage(groupDBISAR.privateGroupId, MessageType.system, inviteMessage, local: true);
       sendKeyPackageEventToMLSGroup(groupDBISAR);
       // Track keypackage usage for one-time keypackages
