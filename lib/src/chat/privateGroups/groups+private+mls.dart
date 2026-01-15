@@ -9,7 +9,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:nostr_mls_package/nostr_mls_package.dart';
 import 'package:isar/isar.dart' hide Filter;
-import 'groups+private+mls+keypackages.dart';
 
 String toHexString(List<int> bytes) {
   return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join('');
