@@ -7,6 +7,68 @@ import 'package:nostr_mls_package/nostr_mls_package.dart';
 import 'package:convert/convert.dart';
 import 'package:isar/isar.dart' hide Filter;
 
+/// Key package error types
+enum KeyPackageErrorType {
+  invalidLifetime,
+  unknown,
+}
+
+/// Key package error information
+class KeyPackageError {
+  final KeyPackageErrorType type;
+  final String message;
+  final String? memberPubkey; // The pubkey of the member whose keypackage is expired
+
+  KeyPackageError({
+    required this.type,
+    required this.message,
+    this.memberPubkey,
+  });
+
+  /// Parse error message from Rust layer
+  /// Returns KeyPackageError if it's a structured error, null otherwise
+  /// [membersKeyPackages] Optional map of member pubkeys to their keypackages, used to identify which member's keypackage expired
+  static KeyPackageError? parseError(
+    dynamic error, {
+    Map<String, String>? membersKeyPackages,
+  }) {
+    try {
+      final errorString = error.toString();
+      
+      // Try to parse as JSON
+      if (errorString.contains('{') && errorString.contains('error_type')) {
+        // Extract JSON from error string
+        final jsonStart = errorString.indexOf('{');
+        final jsonEnd = errorString.lastIndexOf('}') + 1;
+        if (jsonStart >= 0 && jsonEnd > jsonStart) {
+          final jsonStr = errorString.substring(jsonStart, jsonEnd);
+          final errorJson = jsonDecode(jsonStr) as Map<String, dynamic>;
+          
+          final errorType = errorJson['error_type'] as String?;
+          final message = errorJson['message'] as String? ?? errorString;
+          
+          if (errorType == 'KEY_PACKAGE_INVALID_LIFETIME') {
+            return KeyPackageError(
+              type: KeyPackageErrorType.invalidLifetime,
+              message: message,
+              memberPubkey: errorJson['member_pubkey'] as String?,
+            );
+          }
+        }
+      }
+      return null;
+    } catch (e) {
+      // If parsing fails, return null to use default error handling
+      return null;
+    }
+  }
+
+  /// Check if this is the current user's keypackage
+  bool isOwnKeyPackage(String currentPubkey) {
+    return memberPubkey != null && memberPubkey == currentPubkey;
+  }
+}
+
 /// KeyPackage management for MLS private groups
 /// Enhanced with support for one-time and permanent keypackages
 extension GroupsPrivateMlsKeyPackages on Groups {

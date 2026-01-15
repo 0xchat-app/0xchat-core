@@ -797,7 +797,13 @@ class KeyPackageManager {
       Map<String, dynamic> resultMap = jsonDecode(result);
       return resultMap['found'] == true;
     } catch (e) {
-      print('Failed to verify keypackage in storage: $e');
+      // Parse and check if it's a key package error
+      final keyPackageError = KeyPackageError.parseError(e);
+      if (keyPackageError != null) {
+        print('Key package expired: $e');
+      } else {
+        print('Failed to verify keypackage in storage: $e');
+      }
       return false;
     }
   }

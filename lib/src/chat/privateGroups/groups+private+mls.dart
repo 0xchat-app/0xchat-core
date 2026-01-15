@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:nostr_mls_package/nostr_mls_package.dart';
 import 'package:isar/isar.dart' hide Filter;
+import 'groups+private+mls+keypackages.dart';
 
 String toHexString(List<int> bytes) {
   return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join('');
@@ -374,43 +375,55 @@ extension MLSPrivateGroups on Groups {
     Map<String, String> membersKeyPackages =
         await getMembersKeyPackages(members, onKeyPackageSelection: onKeyPackageSelection);
     if (membersKeyPackages.keys.length < members.length) return null;
-    String createGroupResult = await createGroup(
-        groupName: groupName,
-        groupDescription: groupDescription,
-        groupMembersSerializedKeyPackages: membersKeyPackages.values.toList(),
-        groupMembersPubkeys: members,
-        groupCreatorPublicKey: pubkey,
-        groupAdminPublicKeys: admins,
-        relays: relays);
-    MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(createGroupResult));
+    try {
+      String createGroupResult = await createGroup(
+          groupName: groupName,
+          groupDescription: groupDescription,
+          groupMembersSerializedKeyPackages: membersKeyPackages.values.toList(),
+          groupMembersPubkeys: members,
+          groupCreatorPublicKey: pubkey,
+          groupAdminPublicKeys: admins,
+          relays: relays);
+      MlsGroup mlsGroup = MlsGroup.fromJson(jsonDecode(createGroupResult));
 
-    ///send welcome & invite members
-    await sendWelcomeMessages(mlsGroup.serializedWelcomeMessage, mlsGroup.groupMembers, relays);
-    GroupDBISAR groupDBISAR = GroupDBISAR(
-        groupId: mlsGroup.nostrGroupData.nostrGroupId,
-        owner: pubkey,
-        isMLSGroup: true,
-        isDirectMessage: members.length <= 1,
-        updateTime: currentUnixTimestampSeconds(),
-        name: mlsGroup.nostrGroupData.name,
-        about: mlsGroup.nostrGroupData.description,
-        members: mlsGroup.groupMembers.toSet().toList(),
-        mlsGroupId: mlsGroup.mlsGroupId,
-        relay: relays.firstOrNull,
-        adminPubkeys: mlsGroup.nostrGroupData.adminPubkeys);
-    updateOrCreateGroupNotifier(groupDBISAR.privateGroupId, groupDBISAR);
-    updateOrCreateMyGroupNotifier(groupDBISAR.privateGroupId, groupDBISAR);
-    await syncGroupToDB(groupDBISAR);
-    await syncMyGroupListToDB();
-    updateMLSGroupSubscription();
-    String inviteMessage =
-        groupDBISAR.isDirectMessage ? 'Private chat created!' : 'Private group created!';
-    sendGroupMessage(groupDBISAR.privateGroupId, MessageType.system, inviteMessage, local: true);
-    sendKeyPackageEventToMLSGroup(groupDBISAR);
-    // Track keypackage usage for one-time keypackages
-    await trackOneTimeKeyPackageUsage(membersKeyPackages, groupDBISAR.privateGroupId);
+      ///send welcome & invite members
+      await sendWelcomeMessages(mlsGroup.serializedWelcomeMessage, mlsGroup.groupMembers, relays);
+      GroupDBISAR groupDBISAR = GroupDBISAR(
+          groupId: mlsGroup.nostrGroupData.nostrGroupId,
+          owner: pubkey,
+          isMLSGroup: true,
+          isDirectMessage: members.length <= 1,
+          updateTime: currentUnixTimestampSeconds(),
+          name: mlsGroup.nostrGroupData.name,
+          about: mlsGroup.nostrGroupData.description,
+          members: mlsGroup.groupMembers.toSet().toList(),
+          mlsGroupId: mlsGroup.mlsGroupId,
+          relay: relays.firstOrNull,
+          adminPubkeys: mlsGroup.nostrGroupData.adminPubkeys);
+      updateOrCreateGroupNotifier(groupDBISAR.privateGroupId, groupDBISAR);
+      updateOrCreateMyGroupNotifier(groupDBISAR.privateGroupId, groupDBISAR);
+      await syncGroupToDB(groupDBISAR);
+      await syncMyGroupListToDB();
+      updateMLSGroupSubscription();
+      String inviteMessage =
+          groupDBISAR.isDirectMessage ? 'Private chat created!' : 'Private group created!';
+      sendGroupMessage(groupDBISAR.privateGroupId, MessageType.system, inviteMessage, local: true);
+      sendKeyPackageEventToMLSGroup(groupDBISAR);
+      // Track keypackage usage for one-time keypackages
+      await trackOneTimeKeyPackageUsage(membersKeyPackages, groupDBISAR.privateGroupId);
 
-    return groupDBISAR;
+      return groupDBISAR;
+    } catch (e) {
+      // Parse and handle key package errors
+      final keyPackageError = KeyPackageError.parseError(e, membersKeyPackages: membersKeyPackages);
+      if (keyPackageError != null) {
+        print('Key package error: ${keyPackageError.message}');
+        // Re-throw with KeyPackageError so business layer can handle dialog
+        throw keyPackageError;
+      }
+      // Re-throw other errors as-is
+      rethrow;
+    }
   }
 
   Future<void> sendWelcomeMessages(
@@ -887,34 +900,46 @@ extension MLSPrivateGroups on Groups {
     Map<String, String> membersKeyPackages =
         await getMembersKeyPackages(members, onKeyPackageSelection: onKeyPackageSelection);
     if (membersKeyPackages.keys.length < members.length) return group;
-    String exportSecretResult = await exportSecret(groupId: group.mlsGroupId!);
-    U8Array32 preSecret =
-        U8Array32(Uint8List.fromList((jsonDecode(exportSecretResult)['secret']).cast<int>()));
-    String result = await addMembers(
-        groupId: group.mlsGroupId!, serializedKeyPackages: membersKeyPackages.values.toList());
-    List<int> commit_message = List<int>.from(jsonDecode(result)['commit_message']);
-    List<int> welcome_message = List<int>.from(jsonDecode(result)['welcome_message']);
-    String eventString = await createCommitMessageForGroup(
-        nostrGroupId: group.groupId, serializedCommit: commit_message, secretKey: preSecret);
-    Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
-    OKEvent okEvent = await sendGroupEventToMLSGroup(group, groupEvent);
-    if (okEvent.status) {
-      await sendWelcomeMessages(
-          welcome_message, members, Account.sharedInstance.getCurrentCircleRelay());
-      updateMLSGroupInfo(group);
+    try {
+      String exportSecretResult = await exportSecret(groupId: group.mlsGroupId!);
+      U8Array32 preSecret =
+          U8Array32(Uint8List.fromList((jsonDecode(exportSecretResult)['secret']).cast<int>()));
+      String result = await addMembers(
+          groupId: group.mlsGroupId!, serializedKeyPackages: membersKeyPackages.values.toList());
+      List<int> commit_message = List<int>.from(jsonDecode(result)['commit_message']);
+      List<int> welcome_message = List<int>.from(jsonDecode(result)['welcome_message']);
+      String eventString = await createCommitMessageForGroup(
+          nostrGroupId: group.groupId, serializedCommit: commit_message, secretKey: preSecret);
+      Event groupEvent = await Event.fromJson(jsonDecode(eventString)['event']);
+      OKEvent okEvent = await sendGroupEventToMLSGroup(group, groupEvent);
+      if (okEvent.status) {
+        await sendWelcomeMessages(
+            welcome_message, members, Account.sharedInstance.getCurrentCircleRelay());
+        updateMLSGroupInfo(group);
 
-      // Track keypackage usage for one-time keypackages
-      trackOneTimeKeyPackageUsage(membersKeyPackages, group.privateGroupId);
+        // Track keypackage usage for one-time keypackages
+        trackOneTimeKeyPackageUsage(membersKeyPackages, group.privateGroupId);
 
-      String content = '';
-      for (var member in members) {
-        UserDBISAR? user = await Account.sharedInstance.getUserInfo(member);
-        content = '${user?.name} $content ';
-        content = '${content}joined the group';
+        String content = '';
+        for (var member in members) {
+          UserDBISAR? user = await Account.sharedInstance.getUserInfo(member);
+          content = '${user?.name} $content ';
+          content = '${content}joined the group';
+        }
+        sendGroupMessage(group.privateGroupId, MessageType.system, content, local: true);
       }
-      sendGroupMessage(group.privateGroupId, MessageType.system, content, local: true);
+      return group;
+    } catch (e) {
+      // Parse and handle key package errors
+      final keyPackageError = KeyPackageError.parseError(e, membersKeyPackages: membersKeyPackages);
+      if (keyPackageError != null) {
+        print('Key package error: ${keyPackageError.message}');
+        // Re-throw with KeyPackageError so business layer can handle dialog
+        throw keyPackageError;
+      }
+      // Re-throw other errors as-is
+      rethrow;
     }
-    return group;
   }
 
   Future<GroupDBISAR> removeMembersFromMLSGroup(GroupDBISAR group, List<String> members) async {
