@@ -307,6 +307,45 @@ class KeyPackageManager {
     }
   }
 
+  /// Get all users who have local keypackages
+  /// Returns a list of unique pubkeys that have at least one available keypackage in local database
+  static Future<List<String>> getAllUsersWithLocalKeyPackages() async {
+    try {
+      final isar = DBISAR.sharedInstance.isar;
+      final allKeyPackages = await isar.keyPackageDBISARs
+          .where()
+          .findAll();
+
+      // Get unique owner pubkeys
+      final Set<String> uniquePubkeys = {};
+      String currentPubkey = Account.sharedInstance.currentPubkey;
+
+      for (KeyPackageDBISAR keyPackage in allKeyPackages) {
+        final pubkey = keyPackage.ownerPubkey;
+        
+        // For current user's keypackages, verify they exist in nostr_mls storage
+        if (pubkey == currentPubkey) {
+          bool existsInStorage =
+              await _verifyKeyPackageInStorage(keyPackage.encodedKeyPackage);
+          if (!existsInStorage) {
+            // Skip invalid keypackages for current user
+            continue;
+          }
+        }
+        
+        // Only add if keypackage is available (not used or available for use)
+        if (keyPackage.isAvailable) {
+          uniquePubkeys.add(pubkey);
+        }
+      }
+
+      return uniquePubkeys.toList();
+    } catch (e) {
+      print('Failed to get users with local keypackages: $e');
+      return [];
+    }
+  }
+
   /// Get available keypackages for a user
   static Future<List<KeyPackageDBISAR>> getAvailableLocalKeyPackages(
       String pubkey,
