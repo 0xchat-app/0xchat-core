@@ -115,6 +115,7 @@ class ChatCoreManager {
       Future(() => Groups.sharedInstance.initWithConfig(config)),
       Future(() => RelayGroup.sharedInstance.init(callBack: config.relayGroupsUpdatedCallBack)),
       Future(() => NotificationHelper.sharedInstance.setServerRelay(config.pushServerRelay)),
+      Future(() => CircleMemberService.sharedInstance.init()),
     ]);
   }
 
@@ -139,6 +140,7 @@ class ChatCoreManager {
       Future(() => Messages.sharedInstance.init()),
       Future(() => Contacts.sharedInstance.init(callBack: contactUpdatedCallBack)),
       Future(() => Groups.sharedInstance.init(callBack: groupsUpdatedCallBack)),
+      Future(() => CircleMemberService.sharedInstance.init()),
     ]);
   }
 
