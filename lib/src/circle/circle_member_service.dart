@@ -452,5 +452,159 @@ class CircleMemberService {
       throw Exception(message is String ? message : 'Failed to delete tenant');
     }
   }
+
+  /// Generate invitation code
+  /// 
+  /// [maxUses] Optional maximum number of uses (default: 1)
+  /// [expiresAt] Optional expiration timestamp (Unix seconds)
+  /// 
+  /// Returns invitation code info
+  /// Requires system admin or tenant admin permissions
+  Future<Map<String, dynamic>> generateInvitationCode({
+    int? maxUses,
+    int? expiresAt,
+  }) async {
+    // Build content JSON
+    final contentMap = <String, dynamic>{};
+    if (maxUses != null) contentMap['max_uses'] = maxUses;
+    if (expiresAt != null) contentMap['expires_at'] = expiresAt;
+
+    final content = contentMap.isEmpty ? '' : jsonEncode(contentMap);
+
+    final response = await _sendManagementEvent(
+      kind: 20210,
+      tags: [],
+      content: content,
+    );
+
+    if (response['status'] == 'success') {
+      return response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+    } else {
+      final message = response['message'];
+      throw Exception(message is String ? message : 'Failed to generate invitation code');
+    }
+  }
+
+  /// Join circle using invitation code
+  /// 
+  /// [invitationCode] The invitation code to use
+  /// 
+  /// Returns join result with tenant and member info
+  /// Can be called by any user (no membership required)
+  Future<Map<String, dynamic>> joinWithInvitationCode({
+    required String invitationCode,
+  }) async {
+    if (invitationCode.isEmpty) {
+      throw Exception('Invitation code cannot be empty');
+    }
+
+    final tags = [
+      ['invitation_code', invitationCode],
+    ];
+
+    final response = await _sendManagementEvent(
+      kind: 20211,
+      tags: tags,
+      content: '',
+    );
+
+    if (response['status'] == 'success') {
+      return response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+    } else {
+      final message = response['message'];
+      throw Exception(message is String ? message : 'Failed to join with invitation code');
+    }
+  }
+
+  /// List invitation codes
+  /// 
+  /// Returns list of all invitation codes for the current tenant
+  /// Requires system admin or tenant admin permissions
+  Future<List<Map<String, dynamic>>> listInvitationCodes() async {
+    final response = await _sendManagementEvent(
+      kind: 20212,
+      tags: [],
+      content: '',
+    );
+
+    if (response['status'] == 'success') {
+      final data = response['data'] as Map<String, dynamic>?;
+      if (data != null && data['invitation_codes'] != null) {
+        final codesList = data['invitation_codes'] as List<dynamic>;
+        return codesList
+            .map((c) => c as Map<String, dynamic>)
+            .toList();
+      }
+      return [];
+    } else {
+      final message = response['message'];
+      throw Exception(message is String ? message : 'Failed to list invitation codes');
+    }
+  }
+
+  /// Reset invitation code (Kind 20214)
+  /// 
+  /// Deletes all existing invitation codes for the tenant and generates a new one
+  /// 
+  /// [maxUses] Optional maximum number of uses (default: tenant's max_members)
+  /// [expiresAt] Optional expiration timestamp (Unix seconds)
+  /// 
+  /// Returns new invitation code info with deleted_count
+  /// Requires system admin or tenant admin permissions
+  Future<Map<String, dynamic>> resetInvitationCode({
+    int? maxUses,
+    int? expiresAt,
+  }) async {
+    // Build content JSON
+    final contentMap = <String, dynamic>{};
+    if (maxUses != null) contentMap['max_uses'] = maxUses;
+    if (expiresAt != null) contentMap['expires_at'] = expiresAt;
+
+    final content = contentMap.isEmpty ? '' : jsonEncode(contentMap);
+
+    final response = await _sendManagementEvent(
+      kind: 20214,
+      tags: [],
+      content: content,
+    );
+
+    if (response['status'] == 'success') {
+      return response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+    } else {
+      final message = response['message'];
+      throw Exception(message is String ? message : 'Failed to reset invitation code');
+    }
+  }
+
+  /// Delete invitation code
+  /// 
+  /// [invitationCode] The invitation code to delete
+  /// 
+  /// Returns deletion result
+  /// Requires system admin or tenant admin permissions
+  Future<Map<String, dynamic>> deleteInvitationCode({
+    required String invitationCode,
+  }) async {
+    if (invitationCode.isEmpty) {
+      throw Exception('Invitation code cannot be empty');
+    }
+
+    final tags = [
+      ['invitation_code', invitationCode],
+    ];
+
+    final response = await _sendManagementEvent(
+      kind: 20213,
+      tags: tags,
+      content: '',
+    );
+
+    if (response['status'] == 'success') {
+      return response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+    } else {
+      final message = response['message'];
+      throw Exception(message is String ? message : 'Failed to delete invitation code');
+    }
+  }
 }
 
