@@ -169,7 +169,7 @@ class CircleApi {
   /// 
   /// [pubkey] User's public key
   /// [privkey] User's private key
-  /// [baseUrl] Optional base URL for the API (defaults to http://192.168.0.18:3000)
+  /// [baseUrl] Optional base URL for the API (defaults to Config.sharedInstance.privateRelayApiBaseUrl)
   /// 
   /// Returns a list of [RelayAddressInfo].
   /// Throws [Exception] if the request fails or pubkey/privkey is invalid.
@@ -211,7 +211,7 @@ class CircleApi {
   /// [productId] Product ID from App Store or Google Play
   /// [receiptData] Payment receipt (Base64 encoded receipt for Apple, purchase_token for Google)
   /// [paymentType] Payment type (app_store or google_play)
-  /// [baseUrl] Optional base URL for the API (defaults to http://192.168.0.18:3000)
+  /// [baseUrl] Optional base URL for the API (defaults to Config.sharedInstance.privateRelayApiBaseUrl)
   /// 
   /// Returns [PaymentVerificationResult] with tenant and relay information.
   /// Throws [Exception] if the request fails or pubkey/privkey is invalid.

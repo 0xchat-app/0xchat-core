@@ -767,9 +767,10 @@ class Connect {
     _reconnectionTimers[relay]?.cancel();
     
     // Schedule new reconnection attempt
-    _reconnectionTimers[relay] = Timer(Duration(milliseconds: 3000), () {
+    _reconnectionTimers[relay] = Timer(Duration(milliseconds: 3000), () async {
       // Double check if reconnection is still needed
       if (webSockets.containsKey(relay)) {
+        await closeConnect(relay);
         connect(relay, relayKind: relayKind);
       }
       // Clean up the timer reference

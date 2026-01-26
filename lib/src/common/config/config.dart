@@ -83,6 +83,7 @@ class Config {
   final String mintHost = 'mint.0xchat.com';
   final String relayGroupHost = 'wss://groups.0xchat.com';
   final String pushServerHost = 'ws://www.0xchat.com:9090';
+  final String privateRelayApiBaseUrl = 'https://relay.xchat.chat';
 
   Future<void> initConfig() async {
     // subscript friend requests

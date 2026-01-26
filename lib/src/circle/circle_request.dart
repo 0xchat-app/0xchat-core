@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:chatcore/chat-core.dart';
+import '../common/config/config.dart';
 
 /// Base error response model for Circle API
 class CircleApiError {
@@ -67,7 +68,7 @@ class CircleRequest {
   /// 
   /// [endpoint] API endpoint path (e.g., '/api/relay-address')
   /// [event] Signed Nostr event to send as request body
-  /// [baseUrl] Optional base URL (defaults to http://192.168.0.18:3000)
+  /// [baseUrl] Optional base URL (defaults to Config.sharedInstance.privateRelayApiBaseUrl)
   /// 
   /// Returns the HTTP response.
   /// Throws [Exception] if the request fails.
@@ -76,7 +77,7 @@ class CircleRequest {
     required Event event,
     String? baseUrl,
   }) async {
-    final apiBaseUrl = baseUrl ?? 'http://192.168.0.18:3000';
+    final apiBaseUrl = baseUrl ?? Config.sharedInstance.privateRelayApiBaseUrl;
     final url = Uri.parse('$apiBaseUrl$endpoint');
 
     LogUtils.v(() => 'Making POST request to: $url');
@@ -139,7 +140,7 @@ class CircleRequest {
   /// [kind] Event kind (default: 1)
   /// [tags] Event tags
   /// [content] Event content
-  /// [baseUrl] Optional base URL (defaults to http://192.168.0.18:3000)
+  /// [baseUrl] Optional base URL (defaults to Config.sharedInstance.privateRelayApiBaseUrl)
   /// 
   /// Returns parsed response data.
   /// Throws [Exception] if the request fails or pubkey/privkey is invalid.
