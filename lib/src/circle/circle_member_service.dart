@@ -485,37 +485,6 @@ class CircleMemberService {
     }
   }
 
-  /// Join circle using invitation code
-  /// 
-  /// [invitationCode] The invitation code to use
-  /// 
-  /// Returns join result with tenant and member info
-  /// Can be called by any user (no membership required)
-  Future<Map<String, dynamic>> joinWithInvitationCode({
-    required String invitationCode,
-  }) async {
-    if (invitationCode.isEmpty) {
-      throw Exception('Invitation code cannot be empty');
-    }
-
-    final tags = [
-      ['invitation_code', invitationCode],
-    ];
-
-    final response = await _sendManagementEvent(
-      kind: 20211,
-      tags: tags,
-      content: '',
-    );
-
-    if (response['status'] == 'success') {
-      return response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
-    } else {
-      final message = response['message'];
-      throw Exception(message is String ? message : 'Failed to join with invitation code');
-    }
-  }
-
   /// List invitation codes
   /// 
   /// Returns list of all invitation codes for the current tenant
