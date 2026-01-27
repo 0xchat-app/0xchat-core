@@ -65,6 +65,7 @@ enum ConnectStatus {
 
 class ISocket {
   WebSocket? socket;
+  StreamSubscription? subscription;
 
   ConnectStatus status;
   List<RelayKind> relayKinds = [];
@@ -123,6 +124,9 @@ class Connect {
 
   // Track active reconnection tasks for proper cleanup
   Map<String, Timer> _reconnectionTimers = {};
+
+  // Track relays currently being checked to avoid duplicate checks
+  Set<String> _checkingRelays = {};
 
   void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
@@ -197,6 +201,8 @@ class Connect {
       final webSocket = webSockets.remove(relay);
       if (webSocket != null && webSocket.status != ConnectStatus.closed) {
         webSocket.status = ConnectStatus.closed;
+        // Cancel subscription first to prevent stale callbacks
+        webSocket.subscription?.cancel();
         webSocket.socket?.close();
       }
       for (var relayKind in webSocket?.relayKinds ?? []) {
@@ -222,6 +228,8 @@ class Connect {
 
   void _checkTimeout() {
     var now = DateTime.now().millisecondsSinceEpoch;
+    Set<String> timeoutRelays = {};
+    
     Iterable<String> okMapKeys = List<String>.from(sendsMap.keys);
     for (var eventId in okMapKeys) {
       var start = sendsMap[eventId]!.sendsTime;
@@ -231,6 +239,7 @@ class Connect {
         Iterable<String> relays = List<String>.from(sendsMap[eventId]!.relays);
         for (var relay in relays) {
           _handleOk(ok, relay);
+          timeoutRelays.add(relay);
         }
       }
     }
@@ -245,8 +254,43 @@ class Connect {
           // request timeout
           String relay = requestMapKey.substring(64);
           _handleEOSE(jsonEncode([request.requestId]), relay, true);
+          timeoutRelays.add(relay);
         }
       }
+    }
+    
+    // Quick check and reconnect if needed for timeout relays
+    for (var relay in timeoutRelays) {
+      _quickCheckAndReconnectIfNeeded(relay);
+    }
+  }
+
+  /// Quick check relay connection using PING/PONG and reconnect if disconnected
+  Future<void> _quickCheckAndReconnectIfNeeded(String relay) async {
+    // Avoid duplicate checks
+    if (_checkingRelays.contains(relay)) {
+      return;
+    }
+    
+    _checkingRelays.add(relay);
+    
+    try {
+      // Quick PING/PONG check with 3 second timeout
+      final latency = await testRelayLatency(
+        relay,
+        timeout: Duration(seconds: 3),
+      );
+      
+      // If latency test failed (returned null), connection is likely broken
+      if (latency == null) {
+        LogUtils.v(() => 'Relay $relay connection check failed during timeout, reconnecting...');
+        await resetConnection([relay]);
+      }
+    } catch (e) {
+      LogUtils.v(() => 'Exception during quick connection check for $relay: $e, reconnecting...');
+      await resetConnection([relay]);
+    } finally {
+      _checkingRelays.remove(relay);
     }
   }
 
@@ -281,7 +325,7 @@ class Connect {
   }
 
   Future<void> connect(String relay, {RelayKind relayKind = RelayKind.general}) async {
-    LogUtils.v(() => 'connect to $relay, kind: ${relayKind.name}');
+    LogUtils.v(() => 'connect to $relay, kind: ${relayKind.toString().split('.').last}');
     if (relay.isEmpty) return;
 
     List<RelayKind> relayKinds = webSockets[relay]?.relayKinds ?? [relayKind];
@@ -297,9 +341,18 @@ class Connect {
       WebSocket? socket;
       socket = await _connectWs(relay);
       if (socket != null) {
-        socket.done.then((dynamic _) => _onDisconnected(relay, relayKind));
-        _listenEvent(socket, relay, relayKind);
+        final currentSocket = socket;
+        socket.done.then((dynamic _) {
+          // Check if this socket is still the current socket for this relay
+          final currentWebSocket = webSockets[relay];
+          if (currentWebSocket == null || currentWebSocket.socket != currentSocket) {
+            return;
+          }
+          _onDisconnected(relay, relayKind);
+        });
+        final subscription = _listenEvent(socket, relay, relayKind);
         webSockets[relay] = ISocket(socket, ConnectStatus.open, relayKinds);
+        webSockets[relay]!.subscription = subscription;
         LogUtils.v(() => "$relay connection initialized");
         _setConnectStatus(relay, ConnectStatus.open);
       }
@@ -363,13 +416,17 @@ class Connect {
 
   Future closeConnect(String relay) async {
     LogUtils.v(() => 'closeConnect ${webSockets[relay]?.socket}');
-    final socket = webSockets[relay]?.socket;
+    final webSocket = webSockets[relay];
+    final socket = webSocket?.socket;
     
     webSockets.remove(relay);
 
     // Cancel any pending reconnection for this relay
     _reconnectionTimers[relay]?.cancel();
     _reconnectionTimers.remove(relay);
+    
+    // Cancel subscription first to prevent stale callbacks
+    webSocket?.subscription?.cancel();
     
     await socket?.close();
   }
@@ -506,7 +563,7 @@ class Connect {
     Sends sends = Sends(generate64RandomHexChars(), rs, DateTime.now().millisecondsSinceEpoch,
         event.id, sendCallBack, eventString);
     sendsMap[event.id] = sends;
-    _send(eventString, toRelays: rs);
+    _send(eventString, toRelays: rs, eventId: event.id);
   }
 
   void _send(String data, {List<String>? toRelays, String? eventId, String? subscriptionId}) {
@@ -778,14 +835,25 @@ class Connect {
     });
   }
 
-  void _listenEvent(WebSocket socket, String relay, RelayKind relayKind) {
-    socket.listen((message) async {
+  StreamSubscription _listenEvent(WebSocket socket, String relay, RelayKind relayKind) {
+    final currentSocket = socket;
+    return socket.listen((message) async {
       await _handleMessage(message, relay);
     }, onDone: () async {
       LogUtils.v(() => "connect aborted");
+      // Check if this socket is still the current socket for this relay
+      final currentWebSocket = webSockets[relay];
+      if (currentWebSocket == null || currentWebSocket.socket != currentSocket) {
+        return;
+      }
       await _reConnectToRelay(relay, relayKind);
     }, onError: (e) async {
       LogUtils.v(() => 'Server error: $e');
+      // Check if this socket is still the current socket for this relay
+      final currentWebSocket = webSockets[relay];
+      if (currentWebSocket == null || currentWebSocket.socket != currentSocket) {
+        return;
+      }
       await _reConnectToRelay(relay, relayKind);
     });
   }
