@@ -106,10 +106,9 @@ class CircleRequest {
     required http.Response response,
     required T Function(Map<String, dynamic>) parseSuccess,
   }) {
-    final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
-
     if (response.statusCode == 200) {
       try {
+        final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
         return parseSuccess(responseBody);
       } catch (e) {
         LogUtils.e(() => 'Error parsing response: $e');
@@ -118,6 +117,7 @@ class CircleRequest {
     } else {
       // Handle error response
       try {
+        final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
         final error = CircleApiError.fromJson(responseBody);
         LogUtils.e(() => 'API error: ${error.error}');
         throw Exception(error.error);
