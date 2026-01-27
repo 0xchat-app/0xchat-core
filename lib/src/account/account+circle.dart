@@ -438,10 +438,28 @@ extension AccountCircle on Account {
     required Map<String, dynamic> tenantInfo,
   }) async {
     try {
-      final circle = await getCircleById(circleId);
+      var circle = await getCircleById(circleId);
+      
+      // If CircleDBISAR doesn't exist, create it with basic info
       if (circle == null) {
-        LogUtils.w(() => 'Circle with id $circleId not found');
-        return false;
+        // Get circle name from tenantInfo or use a default
+        final circleName = tenantInfo['name'] as String? ?? 'Circle';
+        
+        // Create new CircleDBISAR with basic info
+        circle = CircleDBISAR(
+          circleId: circleId,
+          name: circleName,
+          description: '',
+          image: '',
+          relayList: const [],
+          fileserverList: const [],
+          iceserverList: const [],
+          pushserverList: const [],
+          groupId: null,
+        );
+        
+        // Save the new circle first
+        await DBISAR.sharedInstance.saveToDB(circle);
       }
 
       // Update subscription info

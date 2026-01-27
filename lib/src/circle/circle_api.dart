@@ -302,6 +302,31 @@ class CircleApi {
     );
   }
 
+  /// Check if a relay URL is a paid relay (based on matching privateRelayApiBaseUrl)
+  /// 
+  /// [relayUrl] The relay URL to check
+  /// Returns true if the relay URL's host matches the privateRelayApiBaseUrl host
+  static bool isPaidRelay(String relayUrl) {
+    try {
+      if (relayUrl.isEmpty) return false;
+
+      // Extract host from relayUrl (e.g., wss://relay.xchat.chat/xxx -> relay.xchat.chat)
+      final relayUri = Uri.parse(relayUrl);
+      final relayHost = relayUri.host;
+
+      // Get privateRelayApiBaseUrl host (e.g., https://relay.xchat.chat -> relay.xchat.chat)
+      final privateRelayApiBaseUrl = Config.sharedInstance.privateRelayApiBaseUrl;
+      final apiUri = Uri.parse(privateRelayApiBaseUrl);
+      final apiHost = apiUri.host;
+
+      // Check if hosts match
+      return relayHost == apiHost;
+    } catch (e) {
+      LogUtils.w(() => 'Failed to check if paid relay: $e');
+      return false;
+    }
+  }
+
   /// Join circle using invitation code via HTTP API
   /// 
   /// This allows users to join a tenant using an invitation code without
