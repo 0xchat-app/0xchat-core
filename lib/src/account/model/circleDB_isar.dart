@@ -18,6 +18,17 @@ class CircleDBISAR  {
   List<String> pushserverList;
   String? groupId;
 
+  // Subscription info (for paid circles only)
+  String? tenantAdminPubkey;
+  int? expiresAt; // Unix timestamp in seconds
+  int? maxMembers;
+  int? currentMembers;
+  String? subscriptionStatus;
+  String? tenantName;
+
+  // Member info (for paid circles only)
+  List<String> memberPubkeys; // Only store pubkey list, display names retrieved from UserDBISAR
+
   CircleDBISAR({
     required this.circleId,
     this.name = '',
@@ -28,5 +39,12 @@ class CircleDBISAR  {
     this.iceserverList = const [],
     this.pushserverList = const [],
     this.groupId,
+    this.tenantAdminPubkey,
+    this.expiresAt,
+    this.maxMembers,
+    this.currentMembers,
+    this.subscriptionStatus,
+    this.tenantName,
+    this.memberPubkeys = const [],
   });
 }

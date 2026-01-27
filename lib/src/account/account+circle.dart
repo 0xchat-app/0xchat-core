@@ -428,4 +428,100 @@ extension AccountCircle on Account {
       return [];
     }
   }
+
+  /// Save tenant info to CircleDBISAR (for paid circles only)
+  /// [circleId] Circle ID
+  /// [tenantInfo] Tenant information map from server
+  /// Returns true if saved successfully, false otherwise
+  Future<bool> saveTenantInfoToCircleDB({
+    required String circleId,
+    required Map<String, dynamic> tenantInfo,
+  }) async {
+    try {
+      final circle = await getCircleById(circleId);
+      if (circle == null) {
+        LogUtils.w(() => 'Circle with id $circleId not found');
+        return false;
+      }
+
+      // Update subscription info
+      circle.tenantAdminPubkey = tenantInfo['tenant_admin_pubkey'] as String?;
+      circle.expiresAt = tenantInfo['expires_at'] as int?;
+      circle.maxMembers = tenantInfo['max_members'] as int?;
+      circle.currentMembers = tenantInfo['current_members'] as int?;
+      circle.subscriptionStatus = tenantInfo['subscription_status'] as String?;
+      circle.tenantName = tenantInfo['name'] as String?;
+
+      // Update member info (only store pubkey list)
+      final membersData = tenantInfo['members'] as List<dynamic>?;
+      if (membersData != null) {
+        circle.memberPubkeys = membersData
+            .map((m) => (m as Map<String, dynamic>)['pubkey'] as String)
+            .where((p) => p.isNotEmpty)
+            .toList();
+      } else {
+        circle.memberPubkeys = [];
+      }
+
+      // Save to database
+      await DBISAR.sharedInstance.saveToDB(circle);
+
+      LogUtils.v(() => 'Successfully saved tenant info to circle: $circleId');
+      return true;
+    } catch (e) {
+      LogUtils.e(() => 'Failed to save tenant info to circle: $e');
+      return false;
+    }
+  }
+
+  /// Load tenant info from CircleDBISAR (for paid circles only)
+  /// [circleId] Circle ID
+  /// Returns tenant info map if cached data exists, null otherwise
+  Future<Map<String, dynamic>?> loadTenantInfoFromCircleDB(String circleId) async {
+    try {
+      final circle = await getCircleById(circleId);
+      if (circle == null) {
+        return null;
+      }
+
+      // Check if there is cached subscription info (at least one subscription field is not null)
+      final hasCachedData = circle.tenantAdminPubkey != null ||
+          circle.expiresAt != null ||
+          circle.maxMembers != null ||
+          circle.currentMembers != null ||
+          circle.subscriptionStatus != null ||
+          circle.tenantName != null;
+
+      if (!hasCachedData) {
+        return null;
+      }
+
+      // Build tenant info Map
+      final tenantInfo = <String, dynamic>{
+        if (circle.tenantAdminPubkey != null)
+          'tenant_admin_pubkey': circle.tenantAdminPubkey,
+        if (circle.expiresAt != null) 'expires_at': circle.expiresAt,
+        if (circle.maxMembers != null) 'max_members': circle.maxMembers,
+        if (circle.currentMembers != null) 'current_members': circle.currentMembers,
+        if (circle.subscriptionStatus != null)
+          'subscription_status': circle.subscriptionStatus,
+        if (circle.tenantName != null) 'name': circle.tenantName,
+      };
+
+      // Build members list (only contains pubkey, display names retrieved from UserDBISAR)
+      if (circle.memberPubkeys.isNotEmpty) {
+        final members = circle.memberPubkeys.map((pubkey) => {
+          'pubkey': pubkey,
+          'display_name': '', // Display names retrieved from UserDBISAR
+        }).toList();
+
+        tenantInfo['members'] = members;
+      }
+
+      return tenantInfo;
+    } catch (e) {
+      LogUtils.e(() => 'Failed to load tenant info from circle: $e');
+      return null;
+    }
+  }
 }

@@ -56,6 +56,34 @@ const CircleDBISARSchema = IsarGeneratedSchema(
         name: 'groupId',
         type: IsarType.string,
       ),
+      IsarPropertySchema(
+        name: 'tenantAdminPubkey',
+        type: IsarType.string,
+      ),
+      IsarPropertySchema(
+        name: 'expiresAt',
+        type: IsarType.long,
+      ),
+      IsarPropertySchema(
+        name: 'maxMembers',
+        type: IsarType.long,
+      ),
+      IsarPropertySchema(
+        name: 'currentMembers',
+        type: IsarType.long,
+      ),
+      IsarPropertySchema(
+        name: 'subscriptionStatus',
+        type: IsarType.string,
+      ),
+      IsarPropertySchema(
+        name: 'tenantName',
+        type: IsarType.string,
+      ),
+      IsarPropertySchema(
+        name: 'memberPubkeys',
+        type: IsarType.stringList,
+      ),
     ],
     indexes: [
       IsarIndexSchema(
@@ -121,6 +149,41 @@ int serializeCircleDBISAR(IsarWriter writer, CircleDBISAR object) {
     } else {
       IsarCore.writeString(writer, 9, value);
     }
+  }
+  {
+    final value = object.tenantAdminPubkey;
+    if (value == null) {
+      IsarCore.writeNull(writer, 10);
+    } else {
+      IsarCore.writeString(writer, 10, value);
+    }
+  }
+  IsarCore.writeLong(writer, 11, object.expiresAt ?? -9223372036854775808);
+  IsarCore.writeLong(writer, 12, object.maxMembers ?? -9223372036854775808);
+  IsarCore.writeLong(writer, 13, object.currentMembers ?? -9223372036854775808);
+  {
+    final value = object.subscriptionStatus;
+    if (value == null) {
+      IsarCore.writeNull(writer, 14);
+    } else {
+      IsarCore.writeString(writer, 14, value);
+    }
+  }
+  {
+    final value = object.tenantName;
+    if (value == null) {
+      IsarCore.writeNull(writer, 15);
+    } else {
+      IsarCore.writeString(writer, 15, value);
+    }
+  }
+  {
+    final list = object.memberPubkeys;
+    final listWriter = IsarCore.beginList(writer, 16, list.length);
+    for (var i = 0; i < list.length; i++) {
+      IsarCore.writeString(listWriter, i, list[i]);
+    }
+    IsarCore.endList(writer, listWriter);
   }
   return object.id;
 }
@@ -205,6 +268,56 @@ CircleDBISAR deserializeCircleDBISAR(IsarReader reader) {
   }
   final String? _groupId;
   _groupId = IsarCore.readString(reader, 9);
+  final String? _tenantAdminPubkey;
+  _tenantAdminPubkey = IsarCore.readString(reader, 10);
+  final int? _expiresAt;
+  {
+    final value = IsarCore.readLong(reader, 11);
+    if (value == -9223372036854775808) {
+      _expiresAt = null;
+    } else {
+      _expiresAt = value;
+    }
+  }
+  final int? _maxMembers;
+  {
+    final value = IsarCore.readLong(reader, 12);
+    if (value == -9223372036854775808) {
+      _maxMembers = null;
+    } else {
+      _maxMembers = value;
+    }
+  }
+  final int? _currentMembers;
+  {
+    final value = IsarCore.readLong(reader, 13);
+    if (value == -9223372036854775808) {
+      _currentMembers = null;
+    } else {
+      _currentMembers = value;
+    }
+  }
+  final String? _subscriptionStatus;
+  _subscriptionStatus = IsarCore.readString(reader, 14);
+  final String? _tenantName;
+  _tenantName = IsarCore.readString(reader, 15);
+  final List<String> _memberPubkeys;
+  {
+    final length = IsarCore.readList(reader, 16, IsarCore.readerPtrPtr);
+    {
+      final reader = IsarCore.readerPtr;
+      if (reader.isNull) {
+        _memberPubkeys = const [];
+      } else {
+        final list = List<String>.filled(length, '', growable: true);
+        for (var i = 0; i < length; i++) {
+          list[i] = IsarCore.readString(reader, i) ?? '';
+        }
+        IsarCore.freeReader(reader);
+        _memberPubkeys = list;
+      }
+    }
+  }
   final object = CircleDBISAR(
     circleId: _circleId,
     name: _name,
@@ -215,6 +328,13 @@ CircleDBISAR deserializeCircleDBISAR(IsarReader reader) {
     iceserverList: _iceserverList,
     pushserverList: _pushserverList,
     groupId: _groupId,
+    tenantAdminPubkey: _tenantAdminPubkey,
+    expiresAt: _expiresAt,
+    maxMembers: _maxMembers,
+    currentMembers: _currentMembers,
+    subscriptionStatus: _subscriptionStatus,
+    tenantName: _tenantName,
+    memberPubkeys: _memberPubkeys,
   );
   object.id = IsarCore.readId(reader);
   return object;
@@ -303,6 +423,56 @@ dynamic deserializeCircleDBISARProp(IsarReader reader, int property) {
       }
     case 9:
       return IsarCore.readString(reader, 9);
+    case 10:
+      return IsarCore.readString(reader, 10);
+    case 11:
+      {
+        final value = IsarCore.readLong(reader, 11);
+        if (value == -9223372036854775808) {
+          return null;
+        } else {
+          return value;
+        }
+      }
+    case 12:
+      {
+        final value = IsarCore.readLong(reader, 12);
+        if (value == -9223372036854775808) {
+          return null;
+        } else {
+          return value;
+        }
+      }
+    case 13:
+      {
+        final value = IsarCore.readLong(reader, 13);
+        if (value == -9223372036854775808) {
+          return null;
+        } else {
+          return value;
+        }
+      }
+    case 14:
+      return IsarCore.readString(reader, 14);
+    case 15:
+      return IsarCore.readString(reader, 15);
+    case 16:
+      {
+        final length = IsarCore.readList(reader, 16, IsarCore.readerPtrPtr);
+        {
+          final reader = IsarCore.readerPtr;
+          if (reader.isNull) {
+            return const [];
+          } else {
+            final list = List<String>.filled(length, '', growable: true);
+            for (var i = 0; i < length; i++) {
+              list[i] = IsarCore.readString(reader, i) ?? '';
+            }
+            IsarCore.freeReader(reader);
+            return list;
+          }
+        }
+      }
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -316,6 +486,12 @@ sealed class _CircleDBISARUpdate {
     String? description,
     String? image,
     String? groupId,
+    String? tenantAdminPubkey,
+    int? expiresAt,
+    int? maxMembers,
+    int? currentMembers,
+    String? subscriptionStatus,
+    String? tenantName,
   });
 }
 
@@ -332,6 +508,12 @@ class _CircleDBISARUpdateImpl implements _CircleDBISARUpdate {
     Object? description = ignore,
     Object? image = ignore,
     Object? groupId = ignore,
+    Object? tenantAdminPubkey = ignore,
+    Object? expiresAt = ignore,
+    Object? maxMembers = ignore,
+    Object? currentMembers = ignore,
+    Object? subscriptionStatus = ignore,
+    Object? tenantName = ignore,
   }) {
     return collection.updateProperties([
           id
@@ -341,6 +523,12 @@ class _CircleDBISARUpdateImpl implements _CircleDBISARUpdate {
           if (description != ignore) 3: description as String?,
           if (image != ignore) 4: image as String?,
           if (groupId != ignore) 9: groupId as String?,
+          if (tenantAdminPubkey != ignore) 10: tenantAdminPubkey as String?,
+          if (expiresAt != ignore) 11: expiresAt as int?,
+          if (maxMembers != ignore) 12: maxMembers as int?,
+          if (currentMembers != ignore) 13: currentMembers as int?,
+          if (subscriptionStatus != ignore) 14: subscriptionStatus as String?,
+          if (tenantName != ignore) 15: tenantName as String?,
         }) >
         0;
   }
@@ -354,6 +542,12 @@ sealed class _CircleDBISARUpdateAll {
     String? description,
     String? image,
     String? groupId,
+    String? tenantAdminPubkey,
+    int? expiresAt,
+    int? maxMembers,
+    int? currentMembers,
+    String? subscriptionStatus,
+    String? tenantName,
   });
 }
 
@@ -370,6 +564,12 @@ class _CircleDBISARUpdateAllImpl implements _CircleDBISARUpdateAll {
     Object? description = ignore,
     Object? image = ignore,
     Object? groupId = ignore,
+    Object? tenantAdminPubkey = ignore,
+    Object? expiresAt = ignore,
+    Object? maxMembers = ignore,
+    Object? currentMembers = ignore,
+    Object? subscriptionStatus = ignore,
+    Object? tenantName = ignore,
   }) {
     return collection.updateProperties(id, {
       if (circleId != ignore) 1: circleId as String?,
@@ -377,6 +577,12 @@ class _CircleDBISARUpdateAllImpl implements _CircleDBISARUpdateAll {
       if (description != ignore) 3: description as String?,
       if (image != ignore) 4: image as String?,
       if (groupId != ignore) 9: groupId as String?,
+      if (tenantAdminPubkey != ignore) 10: tenantAdminPubkey as String?,
+      if (expiresAt != ignore) 11: expiresAt as int?,
+      if (maxMembers != ignore) 12: maxMembers as int?,
+      if (currentMembers != ignore) 13: currentMembers as int?,
+      if (subscriptionStatus != ignore) 14: subscriptionStatus as String?,
+      if (tenantName != ignore) 15: tenantName as String?,
     });
   }
 }
@@ -394,6 +600,12 @@ sealed class _CircleDBISARQueryUpdate {
     String? description,
     String? image,
     String? groupId,
+    String? tenantAdminPubkey,
+    int? expiresAt,
+    int? maxMembers,
+    int? currentMembers,
+    String? subscriptionStatus,
+    String? tenantName,
   });
 }
 
@@ -410,6 +622,12 @@ class _CircleDBISARQueryUpdateImpl implements _CircleDBISARQueryUpdate {
     Object? description = ignore,
     Object? image = ignore,
     Object? groupId = ignore,
+    Object? tenantAdminPubkey = ignore,
+    Object? expiresAt = ignore,
+    Object? maxMembers = ignore,
+    Object? currentMembers = ignore,
+    Object? subscriptionStatus = ignore,
+    Object? tenantName = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (circleId != ignore) 1: circleId as String?,
@@ -417,6 +635,12 @@ class _CircleDBISARQueryUpdateImpl implements _CircleDBISARQueryUpdate {
       if (description != ignore) 3: description as String?,
       if (image != ignore) 4: image as String?,
       if (groupId != ignore) 9: groupId as String?,
+      if (tenantAdminPubkey != ignore) 10: tenantAdminPubkey as String?,
+      if (expiresAt != ignore) 11: expiresAt as int?,
+      if (maxMembers != ignore) 12: maxMembers as int?,
+      if (currentMembers != ignore) 13: currentMembers as int?,
+      if (subscriptionStatus != ignore) 14: subscriptionStatus as String?,
+      if (tenantName != ignore) 15: tenantName as String?,
     });
   }
 }
@@ -441,6 +665,12 @@ class _CircleDBISARQueryBuilderUpdateImpl implements _CircleDBISARQueryUpdate {
     Object? description = ignore,
     Object? image = ignore,
     Object? groupId = ignore,
+    Object? tenantAdminPubkey = ignore,
+    Object? expiresAt = ignore,
+    Object? maxMembers = ignore,
+    Object? currentMembers = ignore,
+    Object? subscriptionStatus = ignore,
+    Object? tenantName = ignore,
   }) {
     final q = query.build();
     try {
@@ -450,6 +680,12 @@ class _CircleDBISARQueryBuilderUpdateImpl implements _CircleDBISARQueryUpdate {
         if (description != ignore) 3: description as String?,
         if (image != ignore) 4: image as String?,
         if (groupId != ignore) 9: groupId as String?,
+        if (tenantAdminPubkey != ignore) 10: tenantAdminPubkey as String?,
+        if (expiresAt != ignore) 11: expiresAt as int?,
+        if (maxMembers != ignore) 12: maxMembers as int?,
+        if (currentMembers != ignore) 13: currentMembers as int?,
+        if (subscriptionStatus != ignore) 14: subscriptionStatus as String?,
+        if (tenantName != ignore) 15: tenantName as String?,
       });
     } finally {
       q.close();
@@ -2237,6 +2473,1082 @@ extension CircleDBISARQueryFilter
       );
     });
   }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantAdminPubkeyIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 10));
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantAdminPubkeyIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 10));
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantAdminPubkeyEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 10,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantAdminPubkeyGreaterThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 10,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantAdminPubkeyGreaterThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 10,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantAdminPubkeyLessThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 10,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantAdminPubkeyLessThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 10,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantAdminPubkeyBetween(
+    String? lower,
+    String? upper, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 10,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantAdminPubkeyStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 10,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantAdminPubkeyEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 10,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantAdminPubkeyContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 10,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantAdminPubkeyMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 10,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantAdminPubkeyIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 10,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantAdminPubkeyIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 10,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      expiresAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 11));
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      expiresAtIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 11));
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      expiresAtEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 11,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      expiresAtGreaterThan(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 11,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      expiresAtGreaterThanOrEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 11,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      expiresAtLessThan(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 11,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      expiresAtLessThanOrEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 11,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      expiresAtBetween(
+    int? lower,
+    int? upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 11,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      maxMembersIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 12));
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      maxMembersIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 12));
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      maxMembersEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 12,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      maxMembersGreaterThan(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 12,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      maxMembersGreaterThanOrEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 12,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      maxMembersLessThan(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 12,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      maxMembersLessThanOrEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 12,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      maxMembersBetween(
+    int? lower,
+    int? upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 12,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      currentMembersIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 13));
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      currentMembersIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 13));
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      currentMembersEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 13,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      currentMembersGreaterThan(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 13,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      currentMembersGreaterThanOrEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 13,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      currentMembersLessThan(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 13,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      currentMembersLessThanOrEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 13,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      currentMembersBetween(
+    int? lower,
+    int? upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 13,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      subscriptionStatusIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 14));
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      subscriptionStatusIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 14));
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      subscriptionStatusEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 14,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      subscriptionStatusGreaterThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 14,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      subscriptionStatusGreaterThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 14,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      subscriptionStatusLessThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 14,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      subscriptionStatusLessThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 14,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      subscriptionStatusBetween(
+    String? lower,
+    String? upper, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 14,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      subscriptionStatusStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 14,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      subscriptionStatusEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 14,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      subscriptionStatusContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 14,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      subscriptionStatusMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 14,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      subscriptionStatusIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 14,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      subscriptionStatusIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 14,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 15));
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantNameIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 15));
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantNameEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 15,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantNameGreaterThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 15,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantNameGreaterThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 15,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantNameLessThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 15,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantNameLessThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 15,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantNameBetween(
+    String? lower,
+    String? upper, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 15,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantNameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 15,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantNameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 15,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantNameContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 15,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantNameMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 15,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 15,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      tenantNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 15,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      memberPubkeysElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 16,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      memberPubkeysElementGreaterThan(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 16,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      memberPubkeysElementGreaterThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 16,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      memberPubkeysElementLessThan(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 16,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      memberPubkeysElementLessThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 16,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      memberPubkeysElementBetween(
+    String lower,
+    String upper, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 16,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      memberPubkeysElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 16,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      memberPubkeysElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 16,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      memberPubkeysElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 16,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      memberPubkeysElementMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 16,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      memberPubkeysElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 16,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      memberPubkeysElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 16,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      memberPubkeysIsEmpty() {
+    return not().memberPubkeysIsNotEmpty();
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      memberPubkeysIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterOrEqualCondition(property: 16, value: null),
+      );
+    });
+  }
 }
 
 extension CircleDBISARQueryObject
@@ -2360,6 +3672,108 @@ extension CircleDBISARQuerySortBy
       );
     });
   }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy>
+      sortByTenantAdminPubkey({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        10,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy>
+      sortByTenantAdminPubkeyDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        10,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy> sortByExpiresAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(11);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy> sortByExpiresAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(11, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy> sortByMaxMembers() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(12);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy>
+      sortByMaxMembersDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(12, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy>
+      sortByCurrentMembers() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(13);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy>
+      sortByCurrentMembersDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(13, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy>
+      sortBySubscriptionStatus({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        14,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy>
+      sortBySubscriptionStatusDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        14,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy> sortByTenantName(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        15,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy> sortByTenantNameDesc(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        15,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
 }
 
 extension CircleDBISARQuerySortThenBy
@@ -2445,6 +3859,87 @@ extension CircleDBISARQuerySortThenBy
       return query.addSortBy(9, sort: Sort.desc, caseSensitive: caseSensitive);
     });
   }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy>
+      thenByTenantAdminPubkey({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(10, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy>
+      thenByTenantAdminPubkeyDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(10, sort: Sort.desc, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy> thenByExpiresAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(11);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy> thenByExpiresAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(11, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy> thenByMaxMembers() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(12);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy>
+      thenByMaxMembersDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(12, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy>
+      thenByCurrentMembers() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(13);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy>
+      thenByCurrentMembersDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(13, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy>
+      thenBySubscriptionStatus({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(14, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy>
+      thenBySubscriptionStatusDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(14, sort: Sort.desc, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy> thenByTenantName(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(15, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy> thenByTenantNameDesc(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(15, sort: Sort.desc, caseSensitive: caseSensitive);
+    });
+  }
 }
 
 extension CircleDBISARQueryWhereDistinct
@@ -2511,6 +4006,55 @@ extension CircleDBISARQueryWhereDistinct
       return query.addDistinctBy(9, caseSensitive: caseSensitive);
     });
   }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterDistinct>
+      distinctByTenantAdminPubkey({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(10, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterDistinct>
+      distinctByExpiresAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(11);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterDistinct>
+      distinctByMaxMembers() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(12);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterDistinct>
+      distinctByCurrentMembers() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(13);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterDistinct>
+      distinctBySubscriptionStatus({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(14, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterDistinct> distinctByTenantName(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(15, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterDistinct>
+      distinctByMemberPubkeys() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(16);
+    });
+  }
 }
 
 extension CircleDBISARQueryProperty1
@@ -2575,6 +4119,51 @@ extension CircleDBISARQueryProperty1
   QueryBuilder<CircleDBISAR, String?, QAfterProperty> groupIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(9);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, String?, QAfterProperty>
+      tenantAdminPubkeyProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(10);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, int?, QAfterProperty> expiresAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(11);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, int?, QAfterProperty> maxMembersProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(12);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, int?, QAfterProperty> currentMembersProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(13);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, String?, QAfterProperty>
+      subscriptionStatusProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(14);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, String?, QAfterProperty> tenantNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(15);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, List<String>, QAfterProperty>
+      memberPubkeysProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(16);
     });
   }
 }
@@ -2645,6 +4234,53 @@ extension CircleDBISARQueryProperty2<R>
       return query.addProperty(9);
     });
   }
+
+  QueryBuilder<CircleDBISAR, (R, String?), QAfterProperty>
+      tenantAdminPubkeyProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(10);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, (R, int?), QAfterProperty> expiresAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(11);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, (R, int?), QAfterProperty> maxMembersProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(12);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, (R, int?), QAfterProperty>
+      currentMembersProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(13);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, (R, String?), QAfterProperty>
+      subscriptionStatusProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(14);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, (R, String?), QAfterProperty>
+      tenantNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(15);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, (R, List<String>), QAfterProperty>
+      memberPubkeysProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(16);
+    });
+  }
 }
 
 extension CircleDBISARQueryProperty3<R1, R2>
@@ -2711,6 +4347,53 @@ extension CircleDBISARQueryProperty3<R1, R2>
   QueryBuilder<CircleDBISAR, (R1, R2, String?), QOperations> groupIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(9);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, (R1, R2, String?), QOperations>
+      tenantAdminPubkeyProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(10);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, (R1, R2, int?), QOperations> expiresAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(11);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, (R1, R2, int?), QOperations> maxMembersProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(12);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, (R1, R2, int?), QOperations>
+      currentMembersProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(13);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, (R1, R2, String?), QOperations>
+      subscriptionStatusProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(14);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, (R1, R2, String?), QOperations>
+      tenantNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(15);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, (R1, R2, List<String>), QOperations>
+      memberPubkeysProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(16);
     });
   }
 }
