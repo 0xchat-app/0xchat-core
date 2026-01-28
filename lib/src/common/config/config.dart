@@ -69,7 +69,7 @@ class Config {
   ];
   // host config
   Map<String, String> hostConfig = {
-    "wss://relay.xchat.chat": "wss://47.131.68.160:3000",
+    "wss://relay.xchat.chat": "ws://47.131.68.160:3000",
     "wss://relay.0xchat.com": "wss://52.76.210.159",
     "www.0xchat.com": "52.76.210.159:9602",
     "mint.0xchat.com": "35.181.15.130:3337",

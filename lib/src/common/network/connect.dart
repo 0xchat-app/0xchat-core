@@ -127,6 +127,9 @@ class Connect {
 
   // Track relays currently being checked to avoid duplicate checks
   Set<String> _checkingRelays = {};
+  
+  // Track relays currently being connected to avoid duplicate connections
+  Set<String> _connectingRelays = {};
 
   void startHeartBeat() {
     if (timer == null || timer!.isActive == false) {
@@ -199,6 +202,8 @@ class Connect {
     relayList ??= [...webSockets.keys];
     for (var relay in relayList) {
       final webSocket = webSockets.remove(relay);
+      // Remove from _connectingRelays to allow reconnection
+      _connectingRelays.remove(relay);
       if (webSocket != null && webSocket.status != ConnectStatus.closed) {
         webSocket.status = ConnectStatus.closed;
         // Cancel subscription first to prevent stale callbacks
@@ -335,6 +340,13 @@ class Connect {
     webSockets[relay]?.relayKinds = relayKinds;
     // connecting or open
     if (webSockets[relay]?.status == ConnectStatus.connecting || webSockets[relay]?.status == ConnectStatus.open) return;
+    
+    // Check if already connecting to avoid duplicate connections
+    if (_connectingRelays.contains(relay)) {
+      return;
+    }
+    
+    _connectingRelays.add(relay);
     LogUtils.v(() => "connecting... $relay");
     webSockets[relay] = ISocket(null, ConnectStatus.connecting, relayKinds);
     try {
@@ -355,8 +367,12 @@ class Connect {
         webSockets[relay]!.subscription = subscription;
         LogUtils.v(() => "$relay connection initialized");
         _setConnectStatus(relay, ConnectStatus.open);
+        _connectingRelays.remove(relay);
+      } else {
+        _connectingRelays.remove(relay);
       }
     } catch (_) {
+      _connectingRelays.remove(relay);
       _onDisconnected(relay, relayKind);
     }
   }
@@ -424,6 +440,9 @@ class Connect {
     // Cancel any pending reconnection for this relay
     _reconnectionTimers[relay]?.cancel();
     _reconnectionTimers.remove(relay);
+    
+    // Remove from _connectingRelays
+    _connectingRelays.remove(relay);
     
     // Cancel subscription first to prevent stale callbacks
     webSocket?.subscription?.cancel();
