@@ -11,6 +11,7 @@ export 'src/account/account+circle.dart';
 export 'src/circle/circle_member_service.dart';
 export 'src/circle/circle_api.dart';
 export 'src/circle/circle_request.dart';
+export 'src/circle/s3_config_utils.dart';
 export 'src/account/badges.dart';
 export 'src/account/zaps.dart';
 export 'src/account/zaps+nuts.dart';

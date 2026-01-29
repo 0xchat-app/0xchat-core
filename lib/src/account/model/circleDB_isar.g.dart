@@ -84,6 +84,10 @@ const CircleDBISARSchema = IsarGeneratedSchema(
         name: 'memberPubkeys',
         type: IsarType.stringList,
       ),
+      IsarPropertySchema(
+        name: 's3ConfigJson',
+        type: IsarType.string,
+      ),
     ],
     indexes: [
       IsarIndexSchema(
@@ -184,6 +188,14 @@ int serializeCircleDBISAR(IsarWriter writer, CircleDBISAR object) {
       IsarCore.writeString(listWriter, i, list[i]);
     }
     IsarCore.endList(writer, listWriter);
+  }
+  {
+    final value = object.s3ConfigJson;
+    if (value == null) {
+      IsarCore.writeNull(writer, 17);
+    } else {
+      IsarCore.writeString(writer, 17, value);
+    }
   }
   return object.id;
 }
@@ -318,6 +330,8 @@ CircleDBISAR deserializeCircleDBISAR(IsarReader reader) {
       }
     }
   }
+  final String? _s3ConfigJson;
+  _s3ConfigJson = IsarCore.readString(reader, 17);
   final object = CircleDBISAR(
     circleId: _circleId,
     name: _name,
@@ -335,6 +349,7 @@ CircleDBISAR deserializeCircleDBISAR(IsarReader reader) {
     subscriptionStatus: _subscriptionStatus,
     tenantName: _tenantName,
     memberPubkeys: _memberPubkeys,
+    s3ConfigJson: _s3ConfigJson,
   );
   object.id = IsarCore.readId(reader);
   return object;
@@ -473,6 +488,8 @@ dynamic deserializeCircleDBISARProp(IsarReader reader, int property) {
           }
         }
       }
+    case 17:
+      return IsarCore.readString(reader, 17);
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -492,6 +509,7 @@ sealed class _CircleDBISARUpdate {
     int? currentMembers,
     String? subscriptionStatus,
     String? tenantName,
+    String? s3ConfigJson,
   });
 }
 
@@ -514,6 +532,7 @@ class _CircleDBISARUpdateImpl implements _CircleDBISARUpdate {
     Object? currentMembers = ignore,
     Object? subscriptionStatus = ignore,
     Object? tenantName = ignore,
+    Object? s3ConfigJson = ignore,
   }) {
     return collection.updateProperties([
           id
@@ -529,6 +548,7 @@ class _CircleDBISARUpdateImpl implements _CircleDBISARUpdate {
           if (currentMembers != ignore) 13: currentMembers as int?,
           if (subscriptionStatus != ignore) 14: subscriptionStatus as String?,
           if (tenantName != ignore) 15: tenantName as String?,
+          if (s3ConfigJson != ignore) 17: s3ConfigJson as String?,
         }) >
         0;
   }
@@ -548,6 +568,7 @@ sealed class _CircleDBISARUpdateAll {
     int? currentMembers,
     String? subscriptionStatus,
     String? tenantName,
+    String? s3ConfigJson,
   });
 }
 
@@ -570,6 +591,7 @@ class _CircleDBISARUpdateAllImpl implements _CircleDBISARUpdateAll {
     Object? currentMembers = ignore,
     Object? subscriptionStatus = ignore,
     Object? tenantName = ignore,
+    Object? s3ConfigJson = ignore,
   }) {
     return collection.updateProperties(id, {
       if (circleId != ignore) 1: circleId as String?,
@@ -583,6 +605,7 @@ class _CircleDBISARUpdateAllImpl implements _CircleDBISARUpdateAll {
       if (currentMembers != ignore) 13: currentMembers as int?,
       if (subscriptionStatus != ignore) 14: subscriptionStatus as String?,
       if (tenantName != ignore) 15: tenantName as String?,
+      if (s3ConfigJson != ignore) 17: s3ConfigJson as String?,
     });
   }
 }
@@ -606,6 +629,7 @@ sealed class _CircleDBISARQueryUpdate {
     int? currentMembers,
     String? subscriptionStatus,
     String? tenantName,
+    String? s3ConfigJson,
   });
 }
 
@@ -628,6 +652,7 @@ class _CircleDBISARQueryUpdateImpl implements _CircleDBISARQueryUpdate {
     Object? currentMembers = ignore,
     Object? subscriptionStatus = ignore,
     Object? tenantName = ignore,
+    Object? s3ConfigJson = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (circleId != ignore) 1: circleId as String?,
@@ -641,6 +666,7 @@ class _CircleDBISARQueryUpdateImpl implements _CircleDBISARQueryUpdate {
       if (currentMembers != ignore) 13: currentMembers as int?,
       if (subscriptionStatus != ignore) 14: subscriptionStatus as String?,
       if (tenantName != ignore) 15: tenantName as String?,
+      if (s3ConfigJson != ignore) 17: s3ConfigJson as String?,
     });
   }
 }
@@ -671,6 +697,7 @@ class _CircleDBISARQueryBuilderUpdateImpl implements _CircleDBISARQueryUpdate {
     Object? currentMembers = ignore,
     Object? subscriptionStatus = ignore,
     Object? tenantName = ignore,
+    Object? s3ConfigJson = ignore,
   }) {
     final q = query.build();
     try {
@@ -686,6 +713,7 @@ class _CircleDBISARQueryBuilderUpdateImpl implements _CircleDBISARQueryUpdate {
         if (currentMembers != ignore) 13: currentMembers as int?,
         if (subscriptionStatus != ignore) 14: subscriptionStatus as String?,
         if (tenantName != ignore) 15: tenantName as String?,
+        if (s3ConfigJson != ignore) 17: s3ConfigJson as String?,
       });
     } finally {
       q.close();
@@ -3549,6 +3577,200 @@ extension CircleDBISARQueryFilter
       );
     });
   }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      s3ConfigJsonIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 17));
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      s3ConfigJsonIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 17));
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      s3ConfigJsonEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 17,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      s3ConfigJsonGreaterThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 17,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      s3ConfigJsonGreaterThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 17,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      s3ConfigJsonLessThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 17,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      s3ConfigJsonLessThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 17,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      s3ConfigJsonBetween(
+    String? lower,
+    String? upper, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 17,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      s3ConfigJsonStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 17,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      s3ConfigJsonEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 17,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      s3ConfigJsonContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 17,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      s3ConfigJsonMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 17,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      s3ConfigJsonIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 17,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterFilterCondition>
+      s3ConfigJsonIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 17,
+          value: '',
+        ),
+      );
+    });
+  }
 }
 
 extension CircleDBISARQueryObject
@@ -3774,6 +3996,27 @@ extension CircleDBISARQuerySortBy
       );
     });
   }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy> sortByS3ConfigJson(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        17,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy> sortByS3ConfigJsonDesc(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        17,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
 }
 
 extension CircleDBISARQuerySortThenBy
@@ -3940,6 +4183,20 @@ extension CircleDBISARQuerySortThenBy
       return query.addSortBy(15, sort: Sort.desc, caseSensitive: caseSensitive);
     });
   }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy> thenByS3ConfigJson(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(17, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterSortBy> thenByS3ConfigJsonDesc(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(17, sort: Sort.desc, caseSensitive: caseSensitive);
+    });
+  }
 }
 
 extension CircleDBISARQueryWhereDistinct
@@ -4055,6 +4312,13 @@ extension CircleDBISARQueryWhereDistinct
       return query.addDistinctBy(16);
     });
   }
+
+  QueryBuilder<CircleDBISAR, CircleDBISAR, QAfterDistinct>
+      distinctByS3ConfigJson({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(17, caseSensitive: caseSensitive);
+    });
+  }
 }
 
 extension CircleDBISARQueryProperty1
@@ -4164,6 +4428,12 @@ extension CircleDBISARQueryProperty1
       memberPubkeysProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(16);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, String?, QAfterProperty> s3ConfigJsonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(17);
     });
   }
 }
@@ -4281,6 +4551,13 @@ extension CircleDBISARQueryProperty2<R>
       return query.addProperty(16);
     });
   }
+
+  QueryBuilder<CircleDBISAR, (R, String?), QAfterProperty>
+      s3ConfigJsonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(17);
+    });
+  }
 }
 
 extension CircleDBISARQueryProperty3<R1, R2>
@@ -4394,6 +4671,13 @@ extension CircleDBISARQueryProperty3<R1, R2>
       memberPubkeysProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(16);
+    });
+  }
+
+  QueryBuilder<CircleDBISAR, (R1, R2, String?), QOperations>
+      s3ConfigJsonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(17);
     });
   }
 }

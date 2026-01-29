@@ -233,6 +233,7 @@ extension AccountCircle on Account {
   /// [iceserverList] New ICE server list
   /// [pushserverList] New push server list
   /// [groupId] New associated group ID
+  /// [s3ConfigJson] S3 configuration JSON string
   /// Returns the updated circle object, null if failed
   Future<CircleDBISAR?> updatecircle({
     required String circleId,
@@ -244,6 +245,7 @@ extension AccountCircle on Account {
     List<String>? iceserverList,
     List<String>? pushserverList,
     String? groupId,
+    String? s3ConfigJson,
   }) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
@@ -276,6 +278,7 @@ extension AccountCircle on Account {
       if (iceserverList != null) circle.iceserverList = iceserverList;
       if (pushserverList != null) circle.pushserverList = pushserverList;
       if (groupId != null) circle.groupId = groupId;
+      if (s3ConfigJson != null) circle.s3ConfigJson = s3ConfigJson;
 
       // Save updates
       await DBISAR.sharedInstance.saveToDB(circle);
@@ -479,6 +482,20 @@ extension AccountCircle on Account {
             .toList();
       } else {
         circle.memberPubkeys = [];
+      }
+
+      // Handle s3_config if present
+      if (tenantInfo['s3_config'] != null) {
+        try {
+          final s3ConfigJson = tenantInfo['s3_config'] as Map<String, dynamic>;
+          final s3Config = S3Config.fromJson(s3ConfigJson);
+          await S3ConfigUtils.saveS3ConfigToCircleDB(
+            circleId: circleId,
+            s3Config: s3Config,
+          );
+        } catch (e) {
+          LogUtils.w(() => 'Failed to save S3 config from tenant info: $e');
+        }
       }
 
       // Save to database

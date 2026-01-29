@@ -1,5 +1,80 @@
+import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'circle_request.dart';
+
+/// S3 configuration model
+class S3Config {
+  S3Config({
+    required this.bucket,
+    required this.region,
+    required this.accessKeyId,
+    required this.secretAccessKey,
+    this.endpointUrl,
+    this.pathPrefix,
+    this.sessionToken,
+    this.expiration,
+  });
+
+  final String bucket;
+  final String region;
+  final String accessKeyId;
+  final String secretAccessKey;
+  final String? endpointUrl;
+  final String? pathPrefix;
+  
+  /// AWS Session Token (for temporary credentials from STS)
+  /// If null, credentials are permanent
+  final String? sessionToken;
+  
+  /// Credential expiration timestamp (Unix seconds)
+  /// If null, credentials don't expire (permanent)
+  final int? expiration;
+
+  factory S3Config.fromJson(Map<String, dynamic> json) {
+    // Handle both old format (flat) and new format (with credentials object)
+    String accessKeyId;
+    String secretAccessKey;
+    String? sessionToken;
+    int? expiration;
+    
+    if (json['credentials'] != null) {
+      // New format with credentials object
+      final creds = json['credentials'] as Map<String, dynamic>;
+      accessKeyId = creds['access_key_id'] as String;
+      secretAccessKey = creds['secret_access_key'] as String;
+      sessionToken = creds['session_token'] as String?;
+      expiration = creds['expiration'] as int?;
+    } else {
+      // Old format (flat) - backward compatibility
+      accessKeyId = json['access_key_id'] as String;
+      secretAccessKey = json['secret_access_key'] as String;
+      sessionToken = json['session_token'] as String?;
+      expiration = json['expiration'] as int?;
+    }
+    
+    return S3Config(
+      bucket: json['bucket'] as String,
+      region: json['region'] as String,
+      accessKeyId: accessKeyId,
+      secretAccessKey: secretAccessKey,
+      endpointUrl: json['endpoint_url'] as String?,
+      pathPrefix: json['path_prefix'] as String?,
+      sessionToken: sessionToken,
+      expiration: expiration,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'bucket': bucket,
+    'region': region,
+    'access_key_id': accessKeyId,
+    'secret_access_key': secretAccessKey,
+    if (endpointUrl != null) 'endpoint_url': endpointUrl,
+    if (pathPrefix != null) 'path_prefix': pathPrefix,
+    if (sessionToken != null) 'session_token': sessionToken,
+    if (expiration != null) 'expiration': expiration,
+  };
+}
 
 /// Relay address information model
 class RelayAddressInfo {
@@ -36,7 +111,7 @@ class RelayAddressInfo {
     'base_domain': baseDomain,
     'tenant_name': tenantName,
     'subscription_status': subscriptionStatus,
-    'expires_at': expiresAt,
+    if (expiresAt != null) 'expires_at': expiresAt,
   };
 }
 
@@ -196,6 +271,60 @@ class CircleApi {
       return result;
     } catch (e) {
       LogUtils.e(() => 'Error in getRelayAddresses: $e');
+      rethrow;
+    }
+  }
+
+  /// Get S3 temporary credentials for a tenant
+  /// 
+  /// Uses STS AssumeRole to generate temporary credentials for secure S3 access.
+  /// Credentials default to 1 hour expiration, max 12 hours.
+  /// 
+  /// [pubkey] User's public key
+  /// [privkey] User's private key
+  /// [tenantId] Tenant ID
+  /// [durationSeconds] Optional credential duration in seconds (default: 3600, max: 43200)
+  /// [baseUrl] Optional base URL for the API (defaults to Config.sharedInstance.privateRelayApiBaseUrl)
+  /// 
+  /// Returns [S3Config] with temporary credentials (including sessionToken and expiration).
+  /// Throws [Exception] if the request fails, user is not a tenant member, or STS is not configured.
+  static Future<S3Config> getS3Credentials({
+    required String pubkey,
+    required String privkey,
+    required String tenantId,
+    int? durationSeconds,
+    String? baseUrl,
+  }) async {
+    try {
+      // Build content JSON if durationSeconds is provided
+      String content = '';
+      if (durationSeconds != null) {
+        content = jsonEncode({'duration_seconds': durationSeconds});
+      }
+
+      final result = await CircleRequest.post<S3Config>(
+        endpoint: '/api/s3',
+        pubkey: pubkey,
+        privkey: privkey,
+        baseUrl: baseUrl,
+        tags: [
+          ['tenant_id', tenantId],
+        ],
+        content: content,
+        parseSuccess: (json) {
+          if (json['success'] == true && json['data'] != null) {
+            final s3Config = S3Config.fromJson(json['data'] as Map<String, dynamic>);
+            LogUtils.v(() => 'Successfully fetched S3 credentials for tenant $tenantId');
+            return s3Config;
+          } else {
+            final error = json['error'] as String? ?? 'Unknown error';
+            throw Exception('Failed to get S3 credentials: $error');
+          }
+        },
+      );
+      return result;
+    } catch (e) {
+      LogUtils.e(() => 'Error in getS3Credentials: $e');
       rethrow;
     }
   }

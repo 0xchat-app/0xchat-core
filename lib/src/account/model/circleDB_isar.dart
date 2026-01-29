@@ -29,6 +29,9 @@ class CircleDBISAR  {
   // Member info (for paid circles only)
   List<String> memberPubkeys; // Only store pubkey list, display names retrieved from UserDBISAR
 
+  // S3 configuration (stored as JSON string)
+  String? s3ConfigJson;
+
   CircleDBISAR({
     required this.circleId,
     this.name = '',
@@ -46,5 +49,6 @@ class CircleDBISAR  {
     this.subscriptionStatus,
     this.tenantName,
     this.memberPubkeys = const [],
+    this.s3ConfigJson,
   });
 }
