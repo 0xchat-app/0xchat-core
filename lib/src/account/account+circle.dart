@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:chatcore/chat-core.dart';
 import 'package:isar/isar.dart' hide Filter;
@@ -489,6 +490,8 @@ extension AccountCircle on Account {
         try {
           final s3ConfigJson = tenantInfo['s3_config'] as Map<String, dynamic>;
           final s3Config = S3Config.fromJson(s3ConfigJson);
+          // Update local circle object's s3ConfigJson before saving
+          circle.s3ConfigJson = jsonEncode(s3Config.toJson());
           await S3ConfigUtils.saveS3ConfigToCircleDB(
             circleId: circleId,
             s3Config: s3Config,
