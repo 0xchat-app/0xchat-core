@@ -194,6 +194,33 @@ class PaymentVerificationResult {
   };
 }
 
+/// Delete tenant files result model
+class DeleteTenantFilesResult {
+  DeleteTenantFilesResult({
+    required this.tenantId,
+    required this.deletedCount,
+    required this.totalCount,
+  });
+
+  final String tenantId;
+  final int deletedCount;
+  final int totalCount;
+
+  factory DeleteTenantFilesResult.fromJson(Map<String, dynamic> json) {
+    return DeleteTenantFilesResult(
+      tenantId: json['tenant_id'] as String,
+      deletedCount: json['deleted_count'] as int,
+      totalCount: json['total_count'] as int,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'tenant_id': tenantId,
+    'deleted_count': deletedCount,
+    'total_count': totalCount,
+  };
+}
+
 /// API client for Circle operations
 class CircleApi {
   CircleApi._();
@@ -325,6 +352,52 @@ class CircleApi {
       return result;
     } catch (e) {
       LogUtils.e(() => 'Error in getS3Credentials: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete tenant files from S3 storage
+  /// 
+  /// Deletes all files for the specified tenant in S3 storage.
+  /// This operation is irreversible and requires system admin or tenant admin permissions.
+  /// 
+  /// [pubkey] User's public key
+  /// [privkey] User's private key
+  /// [tenantId] Tenant ID
+  /// [baseUrl] Optional base URL for the API (defaults to Config.sharedInstance.privateRelayApiBaseUrl)
+  /// 
+  /// Returns [DeleteTenantFilesResult] with deletion statistics.
+  /// Throws [Exception] if the request fails, user lacks permissions, or tenant not found.
+  static Future<DeleteTenantFilesResult> deleteTenantFiles({
+    required String pubkey,
+    required String privkey,
+    required String tenantId,
+    String? baseUrl,
+  }) async {
+    try {
+      final result = await CircleRequest.post<DeleteTenantFilesResult>(
+        endpoint: '/api/delete-tenant-files',
+        pubkey: pubkey,
+        privkey: privkey,
+        baseUrl: baseUrl,
+        tags: [
+          ['tenant_id', tenantId],
+        ],
+        content: '',
+        parseSuccess: (json) {
+          if (json['success'] == true && json['data'] != null) {
+            final deleteResult = DeleteTenantFilesResult.fromJson(json['data'] as Map<String, dynamic>);
+            LogUtils.v(() => 'Successfully deleted ${deleteResult.deletedCount}/${deleteResult.totalCount} files for tenant ${deleteResult.tenantId}');
+            return deleteResult;
+          } else {
+            final error = json['error'] as String? ?? 'Unknown error';
+            throw Exception('Failed to delete tenant files: $error');
+          }
+        },
+      );
+      return result;
+    } catch (e) {
+      LogUtils.e(() => 'Error in deleteTenantFiles: $e');
       rethrow;
     }
   }

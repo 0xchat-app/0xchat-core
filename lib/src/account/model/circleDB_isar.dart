@@ -19,6 +19,7 @@ class CircleDBISAR  {
   String? groupId;
 
   // Subscription info (for paid circles only)
+  String? tenantId;
   String? tenantAdminPubkey;
   int? expiresAt; // Unix timestamp in seconds
   int? maxMembers;
@@ -42,6 +43,7 @@ class CircleDBISAR  {
     this.iceserverList = const [],
     this.pushserverList = const [],
     this.groupId,
+    this.tenantId,
     this.tenantAdminPubkey,
     this.expiresAt,
     this.maxMembers,

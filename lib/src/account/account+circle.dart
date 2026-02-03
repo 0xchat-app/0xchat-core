@@ -467,6 +467,7 @@ extension AccountCircle on Account {
       }
 
       // Update subscription info
+      circle.tenantId = tenantInfo['tenant_id'] as String?;
       circle.tenantAdminPubkey = tenantInfo['tenant_admin_pubkey'] as String?;
       circle.expiresAt = tenantInfo['expires_at'] as int?;
       circle.maxMembers = tenantInfo['max_members'] as int?;
