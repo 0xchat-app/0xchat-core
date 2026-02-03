@@ -369,25 +369,6 @@ class CircleMemberService {
     }
   }
 
-  /// Get tenant info (admin-visible, detailed)
-  /// 
-  /// Returns detailed tenant info including admin pubkey and other sensitive fields
-  /// Requires system admin or tenant admin permissions
-  Future<Map<String, dynamic>> getTenantInfoAdmin() async {
-    final response = await _sendManagementEvent(
-      kind: 20101,
-      tags: [],
-      content: '',
-    );
-
-    if (response['status'] == 'success') {
-      return response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
-    } else {
-      final message = response['message'];
-      throw Exception(message is String ? message : 'Failed to get tenant info (admin)');
-    }
-  }
-
   /// Update tenant configuration
   /// 
   /// [name] Optional new tenant name (tenant admin can update)

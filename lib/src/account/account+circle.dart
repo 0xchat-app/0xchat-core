@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:chatcore/chat-core.dart';
 import 'package:isar/isar.dart' hide Filter;
@@ -484,22 +483,6 @@ extension AccountCircle on Account {
             .toList();
       } else {
         circle.memberPubkeys = [];
-      }
-
-      // Handle s3_config if present
-      if (tenantInfo['s3_config'] != null) {
-        try {
-          final s3ConfigJson = tenantInfo['s3_config'] as Map<String, dynamic>;
-          final s3Config = S3Config.fromJson(s3ConfigJson);
-          // Update local circle object's s3ConfigJson before saving
-          circle.s3ConfigJson = jsonEncode(s3Config.toJson());
-          await S3ConfigUtils.saveS3ConfigToCircleDB(
-            circleId: circleId,
-            s3Config: s3Config,
-          );
-        } catch (e) {
-          LogUtils.w(() => 'Failed to save S3 config from tenant info: $e');
-        }
       }
 
       // Save to database
