@@ -4,6 +4,7 @@ import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:isar/isar.dart' hide Filter;
 import 'package:nostr_mls_package/nostr_mls_package.dart';
+import '../../circle/circle_api.dart';
 
 /// Result of keypackage selection
 class KeyPackageSelectionResult {
@@ -16,6 +17,9 @@ class KeyPackageSelectionResult {
 /// KeyPackage Manager for MLS private groups
 /// Handles both one-time and permanent keypackages
 class KeyPackageManager {
+  // Keypackage lifetime: 200 years in seconds
+  static const int _keyPackageLifetimeSeconds = 200 * 365 * 24 * 60 * 60; // 200 years
+
   /// Create a one-time keypackage for sharing
   /// This keypackage can only be used once for processing welcome messages
   static Future<KeyPackageEvent?> createOneTimeKeyPackage({
@@ -34,6 +38,7 @@ class KeyPackageManager {
         publicKey: ownerPubkey,
         relay: relays,
         client: client.value,
+        lifetimeSeconds: _keyPackageLifetimeSeconds,
       );
 
       ParsedKeyPackage parsedKeyPackage = parseKeyPackageString(result);
@@ -86,6 +91,7 @@ class KeyPackageManager {
         publicKey: ownerPubkey,
         relay: relays,
         client: client.value,
+        lifetimeSeconds: _keyPackageLifetimeSeconds,
       );
 
       ParsedKeyPackage parsedKeyPackage = parseKeyPackageString(result);
@@ -1070,5 +1076,123 @@ class KeyPackageManager {
         completer.complete(null);
       }
     });
+  }
+
+  /// Wait for relay connection to be established
+  static Future<void> _waitForRelayConnection(String relayUrl) async {
+    // Check if already connected
+    final connectedRelays = Connect.sharedInstance.relays(
+      relayKinds: [RelayKind.circleRelay],
+    );
+    if (connectedRelays.contains(relayUrl)) {
+      return; // Already connected
+    }
+
+    // Wait for connection with timeout
+    final completer = Completer<void>();
+    ConnectStatusCallBack? connectionListener;
+    
+    connectionListener = (relay, ConnectStatus status, relayKinds) {
+      if (relay == relayUrl && 
+          status == ConnectStatus.open && 
+          relayKinds.contains(RelayKind.circleRelay)) {
+        Connect.sharedInstance.removeConnectStatusListener(connectionListener!);
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      }
+    };
+
+    Connect.sharedInstance.addConnectStatusListener(connectionListener);
+    
+    // Ensure connection is initiated
+    Connect.sharedInstance.connect(relayUrl, relayKind: RelayKind.circleRelay);
+    
+    // Wait for connection (no timeout, wait indefinitely)
+    await completer.future;
+  }
+
+  /// Ensure permanent keypackage is uploaded to paid relay
+  /// This method checks local keypackage, verifies if it exists on relay, and uploads if needed
+  static Future<void> ensurePermanentKeyPackageOnRelay() async {
+    try {
+      // 1. Get current circle's relay
+      final relays = Account.sharedInstance.getCurrentCircleRelay();
+      if (relays.isEmpty) return;
+      
+      // 2. Check if it's a paid relay
+      final relayUrl = relays.first;
+      if (!CircleApi.isPaidRelay(relayUrl)) return;
+      
+      // 3. Get current user's pubkey and privkey
+      final ownerPubkey = Account.sharedInstance.currentPubkey;
+      final ownerPrivkey = Account.sharedInstance.currentPrivkey;
+      if (ownerPubkey.isEmpty || ownerPrivkey.isEmpty) return;
+      
+      // 4. Check local permanent keypackage
+      List<KeyPackageDBISAR> localPermanentKeyPackages = 
+          await getLocalKeyPackagesByType(ownerPubkey, KeyPackageType.permanent);
+      
+      KeyPackageEvent? keyPackageEvent;
+      
+      if (localPermanentKeyPackages.isEmpty) {
+        // 5. No local permanent keypackage, generate new one
+        keyPackageEvent = await createPermanentKeyPackage(
+          ownerPubkey: ownerPubkey,
+          ownerPrivkey: ownerPrivkey,
+          relays: relays,
+        );
+      } else {
+        // 6. Have local permanent keypackage, check if it exists on relay
+        final localKeyPackage = localPermanentKeyPackages.first;
+        if (localKeyPackage.eventId.isNotEmpty) {
+          // Wait for relay connection to succeed
+          await _waitForRelayConnection(relayUrl);
+          
+          // Check if it exists on relay
+          final relayKeyPackage = await _fetchKeyPackageFromRelay(
+            localKeyPackage.eventId,
+            relays,
+          );
+          if (relayKeyPackage != null) {
+            // Already exists on relay, no need to upload
+            return;
+          }
+        }
+        // Doesn't exist on relay, need to upload
+        keyPackageEvent = localKeyPackage.toKeyPackageEvent();
+      }
+      
+      // 7. Publish to relay (with retry mechanism)
+      if (keyPackageEvent != null) {
+        const maxRetries = 3;
+        int retryCount = 0;
+        bool publishSuccess = false;
+        
+        while (retryCount < maxRetries && !publishSuccess) {
+          final okEvent = await publishKeyPackageEventToRelays(
+            keyPackageEvent,
+            relays,
+            ownerPubkey,
+            ownerPrivkey,
+          );
+          
+          if (okEvent.status) {
+            publishSuccess = true;
+          } else {
+            retryCount++;
+            if (retryCount < maxRetries) {
+              print('Failed to publish keypackage to relay (attempt $retryCount/$maxRetries): ${okEvent.message}, retrying...');
+              // Wait before retrying
+              await Future.delayed(Duration(seconds: 2 * retryCount));
+            } else {
+              print('Failed to publish keypackage to relay after $maxRetries attempts: ${okEvent.message}');
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('Failed to ensure permanent keypackage on relay: $e');
+    }
   }
 }
