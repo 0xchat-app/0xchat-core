@@ -473,6 +473,7 @@ extension AccountCircle on Account {
       circle.currentMembers = tenantInfo['current_members'] as int?;
       circle.subscriptionStatus = tenantInfo['subscription_status'] as String?;
       circle.tenantName = tenantInfo['name'] as String?;
+      circle.status = tenantInfo['status'] as String?;
 
       // Update member info (only store pubkey list)
       final membersData = tenantInfo['members'] as List<dynamic>?;
@@ -512,7 +513,8 @@ extension AccountCircle on Account {
           circle.maxMembers != null ||
           circle.currentMembers != null ||
           circle.subscriptionStatus != null ||
-          circle.tenantName != null;
+          circle.tenantName != null ||
+          circle.status != null;
 
       if (!hasCachedData) {
         return null;
@@ -528,6 +530,7 @@ extension AccountCircle on Account {
         if (circle.subscriptionStatus != null)
           'subscription_status': circle.subscriptionStatus,
         if (circle.tenantName != null) 'name': circle.tenantName,
+        if (circle.status != null) 'status': circle.status,
       };
 
       // Build members list (only contains pubkey, display names retrieved from UserDBISAR)

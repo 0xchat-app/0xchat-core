@@ -84,6 +84,7 @@ class RelayAddressInfo {
     required this.baseDomain,
     required this.tenantName,
     required this.subscriptionStatus,
+    required this.status,
     this.expiresAt,
   });
 
@@ -92,6 +93,7 @@ class RelayAddressInfo {
   final String baseDomain;
   final String tenantName;
   final String subscriptionStatus;
+  final String status;
   final int? expiresAt;
 
   factory RelayAddressInfo.fromJson(Map<String, dynamic> json) {
@@ -101,6 +103,7 @@ class RelayAddressInfo {
       baseDomain: json['base_domain'] as String,
       tenantName: json['tenant_name'] as String,
       subscriptionStatus: json['subscription_status'] as String,
+      status: json['status'] as String? ?? 'active', // Default to 'active' for backward compatibility
       expiresAt: json['expires_at'] as int?,
     );
   }
@@ -111,6 +114,7 @@ class RelayAddressInfo {
     'base_domain': baseDomain,
     'tenant_name': tenantName,
     'subscription_status': subscriptionStatus,
+    'status': status,
     if (expiresAt != null) 'expires_at': expiresAt,
   };
 }
