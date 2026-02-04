@@ -888,8 +888,51 @@ class Connect {
     if (!auths.containsKey(relay)) {
       auths[relay] = AuthData(auth.challenge, '', []);
     } else if (auths[relay]?.challenge != auth.challenge) {
-      auths[relay]?.challenge = auth.challenge;
-      auths[relay]?.eventId = '';
+      // If previous auth is still pending (eventId is not empty and not 'sending...'),
+      // preserve resendDatas and wait for previous auth to complete
+      // Only reset eventId if previous auth is not pending
+      final previousEventId = auths[relay]?.eventId;
+      final isPreviousAuthPending = previousEventId != null && 
+          previousEventId.isNotEmpty && 
+          previousEventId != 'sending...';
+      
+      if (!isPreviousAuthPending) {
+        // Previous auth is not pending, safe to reset
+        auths[relay]?.challenge = auth.challenge;
+        auths[relay]?.eventId = '';
+      } else {
+        // Previous auth is still pending, keep the existing eventId
+        // but update challenge for next auth attempt
+        auths[relay]?.challenge = auth.challenge;
+        // Don't reset eventId, wait for previous auth OK response
+      }
+    }
+    
+    // Add pending events from sendsMap to resendDatas
+    // This ensures events sent before auth challenge are resend after auth completes
+    for (var send in sendsMap.values) {
+      if (send.relays.contains(relay)) {
+        if (auths[relay]?.resendDatas.contains(send.eventString) == false) {
+          auths[relay]?.resendDatas.add(send.eventString);
+        }
+      }
+    }
+    
+    // Add pending requests from requestsMap to resendDatas
+    // This ensures requests sent before auth challenge are resend after auth completes
+    for (var key in requestsMap.keys) {
+      if (key.contains(relay)) {
+        var request = requestsMap[key];
+        if (request != null) {
+          // Add requests that have been sent (requestTime > 0)
+          // Also add requests in waitingQueue (requestTime == 0) to ensure they are resend after auth
+          if (request.requestTime > 0 || subscriptionsWaitingQueue[relay]?.contains(request.requestId) == true) {
+            if (auths[relay]?.resendDatas.contains(request.subscriptionString) == false) {
+              auths[relay]?.resendDatas.add(request.subscriptionString);
+            }
+          }
+        }
+      }
     }
   }
 
