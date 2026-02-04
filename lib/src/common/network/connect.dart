@@ -855,6 +855,12 @@ class Connect {
         _sendAuth(relay);
         return;
       }
+      // circle/tenant expired: relay rejected write with e.g. "tenant expired, write blocked"
+      if (!ok.status &&
+          ok.message.isNotEmpty &&
+          ok.message.toLowerCase().contains('tenant expired')) {
+        Account.notifyCircleExpired();
+      }
       // callback
       if (sendsMap[ok.eventId]!.okCallBack != null) {
         var relays = sendsMap[ok.eventId]!.relays;
