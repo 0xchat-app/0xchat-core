@@ -377,6 +377,54 @@ class Connect {
     }
   }
 
+  /// Wait for a relay connection to be established
+  /// Returns true if connection succeeds, false if connection fails
+  Future<bool> waitForRelayConnection(
+    String relay, {
+    RelayKind relayKind = RelayKind.general,
+  }) async {
+    // Check if already connected
+    final webSocket = webSockets[relay];
+    if (webSocket != null &&
+        webSocket.status == ConnectStatus.open &&
+        webSocket.relayKinds.contains(relayKind)) {
+      return true;
+    }
+
+    // Create completer to wait for connection
+    final completer = Completer<bool>();
+    ConnectStatusCallBack? connectionListener;
+
+    // Setup connection status listener
+    connectionListener = (String statusRelay, ConnectStatus status, List<RelayKind> relayKinds) {
+      if (statusRelay != relay) return;
+
+      // Connection succeeded
+      if (status == ConnectStatus.open && relayKinds.contains(relayKind)) {
+        removeConnectStatusListener(connectionListener!);
+        if (!completer.isCompleted) {
+          completer.complete(true);
+        }
+        return;
+      }
+
+      // Connection failed (closed and no longer in webSockets, meaning no retry)
+      if (status == ConnectStatus.closed && !webSockets.containsKey(relay)) {
+        removeConnectStatusListener(connectionListener!);
+        if (!completer.isCompleted) {
+          completer.complete(false);
+        }
+        return;
+      }
+    };
+
+    // Add listener to wait for connection
+    addConnectStatusListener(connectionListener);
+
+    // Wait for connection result
+    return completer.future;
+  }
+
   Future<bool> connectRelays(List<String> relays, {RelayKind relayKind = RelayKind.general}) async {
     final completer = Completer<bool>();
     if (relays.isEmpty && !completer.isCompleted) completer.complete(true);
