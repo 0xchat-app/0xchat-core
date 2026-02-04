@@ -301,7 +301,9 @@ class Connect {
 
   void _setConnectStatus(String relay, ConnectStatus status) {
     webSockets[relay]?.status = status;
-    for (var callBack in connectStatusListeners) {
+    // Create a copy of the list to avoid concurrent modification during iteration
+    final listeners = List<ConnectStatusCallBack>.from(connectStatusListeners);
+    for (var callBack in listeners) {
       callBack(relay, status, webSockets[relay]?.relayKinds ?? []);
     }
   }
@@ -722,7 +724,7 @@ class Connect {
         _handleEOSE(m.message, relay, false);
         break;
       case "CLOSED":
-        _handleCLOSED(m.message, relay);
+        await _handleCLOSED(m.message, relay);
         break;
       case "NOTICE":
       case "NOTIFY":
@@ -793,7 +795,7 @@ class Connect {
     }
   }
 
-  void _handleCLOSED(Closed closed, String relay) {
+  Future<void> _handleCLOSED(Closed closed, String relay) async {
     LogUtils.v(() => 'receive closed: ${closed.serialize()}, $relay');
     String subscriptionId = closed.subscriptionId;
     String requestsMapKey = subscriptionId + relay;
@@ -806,6 +808,12 @@ class Connect {
         }
         _sendAuth(relay);
         return;
+      }
+      // Wait for event validation futures to complete before removing request
+      // This ensures eventCallBack executes before eoseCallBack
+      if (eventCheckerFutures.containsKey(requestsMapKey)) {
+        await Future.wait(eventCheckerFutures[requestsMapKey]!);
+        eventCheckerFutures.remove(requestsMapKey);
       }
       _removeRequestsMapRelay(subscriptionId, relay, true);
     }
