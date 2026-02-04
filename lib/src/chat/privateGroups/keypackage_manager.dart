@@ -75,13 +75,11 @@ class KeyPackageManager {
     try {
       // Check if permanent keypackage already exists locally
       List<KeyPackageDBISAR> existingPermanentKeyPackages =
-          await getLocalKeyPackagesByType(
-              ownerPubkey, KeyPackageType.permanent);
+          await getLocalKeyPackagesByType(ownerPubkey, KeyPackageType.permanent);
 
       if (existingPermanentKeyPackages.isNotEmpty) {
         // Use existing permanent keypackage
-        KeyPackageDBISAR existingKeyPackage =
-            existingPermanentKeyPackages.first;
+        KeyPackageDBISAR existingKeyPackage = existingPermanentKeyPackages.first;
         // Convert KeyPackageDBISAR back to KeyPackageEvent using the existing method
         return existingKeyPackage.toKeyPackageEvent();
       }
@@ -113,11 +111,8 @@ class KeyPackageManager {
     }
   }
 
-  static Future<OKEvent> publishKeyPackageEventToRelays(
-      KeyPackageEvent keyPackageEvent,
-      List<String> relays,
-      String ownerPubkey,
-      String ownerPrivkey) async {
+  static Future<OKEvent> publishKeyPackageEventToRelays(KeyPackageEvent keyPackageEvent,
+      List<String> relays, String ownerPubkey, String ownerPrivkey) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     List<List<String>> tags = [
@@ -139,7 +134,7 @@ class KeyPackageManager {
       if (ok.status) {
         await saveKeyPackageEventToDB(event, KeyPackageType.permanent);
       }
-      
+
       if (!completer.isCompleted) {
         completer.complete(ok);
       }
@@ -152,8 +147,7 @@ class KeyPackageManager {
     try {
       // Get all local keypackages (both permanent and one-time)
       List<KeyPackageDBISAR> permanentKeyPackages =
-          await getLocalKeyPackagesByType(
-              ownerPubkey, KeyPackageType.permanent);
+          await getLocalKeyPackagesByType(ownerPubkey, KeyPackageType.permanent);
       List<KeyPackageDBISAR> oneTimeKeyPackages =
           await getLocalKeyPackagesByType(ownerPubkey, KeyPackageType.oneTime);
 
@@ -164,10 +158,8 @@ class KeyPackageManager {
       ];
 
       // Extract all event ids (filter out empty ones)
-      List<String> eventIds = allKeyPackages
-          .where((kp) => kp.eventId.isNotEmpty)
-          .map((kp) => kp.eventId)
-          .toList();
+      List<String> eventIds =
+          allKeyPackages.where((kp) => kp.eventId.isNotEmpty).map((kp) => kp.eventId).toList();
 
       // Delete all keypackages from relay
       if (eventIds.isNotEmpty) {
@@ -181,8 +173,7 @@ class KeyPackageManager {
     } catch (e) {
       print('Failed to delete keypackage events from relays: $e');
       Completer<OKEvent> completer = Completer<OKEvent>();
-      completer.complete(
-          OKEvent('', false, 'Failed to delete keypackage events: $e'));
+      completer.complete(OKEvent('', false, 'Failed to delete keypackage events: $e'));
       return completer.future;
     }
   }
@@ -222,8 +213,7 @@ class KeyPackageManager {
     try {
       // Get all permanent keypackages from database
       List<KeyPackageDBISAR> permanentKeyPackages =
-          await getLocalKeyPackagesByType(
-              ownerPubkey, KeyPackageType.permanent);
+          await getLocalKeyPackagesByType(ownerPubkey, KeyPackageType.permanent);
       // Delete from relay and database
       await _deleteKeyPackageFromDB(permanentKeyPackages);
       await _deleteKeyPackagesFromRelay(
@@ -244,15 +234,12 @@ class KeyPackageManager {
   }
 
   /// Delete keypackage from relay
-  static Future<OKEvent> _deleteKeyPackagesFromRelay(
-      List<String> keyPackageEventIds, List<String> relays, List<KeyPackageDBISAR> keyPackages) async {
+  static Future<OKEvent> _deleteKeyPackagesFromRelay(List<String> keyPackageEventIds,
+      List<String> relays, List<KeyPackageDBISAR> keyPackages) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     /// send delete event to relay
-    Event event = await Nip9.encode(
-        keyPackageEventIds,
-        '',
-        Account.sharedInstance.currentPubkey,
+    Event event = await Nip9.encode(keyPackageEventIds, '', Account.sharedInstance.currentPubkey,
         Account.sharedInstance.currentPrivkey);
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
       // Only mark as not published if deletion was successful
@@ -264,19 +251,18 @@ class KeyPackageManager {
           }
         }
       }
-      
+
       if (!completer.isCompleted) completer.complete(ok);
     });
     return completer.future;
   }
 
-  static Future<void> saveKeyPackageEventToDB(
-      Event event, KeyPackageType type) async {
+  static Future<void> saveKeyPackageEventToDB(Event event, KeyPackageType type) async {
     KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
 
     try {
       final isar = DBISAR.sharedInstance.isar;
-      
+
       // Check if a keypackage with the same encodedKeyPackage already exists
       KeyPackageDBISAR? existingKeyPackage = await isar.keyPackageDBISARs
           .where()
@@ -318,9 +304,7 @@ class KeyPackageManager {
   static Future<List<String>> getAllUsersWithLocalKeyPackages() async {
     try {
       final isar = DBISAR.sharedInstance.isar;
-      final allKeyPackages = await isar.keyPackageDBISARs
-          .where()
-          .findAll();
+      final allKeyPackages = await isar.keyPackageDBISARs.where().findAll();
 
       // Get unique owner pubkeys
       final Set<String> uniquePubkeys = {};
@@ -328,17 +312,16 @@ class KeyPackageManager {
 
       for (KeyPackageDBISAR keyPackage in allKeyPackages) {
         final pubkey = keyPackage.ownerPubkey;
-        
+
         // For current user's keypackages, verify they exist in nostr_mls storage
         if (pubkey == currentPubkey) {
-          bool existsInStorage =
-              await _verifyKeyPackageInStorage(keyPackage.encodedKeyPackage);
+          bool existsInStorage = await _verifyKeyPackageInStorage(keyPackage.encodedKeyPackage);
           if (!existsInStorage) {
             // Skip invalid keypackages for current user
             continue;
           }
         }
-        
+
         // Only add if keypackage is available (not used or available for use)
         if (keyPackage.isAvailable) {
           uniquePubkeys.add(pubkey);
@@ -353,8 +336,7 @@ class KeyPackageManager {
   }
 
   /// Get available keypackages for a user
-  static Future<List<KeyPackageDBISAR>> getAvailableLocalKeyPackages(
-      String pubkey,
+  static Future<List<KeyPackageDBISAR>> getAvailableLocalKeyPackages(String pubkey,
       {String? welcomeSenderPubkey}) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
@@ -379,8 +361,7 @@ class KeyPackageManager {
 
         // Only verify keypackages in nostr_mls storage if this is the current user's keypackages
         if (pubkey == currentPubkey) {
-          bool existsInStorage =
-              await _verifyKeyPackageInStorage(keyPackage.encodedKeyPackage);
+          bool existsInStorage = await _verifyKeyPackageInStorage(keyPackage.encodedKeyPackage);
           if (existsInStorage) {
             availableKeyPackages.add(keyPackage);
           } else {
@@ -398,20 +379,16 @@ class KeyPackageManager {
     }
   }
 
-  static Future<KeyPackageDBISAR?> getKeyPackageById(
-      String keyPackageId) async {
+  static Future<KeyPackageDBISAR?> getKeyPackageById(String keyPackageId) async {
     final isar = DBISAR.sharedInstance.isar;
-    KeyPackageDBISAR? keyPackage = isar.keyPackageDBISARs
-        .where()
-        .keyPackageIdEqualTo(keyPackageId)
-        .findFirst();
+    KeyPackageDBISAR? keyPackage =
+        isar.keyPackageDBISARs.where().keyPackageIdEqualTo(keyPackageId).findFirst();
 
     if (keyPackage != null) {
       // Only verify keypackage in nostr_mls storage if this is the current user's keypackage
       String currentPubkey = Account.sharedInstance.currentPubkey;
       if (keyPackage.ownerPubkey == currentPubkey) {
-        bool existsInStorage =
-            await _verifyKeyPackageInStorage(keyPackage.encodedKeyPackage);
+        bool existsInStorage = await _verifyKeyPackageInStorage(keyPackage.encodedKeyPackage);
         if (!existsInStorage) {
           // Remove from database if not found in nostr_mls storage
           await _deleteKeyPackageFromDB([keyPackage]);
@@ -440,8 +417,7 @@ class KeyPackageManager {
       if (pubkey == currentPubkey) {
         List<KeyPackageDBISAR> validKeyPackages = [];
         for (KeyPackageDBISAR keyPackage in keyPackages) {
-          bool existsInStorage =
-              await _verifyKeyPackageInStorage(keyPackage.encodedKeyPackage);
+          bool existsInStorage = await _verifyKeyPackageInStorage(keyPackage.encodedKeyPackage);
           if (existsInStorage) {
             validKeyPackages.add(keyPackage);
           } else {
@@ -491,8 +467,7 @@ class KeyPackageManager {
     // First check if user has a scanned keypackage ID (highest priority)
     UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
     // Second check if user has a last selected keypackage ID
-    if (user?.lastSelectedKeyPackageId != null &&
-        user!.lastSelectedKeyPackageId!.isNotEmpty) {
+    if (user?.lastSelectedKeyPackageId != null && user!.lastSelectedKeyPackageId!.isNotEmpty) {
       // Try to get the last selected keypackage
       final isar = DBISAR.sharedInstance.isar;
       final lastSelectedKeyPackage = isar.keyPackageDBISARs
@@ -500,16 +475,14 @@ class KeyPackageManager {
           .keyPackageIdEqualTo(user.lastSelectedKeyPackageId!)
           .findFirst();
 
-      if (lastSelectedKeyPackage != null &&
-          lastSelectedKeyPackage.isAvailable) {
+      if (lastSelectedKeyPackage != null && lastSelectedKeyPackage.isAvailable) {
         return lastSelectedKeyPackage.encodedKeyPackage;
       }
     }
 
     // If no last selected keypackage or it's not available, proceed with normal logic
     // First try local database - prioritize XChat client
-    List<KeyPackageDBISAR> localKeyPackages =
-        await getAvailableLocalKeyPackages(pubkey);
+    List<KeyPackageDBISAR> localKeyPackages = await getAvailableLocalKeyPackages(pubkey);
 
     if (localKeyPackages.isNotEmpty) {
       // First try to find XChat client keypackages
@@ -540,39 +513,31 @@ class KeyPackageManager {
     }
 
     // Search relay for more keypackages
-    List<KeyPackageEvent> relayKeyPackages =
-        await searchAndStoreKeyPackages(pubkey);
+    List<KeyPackageEvent> relayKeyPackages = await searchAndStoreKeyPackages(pubkey);
 
     // Combine local and relay keypackages
     List<KeyPackageEvent> localKeyPackageEvents =
         localKeyPackages.map((kp) => kp.toKeyPackageEvent()).toList();
-    List<KeyPackageEvent> availableKeyPackages = [
-      ...localKeyPackageEvents,
-      ...relayKeyPackages
-    ];
+    List<KeyPackageEvent> availableKeyPackages = [...localKeyPackageEvents, ...relayKeyPackages];
 
     // search all keypackages (local + relay)
-    List<KeyPackageEvent> oxchatLiteKeyPackages = availableKeyPackages
-        .where((kp) => kp.client == KeyPackageClient.oxchatLite.value)
-        .toList();
+    List<KeyPackageEvent> oxchatLiteKeyPackages =
+        availableKeyPackages.where((kp) => kp.client == KeyPackageClient.oxchatLite.value).toList();
     if (oxchatLiteKeyPackages.isNotEmpty) {
       return oxchatLiteKeyPackages.first.encoded_key_package;
     }
 
     // If no XChat keypackages locally, search relay and let upper layer choose
     if (onKeyPackageSelection != null) {
-      KeyPackageSelectionResult? result =
-          await onKeyPackageSelection(pubkey, availableKeyPackages);
+      KeyPackageSelectionResult? result = await onKeyPackageSelection(pubkey, availableKeyPackages);
       if (result?.keyPackage != null) {
         // Find the keypackage ID for the selected keypackage
-        KeyPackageDBISAR? selectedKeyPackageDB = localKeyPackages
-            .where((kp) => kp.encodedKeyPackage == result!.keyPackage)
-            .firstOrNull;
+        KeyPackageDBISAR? selectedKeyPackageDB =
+            localKeyPackages.where((kp) => kp.encodedKeyPackage == result!.keyPackage).firstOrNull;
         if (selectedKeyPackageDB != null) {
           if (result!.rememberSelection) {
             // Remember the selection
-            await updateUserLastSelectedKeyPackageId(
-                pubkey, selectedKeyPackageDB.keyPackageId);
+            await updateUserLastSelectedKeyPackageId(pubkey, selectedKeyPackageDB.keyPackageId);
           } else {
             // Clear the last selected keypackage ID
             await updateUserLastSelectedKeyPackageId(pubkey, '');
@@ -591,23 +556,19 @@ class KeyPackageManager {
   }
 
   /// Search for keypackages on relay and store them locally
-  static Future<List<KeyPackageEvent>> searchAndStoreKeyPackages(
-      String pubkey) async {
+  static Future<List<KeyPackageEvent>> searchAndStoreKeyPackages(String pubkey) async {
     try {
-      Completer<List<KeyPackageEvent>> completer =
-          Completer<List<KeyPackageEvent>>();
+      Completer<List<KeyPackageEvent>> completer = Completer<List<KeyPackageEvent>>();
       List<Event> cachedEvents = [];
       List<KeyPackageEvent> relayKeyPackages = [];
       Filter filter = Filter(kinds: [443], authors: [pubkey], limit: 10);
 
-      Connect.sharedInstance.addSubscription([filter],
-          eventCallBack: (event, relay) async {
+      Connect.sharedInstance.addSubscription([filter], eventCallBack: (event, relay) async {
         cachedEvents.add(event);
       }, eoseCallBack: (requestId, ok, relay, unRelays) async {
         for (Event event in cachedEvents) {
           try {
-            KeyPackageEvent keyPackageEvent =
-                Nip104.decodeKeyPackageEvent(event);
+            KeyPackageEvent keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
 
             // Validate keypackage
             bool isValid = await checkValidKeypackage(keyPackageEvent);
@@ -617,8 +578,7 @@ class KeyPackageManager {
             KeyPackageType type = _determineKeyPackageType(keyPackageEvent);
 
             // Create database record
-            KeyPackageDBISAR keyPackageDB =
-                KeyPackageDBISAR.fromKeyPackageEvent(
+            KeyPackageDBISAR keyPackageDB = KeyPackageDBISAR.fromKeyPackageEvent(
               keyPackageEvent,
               type: type,
               status: KeyPackageStatus.available,
@@ -653,10 +613,8 @@ class KeyPackageManager {
   }) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
-      final keyPackage = isar.keyPackageDBISARs
-          .where()
-          .keyPackageIdEqualTo(keyPackageId)
-          .findFirst();
+      final keyPackage =
+          isar.keyPackageDBISARs.where().keyPackageIdEqualTo(keyPackageId).findFirst();
 
       if (keyPackage != null) {
         // For one-time keypackages, check if it's already used by a different user
@@ -684,10 +642,8 @@ class KeyPackageManager {
   }) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
-      final keyPackage = isar.keyPackageDBISARs
-          .where()
-          .encodedKeyPackageEqualTo(encodedKeyPackage)
-          .findFirst();
+      final keyPackage =
+          isar.keyPackageDBISARs.where().encodedKeyPackageEqualTo(encodedKeyPackage).findFirst();
 
       if (keyPackage != null) {
         // For one-time keypackages, check if it's already used by a different user
@@ -713,8 +669,7 @@ class KeyPackageManager {
   }
 
   /// Record scanned keypackage ID to user for priority selection
-  static Future<void> recordScannedKeyPackageId(
-      String senderPubkey, String? keyPackageId) async {
+  static Future<void> recordScannedKeyPackageId(String senderPubkey, String? keyPackageId) async {
     try {
       UserDBISAR? user = await Account.sharedInstance.getUserInfo(senderPubkey);
       if (user != null) {
@@ -730,11 +685,9 @@ class KeyPackageManager {
     }
   }
 
-  static Future<OKEvent> _publishKeyPackageEvent(
-      Event event, List<String> relays) async {
+  static Future<OKEvent> _publishKeyPackageEvent(Event event, List<String> relays) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
-    Connect.sharedInstance.sendEvent(event, toRelays: relays,
-        sendCallBack: (ok, relay) {
+    Connect.sharedInstance.sendEvent(event, toRelays: relays, sendCallBack: (ok, relay) {
       if (!completer.isCompleted) {
         completer.complete(ok);
       }
@@ -748,8 +701,7 @@ class KeyPackageManager {
     return KeyPackageType.permanent;
   }
 
-  static Future<bool> checkValidKeypackage(
-      KeyPackageEvent keyPackageEvent) async {
+  static Future<bool> checkValidKeypackage(KeyPackageEvent keyPackageEvent) async {
     try {
       String extensions = jsonDecode(await getExtensions())['extensions'];
       String ciphersuite = jsonDecode(await getCiphersuite())['ciphersuite'];
@@ -764,13 +716,11 @@ class KeyPackageManager {
   }
 
   static bool _areListsEqual(List<String> list1, List<String> list2) {
-    return Set.from(list1).containsAll(list2) &&
-        Set.from(list2).containsAll(list1);
+    return Set.from(list1).containsAll(list2) && Set.from(list2).containsAll(list1);
   }
 
   /// Update user's last selected keypackage ID
-  static Future<void> updateUserLastSelectedKeyPackageId(
-      String pubkey, String keyPackageId) async {
+  static Future<void> updateUserLastSelectedKeyPackageId(String pubkey, String keyPackageId) async {
     try {
       UserDBISAR? user = await Account.sharedInstance.getUserInfo(pubkey);
       if (user != null) {
@@ -787,8 +737,7 @@ class KeyPackageManager {
     try {
       final isar = DBISAR.sharedInstance.isar;
 
-      final total =
-          isar.keyPackageDBISARs.where().ownerPubkeyEqualTo(pubkey).count();
+      final total = isar.keyPackageDBISARs.where().ownerPubkeyEqualTo(pubkey).count();
 
       // Count keypackages that have been used (have usedByPubkey)
       final used = isar.keyPackageDBISARs
@@ -834,11 +783,9 @@ class KeyPackageManager {
   }
 
   /// Verify if keypackage exists in nostr_mls storage
-  static Future<bool> _verifyKeyPackageInStorage(
-      String encodedKeyPackage) async {
+  static Future<bool> _verifyKeyPackageInStorage(String encodedKeyPackage) async {
     try {
-      String result = await getKeyPackageFromStorage(
-          serializedKeyPackage: encodedKeyPackage);
+      String result = await getKeyPackageFromStorage(serializedKeyPackage: encodedKeyPackage);
       Map<String, dynamic> resultMap = jsonDecode(result);
       return resultMap['found'] == true;
     } catch (e) {
@@ -854,16 +801,12 @@ class KeyPackageManager {
   }
 
   /// Delete keypackage from database
-  static Future<void> _deleteKeyPackageFromDB(
-      List<KeyPackageDBISAR> keyPackages) async {
+  static Future<void> _deleteKeyPackageFromDB(List<KeyPackageDBISAR> keyPackages) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
       await isar.writeAsync((isar) {
         for (var keyPackage in keyPackages) {
-          isar.keyPackageDBISARs
-              .where()
-              .keyPackageIdEqualTo(keyPackage.keyPackageId)
-              .deleteAll();
+          isar.keyPackageDBISARs.where().keyPackageIdEqualTo(keyPackage.keyPackageId).deleteAll();
         }
       });
     } catch (e) {
@@ -881,10 +824,8 @@ class KeyPackageManager {
     try {
       // First check if the encodedKeyPackage already exists in database
       final isar = DBISAR.sharedInstance.isar;
-      final existingKeyPackage = isar.keyPackageDBISARs
-          .where()
-          .encodedKeyPackageEqualTo(encodedKeyPackage)
-          .findFirst();
+      final existingKeyPackage =
+          isar.keyPackageDBISARs.where().encodedKeyPackageEqualTo(encodedKeyPackage).findFirst();
 
       if (existingKeyPackage != null) {
         return existingKeyPackage.keyPackageId;
@@ -942,8 +883,7 @@ class KeyPackageManager {
       }
 
       // If not found locally, fetch from relay
-      final relayKeyPackageEvent =
-          await _fetchKeyPackageFromRelay(eventId, relays);
+      final relayKeyPackageEvent = await _fetchKeyPackageFromRelay(eventId, relays);
       if (relayKeyPackageEvent == null) {
         print('Failed to fetch keypackage event from relay');
         return {'success': false, 'pubkey': null};
@@ -956,8 +896,7 @@ class KeyPackageManager {
         status: KeyPackageStatus.available,
       );
 
-      await KeyPackageManager.deleteAllKeyPackagesFromUser(
-          relayKeyPackageEvent.pubkey);
+      await KeyPackageManager.deleteAllKeyPackagesFromUser(relayKeyPackageEvent.pubkey);
       // Save to database
       await KeyPackageManager.saveKeyPackage(keyPackageDB);
 
@@ -974,12 +913,10 @@ class KeyPackageManager {
   }
 
   /// Fetch KeyPackageEvent from local database
-  static Future<KeyPackageDBISAR?> _fetchKeyPackageFromLocal(
-      String eventId) async {
+  static Future<KeyPackageDBISAR?> _fetchKeyPackageFromLocal(String eventId) async {
     try {
       final isar = DBISAR.sharedInstance.isar;
-      final localKeyPackage =
-          isar.keyPackageDBISARs.where().eventIdEqualTo(eventId).findFirst();
+      final localKeyPackage = isar.keyPackageDBISARs.where().eventIdEqualTo(eventId).findFirst();
 
       if (localKeyPackage != null) {
         return localKeyPackage;
@@ -1007,8 +944,7 @@ class KeyPackageManager {
       final relayUrl = relays.first;
 
       // Check if already connected to the relay
-      final connectedRelays =
-          Connect.sharedInstance.relays(relayKinds: [RelayKind.circleRelay]);
+      final connectedRelays = Connect.sharedInstance.relays(relayKinds: [RelayKind.circleRelay]);
       bool isConnected = connectedRelays.contains(relayUrl);
 
       if (isConnected) {
@@ -1029,21 +965,22 @@ class KeyPackageManager {
   }
 
   /// Make keypackage request to relay
-  static void _makeKeyPackageRequest(
-      String eventId, Completer<KeyPackageEvent?> completer) {
+  static void _makeKeyPackageRequest(String eventId, Completer<KeyPackageEvent?> completer) {
     // Subscribe to the specific event
     final filter = Filter(ids: [eventId], kinds: [443]);
+    Event? resultEvent;
     Connect.sharedInstance.addSubscription(
       [filter],
       eventCallBack: (event, relay) {
         if (event.kind == 443) {
-          final keyPackageEvent = Nip104.decodeKeyPackageEvent(event);
-          completer.complete(keyPackageEvent);
+          resultEvent = event;
         }
       },
       eoseCallBack: (requestId, ok, relay, unCompletedRelays) {
+        KeyPackageEvent? keyPackageEvent;
+        if (resultEvent != null) keyPackageEvent = Nip104.decodeKeyPackageEvent(resultEvent!);
         if (!completer.isCompleted) {
-          completer.complete(null);
+          completer.complete(keyPackageEvent);
         }
       },
     );
@@ -1091,10 +1028,10 @@ class KeyPackageManager {
     // Wait for connection with timeout
     final completer = Completer<void>();
     ConnectStatusCallBack? connectionListener;
-    
+
     connectionListener = (relay, ConnectStatus status, relayKinds) {
-      if (relay == relayUrl && 
-          status == ConnectStatus.open && 
+      if (relay == relayUrl &&
+          status == ConnectStatus.open &&
           relayKinds.contains(RelayKind.circleRelay)) {
         Connect.sharedInstance.removeConnectStatusListener(connectionListener!);
         if (!completer.isCompleted) {
@@ -1104,10 +1041,10 @@ class KeyPackageManager {
     };
 
     Connect.sharedInstance.addConnectStatusListener(connectionListener);
-    
+
     // Ensure connection is initiated
     Connect.sharedInstance.connect(relayUrl, relayKind: RelayKind.circleRelay);
-    
+
     // Wait for connection (no timeout, wait indefinitely)
     await completer.future;
   }
@@ -1118,23 +1055,24 @@ class KeyPackageManager {
     try {
       // 1. Get current circle's relay
       final relays = Account.sharedInstance.getCurrentCircleRelay();
+      print('getCurrentCircleRelay = $relays');
       if (relays.isEmpty) return;
-      
+
       // 2. Check if it's a paid relay
       final relayUrl = relays.first;
       if (!CircleApi.isPaidRelay(relayUrl)) return;
-      
+
       // 3. Get current user's pubkey and privkey
       final ownerPubkey = Account.sharedInstance.currentPubkey;
       final ownerPrivkey = Account.sharedInstance.currentPrivkey;
       if (ownerPubkey.isEmpty || ownerPrivkey.isEmpty) return;
-      
+
       // 4. Check local permanent keypackage
-      List<KeyPackageDBISAR> localPermanentKeyPackages = 
+      List<KeyPackageDBISAR> localPermanentKeyPackages =
           await getLocalKeyPackagesByType(ownerPubkey, KeyPackageType.permanent);
-      
+
       KeyPackageEvent? keyPackageEvent;
-      
+
       if (localPermanentKeyPackages.isEmpty) {
         // 5. No local permanent keypackage, generate new one
         keyPackageEvent = await createPermanentKeyPackage(
@@ -1148,7 +1086,7 @@ class KeyPackageManager {
         if (localKeyPackage.eventId.isNotEmpty) {
           // Wait for relay connection to succeed
           await _waitForRelayConnection(relayUrl);
-          
+
           // Check if it exists on relay
           final relayKeyPackage = await _fetchKeyPackageFromRelay(
             localKeyPackage.eventId,
@@ -1162,13 +1100,13 @@ class KeyPackageManager {
         // Doesn't exist on relay, need to upload
         keyPackageEvent = localKeyPackage.toKeyPackageEvent();
       }
-      
+
       // 7. Publish to relay (with retry mechanism)
       if (keyPackageEvent != null) {
         const maxRetries = 3;
         int retryCount = 0;
         bool publishSuccess = false;
-        
+
         while (retryCount < maxRetries && !publishSuccess) {
           final okEvent = await publishKeyPackageEventToRelays(
             keyPackageEvent,
@@ -1176,17 +1114,19 @@ class KeyPackageManager {
             ownerPubkey,
             ownerPrivkey,
           );
-          
+
           if (okEvent.status) {
             publishSuccess = true;
           } else {
             retryCount++;
             if (retryCount < maxRetries) {
-              print('Failed to publish keypackage to relay (attempt $retryCount/$maxRetries): ${okEvent.message}, retrying...');
+              print(
+                  'Failed to publish keypackage to relay (attempt $retryCount/$maxRetries): ${okEvent.message}, retrying...');
               // Wait before retrying
               await Future.delayed(Duration(seconds: 2 * retryCount));
             } else {
-              print('Failed to publish keypackage to relay after $maxRetries attempts: ${okEvent.message}');
+              print(
+                  'Failed to publish keypackage to relay after $maxRetries attempts: ${okEvent.message}');
             }
           }
         }
