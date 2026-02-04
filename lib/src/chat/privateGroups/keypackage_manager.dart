@@ -118,7 +118,7 @@ class KeyPackageManager {
       KeyPackageEvent keyPackageEvent,
       List<String> relays,
       String ownerPubkey,
-      String ownerPrivkey) async {
+      String ownerPrivkey, {int kind = 443}) async {
     Completer<OKEvent> completer = Completer<OKEvent>();
 
     List<List<String>> tags = [
@@ -133,6 +133,7 @@ class KeyPackageManager {
       tags,
       ownerPubkey,
       ownerPrivkey,
+      kind: kind,
     );
 
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) async {
@@ -602,7 +603,7 @@ class KeyPackageManager {
           Completer<List<KeyPackageEvent>>();
       List<Event> cachedEvents = [];
       List<KeyPackageEvent> relayKeyPackages = [];
-      Filter filter = Filter(kinds: [443], authors: [pubkey], limit: 10);
+      Filter filter = Filter(kinds: [443, 10443], authors: [pubkey], limit: 10);
 
       Connect.sharedInstance.addSubscription([filter],
           eventCallBack: (event, relay) async {
@@ -1010,11 +1011,11 @@ class KeyPackageManager {
       Event? resultEvent;
 
       // Subscribe to the specific event
-      final filter = Filter(ids: [eventId], kinds: [443]);
+      final filter = Filter(ids: [eventId], kinds: [443, 10443]);
       Connect.sharedInstance.addSubscription(
         [filter],
         eventCallBack: (event, relay) {
-          if (event.kind == 443) {
+          if (event.kind == 443 || event.kind == 10443) {
             resultEvent = event;
           }
         },
@@ -1097,6 +1098,7 @@ class KeyPackageManager {
           relays,
           ownerPubkey,
           ownerPrivkey,
+          kind: 10443,
         );
       }
     } catch (e) {
