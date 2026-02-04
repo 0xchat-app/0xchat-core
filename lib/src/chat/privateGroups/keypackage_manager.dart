@@ -1015,40 +1015,6 @@ class KeyPackageManager {
     });
   }
 
-  /// Wait for relay connection to be established
-  static Future<void> _waitForRelayConnection(String relayUrl) async {
-    // Check if already connected
-    final connectedRelays = Connect.sharedInstance.relays(
-      relayKinds: [RelayKind.circleRelay],
-    );
-    if (connectedRelays.contains(relayUrl)) {
-      return; // Already connected
-    }
-
-    // Wait for connection with timeout
-    final completer = Completer<void>();
-    ConnectStatusCallBack? connectionListener;
-
-    connectionListener = (relay, ConnectStatus status, relayKinds) {
-      if (relay == relayUrl &&
-          status == ConnectStatus.open &&
-          relayKinds.contains(RelayKind.circleRelay)) {
-        Connect.sharedInstance.removeConnectStatusListener(connectionListener!);
-        if (!completer.isCompleted) {
-          completer.complete();
-        }
-      }
-    };
-
-    Connect.sharedInstance.addConnectStatusListener(connectionListener);
-
-    // Ensure connection is initiated
-    Connect.sharedInstance.connect(relayUrl, relayKind: RelayKind.circleRelay);
-
-    // Wait for connection (no timeout, wait indefinitely)
-    await completer.future;
-  }
-
   /// Ensure permanent keypackage is uploaded to paid relay
   /// This method checks local keypackage, verifies if it exists on relay, and uploads if needed
   static Future<void> ensurePermanentKeyPackageOnRelay() async {
@@ -1084,9 +1050,6 @@ class KeyPackageManager {
         // 6. Have local permanent keypackage, check if it exists on relay
         final localKeyPackage = localPermanentKeyPackages.first;
         if (localKeyPackage.eventId.isNotEmpty) {
-          // Wait for relay connection to succeed
-          await _waitForRelayConnection(relayUrl);
-
           // Check if it exists on relay
           final relayKeyPackage = await _fetchKeyPackageFromRelay(
             localKeyPackage.eventId,
@@ -1101,35 +1064,14 @@ class KeyPackageManager {
         keyPackageEvent = localKeyPackage.toKeyPackageEvent();
       }
 
-      // 7. Publish to relay (with retry mechanism)
+      // 7. Publish to relay
       if (keyPackageEvent != null) {
-        const maxRetries = 3;
-        int retryCount = 0;
-        bool publishSuccess = false;
-
-        while (retryCount < maxRetries && !publishSuccess) {
-          final okEvent = await publishKeyPackageEventToRelays(
-            keyPackageEvent,
-            relays,
-            ownerPubkey,
-            ownerPrivkey,
-          );
-
-          if (okEvent.status) {
-            publishSuccess = true;
-          } else {
-            retryCount++;
-            if (retryCount < maxRetries) {
-              print(
-                  'Failed to publish keypackage to relay (attempt $retryCount/$maxRetries): ${okEvent.message}, retrying...');
-              // Wait before retrying
-              await Future.delayed(Duration(seconds: 2 * retryCount));
-            } else {
-              print(
-                  'Failed to publish keypackage to relay after $maxRetries attempts: ${okEvent.message}');
-            }
-          }
-        }
+        await publishKeyPackageEventToRelays(
+          keyPackageEvent,
+          relays,
+          ownerPubkey,
+          ownerPrivkey,
+        );
       }
     } catch (e) {
       print('Failed to ensure permanent keypackage on relay: $e');

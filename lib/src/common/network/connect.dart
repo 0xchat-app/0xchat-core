@@ -379,15 +379,49 @@ class Connect {
 
   /// Wait for a relay connection to be established
   /// Returns true if connection succeeds, false if connection fails
-  Future<bool> waitForRelayConnection(
-    String relay, {
-    RelayKind relayKind = RelayKind.general,
+  /// Either relay or relayKind must be provided
+  Future<bool> waitForRelayConnection({
+    String? relay,
+    RelayKind? relayKind,
   }) async {
+    // Determine relay URL and relayKind
+    String? targetRelay = relay;
+    RelayKind? targetRelayKind = relayKind;
+
+    // If relay is not provided, get it from relayKind
+    if (targetRelay == null || targetRelay.isEmpty) {
+      if (targetRelayKind == null) {
+        return false; // Both relay and relayKind are null
+      }
+
+      if (targetRelayKind == RelayKind.circleRelay) {
+        final relays = Account.sharedInstance.getCurrentCircleRelay();
+        if (relays.isEmpty) return false;
+        targetRelay = relays.first;
+      } else {
+        // For other relay kinds, get from connected relays
+        final connectedRelays = relays(relayKinds: [targetRelayKind]);
+        if (connectedRelays.isEmpty) return false;
+        targetRelay = connectedRelays.first;
+      }
+    }
+
+    // At this point, targetRelay should not be null
+    if (targetRelay == null || targetRelay.isEmpty) return false;
+
+    // If relayKind is not provided, try to infer from existing connection
+    if (targetRelayKind == null) {
+      final webSocket = webSockets[targetRelay];
+      targetRelayKind = webSocket?.relayKinds.isNotEmpty == true
+          ? webSocket!.relayKinds.first
+          : RelayKind.general;
+    }
+
     // Check if already connected
-    final webSocket = webSockets[relay];
+    final webSocket = webSockets[targetRelay];
     if (webSocket != null &&
         webSocket.status == ConnectStatus.open &&
-        webSocket.relayKinds.contains(relayKind)) {
+        webSocket.relayKinds.contains(targetRelayKind)) {
       return true;
     }
 
@@ -397,10 +431,10 @@ class Connect {
 
     // Setup connection status listener
     connectionListener = (String statusRelay, ConnectStatus status, List<RelayKind> relayKinds) {
-      if (statusRelay != relay) return;
+      if (statusRelay != targetRelay) return;
 
       // Connection succeeded
-      if (status == ConnectStatus.open && relayKinds.contains(relayKind)) {
+      if (status == ConnectStatus.open && relayKinds.contains(targetRelayKind)) {
         removeConnectStatusListener(connectionListener!);
         if (!completer.isCompleted) {
           completer.complete(true);
@@ -409,7 +443,7 @@ class Connect {
       }
 
       // Connection failed (closed and no longer in webSockets, meaning no retry)
-      if (status == ConnectStatus.closed && !webSockets.containsKey(relay)) {
+      if (status == ConnectStatus.closed && !webSockets.containsKey(targetRelay)) {
         removeConnectStatusListener(connectionListener!);
         if (!completer.isCompleted) {
           completer.complete(false);
