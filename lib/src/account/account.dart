@@ -53,14 +53,9 @@ class Account {
   AccountUpdateCallback? groupListUpdateCallback;
   AccountUpdateCallback? relayGroupListUpdateCallback;
 
-  /// Callback invoked when the current circle is detected as expired
-  /// (e.g. relay "tenant expired, write blocked" or purchase flow). Set by the upper layer to show toast / expired prompt.
-  static void Function()? onCircleExpired;
-
-  /// Call when the current circle is detected as expired. No-op if [onCircleExpired] is null.
-  static void notifyCircleExpired() {
-    onCircleExpired?.call();
-  }
+  /// Callback invoked when relay returns OK with status false and non-empty message.
+  /// Set by the upper layer (e.g. ox_common) to handle tenant expired toast, not-a-member delete circle, etc.
+  static void Function(OKEvent ok)? onRelayOkError;
 
   void init() {
     startHeartBeat();
