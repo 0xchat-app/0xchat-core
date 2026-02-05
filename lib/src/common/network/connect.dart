@@ -76,6 +76,30 @@ class ISocket {
   ISocket(this.socket, this.connectStatus, this.relayKinds);
 }
 
+// #region agent log - retry limiting helper
+class _RelayFailureInfo {
+  int retryCount = 0;
+  int lastFailTimeMs = 0;
+  
+  bool shouldSkip(int maxRetries, int backoffSeconds) {
+    if (retryCount < maxRetries) return false;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final backoffMs = backoffSeconds * 1000;
+    return (now - lastFailTimeMs) < backoffMs;
+  }
+  
+  void recordFailure() {
+    retryCount++;
+    lastFailTimeMs = DateTime.now().millisecondsSinceEpoch;
+  }
+  
+  void reset() {
+    retryCount = 0;
+    lastFailTimeMs = 0;
+  }
+}
+// #endregion
+
 enum RelayKind {
   general,
   dm,
@@ -100,6 +124,13 @@ class Connect {
 
   static final int timeout = 10;
   static final int MAX_SUBSCRIPTIONS_COUNT = 15;
+  
+  // #region agent log - retry limiting
+  static final int MAX_RETRY_COUNT = 3; // Maximum retries before backing off
+  static final int RETRY_BACKOFF_SECONDS = 300; // 5 minutes backoff after max retries
+  // Track relay failures: relay -> {retryCount, lastFailTime}
+  final Map<String, _RelayFailureInfo> _relayFailures = {};
+  // #endregion
 
   NoticeCallBack? noticeCallBack;
   StreamSubscription? _connectivitySubscription;
@@ -779,15 +810,35 @@ class Connect {
   }
 
   Future _connectWs(String relay, [int retryCount = 0]) async {
-    // #region agent log
-    _connectDebugLog('C', '_connectWs:ENTER', 'Connection attempt', {'relay': relay, 'retryCount': retryCount});
+    // #region agent log - check retry limit before attempting
+    _relayFailures[relay] ??= _RelayFailureInfo();
+    final failureInfo = _relayFailures[relay]!;
+    if (failureInfo.shouldSkip(MAX_RETRY_COUNT, RETRY_BACKOFF_SECONDS)) {
+      _connectDebugLog('C', '_connectWs:SKIP_BACKOFF', 'Skipping due to retry backoff', {
+        'relay': relay, 
+        'retryCount': failureInfo.retryCount,
+        'backoffSecondsRemaining': RETRY_BACKOFF_SECONDS - ((DateTime.now().millisecondsSinceEpoch - failureInfo.lastFailTimeMs) ~/ 1000)
+      });
+      _setConnectStatus(relay, 3); // closed
+      return;
+    }
+    _connectDebugLog('C', '_connectWs:ENTER', 'Connection attempt', {'relay': relay, 'retryCount': retryCount, 'totalFailures': failureInfo.retryCount});
     // #endregion
     try {
       _setConnectStatus(relay, 0); // connecting
-      return await _connectWsSetting(relay);
+      final socket = await _connectWsSetting(relay);
+      // #region agent log - reset failure count on success
+      failureInfo.reset();
+      // #endregion
+      return socket;
     } catch (e) {
       LogUtils.v(() => "Error! can not connect WS connectWs $e relay:$relay");
       _setConnectStatus(relay, 3); // closed
+      
+      // #region agent log - record failure
+      failureInfo.recordFailure();
+      _connectDebugLog('C', '_connectWs:FAIL', 'Connection failed', {'relay': relay, 'totalFailures': failureInfo.retryCount, 'error': e.toString().substring(0, (e.toString().length > 80 ? 80 : e.toString().length))});
+      // #endregion
 
       // Check if error is "was not upgraded to websocket, HTTP status code: 200"
       // If so, don't retry connection
@@ -797,6 +848,13 @@ class Connect {
         LogUtils.v(() => "WebSocket upgrade failed with HTTP 200, skipping retry for relay:$relay");
         return;
       }
+      
+      // #region agent log - check if max retries reached
+      if (failureInfo.retryCount >= MAX_RETRY_COUNT) {
+        _connectDebugLog('C', '_connectWs:MAX_RETRIES', 'Max retries reached, entering backoff', {'relay': relay, 'totalFailures': failureInfo.retryCount, 'backoffSeconds': RETRY_BACKOFF_SECONDS});
+        return;
+      }
+      // #endregion
 
       List<RelayKind>? relayKinds = webSockets[relay]?.relayKinds;
       bool hasNonTempKind = relayKinds?.any((kind) => kind != RelayKind.temp) ?? false;
