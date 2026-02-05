@@ -874,6 +874,10 @@ class Connect {
     }
   }
 
+  // #region agent log - connection timeout constant
+  static const int CONNECT_TIMEOUT_SECONDS = 5; // Timeout for WebSocket.connect to prevent long DNS blocking
+  // #endregion
+
   Future _connectWsSetting(String relay) async {
     String? host = Config.sharedInstance.hostConfig[relay];
     if (host != null && host.isNotEmpty) {
@@ -882,10 +886,16 @@ class Connect {
 
     // #region agent log
     final startTime = DateTime.now().millisecondsSinceEpoch;
-    _connectDebugLog('A', 'connectWsSetting:BEFORE', 'WebSocket.connect starting', {'relay': relay});
+    _connectDebugLog('A', 'connectWsSetting:BEFORE', 'WebSocket.connect starting', {'relay': relay, 'timeoutSeconds': CONNECT_TIMEOUT_SECONDS});
     // #endregion
     try {
-      final socket = await WebSocket.connect(relay);
+      // Add timeout to prevent long DNS blocking on failed hosts
+      final socket = await WebSocket.connect(relay).timeout(
+        Duration(seconds: CONNECT_TIMEOUT_SECONDS),
+        onTimeout: () {
+          throw TimeoutException('WebSocket.connect timed out after ${CONNECT_TIMEOUT_SECONDS}s', Duration(seconds: CONNECT_TIMEOUT_SECONDS));
+        },
+      );
       // #region agent log
       final duration = DateTime.now().millisecondsSinceEpoch - startTime;
       _connectDebugLog('A', 'connectWsSetting:SUCCESS', 'WebSocket.connect completed', {'relay': relay, 'durationMs': duration});
