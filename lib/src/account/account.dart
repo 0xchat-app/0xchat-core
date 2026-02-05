@@ -82,6 +82,11 @@ class Account {
     await saveUserToDB(me!);
   }
 
+  Future<void> syncMeAndFlush() async {
+    await syncMe();
+    await DBISAR.sharedInstance.flushBuffers();
+  }
+
   static Future<void> saveUserToDB(UserDBISAR user) async {
     await DBISAR.sharedInstance.saveToDB(user);
   }

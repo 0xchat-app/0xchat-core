@@ -134,7 +134,9 @@ extension AccountRelay on Account {
     if (!relays.contains(relay)) return OKEvent(relay, false, 'not exit');
     relays.remove(relay);
     Connect.sharedInstance.closeConnects([relay], RelayKind.general);
-    return await setGeneralRelayListToLocal(relays);
+    OKEvent result = await setGeneralRelayListToLocal(relays);
+    await DBISAR.sharedInstance.flushBuffers();
+    return result;
   }
 
   Future<OKEvent> addInboxRelay(String relay) async {
@@ -152,7 +154,9 @@ extension AccountRelay on Account {
     if (!relays.contains(relay)) return OKEvent(relay, false, 'not exit');
     relays.remove(relay);
     Connect.sharedInstance.closeConnects([relay], RelayKind.inbox);
-    return await setInboxRelayListToRelay(relays);
+    OKEvent result = await setInboxRelayListToRelay(relays);
+    await DBISAR.sharedInstance.flushBuffers();
+    return result;
   }
 
   Future<OKEvent> addOutboxRelay(String relay) async {
@@ -170,7 +174,9 @@ extension AccountRelay on Account {
     if (!relays.contains(relay)) return OKEvent(relay, false, 'not exit');
     relays.remove(relay);
     Connect.sharedInstance.closeConnects([relay], RelayKind.outbox);
-    return await setOutboxRelayListToRelay(relays);
+    OKEvent result = await setOutboxRelayListToRelay(relays);
+    await DBISAR.sharedInstance.flushBuffers();
+    return result;
   }
 
   Future<OKEvent> addDMRelay(String relay) async {
@@ -188,7 +194,9 @@ extension AccountRelay on Account {
     if (!relays.contains(relay)) return OKEvent(relay, false, 'not exit');
     relays.remove(relay);
     Connect.sharedInstance.closeConnects([relay], RelayKind.dm);
-    return await setDMRelayListToRelay(relays);
+    OKEvent result = await setDMRelayListToRelay(relays);
+    await DBISAR.sharedInstance.flushBuffers();
+    return result;
   }
 
   Future<OKEvent> addSearchRelay(String relay) async {
@@ -208,7 +216,9 @@ extension AccountRelay on Account {
     if (!relays.contains(relay)) return OKEvent(relay, false, 'not exit');
     relays.remove(relay);
     Connect.sharedInstance.closeConnects([relay], RelayKind.search);
-    return await setSearchRelayListToLocal(relays);
+    OKEvent result = await setSearchRelayListToLocal(relays);
+    await DBISAR.sharedInstance.flushBuffers();
+    return result;
   }
 
   Future<OKEvent> setSearchRelayListToLocal(List<String> relays) async {
