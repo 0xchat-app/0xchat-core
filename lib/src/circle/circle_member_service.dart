@@ -353,10 +353,9 @@ class CircleMemberService {
   }
 
   /// Get tenant info (member-visible)
-  /// 
-  /// Returns tenant info using HTTP API instead of socket.
-  /// This allows checking tenant existence before establishing WebSocket connections.
-  Future<Map<String, dynamic>> getTenantInfo() async {
+  ///
+  /// Returns [TenantInfo] model using [CircleApi.getTenantInfo].
+  Future<TenantInfo> getTenantInfo() async {
     // Get current circle relay URL
     final relay = _getCurrentCircleRelay();
     if (relay == null) {
@@ -398,22 +397,17 @@ class CircleMemberService {
     // Get pubkey and privkey
     final pubkey = _getCurrentPubkey();
     final privkey = _getCurrentPrivkey();
-    
+
     if (pubkey == null || privkey == null || privkey.isEmpty) {
       throw Exception('User not logged in or private key not available');
     }
 
-    // Call HTTP API
-    final tenantInfo = await CircleApi.getTenantInfo(
+    return CircleApi.getTenantInfo(
       pubkey: pubkey,
       privkey: privkey,
       tenantId: tenantId,
       baseUrl: baseUrl,
     );
-
-    // Convert TenantInfo to Map<String, dynamic> format for backward compatibility
-    final result = tenantInfo.toJson();
-    return result;
   }
 
   /// Update tenant configuration
