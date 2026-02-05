@@ -115,16 +115,32 @@ class CircleRequest {
         throw Exception('Failed to parse response: $e');
       }
     } else {
+      LogUtils.e(() => 'Error response: ${response.body}');
       // Handle error response
       try {
         final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
-        final error = CircleApiError.fromJson(responseBody);
-        LogUtils.e(() => 'API error: ${error.error}');
-        throw Exception(error.error);
-      } catch (e) {
-        if (e is Exception && e.toString().contains('error')) {
-          rethrow;
+        
+        // Extract error code if present
+        String? errorCode;
+        if (responseBody.containsKey('code')) {
+          final codeValue = responseBody['code'];
+          if (codeValue is String) {
+            errorCode = codeValue;
+            LogUtils.e(() => 'Error code: $errorCode');
+          }
         }
+        throw Exception('Error code: $errorCode');
+      } catch (e) {
+        // If it's already an Exception we threw (with our error message), rethrow it
+        if (e is Exception) {
+          final errorStr = e.toString();
+          // Check if this is our custom error message (not the fallback format)
+          if (!errorStr.contains('Request failed with status') && 
+              !errorStr.contains('Failed to parse response')) {
+            rethrow;
+          }
+        }
+        // Fallback: log and throw with full response
         LogUtils.e(() => 'Unknown error response: ${response.body}');
         throw Exception('Request failed with status ${response.statusCode}: ${response.body}');
       }

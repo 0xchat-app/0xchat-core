@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
+import 'circle_api.dart';
 
 /// Circle member management service
 /// 
@@ -353,20 +354,66 @@ class CircleMemberService {
 
   /// Get tenant info (member-visible)
   /// 
-  /// Returns tenant info
+  /// Returns tenant info using HTTP API instead of socket.
+  /// This allows checking tenant existence before establishing WebSocket connections.
   Future<Map<String, dynamic>> getTenantInfo() async {
-    final response = await _sendManagementEvent(
-      kind: 20203,
-      tags: [],
-      content: '',
+    // Get current circle relay URL
+    final relay = _getCurrentCircleRelay();
+    if (relay == null) {
+      throw Exception('No circle relay available');
+    }
+
+    // Extract baseUrl from relay URL
+    final baseUrl = CircleApi.extractBaseUrlFromRelay(relay);
+
+    // Get tenantId using the following priority:
+    // 1. Try to get from current circle's CircleDBISAR.tenantId (if circle exists and tenantId is saved)
+    // 2. If not available, extract from relay URL path
+    String? tenantId;
+
+    // Try to get tenantId from CircleDBISAR
+    try {
+      // Get all circles and find one that matches the relay URL
+      final circles = await Account.sharedInstance.getAllCircles();
+      for (final circle in circles) {
+        if (circle.relayList.contains(relay) && circle.tenantId != null && circle.tenantId!.isNotEmpty) {
+          tenantId = circle.tenantId;
+          break;
+        }
+      }
+    } catch (e) {
+      LogUtils.v(() => 'Could not get tenantId from CircleDBISAR: $e');
+    }
+
+    // If not found in CircleDBISAR, extract from relay URL path
+    if (tenantId == null || tenantId.isEmpty) {
+      tenantId = CircleApi.extractTenantIdFromRelay(relay);
+    }
+
+    // If still not available, throw exception
+    if (tenantId == null || tenantId.isEmpty) {
+      throw Exception('Cannot determine tenantId from relay URL: $relay');
+    }
+
+    // Get pubkey and privkey
+    final pubkey = _getCurrentPubkey();
+    final privkey = _getCurrentPrivkey();
+    
+    if (pubkey == null || privkey == null || privkey.isEmpty) {
+      throw Exception('User not logged in or private key not available');
+    }
+
+    // Call HTTP API
+    final tenantInfo = await CircleApi.getTenantInfo(
+      pubkey: pubkey,
+      privkey: privkey,
+      tenantId: tenantId,
+      baseUrl: baseUrl,
     );
 
-    if (response['status'] == 'success') {
-      return response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
-    } else {
-      final message = response['message'];
-      throw Exception(message is String ? message : 'Failed to get tenant info');
-    }
+    // Convert TenantInfo to Map<String, dynamic> format for backward compatibility
+    final result = tenantInfo.toJson();
+    return result;
   }
 
   /// Update tenant configuration

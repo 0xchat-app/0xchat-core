@@ -225,6 +225,83 @@ class DeleteTenantFilesResult {
   };
 }
 
+/// Tenant member model
+class TenantMember {
+  TenantMember({
+    required this.pubkey,
+    required this.role,
+    this.displayName,
+  });
+
+  final String pubkey;
+  final String role;
+  final String? displayName;
+
+  factory TenantMember.fromJson(Map<String, dynamic> json) {
+    return TenantMember(
+      pubkey: json['pubkey'] as String,
+      role: json['role'] as String,
+      displayName: json['display_name'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'pubkey': pubkey,
+    'role': role,
+    if (displayName != null) 'display_name': displayName,
+  };
+}
+
+/// Tenant information model
+class TenantInfo {
+  TenantInfo({
+    required this.tenantId,
+    required this.name,
+    required this.maxMembers,
+    required this.currentMembers,
+    this.expiresAt,
+    required this.tenantAdminPubkey,
+    required this.status,
+    required this.members,
+  });
+
+  final String tenantId;
+  final String name;
+  final int maxMembers;
+  final int currentMembers;
+  final int? expiresAt;
+  final String tenantAdminPubkey;
+  final String status;
+  final List<TenantMember> members;
+
+  factory TenantInfo.fromJson(Map<String, dynamic> json) {
+    final membersList = json['members'] as List<dynamic>? ?? [];
+    return TenantInfo(
+      tenantId: json['tenant_id'] as String,
+      name: json['name'] as String,
+      maxMembers: json['max_members'] as int,
+      currentMembers: json['current_members'] as int,
+      expiresAt: json['expires_at'] as int?,
+      tenantAdminPubkey: json['tenant_admin_pubkey'] as String,
+      status: json['status'] as String,
+      members: membersList
+          .map((m) => TenantMember.fromJson(m as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'tenant_id': tenantId,
+    'name': name,
+    'max_members': maxMembers,
+    'current_members': currentMembers,
+    if (expiresAt != null) 'expires_at': expiresAt,
+    'tenant_admin_pubkey': tenantAdminPubkey,
+    'status': status,
+    'members': members.map((m) => m.toJson()).toList(),
+  };
+}
+
 /// API client for Circle operations
 class CircleApi {
   CircleApi._();
@@ -235,7 +312,7 @@ class CircleApi {
   /// Examples:
   /// - ws://127.0.0.1:3000/tenant_xxx -> http://127.0.0.1:3000
   /// - wss://domain.com/tenant_xxx -> https://domain.com
-  static String _extractBaseUrlFromRelay(String relayUrl) {
+  static String extractBaseUrlFromRelay(String relayUrl) {
     try {
       final uri = Uri.parse(relayUrl);
       final scheme = uri.scheme;
@@ -508,6 +585,77 @@ class CircleApi {
     );
   }
 
+  /// Extract tenant ID from relay URL path
+  /// 
+  /// Extracts the tenant ID from the relay URL path component.
+  /// Examples:
+  /// - wss://domain.com/aCc4RUjN -> aCc4RUjN
+  /// - wss://domain.com/tenant_xxx -> tenant_xxx
+  /// 
+  /// [relayUrl] The relay URL to extract tenant ID from
+  /// Returns the tenant ID from the path, or null if path is empty
+  static String? extractTenantIdFromRelay(String relayUrl) {
+    try {
+      final uri = Uri.parse(relayUrl);
+      final path = uri.path;
+      if (path.isEmpty || path == '/') {
+        return null;
+      }
+      // Remove leading slash
+      return path.startsWith('/') ? path.substring(1) : path;
+    } catch (e) {
+      LogUtils.e(() => 'Error extracting tenant ID from relay: $e');
+      return null;
+    }
+  }
+
+  /// Get tenant information
+  /// 
+  /// Queries tenant information using the HTTP API endpoint.
+  /// This allows checking tenant existence before establishing WebSocket connections.
+  /// 
+  /// [pubkey] User's public key
+  /// [privkey] User's private key
+  /// [tenantId] Tenant ID to query
+  /// [baseUrl] Optional base URL for the API (defaults to Config.sharedInstance.privateRelayApiBaseUrl)
+  /// 
+  /// Returns [TenantInfo] with tenant details.
+  /// Throws [Exception] if the request fails, user is not a tenant member, or tenant not found.
+  static Future<TenantInfo> getTenantInfo({
+    required String pubkey,
+    required String privkey,
+    required String tenantId,
+    String? baseUrl,
+  }) async {
+    try {
+      final result = await CircleRequest.post<TenantInfo>(
+        endpoint: '/api/tenant-info',
+        pubkey: pubkey,
+        privkey: privkey,
+        baseUrl: baseUrl,
+        kind: 20101,
+        tags: [
+          ['tenant_id', tenantId],
+        ],
+        content: '',
+        parseSuccess: (json) {
+          if (json['status'] == 'success' && json['data'] != null) {
+            final tenantInfo = TenantInfo.fromJson(json['data'] as Map<String, dynamic>);
+            LogUtils.v(() => 'Successfully fetched tenant info for tenant $tenantId');
+            return tenantInfo;
+          } else {
+            final error = json['error'] as String? ?? 'Unknown error';
+            throw Exception('Failed to get tenant info: $error');
+          }
+        },
+      );
+      return result;
+    } catch (e) {
+      LogUtils.e(() => 'Error in getTenantInfo: $e');
+      rethrow;
+    }
+  }
+
   /// Check if a relay URL is a paid relay (based on matching privateRelayApiBaseUrl)
   /// 
   /// [relayUrl] The relay URL to check
@@ -561,7 +709,7 @@ class CircleApi {
       // Extract baseUrl from relayUrl if not provided
       String? apiBaseUrl = baseUrl;
       if (apiBaseUrl == null && relayUrl != null && relayUrl.isNotEmpty) {
-        apiBaseUrl = _extractBaseUrlFromRelay(relayUrl);
+        apiBaseUrl = extractBaseUrlFromRelay(relayUrl);
       }
 
       // Create tags for invitation code
