@@ -10,6 +10,9 @@ class EventCache {
   factory EventCache() => sharedInstance;
   static final EventCache sharedInstance = EventCache._internal();
 
+  /// Cap in-memory event ID set to limit RSS growth (was unbounded, could reach 700+ MB over days).
+  static const int _maxCacheIds = 50000;
+
   Set<String> cacheIds = {};
   //cache kinds
   List<int> kinds = [4, 1059, 42, 1, 6, 7, 9, 10, 11, 12, 9735];
@@ -17,23 +20,36 @@ class EventCache {
   final cacheTimeStamp = 24 * 60 * 60 * 7;
 
   Future<void> loadAllEventsFromDB() async {
-    List<EventDBISAR> eventDBs = await DBISAR.sharedInstance.isar.eventDBISARs.where().findAll();
+    final isar = DBISAR.sharedInstance.isar;
+    final now = currentUnixTimestampSeconds();
+    List<EventDBISAR> eventDBs = await isar.eventDBISARs.where().findAll();
     List<int> expiredEvents = [];
+    final valid = <EventDBISAR>[];
     for (var eventDB in eventDBs) {
       if (eventDB.expiration != null &&
           eventDB.expiration! > 0 &&
-          eventDB.expiration! < currentUnixTimestampSeconds()) {
+          eventDB.expiration! < now) {
         expiredEvents.add(eventDB.id);
         continue;
       }
-      cacheIds.add(eventDB.eventId);
+      valid.add(eventDB);
     }
+    // Keep only recent _maxCacheIds in memory to limit RSS (was unbounded).
+    valid.sort((a, b) => (b.expiration ?? 0).compareTo(a.expiration ?? 0));
+    cacheIds = valid.take(_maxCacheIds).map((e) => e.eventId).toSet();
 
     if (expiredEvents.isEmpty) return;
-    DBISAR.sharedInstance.isar.writeTxn(() async {
-      int result = await DBISAR.sharedInstance.isar.eventDBISARs.deleteAll(expiredEvents);
+    await isar.writeTxn(() async {
+      int result = await isar.eventDBISARs.deleteAll(expiredEvents);
       LogUtils.v(() => 'Deleted event caches: $result');
     });
+  }
+
+  void _evictCacheIdsIfNeeded() {
+    if (cacheIds.length <= _maxCacheIds) return;
+    final toRemove = cacheIds.take(1000).toSet();
+    cacheIds.removeAll(toRemove);
+    LogUtils.v(() => 'EventCache evicted ${toRemove.length} ids, size now ${cacheIds.length}');
   }
 
   Future<EventDBISAR?> loadEventFromDB(String eventId) async {
@@ -68,6 +84,7 @@ class EventCache {
     if (cacheIds.contains(event.id)) {
       return;
     }
+    _evictCacheIdsIfNeeded();
     cacheIds.add(event.id);
     if (!kinds.contains(event.kind)) return;
     EventDBISAR? eventDB =
@@ -77,6 +94,7 @@ class EventCache {
   }
 
   Future<void> sendEvent(Event event, String relay, bool status, String message) async {
+    _evictCacheIdsIfNeeded();
     cacheIds.add(event.id);
     EventDBISAR? eventDB = await loadEventFromDB(event.id);
     eventDB ??=

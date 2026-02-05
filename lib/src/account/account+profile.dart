@@ -72,10 +72,21 @@ extension AccountProfile on Account {
   }
 
   Future<UserDBISAR> reloadProfileFromRelay(String pubkey) async {
+    // #region agent log
+    final startTime = DateTime.now().millisecondsSinceEpoch;
+    if (kDebugMode) debugPrint('[RELOAD_PROFILE][E] reloadProfileFromRelay:ENTER pubkey=$pubkey');
+    // #endregion
     Completer<UserDBISAR> completer = Completer<UserDBISAR>();
     UserDBISAR? db = await getUserInfo(pubkey);
     Filter f = Filter(kinds: ChatCoreManager().userProfileKinds(), authors: [pubkey]);
+    // #region agent log
+    final connectedRelays = Connect.sharedInstance.relays();
+    if (kDebugMode) debugPrint('[RELOAD_PROFILE][E] reloadProfileFromRelay:CONNECTED_RELAYS count=${connectedRelays.length}');
+    // #endregion
     Connect.sharedInstance.addSubscription([f], eventCallBack: (event, relay) async {
+      // #region agent log
+      if (kDebugMode) debugPrint('[RELOAD_PROFILE][E] reloadProfileFromRelay:EVENT kind=${event.kind} relay=$relay');
+      // #endregion
       switch (event.kind) {
         case 0:
           db = _handleKind0Event(db, event);
@@ -91,10 +102,18 @@ extension AccountProfile on Account {
           break;
       }
     }, eoseCallBack: (requestId, ok, relay, unRelays) async {
+      // #region agent log
+      final elapsed = DateTime.now().millisecondsSinceEpoch - startTime;
+      if (kDebugMode) debugPrint('[RELOAD_PROFILE][E] reloadProfileFromRelay:EOSE relay=$relay unRelays=${unRelays.length} elapsed=${elapsed}ms');
+      // #endregion
       if (unRelays.isEmpty) {
         userCache[pubkey] = ValueNotifier<UserDBISAR>(db!);
         if (pubkey == currentPubkey) me = db;
         Account.saveUserToDB(db!);
+        // #region agent log
+        final totalElapsed = DateTime.now().millisecondsSinceEpoch - startTime;
+        if (kDebugMode) debugPrint('[RELOAD_PROFILE][E] reloadProfileFromRelay:COMPLETE totalElapsed=${totalElapsed}ms');
+        // #endregion
         if (!completer.isCompleted) completer.complete(db);
       }
     });

@@ -5,6 +5,16 @@ import 'dart:io';
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
+
+// #region agent log
+void _connectDebugLog(String hypothesisId, String location, String message, [Map<String, dynamic>? data]) {
+  if (!kDebugMode) return;
+  final now = DateTime.now();
+  final ts = '${now.hour.toString().padLeft(2,'0')}:${now.minute.toString().padLeft(2,'0')}:${now.second.toString().padLeft(2,'0')}.${now.millisecond.toString().padLeft(3,'0')}';
+  debugPrint('[CONNECT_DEBUG][$ts][$hypothesisId] $location: $message ${data != null ? jsonEncode(data) : ''}');
+}
+// #endregion
 
 /// notice callback
 typedef NoticeCallBack = void Function(String notice, String relay);
@@ -209,6 +219,9 @@ class Connect {
   }
 
   Future<void> connect(String relay, {RelayKind relayKind = RelayKind.general}) async {
+    // #region agent log
+    _connectDebugLog('B', 'connect:ENTER', 'Connect called', {'relay': relay, 'kind': relayKind.name, 'totalWebSockets': webSockets.length});
+    // #endregion
     LogUtils.v(() => 'connect to $relay, kind: ${relayKind.name}');
     if (relay.isEmpty) return;
 
@@ -218,7 +231,12 @@ class Connect {
     }
     webSockets[relay]?.relayKinds = relayKinds;
     // connecting or open
-    if (webSockets[relay]?.connectStatus == 0 || webSockets[relay]?.connectStatus == 1) return;
+    if (webSockets[relay]?.connectStatus == 0 || webSockets[relay]?.connectStatus == 1) {
+      // #region agent log
+      _connectDebugLog('B', 'connect:SKIP', 'Already connecting/connected', {'relay': relay, 'status': webSockets[relay]?.connectStatus});
+      // #endregion
+      return;
+    }
     LogUtils.v(() => "connecting... $relay");
     webSockets[relay] = ISocket(null, 0, relayKinds);
     try {
@@ -230,6 +248,9 @@ class Connect {
         webSockets[relay] = ISocket(socket, 1, relayKinds);
         LogUtils.v(() => "$relay connection initialized");
         _setConnectStatus(relay, 1);
+        // #region agent log
+        _connectDebugLog('B', 'connect:SUCCESS', 'Connection established', {'relay': relay});
+        // #endregion
       }
     } catch (_) {
       _onDisconnected(relay, relayKind);
@@ -237,12 +258,18 @@ class Connect {
   }
 
   Future<bool> connectRelays(List<String> relays, {RelayKind relayKind = RelayKind.general}) async {
+    // #region agent log
+    _connectDebugLog('B', 'connectRelays:ENTER', 'Batch connect request', {'relayCount': relays.length, 'kind': relayKind.name, 'relays': relays.take(5).toList()});
+    // #endregion
     final completer = Completer<bool>();
     if (relays.isEmpty && !completer.isCompleted) completer.complete(true);
     if (relayKind == RelayKind.temp) {
       // timeout for temp relays
       Timer(Duration(seconds: 10), () {
         if (!completer.isCompleted) {
+          // #region agent log
+          _connectDebugLog('B', 'connectRelays:TIMEOUT', 'Temp relay timeout reached', {'relayCount': relays.length});
+          // #endregion
           completer.complete(false);
           closeConnects(relays, relayKind);
         }
@@ -751,7 +778,10 @@ class Connect {
     });
   }
 
-  Future _connectWs(String relay) async {
+  Future _connectWs(String relay, [int retryCount = 0]) async {
+    // #region agent log
+    _connectDebugLog('C', '_connectWs:ENTER', 'Connection attempt', {'relay': relay, 'retryCount': retryCount});
+    // #endregion
     try {
       _setConnectStatus(relay, 0); // connecting
       return await _connectWsSetting(relay);
@@ -771,10 +801,17 @@ class Connect {
       List<RelayKind>? relayKinds = webSockets[relay]?.relayKinds;
       bool hasNonTempKind = relayKinds?.any((kind) => kind != RelayKind.temp) ?? false;
       if (hasNonTempKind) {
+        // #region agent log
+        _connectDebugLog('C', '_connectWs:RETRY_WAIT', 'Waiting before retry', {'relay': relay, 'retryCount': retryCount, 'waitMs': 3000});
+        // #endregion
         await Future.delayed(Duration(milliseconds: 3000));
         if (webSockets.containsKey(relay)) {
-          return await _connectWs(relay);
+          return await _connectWs(relay, retryCount + 1);
         }
+      } else {
+        // #region agent log
+        _connectDebugLog('C', '_connectWs:NO_RETRY', 'Temp relay, not retrying', {'relay': relay});
+        // #endregion
       }
     }
   }
@@ -785,7 +822,24 @@ class Connect {
       relay = host;
     }
 
-    return await WebSocket.connect(relay);
+    // #region agent log
+    final startTime = DateTime.now().millisecondsSinceEpoch;
+    _connectDebugLog('A', 'connectWsSetting:BEFORE', 'WebSocket.connect starting', {'relay': relay});
+    // #endregion
+    try {
+      final socket = await WebSocket.connect(relay);
+      // #region agent log
+      final duration = DateTime.now().millisecondsSinceEpoch - startTime;
+      _connectDebugLog('A', 'connectWsSetting:SUCCESS', 'WebSocket.connect completed', {'relay': relay, 'durationMs': duration});
+      // #endregion
+      return socket;
+    } catch (e) {
+      // #region agent log
+      final duration = DateTime.now().millisecondsSinceEpoch - startTime;
+      _connectDebugLog('A', 'connectWsSetting:ERROR', 'WebSocket.connect failed', {'relay': relay, 'durationMs': duration, 'error': e.toString()});
+      // #endregion
+      rethrow;
+    }
   }
 
   Future<void> _onDisconnected(String relay, RelayKind relayKind) async {

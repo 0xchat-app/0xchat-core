@@ -326,8 +326,13 @@ class Account {
   }
 
   Future<void> logout() async {
+    // Clear notification
     NotificationHelper.sharedInstance.logout();
+    
+    // Close all connections
     await Connect.sharedInstance.closeAllConnects();
+    
+    // Clear all cached data
     Contacts.sharedInstance.allContacts.clear();
     Contacts.sharedInstance.secretSessionMap.clear();
     Channels.sharedInstance.myChannels.clear();
@@ -337,10 +342,19 @@ class Account {
     RelayGroup.sharedInstance.groupRelays.clear();
     Relays.sharedInstance.relays.clear();
     EventCache.sharedInstance.cacheIds.clear();
+    
+    // Clear account info
+    final oldPubkey = currentPubkey;
     me = null;
     currentPubkey = '';
     currentPrivkey = '';
-    userCache.remove(currentPubkey);
+    
+    // Remove user cache
+    if (oldPubkey.isNotEmpty) {
+      userCache.remove(oldPubkey);
+    }
+    
+    // Close database
     await DBISAR.sharedInstance.closeDatabase();
   }
 

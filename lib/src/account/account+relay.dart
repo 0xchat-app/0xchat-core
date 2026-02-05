@@ -239,24 +239,27 @@ extension AccountRelay on Account {
     RelayGroup.sharedInstance.groupListUpdated();
   }
 
+  /// Collects unique relay URLs from General + DM + Inbox + Outbox (same URL in multiple lists counts once).
+  Set<String> _getUniqueRelayUrls() {
+    final urls = <String>{};
+    for (var r in getMyGeneralRelayList()) urls.add(r.url);
+    for (var r in getMyDMRelayList()) urls.add(r.url);
+    for (var r in getMyInboxRelayList()) urls.add(r.url);
+    for (var r in getMyOutboxRelayList()) urls.add(r.url);
+    return urls;
+  }
+
   int getConnectedRelaysCount() {
-    Set<RelayDBISAR> myRelays = Set.from(getMyGeneralRelayList());
-    myRelays.addAll(getMyDMRelayList());
-    myRelays.addAll(getMyInboxRelayList());
-    myRelays.addAll(getMyOutboxRelayList());
+    final uniqueUrls = _getUniqueRelayUrls();
     int connected = 0;
-    for (var relay in myRelays) {
-      if (relay.connectStatus == 1) ++connected;
+    for (var url in uniqueUrls) {
+      if (Connect.sharedInstance.webSockets[url]?.connectStatus == 1) ++connected;
     }
     return connected;
   }
 
   int getAllRelaysCount() {
-    Set<RelayDBISAR> allRelays = Set.from(getMyGeneralRelayList());
-    allRelays.addAll(getMyDMRelayList());
-    allRelays.addAll(getMyInboxRelayList());
-    allRelays.addAll(getMyOutboxRelayList());
-    return allRelays.length;
+    return _getUniqueRelayUrls().length;
   }
 
   Future<OKEvent> setGeneralRelayListToLocal(List<String> relays) async {
