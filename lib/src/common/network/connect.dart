@@ -498,15 +498,21 @@ class Connect {
     
     // Fallback to all connected relays only if allowFallbackToAll is true
     if (allowFallbackToAll) {
+      bool hasConnectedRelay = false;
       webSockets.forEach((url, socket) {
         if (webSockets[url]?.connectStatus == 1 && socket.socket != null) {
           socket.socket?.add(data);
+          hasConnectedRelay = true;
         } else if (eventId != null) {
           _handleOk(OKEvent(eventId, false, 'not connect to relay'), url);
         } else if (subscriptionId != null) {
           _handleCLOSED(Closed(subscriptionId), url);
         }
       });
+      // If no connected relays and eventId is set, handle as failure
+      if (!hasConnectedRelay && eventId != null && webSockets.isEmpty) {
+        _handleOk(OKEvent(eventId, false, 'no relays available'), '');
+      }
     } else if (eventId != null) {
       _handleOk(OKEvent(eventId, false, 'no relays available'), '');
     }
@@ -661,6 +667,9 @@ class Connect {
       if (sendsMap[ok.eventId]!.okCallBack != null) {
         var relays = sendsMap[ok.eventId]!.relays;
         relays.remove(relay);
+        // If event succeeded, call callback immediately
+        // If event failed, call callback only when all relays have been tried (relays.isEmpty)
+        // This ensures callback is always called, even if all relays fail
         if (ok.status || relays.isEmpty) {
           sendsMap[ok.eventId]!.okCallBack!(ok, relay);
           sendsMap.remove(ok.eventId);
@@ -782,5 +791,93 @@ class Connect {
   Future<void> _onDisconnected(String relay, RelayKind relayKind) async {
     LogUtils.v(() => "_onDisconnected");
     return await _reConnectToRelay(relay, relayKind);
+  }
+
+  /// Wait for a relay connection to be established
+  /// Returns true if connection succeeds, false if connection fails
+  /// Either relay or relayKind must be provided
+  Future<bool> waitForRelayConnection({
+    String? relay,
+    RelayKind? relayKind,
+  }) async {
+    // Determine relay URL and relayKind
+    String? targetRelay = relay;
+    RelayKind? targetRelayKind = relayKind;
+
+    // If relay is not provided, get it from relayKind
+    if (targetRelay == null || targetRelay.isEmpty) {
+      if (targetRelayKind == null) {
+        return false; // Both relay and relayKind are null
+      }
+
+      if (targetRelayKind == RelayKind.circleRelay) {
+        final relays = this.relays(relayKinds: [RelayKind.circleRelay]);
+        if (relays.isEmpty) return false;
+        targetRelay = relays.first;
+      } else {
+        // For other relay kinds, get from connected relays
+        final connectedRelays = this.relays(relayKinds: [targetRelayKind]);
+        if (connectedRelays.isEmpty) return false;
+        targetRelay = connectedRelays.first;
+      }
+    }
+
+    // At this point, targetRelay should not be null or empty
+    if (targetRelay.isEmpty) return false;
+
+    // If relayKind is not provided, try to infer from existing connection
+    if (targetRelayKind == null) {
+      final webSocket = webSockets[targetRelay];
+      targetRelayKind = webSocket?.relayKinds.isNotEmpty == true
+          ? webSocket!.relayKinds.first
+          : RelayKind.general;
+    }
+
+    // Check if already connected
+    // connectStatus: 0=connecting, 1=open, 2=closing, 3=closed
+    final webSocket = webSockets[targetRelay];
+    if (webSocket != null &&
+        webSocket.connectStatus == 1 &&
+        webSocket.relayKinds.contains(targetRelayKind)) {
+      return true;
+    }
+
+    // If relay is not in webSockets or not connecting, start connection
+    if (webSocket == null || webSocket.connectStatus == 3) {
+      connect(targetRelay, relayKind: targetRelayKind);
+    }
+
+    // Create completer to wait for connection
+    final completer = Completer<bool>();
+    ConnectStatusCallBack? connectionListener;
+
+    // Setup connection status listener
+    connectionListener = (String statusRelay, int status, List<RelayKind> relayKinds) {
+      if (statusRelay != targetRelay) return;
+
+      // Connection succeeded (status 1 = open)
+      if (status == 1 && relayKinds.contains(targetRelayKind)) {
+        removeConnectStatusListener(connectionListener!);
+        if (!completer.isCompleted) {
+          completer.complete(true);
+        }
+        return;
+      }
+
+      // Connection failed (status 3 = closed and no longer in webSockets, meaning no retry)
+      if (status == 3 && !webSockets.containsKey(targetRelay)) {
+        removeConnectStatusListener(connectionListener!);
+        if (!completer.isCompleted) {
+          completer.complete(false);
+        }
+        return;
+      }
+    };
+
+    // Add listener to wait for connection
+    addConnectStatusListener(connectionListener);
+
+    // Wait for connection result
+    return completer.future;
   }
 }

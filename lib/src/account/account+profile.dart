@@ -188,6 +188,19 @@ extension AccountProfile on Account {
     Map additionMap = jsonDecode(db.otherField ?? '{}');
     map.addAll(additionMap);
     Event event = await Nip1.setMetadata(jsonEncode(map), currentPubkey, currentPrivkey);
+    
+    // Get available relays before sending
+    List<String> availableRelays = Connect.sharedInstance.relays(
+      relayKinds: [RelayKind.general, RelayKind.outbox],
+    );
+    
+    // If no relays available, complete with null immediately
+    if (availableRelays.isEmpty) {
+      LogUtils.w(() => 'No relays available for updateProfile, completing with null');
+      completer.complete(null);
+      return completer.future;
+    }
+    
     Connect.sharedInstance.sendEvent(event, sendCallBack: (ok, relay) {
       if (ok.status) {
         completer.complete(db);
@@ -195,6 +208,15 @@ extension AccountProfile on Account {
         completer.complete(null);
       }
     });
+    
+    // Add timeout to ensure completer always completes
+    Future.delayed(Duration(seconds: 15), () {
+      if (!completer.isCompleted) {
+        LogUtils.w(() => 'updateProfile completer timeout, completing with null');
+        completer.complete(null);
+      }
+    });
+    
     return completer.future;
   }
 
