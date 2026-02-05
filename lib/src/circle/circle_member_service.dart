@@ -352,52 +352,57 @@ class CircleMemberService {
     }
   }
 
-  /// Get tenant info (member-visible)
+  /// Get tenant info for a specific relay (preferred over [getTenantInfo]).
   ///
+  /// [relayUrl] Relay URL for the circle/tenant.
+  /// [tenantId] If known (e.g. from [RelayAddressInfo]), pass to skip lookup.
+  /// [circleId] If provided, used to resolve [tenantId] from [CircleDBISAR].
   /// Returns [TenantInfo] model using [CircleApi.getTenantInfo].
-  Future<TenantInfo> getTenantInfo() async {
-    // Get current circle relay URL
-    final relay = _getCurrentCircleRelay();
-    if (relay == null) {
-      throw Exception('No circle relay available');
-    }
+  Future<TenantInfo> getTenantInfoForRelay(
+    String relayUrl, {
+    String? tenantId,
+    String? circleId,
+  }) async {
+    final baseUrl = CircleApi.extractBaseUrlFromRelay(relayUrl);
 
-    // Extract baseUrl from relay URL
-    final baseUrl = CircleApi.extractBaseUrlFromRelay(relay);
-
-    // Get tenantId using the following priority:
-    // 1. Try to get from current circle's CircleDBISAR.tenantId (if circle exists and tenantId is saved)
-    // 2. If not available, extract from relay URL path
-    String? tenantId;
-
-    // Try to get tenantId from CircleDBISAR
-    try {
-      // Get all circles and find one that matches the relay URL
-      final circles = await Account.sharedInstance.getAllCircles();
-      for (final circle in circles) {
-        if (circle.relayList.contains(relay) && circle.tenantId != null && circle.tenantId!.isNotEmpty) {
-          tenantId = circle.tenantId;
-          break;
+    String? resolvedTenantId = tenantId;
+    if (resolvedTenantId == null || resolvedTenantId.isEmpty) {
+      if (circleId != null && circleId.isNotEmpty) {
+        try {
+          final circle = await Account.sharedInstance.getCircleById(circleId);
+          if (circle?.tenantId != null && circle!.tenantId!.isNotEmpty) {
+            resolvedTenantId = circle.tenantId;
+          }
+        } catch (e) {
+          LogUtils.v(() => 'Could not get tenantId from CircleDBISAR by circleId: $e');
         }
       }
-    } catch (e) {
-      LogUtils.v(() => 'Could not get tenantId from CircleDBISAR: $e');
+      if (resolvedTenantId == null || resolvedTenantId.isEmpty) {
+        try {
+          final circles = await Account.sharedInstance.getAllCircles();
+          for (final circle in circles) {
+            if (circle.relayList.contains(relayUrl) &&
+                circle.tenantId != null &&
+                circle.tenantId!.isNotEmpty) {
+              resolvedTenantId = circle.tenantId;
+              break;
+            }
+          }
+        } catch (e) {
+          LogUtils.v(() => 'Could not get tenantId from CircleDBISAR: $e');
+        }
+      }
+      if (resolvedTenantId == null || resolvedTenantId.isEmpty) {
+        resolvedTenantId = CircleApi.extractTenantIdFromRelay(relayUrl);
+      }
     }
 
-    // If not found in CircleDBISAR, extract from relay URL path
-    if (tenantId == null || tenantId.isEmpty) {
-      tenantId = CircleApi.extractTenantIdFromRelay(relay);
+    if (resolvedTenantId == null || resolvedTenantId.isEmpty) {
+      throw Exception('Cannot determine tenantId from relay URL: $relayUrl');
     }
 
-    // If still not available, throw exception
-    if (tenantId == null || tenantId.isEmpty) {
-      throw Exception('Cannot determine tenantId from relay URL: $relay');
-    }
-
-    // Get pubkey and privkey
     final pubkey = _getCurrentPubkey();
     final privkey = _getCurrentPrivkey();
-
     if (pubkey == null || privkey == null || privkey.isEmpty) {
       throw Exception('User not logged in or private key not available');
     }
@@ -405,9 +410,19 @@ class CircleMemberService {
     return CircleApi.getTenantInfo(
       pubkey: pubkey,
       privkey: privkey,
-      tenantId: tenantId,
+      tenantId: resolvedTenantId,
       baseUrl: baseUrl,
     );
+  }
+
+  /// Get tenant info for the current circle relay (from [ChatCoreManager.circleRelay]).
+  /// Prefer [getTenantInfoForRelay] with an explicit relay/circle when available.
+  Future<TenantInfo> getTenantInfo() async {
+    final relay = _getCurrentCircleRelay();
+    if (relay == null) {
+      throw Exception('No circle relay available');
+    }
+    return getTenantInfoForRelay(relay);
   }
 
   /// Update tenant configuration
