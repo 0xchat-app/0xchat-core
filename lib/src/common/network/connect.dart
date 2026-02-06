@@ -212,12 +212,19 @@ class Connect {
   // }
 
   void _checkTimeout() {
+    // #region agent log
+    final ctStart = DateTime.now();
+    final ctTs = '${ctStart.hour.toString().padLeft(2,'0')}:${ctStart.minute.toString().padLeft(2,'0')}:${ctStart.second.toString().padLeft(2,'0')}.${ctStart.millisecond.toString().padLeft(3,'0')}';
+    int okTimeouts = 0;
+    int reqTimeouts = 0;
+    // #endregion
     var now = DateTime.now().millisecondsSinceEpoch;
     Iterable<String> okMapKeys = List<String>.from(sendsMap.keys);
     for (var eventId in okMapKeys) {
       var start = sendsMap[eventId]!.sendsTime;
       if (now - start > timeout * 1000) {
         // ok timeout
+        okTimeouts++;
         OKEvent ok = OKEvent(eventId, false, 'Time Out');
         Iterable<String> relays = List<String>.from(sendsMap[eventId]!.relays);
         for (var relay in relays) {
@@ -234,11 +241,19 @@ class Connect {
         var start = request.requestTime;
         if (start > 0 && now - start > timeout * 1000) {
           // request timeout
+          reqTimeouts++;
           String relay = requestMapKey.substring(64);
           _handleEOSE(jsonEncode([request.requestId]), relay, true);
         }
       }
     }
+    // #region agent log
+    final ctDuration = DateTime.now().millisecondsSinceEpoch - ctStart.millisecondsSinceEpoch;
+    if (Platform.isLinux) {
+      try { File('/Users/bear/Desktop/jenkins/.cursor/debug.log').writeAsStringSync('{"sessionId":"debug-session","hypothesisId":"C","location":"connect.dart:_checkTimeout","message":"_checkTimeout","data":{"ts":"$ctTs","durationMs":$ctDuration,"okTimeouts":$okTimeouts,"reqTimeouts":$reqTimeouts,"sendsMapSize":${sendsMap.length},"requestsMapSize":${requestsMap.length}},"timestamp":${ctStart.millisecondsSinceEpoch}}\n', mode: FileMode.append); } catch(_) {}
+      debugPrint('[HEARTBEAT_CT][$ctTs] _checkTimeout: ${ctDuration}ms okT=$okTimeouts reqT=$reqTimeouts sends=${sendsMap.length} reqs=${requestsMap.length}');
+    }
+    // #endregion
   }
 
   void _setConnectStatus(String relay, int status) {
@@ -775,7 +790,18 @@ class Connect {
     String requestsMapKey = subscriptionId + relay;
     if (subscriptionId.isNotEmpty && requestsMap.containsKey(requestsMapKey)) {
       if (eventCheckerFutures.containsKey(requestsMapKey)) {
+        // #region agent log
+        final futureCount = eventCheckerFutures[requestsMapKey]!.length;
+        final eoseStart = DateTime.now().millisecondsSinceEpoch;
+        // #endregion
         await Future.wait(eventCheckerFutures[requestsMapKey]!);
+        // #region agent log
+        final eoseMs = DateTime.now().millisecondsSinceEpoch - eoseStart;
+        if (Platform.isLinux && eoseMs > 5) {
+          try { File('/Users/bear/Desktop/jenkins/.cursor/debug.log').writeAsStringSync('{"sessionId":"debug-session","hypothesisId":"E","location":"connect.dart:_handleEOSE","message":"Future.wait slow","data":{"relay":"$relay","futureCount":$futureCount,"waitMs":$eoseMs,"timeout":$timeout},"timestamp":${DateTime.now().millisecondsSinceEpoch}}\n', mode: FileMode.append); } catch(_) {}
+          debugPrint('[EOSE_WAIT] Future.wait took ${eoseMs}ms for $futureCount futures, relay=$relay timeout=$timeout');
+        }
+        // #endregion
         eventCheckerFutures.remove(requestsMapKey);
       }
       _removeRequestsMapRelay(subscriptionId, relay, timeout);
@@ -918,6 +944,14 @@ class Connect {
     if (currentStatus == 0) return; // already connecting
     if (_connectionQueue.any((p) => p.relay == relay)) return; // already queued
     
+    // #region agent log
+    if (Platform.isLinux) {
+      final now = DateTime.now();
+      final ts = '${now.hour.toString().padLeft(2,'0')}:${now.minute.toString().padLeft(2,'0')}:${now.second.toString().padLeft(2,'0')}.${now.millisecond.toString().padLeft(3,'0')}';
+      try { File('/Users/bear/Desktop/jenkins/.cursor/debug.log').writeAsStringSync('{"sessionId":"debug-session","hypothesisId":"B","location":"connect.dart:_reConnectToRelay","message":"reconnect triggered","data":{"relay":"$relay","relayKind":"${relayKind.name}"},"timestamp":${now.millisecondsSinceEpoch}}\n', mode: FileMode.append); } catch(_) {}
+      debugPrint('[RECONNECT][$ts] _reConnectToRelay: relay=$relay kind=${relayKind.name}');
+    }
+    // #endregion
     _setConnectStatus(relay, 3); // closed
     await Future.delayed(Duration(milliseconds: 3000));
     if (webSockets.containsKey(relay)) {
@@ -1051,11 +1085,19 @@ class Connect {
       // #endregion
       return socket;
     } catch (e) {
+      // #region agent log
+      final closeStart = DateTime.now().millisecondsSinceEpoch;
+      // #endregion
       // Close the HttpClient to clean up any pending connection resources.
       // Use force:false to avoid unhandled SocketExceptions.
       try { httpClient.close(); } catch (_) {}
       // #region agent log
+      final closeMs = DateTime.now().millisecondsSinceEpoch - closeStart;
       final duration = DateTime.now().millisecondsSinceEpoch - startTime;
+      if (Platform.isLinux && closeMs > 1) {
+        try { File('/Users/bear/Desktop/jenkins/.cursor/debug.log').writeAsStringSync('{"sessionId":"debug-session","hypothesisId":"D","location":"connect.dart:_connectWsSetting","message":"httpClient.close slow","data":{"relay":"$relay","closeMs":$closeMs},"timestamp":${DateTime.now().millisecondsSinceEpoch}}\n', mode: FileMode.append); } catch(_) {}
+        debugPrint('[CLOSE_TIMING] httpClient.close() took ${closeMs}ms for $relay');
+      }
       _connectDebugLog('A', 'connectWsSetting:ERROR', 'WebSocket.connect failed', {'relay': relay, 'durationMs': duration, 'error': e.toString().substring(0, (e.toString().length > 120 ? 120 : e.toString().length))});
       // #endregion
       rethrow;
