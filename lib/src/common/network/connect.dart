@@ -941,23 +941,54 @@ class Connect {
     final startTime = DateTime.now().millisecondsSinceEpoch;
     _connectDebugLog('A', 'connectWsSetting:BEFORE', 'WebSocket.connect starting', {'relay': relay, 'timeoutSeconds': CONNECT_TIMEOUT_SECONDS});
     // #endregion
+    
+    // Use a dedicated HttpClient so we can force-close it on timeout,
+    // which truly cancels the underlying OS-level DNS/TCP operation.
+    // Without this, .timeout() only throws on the Dart side but the
+    // native DNS lookup continues, and its eventual completion callback
+    // floods the event loop and blocks frame rendering.
+    final httpClient = HttpClient();
+    httpClient.connectionTimeout = Duration(seconds: CONNECT_TIMEOUT_SECONDS);
+    
+    final completer = Completer<WebSocket>();
+    
+    // Start the connection with our custom HttpClient
+    WebSocket.connect(relay, customClient: httpClient).then((socket) {
+      if (!completer.isCompleted) {
+        completer.complete(socket);
+      } else {
+        // Timeout already fired, close the orphaned socket
+        socket.close();
+      }
+    }).catchError((e) {
+      if (!completer.isCompleted) {
+        completer.completeError(e);
+      }
+      // If timeout already fired, silently discard the error
+    });
+    
+    // Set up a timeout that force-closes the HttpClient
+    Future.delayed(Duration(seconds: CONNECT_TIMEOUT_SECONDS), () {
+      if (!completer.isCompleted) {
+        httpClient.close(force: true); // Force-close cancels pending DNS/TCP at OS level
+        completer.completeError(
+          TimeoutException('WebSocket.connect timed out after ${CONNECT_TIMEOUT_SECONDS}s', Duration(seconds: CONNECT_TIMEOUT_SECONDS)),
+        );
+      }
+    });
+    
     try {
-      // Add timeout to prevent long DNS blocking on failed hosts
-      final socket = await WebSocket.connect(relay).timeout(
-        Duration(seconds: CONNECT_TIMEOUT_SECONDS),
-        onTimeout: () {
-          throw TimeoutException('WebSocket.connect timed out after ${CONNECT_TIMEOUT_SECONDS}s', Duration(seconds: CONNECT_TIMEOUT_SECONDS));
-        },
-      );
+      final socket = await completer.future;
       // #region agent log
       final duration = DateTime.now().millisecondsSinceEpoch - startTime;
       _connectDebugLog('A', 'connectWsSetting:SUCCESS', 'WebSocket.connect completed', {'relay': relay, 'durationMs': duration});
       // #endregion
       return socket;
     } catch (e) {
+      httpClient.close(force: true); // Ensure cleanup on any error
       // #region agent log
       final duration = DateTime.now().millisecondsSinceEpoch - startTime;
-      _connectDebugLog('A', 'connectWsSetting:ERROR', 'WebSocket.connect failed', {'relay': relay, 'durationMs': duration, 'error': e.toString()});
+      _connectDebugLog('A', 'connectWsSetting:ERROR', 'WebSocket.connect failed', {'relay': relay, 'durationMs': duration, 'error': e.toString().substring(0, (e.toString().length > 120 ? 120 : e.toString().length))});
       // #endregion
       rethrow;
     }
