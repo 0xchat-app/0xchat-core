@@ -98,6 +98,13 @@ class _RelayFailureInfo {
     lastFailTimeMs = 0;
   }
 }
+
+class _PendingConnection {
+  final String relay;
+  final RelayKind relayKind;
+  final Completer<void> completer;
+  _PendingConnection(this.relay, this.relayKind) : completer = Completer<void>();
+}
 // #endregion
 
 enum RelayKind {
@@ -130,6 +137,12 @@ class Connect {
   static final int RETRY_BACKOFF_SECONDS = 300; // 5 minutes backoff after max retries
   // Track relay failures: relay -> {retryCount, lastFailTime}
   final Map<String, _RelayFailureInfo> _relayFailures = {};
+  // #endregion
+
+  // #region agent log - concurrency control to prevent main thread blocking
+  static final int MAX_CONCURRENT_CONNECTIONS = 3; // Limit concurrent connection attempts
+  int _activeConnectionCount = 0;
+  final List<_PendingConnection> _connectionQueue = [];
   // #endregion
 
   NoticeCallBack? noticeCallBack;
@@ -251,7 +264,7 @@ class Connect {
 
   Future<void> connect(String relay, {RelayKind relayKind = RelayKind.general}) async {
     // #region agent log
-    _connectDebugLog('B', 'connect:ENTER', 'Connect called', {'relay': relay, 'kind': relayKind.name, 'totalWebSockets': webSockets.length});
+    _connectDebugLog('B', 'connect:ENTER', 'Connect called', {'relay': relay, 'kind': relayKind.name, 'totalWebSockets': webSockets.length, 'activeConns': _activeConnectionCount, 'queueSize': _connectionQueue.length});
     // #endregion
     LogUtils.v(() => 'connect to $relay, kind: ${relayKind.name}');
     if (relay.isEmpty) return;
@@ -268,6 +281,26 @@ class Connect {
       // #endregion
       return;
     }
+    
+    // #region agent log - concurrency control: queue if too many active connections
+    if (_activeConnectionCount >= MAX_CONCURRENT_CONNECTIONS) {
+      _connectDebugLog('B', 'connect:QUEUED', 'Queuing connection (concurrency limit)', {'relay': relay, 'activeConns': _activeConnectionCount, 'queueSize': _connectionQueue.length});
+      final pending = _PendingConnection(relay, relayKind);
+      _connectionQueue.add(pending);
+      // Set status to connecting so it won't be re-queued
+      webSockets[relay] = ISocket(null, 0, relayKinds);
+      return pending.completer.future;
+    }
+    // #endregion
+    
+    await _doConnectInternal(relay, relayKind, relayKinds);
+  }
+  
+  // #region agent log - internal connect method with concurrency tracking
+  Future<void> _doConnectInternal(String relay, RelayKind relayKind, List<RelayKind> relayKinds) async {
+    _activeConnectionCount++;
+    _connectDebugLog('B', 'connect:START_INTERNAL', 'Starting connection', {'relay': relay, 'activeConns': _activeConnectionCount});
+    
     LogUtils.v(() => "connecting... $relay");
     webSockets[relay] = ISocket(null, 0, relayKinds);
     try {
@@ -285,8 +318,28 @@ class Connect {
       }
     } catch (_) {
       _onDisconnected(relay, relayKind);
+    } finally {
+      _activeConnectionCount--;
+      _connectDebugLog('B', 'connect:DONE_INTERNAL', 'Connection attempt finished', {'relay': relay, 'activeConns': _activeConnectionCount, 'queueSize': _connectionQueue.length});
+      // Process next queued connection
+      _processConnectionQueue();
     }
   }
+  
+  void _processConnectionQueue() {
+    if (_connectionQueue.isEmpty || _activeConnectionCount >= MAX_CONCURRENT_CONNECTIONS) return;
+    
+    final pending = _connectionQueue.removeAt(0);
+    _connectDebugLog('B', 'connect:DEQUEUE', 'Processing queued connection', {'relay': pending.relay, 'remainingQueue': _connectionQueue.length});
+    
+    final relayKinds = webSockets[pending.relay]?.relayKinds ?? [pending.relayKind];
+    _doConnectInternal(pending.relay, pending.relayKind, relayKinds).then((_) {
+      if (!pending.completer.isCompleted) pending.completer.complete();
+    }).catchError((e) {
+      if (!pending.completer.isCompleted) pending.completer.complete();
+    });
+  }
+  // #endregion
 
   Future<bool> connectRelays(List<String> relays, {RelayKind relayKind = RelayKind.general}) async {
     // #region agent log
