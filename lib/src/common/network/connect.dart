@@ -140,7 +140,11 @@ class Connect {
   // #endregion
 
   // #region agent log - concurrency control to prevent main thread blocking
-  static final int MAX_CONCURRENT_CONNECTIONS = 3; // Limit concurrent connection attempts
+  // On Linux, Flutter frame rendering uses GLib idle callbacks (G_PRIORITY_DEFAULT_IDLE=200)
+  // which have LOWER priority than I/O callbacks (G_PRIORITY_DEFAULT=0).
+  // Multiple concurrent connections generate continuous I/O events that starve frame rendering.
+  // Limit to 1 on Linux to reduce I/O pressure and allow frames to render.
+  static final int MAX_CONCURRENT_CONNECTIONS = Platform.isLinux ? 1 : 3;
   int _activeConnectionCount = 0;
   final List<_PendingConnection> _connectionQueue = [];
   // #endregion
@@ -284,6 +288,11 @@ class Connect {
     
     // #region agent log - concurrency control: queue if too many active connections
     if (_activeConnectionCount >= MAX_CONCURRENT_CONNECTIONS) {
+      // Skip if this relay is already in the queue to prevent duplicate entries
+      if (_connectionQueue.any((p) => p.relay == relay)) {
+        _connectDebugLog('B', 'connect:SKIP_QUEUED', 'Already in queue', {'relay': relay});
+        return;
+      }
       _connectDebugLog('B', 'connect:QUEUED', 'Queuing connection (concurrency limit)', {'relay': relay, 'activeConns': _activeConnectionCount, 'queueSize': _connectionQueue.length});
       final pending = _PendingConnection(relay, relayKind);
       _connectionQueue.add(pending);
@@ -307,7 +316,10 @@ class Connect {
       WebSocket? socket;
       socket = await _connectWs(relay);
       if (socket != null) {
-        socket.done.then((dynamic _) => _onDisconnected(relay, relayKind));
+        // NOTE: Do NOT add socket.done.then(_onDisconnected) here.
+        // _listenEvent already handles onDone and onError with _reConnectToRelay.
+        // Having both causes DUPLICATE reconnection attempts per disconnect,
+        // doubling the connection queue pressure.
         _listenEvent(socket, relay, relayKind);
         webSockets[relay] = ISocket(socket, 1, relayKinds);
         LogUtils.v(() => "$relay connection initialized");
@@ -333,11 +345,24 @@ class Connect {
     _connectDebugLog('B', 'connect:DEQUEUE', 'Processing queued connection', {'relay': pending.relay, 'remainingQueue': _connectionQueue.length});
     
     final relayKinds = webSockets[pending.relay]?.relayKinds ?? [pending.relayKind];
-    _doConnectInternal(pending.relay, pending.relayKind, relayKinds).then((_) {
-      if (!pending.completer.isCompleted) pending.completer.complete();
-    }).catchError((e) {
-      if (!pending.completer.isCompleted) pending.completer.complete();
-    });
+    
+    // On Linux, delay before starting the next connection to yield event loop time
+    // to GLib idle callbacks (Flutter frame rendering). Without this delay,
+    // connection completions chain immediately into the next connection,
+    // leaving no gap for lower-priority idle sources to execute.
+    void startConnection() {
+      _doConnectInternal(pending.relay, pending.relayKind, relayKinds).then((_) {
+        if (!pending.completer.isCompleted) pending.completer.complete();
+      }).catchError((e) {
+        if (!pending.completer.isCompleted) pending.completer.complete();
+      });
+    }
+    
+    if (Platform.isLinux) {
+      Future.delayed(Duration(milliseconds: 100), startConnection);
+    } else {
+      startConnection();
+    }
   }
   // #endregion
 
@@ -843,6 +868,13 @@ class Connect {
   }
 
   Future<void> _reConnectToRelay(String relay, RelayKind relayKind) async {
+    // Guard: skip if already connecting (status 0) or already in the queue.
+    // This prevents reconnection storms when multiple disconnect signals
+    // (socket.done, onDone, onError) fire for the same relay.
+    final currentStatus = webSockets[relay]?.connectStatus;
+    if (currentStatus == 0) return; // already connecting
+    if (_connectionQueue.any((p) => p.relay == relay)) return; // already queued
+    
     _setConnectStatus(relay, 3); // closed
     await Future.delayed(Duration(milliseconds: 3000));
     if (webSockets.containsKey(relay)) {
@@ -912,10 +944,13 @@ class Connect {
       List<RelayKind>? relayKinds = webSockets[relay]?.relayKinds;
       bool hasNonTempKind = relayKinds?.any((kind) => kind != RelayKind.temp) ?? false;
       if (hasNonTempKind) {
+        // Shorter retry wait on Linux to finish failed relays faster and reduce
+        // total I/O event loop occupation time.
+        final retryWaitMs = Platform.isLinux ? 1500 : 3000;
         // #region agent log
-        _connectDebugLog('C', '_connectWs:RETRY_WAIT', 'Waiting before retry', {'relay': relay, 'retryCount': retryCount, 'waitMs': 3000});
+        _connectDebugLog('C', '_connectWs:RETRY_WAIT', 'Waiting before retry', {'relay': relay, 'retryCount': retryCount, 'waitMs': retryWaitMs});
         // #endregion
-        await Future.delayed(Duration(milliseconds: 3000));
+        await Future.delayed(Duration(milliseconds: retryWaitMs));
         if (webSockets.containsKey(relay)) {
           return await _connectWs(relay, retryCount + 1);
         }
@@ -928,7 +963,8 @@ class Connect {
   }
 
   // #region agent log - connection timeout constant
-  static const int CONNECT_TIMEOUT_SECONDS = 5; // Timeout for WebSocket.connect to prevent long DNS blocking
+  // Shorter timeout on Linux to reduce GLib event loop pressure from I/O callbacks.
+  static final int CONNECT_TIMEOUT_SECONDS = Platform.isLinux ? 3 : 5;
   // #endregion
 
   Future _connectWsSetting(String relay) async {
@@ -942,50 +978,22 @@ class Connect {
     _connectDebugLog('A', 'connectWsSetting:BEFORE', 'WebSocket.connect starting', {'relay': relay, 'timeoutSeconds': CONNECT_TIMEOUT_SECONDS});
     // #endregion
     
-    // Use a dedicated HttpClient so we can force-close it on timeout,
-    // which truly cancels the underlying OS-level DNS/TCP operation.
-    // Without this, .timeout() only throws on the Dart side but the
-    // native DNS lookup continues, and its eventual completion callback
-    // floods the event loop and blocks frame rendering.
-    final httpClient = HttpClient();
-    httpClient.connectionTimeout = Duration(seconds: CONNECT_TIMEOUT_SECONDS);
-    
-    final completer = Completer<WebSocket>();
-    
-    // Start the connection with our custom HttpClient
-    WebSocket.connect(relay, customClient: httpClient).then((socket) {
-      if (!completer.isCompleted) {
-        completer.complete(socket);
-      } else {
-        // Timeout already fired, close the orphaned socket
-        socket.close();
-      }
-    }).catchError((e) {
-      if (!completer.isCompleted) {
-        completer.completeError(e);
-      }
-      // If timeout already fired, silently discard the error
-    });
-    
-    // Set up a timeout that force-closes the HttpClient
-    Future.delayed(Duration(seconds: CONNECT_TIMEOUT_SECONDS), () {
-      if (!completer.isCompleted) {
-        httpClient.close(force: true); // Force-close cancels pending DNS/TCP at OS level
-        completer.completeError(
-          TimeoutException('WebSocket.connect timed out after ${CONNECT_TIMEOUT_SECONDS}s', Duration(seconds: CONNECT_TIMEOUT_SECONDS)),
-        );
-      }
-    });
-    
+    // Use simple .timeout() instead of httpClient.close(force:true).
+    // force-close causes unhandled SocketExceptions in OXHttpOverrides.connectionFactory
+    // whose stack traces flood stdout synchronously, blocking the GLib event loop on Linux.
     try {
-      final socket = await completer.future;
+      final socket = await WebSocket.connect(relay).timeout(
+        Duration(seconds: CONNECT_TIMEOUT_SECONDS),
+        onTimeout: () {
+          throw TimeoutException('WebSocket.connect timed out after ${CONNECT_TIMEOUT_SECONDS}s', Duration(seconds: CONNECT_TIMEOUT_SECONDS));
+        },
+      );
       // #region agent log
       final duration = DateTime.now().millisecondsSinceEpoch - startTime;
       _connectDebugLog('A', 'connectWsSetting:SUCCESS', 'WebSocket.connect completed', {'relay': relay, 'durationMs': duration});
       // #endregion
       return socket;
     } catch (e) {
-      httpClient.close(force: true); // Ensure cleanup on any error
       // #region agent log
       final duration = DateTime.now().millisecondsSinceEpoch - startTime;
       _connectDebugLog('A', 'connectWsSetting:ERROR', 'WebSocket.connect failed', {'relay': relay, 'durationMs': duration, 'error': e.toString().substring(0, (e.toString().length > 120 ? 120 : e.toString().length))});

@@ -42,6 +42,26 @@ class Account {
 
   // Map<String, UserDB> userCache = {};
   Map<String, ValueNotifier<UserDBISAR>> userCache = {};
+  
+  /// Max entries in userCache to prevent unbounded memory growth.
+  static const int _userCacheMaxSize = 500;
+  
+  /// Evict oldest entries from userCache when it grows too large.
+  /// Dart Maps maintain insertion order, so we remove from the beginning.
+  /// Never removes the current user's entry.
+  void _trimUserCacheIfNeeded() {
+    if (userCache.length <= _userCacheMaxSize) return;
+    final keysToRemove = <String>[];
+    final targetRemoveCount = userCache.length - _userCacheMaxSize;
+    for (var key in userCache.keys) {
+      if (key == currentPubkey) continue;
+      keysToRemove.add(key);
+      if (keysToRemove.length >= targetRemoveCount) break;
+    }
+    for (var key in keysToRemove) {
+      userCache.remove(key);
+    }
+  }
 
   List<String> pQueue = [];
   List<Event> unsentNIP46EventQueue = [];
@@ -113,6 +133,7 @@ class Account {
       if (user != null) {
         userCache[pubkey] = ValueNotifier<UserDBISAR>(user);
         _addToPQueue(user);
+        _trimUserCacheIfNeeded();
       }
       completer.complete(user);
     });
