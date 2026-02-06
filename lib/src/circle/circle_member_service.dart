@@ -247,13 +247,11 @@ class CircleMemberService {
   /// 
   /// [memberPubkey] Member pubkey (hex or npub format)
   /// [role] Optional role (default: "member")
-  /// [displayName] Optional display name
   /// 
   /// Returns response data or throws exception
   Future<Map<String, dynamic>> addMember({
     required String memberPubkey,
     String? role,
-    String? displayName,
   }) async {
     final normalizedPubkey = normalizePubkey(memberPubkey);
     if (normalizedPubkey == null) {
@@ -263,7 +261,6 @@ class CircleMemberService {
     // Build content JSON
     final contentMap = <String, dynamic>{};
     if (role != null) contentMap['role'] = role;
-    if (displayName != null) contentMap['display_name'] = displayName;
 
     final content = contentMap.isEmpty ? '' : jsonEncode(contentMap);
 

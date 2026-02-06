@@ -533,12 +533,11 @@ extension AccountCircle on Account {
         if (circle.status != null) 'status': circle.status,
       };
 
-      // Build members list (only contains pubkey, display names retrieved from UserDBISAR)
+      // Build members list (only contains pubkey)
       if (circle.memberPubkeys.isNotEmpty) {
-        final members = circle.memberPubkeys.map((pubkey) => {
-          'pubkey': pubkey,
-          'display_name': '', // Display names retrieved from UserDBISAR
-        }).toList();
+        final members = circle.memberPubkeys
+            .map((pubkey) => <String, dynamic>{'pubkey': pubkey})
+            .toList();
 
         tenantInfo['members'] = members;
       }

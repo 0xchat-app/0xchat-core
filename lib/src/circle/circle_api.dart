@@ -230,25 +230,21 @@ class TenantMember {
   TenantMember({
     required this.pubkey,
     required this.role,
-    this.displayName,
   });
 
   final String pubkey;
   final String role;
-  final String? displayName;
 
   factory TenantMember.fromJson(Map<String, dynamic> json) {
     return TenantMember(
       pubkey: json['pubkey'] as String,
       role: json['role'] as String,
-      displayName: json['display_name'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'pubkey': pubkey,
     'role': role,
-    if (displayName != null) 'display_name': displayName,
   };
 }
 
