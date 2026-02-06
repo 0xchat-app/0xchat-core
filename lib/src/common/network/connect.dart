@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
+import 'package:bip340/bip340.dart' as bip340;
 import 'package:chatcore/chat-core.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -133,7 +134,11 @@ class Connect {
   static final int MAX_SUBSCRIPTIONS_COUNT = 15;
   
   // #region agent log - retry limiting
-  static final int MAX_RETRY_COUNT = 3; // Maximum retries before backing off
+  // On Linux, each failing relay blocks the queue for: retries * timeout + waits.
+  // With MAX_RETRY=3, timeout=3s, wait=1.5s: 3*3 + 2*1.5 = 12s per failing relay!
+  // With 16+ queued relays, that's 192s (3+ min) of continuous I/O pressure.
+  // Reduce to 1 retry on Linux to keep it to 3 + 1.5 + 3 = 7.5s max per relay.
+  static final int MAX_RETRY_COUNT = Platform.isLinux ? 1 : 3;
   static final int RETRY_BACKOFF_SECONDS = 300; // 5 minutes backoff after max retries
   // Track relay failures: relay -> {retryCount, lastFailTime}
   final Map<String, _RelayFailureInfo> _relayFailures = {};
@@ -686,6 +691,28 @@ class Connect {
     }
   }
 
+  // On Linux, event.isValid() calls bip340.verify() + SHA256 synchronously on
+  // the main thread. For each incoming event, this blocks the main thread for
+  // ~1-5ms. When many events arrive (100+), this can block for 500ms+.
+  // Move the CPU-intensive crypto to the algorithm isolate on Linux.
+  static Future<bool> _isValidEventInIsolate(Map<String, dynamic> params) async {
+    final pubkey = params['pubkey'] as String;
+    final id = params['id'] as String;
+    final sig = params['sig'] as String;
+    final createdAt = params['createdAt'] as int;
+    final kind = params['kind'] as int;
+    final tags = (params['tags'] as List)
+        .map((t) => (t as List).map((s) => s.toString()).toList())
+        .toList();
+    final content = params['content'] as String;
+
+    final verifyId = Event.processEventId(pubkey, createdAt, kind, tags, content);
+    if (createdAt.toString().length == 10 && id == verifyId) {
+      return bip340.verify(pubkey, id, sig);
+    }
+    return false;
+  }
+
   Future<bool> _checkValidEvent(Event event, String relay) async {
     String? subscriptionId = event.subscriptionId;
     if (subscriptionId != null) {
@@ -696,8 +723,24 @@ class Connect {
         EventCallBack? callBack = requestsMap[requestsMapKey]!.eventCallBack;
         if (callBack != null) {
           EventCache.sharedInstance.receiveEvent(event, relay);
-          // check sign
-          if (await event.isValid() == false) {
+          // check sign - on Linux, move crypto to isolate to avoid blocking main thread
+          bool isValid;
+          if (Platform.isLinux) {
+            isValid = await ThreadPoolManager.sharedInstance.runAlgorithmTask(
+              () => _isValidEventInIsolate({
+                'pubkey': event.pubkey,
+                'id': event.id,
+                'sig': event.sig,
+                'createdAt': event.createdAt,
+                'kind': event.kind,
+                'tags': event.tags,
+                'content': event.content,
+              })
+            ) as bool;
+          } else {
+            isValid = await event.isValid();
+          }
+          if (!isValid) {
             return false;
           }
           callBack(event, relay);
@@ -978,13 +1021,27 @@ class Connect {
     _connectDebugLog('A', 'connectWsSetting:BEFORE', 'WebSocket.connect starting', {'relay': relay, 'timeoutSeconds': CONNECT_TIMEOUT_SECONDS});
     // #endregion
     
-    // Use simple .timeout() instead of httpClient.close(force:true).
-    // force-close causes unhandled SocketExceptions in OXHttpOverrides.connectionFactory
-    // whose stack traces flood stdout synchronously, blocking the GLib event loop on Linux.
+    // Use a dedicated HttpClient with connectionTimeout instead of .timeout().
+    //
+    // .timeout() problem: When .timeout() fires, only the Dart Future is abandoned.
+    // The underlying DNS/TCP/TLS operations continue running as "orphan" connections,
+    // generating I/O events on the GLib main loop. Over time, orphans accumulate.
+    //
+    // HttpClient.connectionTimeout: When the timeout fires, HttpClient calls
+    // ConnectionTask.cancel() which properly closes the underlying socket,
+    // reducing orphaned I/O operations.
+    //
+    // We also wrap with .timeout() as a safety net in case connectionTimeout
+    // doesn't fire (e.g., during WebSocket upgrade phase after TCP connect).
+    final httpClient = HttpClient();
+    httpClient.connectionTimeout = Duration(seconds: CONNECT_TIMEOUT_SECONDS);
+    
     try {
-      final socket = await WebSocket.connect(relay).timeout(
-        Duration(seconds: CONNECT_TIMEOUT_SECONDS),
+      final socket = await WebSocket.connect(relay, customClient: httpClient).timeout(
+        Duration(seconds: CONNECT_TIMEOUT_SECONDS + 2), // safety net: slightly longer
         onTimeout: () {
+          // Force close the HttpClient if the safety timeout fires
+          try { httpClient.close(force: true); } catch (_) {}
           throw TimeoutException('WebSocket.connect timed out after ${CONNECT_TIMEOUT_SECONDS}s', Duration(seconds: CONNECT_TIMEOUT_SECONDS));
         },
       );
@@ -994,6 +1051,9 @@ class Connect {
       // #endregion
       return socket;
     } catch (e) {
+      // Close the HttpClient to clean up any pending connection resources.
+      // Use force:false to avoid unhandled SocketExceptions.
+      try { httpClient.close(); } catch (_) {}
       // #region agent log
       final duration = DateTime.now().millisecondsSinceEpoch - startTime;
       _connectDebugLog('A', 'connectWsSetting:ERROR', 'WebSocket.connect failed', {'relay': relay, 'durationMs': duration, 'error': e.toString().substring(0, (e.toString().length > 120 ? 120 : e.toString().length))});
