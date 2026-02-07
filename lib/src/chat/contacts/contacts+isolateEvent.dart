@@ -18,14 +18,8 @@ extension IsolateEvent on Contacts {
       'privkey': privkey,
       'pubkey': pubkey,
     };
-    var message;
-    SignerApplication signerApplication = SignerHelper.getSignerApplication(privkey);
-    if (signerApplication == SignerApplication.remoteSigner) {
-      message = await _decodeNip17InIsolate(map);
-    } else {
-      message =
-          await ThreadPoolManager.sharedInstance.runOtherTask(() => _decodeNip17InIsolate(map));
-    }
+    // Always run in isolate: on Linux (and when remoteSigner) this avoids blocking the main thread.
+    final message = await ThreadPoolManager.sharedInstance.runOtherTask(() => _decodeNip17InIsolate(map));
     if (message != null) {
       return Event.fromJson(message, verify: false);
     }
@@ -46,15 +40,8 @@ extension IsolateEvent on Contacts {
       'privkey': privkey,
       'receiver': receiver,
     };
-
-    var message;
-    SignerApplication signerApplication = SignerHelper.getSignerApplication(privkey);
-    if (signerApplication == SignerApplication.remoteSigner) {
-      message = await _decodeNip4InIsolate(map);
-    } else {
-      message = await ThreadPoolManager.sharedInstance.runOtherTask(() => _decodeNip4InIsolate(map));
-    }
-
+    // Always run in isolate: on Linux (and when remoteSigner) this avoids blocking the main thread.
+    final message = await ThreadPoolManager.sharedInstance.runOtherTask(() => _decodeNip4InIsolate(map));
     if (message != null) {
       return EDMessage.fromMap(message);
     }
@@ -75,16 +62,8 @@ extension IsolateEvent on Contacts {
       'privkey': privkey,
       'receiver': receiver,
     };
-
-    var message;
-    SignerApplication signerApplication = SignerHelper.getSignerApplication(privkey);
-    if (signerApplication == SignerApplication.remoteSigner) {
-      message = await _decodeNip44InIsolate(map);
-    } else {
-      message =
-          await ThreadPoolManager.sharedInstance.runOtherTask(() => _decodeNip44InIsolate(map));
-    }
-
+    // Always run in isolate: on Linux (and when remoteSigner) this avoids blocking the main thread.
+    final message = await ThreadPoolManager.sharedInstance.runOtherTask(() => _decodeNip44InIsolate(map));
     if (message != null) {
       return EDMessage.fromMap(message);
     }
@@ -131,16 +110,7 @@ extension IsolateEvent on Contacts {
       'sealedPrivkey': sealedPrivkey,
       'sealedReceiver': sealedReceiver
     };
-
-    var message;
-    SignerApplication signerApplication = SignerHelper.getSignerApplication(privkey);
-    if (signerApplication == SignerApplication.remoteSigner) {
-      message = await _encodeNip17InIsolate(map);
-    } else {
-      message =
-          await ThreadPoolManager.sharedInstance.runOtherTask(() => _encodeNip17InIsolate(map));
-    }
-
+    final message = await ThreadPoolManager.sharedInstance.runOtherTask(() => _encodeNip17InIsolate(map));
     if (message != null) {
       return Event.fromJson(message, verify: false);
     }

@@ -249,7 +249,7 @@ class Connect {
     }
     // #region agent log
     final ctDuration = DateTime.now().millisecondsSinceEpoch - ctStart.millisecondsSinceEpoch;
-    if (Platform.isLinux) {
+    if (Platform.isLinux && kDebugMode) {
       try { File('/Users/bear/Desktop/jenkins/.cursor/debug.log').writeAsStringSync('{"sessionId":"debug-session","hypothesisId":"C","location":"connect.dart:_checkTimeout","message":"_checkTimeout","data":{"ts":"$ctTs","durationMs":$ctDuration,"okTimeouts":$okTimeouts,"reqTimeouts":$reqTimeouts,"sendsMapSize":${sendsMap.length},"requestsMapSize":${requestsMap.length}},"timestamp":${ctStart.millisecondsSinceEpoch}}\n', mode: FileMode.append); } catch(_) {}
       debugPrint('[HEARTBEAT_CT][$ctTs] _checkTimeout: ${ctDuration}ms okT=$okTimeouts reqT=$reqTimeouts sends=${sendsMap.length} reqs=${requestsMap.length}');
     }
@@ -797,7 +797,7 @@ class Connect {
         await Future.wait(eventCheckerFutures[requestsMapKey]!);
         // #region agent log
         final eoseMs = DateTime.now().millisecondsSinceEpoch - eoseStart;
-        if (Platform.isLinux && eoseMs > 5) {
+        if (Platform.isLinux && kDebugMode && eoseMs > 5) {
           try { File('/Users/bear/Desktop/jenkins/.cursor/debug.log').writeAsStringSync('{"sessionId":"debug-session","hypothesisId":"E","location":"connect.dart:_handleEOSE","message":"Future.wait slow","data":{"relay":"$relay","futureCount":$futureCount,"waitMs":$eoseMs,"timeout":$timeout},"timestamp":${DateTime.now().millisecondsSinceEpoch}}\n', mode: FileMode.append); } catch(_) {}
           debugPrint('[EOSE_WAIT] Future.wait took ${eoseMs}ms for $futureCount futures, relay=$relay timeout=$timeout');
         }
@@ -945,7 +945,7 @@ class Connect {
     if (_connectionQueue.any((p) => p.relay == relay)) return; // already queued
     
     // #region agent log
-    if (Platform.isLinux) {
+    if (Platform.isLinux && kDebugMode) {
       final now = DateTime.now();
       final ts = '${now.hour.toString().padLeft(2,'0')}:${now.minute.toString().padLeft(2,'0')}:${now.second.toString().padLeft(2,'0')}.${now.millisecond.toString().padLeft(3,'0')}';
       try { File('/Users/bear/Desktop/jenkins/.cursor/debug.log').writeAsStringSync('{"sessionId":"debug-session","hypothesisId":"B","location":"connect.dart:_reConnectToRelay","message":"reconnect triggered","data":{"relay":"$relay","relayKind":"${relayKind.name}"},"timestamp":${now.millisecondsSinceEpoch}}\n', mode: FileMode.append); } catch(_) {}
@@ -1094,7 +1094,7 @@ class Connect {
       // #region agent log
       final closeMs = DateTime.now().millisecondsSinceEpoch - closeStart;
       final duration = DateTime.now().millisecondsSinceEpoch - startTime;
-      if (Platform.isLinux && closeMs > 1) {
+      if (Platform.isLinux && kDebugMode && closeMs > 1) {
         try { File('/Users/bear/Desktop/jenkins/.cursor/debug.log').writeAsStringSync('{"sessionId":"debug-session","hypothesisId":"D","location":"connect.dart:_connectWsSetting","message":"httpClient.close slow","data":{"relay":"$relay","closeMs":$closeMs},"timestamp":${DateTime.now().millisecondsSinceEpoch}}\n', mode: FileMode.append); } catch(_) {}
         debugPrint('[CLOSE_TIMING] httpClient.close() took ${closeMs}ms for $relay');
       }
