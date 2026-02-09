@@ -5,6 +5,8 @@ import 'dart:typed_data';
 
 import 'package:chatcore/chat-core.dart';
 import 'package:flutter/cupertino.dart';
+
+import '../../circle/circle_api.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:nostr_core_dart/nostr.dart';
 import 'package:nostr_mls_package/nostr_mls_package.dart';
@@ -373,6 +375,14 @@ extension MLSPrivateGroups on Groups {
   }) async {
     members.remove(pubkey);
     if(members.isEmpty) members.add(pubkey);
+    // For paid relay, fetch latest keypackages from relay for each other member before selection
+    if (relays.isNotEmpty && CircleApi.isPaidRelay(relays.first)) {
+      for (final member in members) {
+        if (member != pubkey) {
+          await searchKeyPackagesFromRelay(member);
+        }
+      }
+    }
     Map<String, String> membersKeyPackages =
         await getMembersKeyPackages(members, onKeyPackageSelection: onKeyPackageSelection);
     if (membersKeyPackages.keys.length < members.length) return null;
@@ -904,6 +914,14 @@ extension MLSPrivateGroups on Groups {
         onKeyPackageSelection,
   }) async {
     if (group.mlsGroupId == null) return group;
+    // For paid relay, fetch latest keypackages from relay for each new member before selection
+    if (group.relay != null &&
+        group.relay!.isNotEmpty &&
+        CircleApi.isPaidRelay(group.relay!)) {
+      for (final member in members) {
+        await searchKeyPackagesFromRelay(member);
+      }
+    }
     Map<String, String> membersKeyPackages =
         await getMembersKeyPackages(members, onKeyPackageSelection: onKeyPackageSelection);
     if (membersKeyPackages.keys.length < members.length) return group;
