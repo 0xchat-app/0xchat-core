@@ -33,6 +33,14 @@ List<int> hexStringToBytes(String hexString) {
   return bytes;
 }
 
+/// Thrown when welcome/invite message failed to be accepted by any relay.
+class InviteSendFailureException implements Exception {
+  final String message;
+  InviteSendFailureException([this.message = 'Failed to send invite']);
+  @override
+  String toString() => 'InviteSendFailureException: $message';
+}
+
 class MlsGroup {
   final List<int> mlsGroupId;
   final List<String> groupMembers;
@@ -448,12 +456,19 @@ extension MLSPrivateGroups on Groups {
     Event welcomeEvent =
         await Nip104.encodeWelcomeEvent(serializedWelcomeMessage, relays, pubkey, privkey);
 
-    /// gift-wrapped welcome message and send to each members.
+    // Gift-wrapped welcome message: wait for at least one relay to accept per member.
     for (var member in members) {
       if (member == pubkey) continue;
       Event giftWrappedEvent = await Nip59.encode(welcomeEvent, member);
-      Connect.sharedInstance
-          .sendEvent(giftWrappedEvent, toRelays: relays, sendCallBack: (ok, relay) {});
+      final completer = Completer<OKEvent>();
+      Connect.sharedInstance.sendEvent(giftWrappedEvent, toRelays: relays,
+          sendCallBack: (OKEvent ok, String relay) {
+        if (!completer.isCompleted) completer.complete(ok);
+      });
+      final ok = await completer.future;
+      if (!ok.status) {
+        throw InviteSendFailureException(ok.message.isNotEmpty ? ok.message : 'Failed to send invite');
+      }
     }
     NotificationHelper.sharedInstance.sendNotification(members, relays.first);
   }
