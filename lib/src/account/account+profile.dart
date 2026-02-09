@@ -192,6 +192,9 @@ extension AccountProfile on Account {
     Map additionMap = jsonDecode(db.otherField ?? '{}');
     map.addAll(additionMap);
     Event event = await Nip1.setMetadata(jsonEncode(map), currentPubkey, currentPrivkey);
+
+    await Connect.sharedInstance.waitForRelayConnection(relay: getCurrentCircleRelay().first);
+
     Connect.sharedInstance.sendEvent(event, toRelays: getCurrentCircleRelay(), sendCallBack: (ok, relay) {
       if (ok.status) {
         Account.sharedInstance.updateOrCreateUserNotifier(db.pubKey, db);
