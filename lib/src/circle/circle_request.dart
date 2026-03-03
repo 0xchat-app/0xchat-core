@@ -90,7 +90,7 @@ class CircleRequest {
       body: jsonEncode(event.toJson()),
     );
 
-    LogUtils.v(() => 'Response status: ${response.statusCode}');
+    LogUtils.v(() => 'Response status: ${response.statusCode}, body: ${response.body}');
 
     return response;
   }
@@ -121,15 +121,16 @@ class CircleRequest {
         final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
         
         // Extract error code if present
-        String? errorCode;
-        if (responseBody.containsKey('code')) {
-          final codeValue = responseBody['code'];
-          if (codeValue is String) {
-            errorCode = codeValue;
-            LogUtils.e(() => 'Error code: $errorCode');
-          }
+        final codeValue = responseBody['code'];
+        final errorValue = responseBody['error'];
+        String errorMessage = responseBody.toString();
+        if (codeValue is String) {
+          errorMessage = codeValue;
+        } else if (errorValue is String) {
+          errorMessage = errorValue;
         }
-        throw Exception('Error code: $errorCode');
+        LogUtils.e(() => errorMessage);
+        throw Exception(errorMessage);
       } catch (e) {
         // If it's already an Exception we threw (with our error message), rethrow it
         if (e is Exception) {
