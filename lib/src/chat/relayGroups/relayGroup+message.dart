@@ -107,10 +107,8 @@ extension EMessage on RelayGroup {
           chatType: 4,
           decryptSecret: decryptSecret);
     }
-    var map = await MessageDBISAR.decodeContent(
-        MessageDBISAR.getSubContent(type, content) ?? event.content);
-    messageDB.decryptContent = map['content'];
-    messageDB.type = map['contentType'];
+    await MessageDBISAR.applyDecodedContentToMessage(
+        messageDB, type, content, contentFallbackForDecode: event.content);
 
     if (replaceMessageId != null) {
       groupMessageUpdateCallBack?.call(messageDB, replaceMessageId);

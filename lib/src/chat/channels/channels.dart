@@ -518,10 +518,7 @@ class Channels {
           plaintEvent: jsonEncode(event),
           chatType: 2);
     }
-    var map =
-        await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(type, content) ?? content);
-    messageDB.decryptContent = map['content'];
-    messageDB.type = map['contentType'];
+    await MessageDBISAR.applyDecodedContentToMessage(messageDB, type, content);
 
     if (replaceMessageId != null) {
       channelMessageUpdateCallBack?.call(messageDB, replaceMessageId);

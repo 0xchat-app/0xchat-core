@@ -316,6 +316,27 @@ class MessageDBISAR {
     }
   }
 
+  /// Applies decoded content to [messageDB] for send-path save.
+  /// When [type] and [content] yield no subContent (e.g. plain URL for image),
+  /// [messageDB.type] is left unchanged (caller should have set it to messageTypeToString(type) before call).
+  /// When subContent is present, [messageDB.type] is set from decoded contentType.
+  /// [contentFallbackForDecode] is used as the string to decode when subContent is null;
+  /// if omitted, [content] is used.
+  static Future<void> applyDecodedContentToMessage(
+    MessageDBISAR messageDB,
+    MessageType type,
+    String content, {
+    String? contentFallbackForDecode,
+  }) async {
+    final subContent = getSubContent(type, content);
+    final toDecode = subContent ?? (contentFallbackForDecode ?? content);
+    final map = await decodeContent(toDecode);
+    messageDB.decryptContent = map['content'] as String;
+    if (subContent != null) {
+      messageDB.type = map['contentType'] as String;
+    }
+  }
+
   static String getContent(MessageType type, String content, String? source) {
     if (source != null && source.isNotEmpty == true) return source;
     switch (type) {

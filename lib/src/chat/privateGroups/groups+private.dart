@@ -189,10 +189,8 @@ extension PrivateGroups on Groups {
       messageDB.createTime = replaceMessageDB.createTime;
     }
 
-    var map = await MessageDBISAR.decodeContent(
-        MessageDBISAR.getSubContent(type, content) ?? messageDB.content);
-    messageDB.decryptContent = map['content'];
-    messageDB.type = map['contentType'];
+    await MessageDBISAR.applyDecodedContentToMessage(
+        messageDB, type, content, contentFallbackForDecode: messageDB.content);
     if (encryptedFile?.mimeType != null &&
         (messageDB.type == 'image' ||
             messageDB.type == 'video' ||

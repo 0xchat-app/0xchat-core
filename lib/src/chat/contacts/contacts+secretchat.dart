@@ -437,10 +437,7 @@ extension SecretChat on Contacts {
           decryptAlgo: encryptedFile?.algorithm,
         );
       }
-      var map =
-          await MessageDBISAR.decodeContent(MessageDBISAR.getSubContent(type, content) ?? content);
-      messageDB.decryptContent = map['content'];
-      messageDB.type = map['contentType'];
+      await MessageDBISAR.applyDecodedContentToMessage(messageDB, type, content);
       if (encryptedFile?.mimeType != null &&
           (messageDB.type == 'image' ||
               messageDB.type == 'video' ||
