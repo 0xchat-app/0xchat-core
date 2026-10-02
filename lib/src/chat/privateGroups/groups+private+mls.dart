@@ -581,7 +581,8 @@ extension MLSPrivateGroups on Groups {
           List<String> members =
               group.members?.where((element) => element != pubkey).toList() ?? [];
           if (members.isNotEmpty) {
-            NotificationHelper.sharedInstance.sendNotification(members, relay);
+            NotificationHelper.sharedInstance.sendNotification(members, relay,
+                kind: k == NotificationHelper.callOfferKind ? k : null);
           }
         }
         completer.complete(ok);

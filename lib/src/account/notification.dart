@@ -29,12 +29,21 @@ class NotificationHelper {
     return Connect.sharedInstance.connect(serverRelay, relayKind: RelayKind.notification);
   }
 
+  /// Kind hint of a call offer (NIP-100), as carried in the group message's
+  /// public `k` tag.
+  static const String callOfferKind = '25050';
+
   // send notification to receivers
-  Future<OKEvent> sendNotification(List<String> receivers, String relay) async {
+  //
+  // [kind] marks what the push is for. Only call offers are marked, with the
+  // same `k` the relay already sees on the group message, so a receiver whose
+  // app is not running can ring instead of showing "New message".
+  Future<OKEvent> sendNotification(List<String> receivers, String relay, {String? kind}) async {
     final allowSendNotification = await permissionChecker?.canSendNotification() ?? false;
     if (!allowSendNotification) return OKEvent('', false, 'not allow send notification');
     Keychain keychain = Keychain.generate();
     List<List<String>> tags = Nip4.toTags('', '', '', null, members: receivers);
+    if (kind != null) tags.add(['k', kind]);
     Event event = await Event.from(
         kind: 20285, tags: tags, content: '', pubkey: keychain.public, privkey: keychain.private);
     Completer<OKEvent> completer = Completer<OKEvent>();
